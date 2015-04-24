@@ -1,0 +1,29 @@
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Fri, 21 Nov 2014 16:21:56 +0100
+Subject: mips/gup: Replace ACCESS_ONCE with READ_ONCE
+Origin: https://git.kernel.org/linus/4218091cb45f601b889cd032e39fe6878a426e70
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Change the gup code to replace ACCESS_ONCE with READ_ONCE.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Acked-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+---
+ arch/mips/mm/gup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/mm/gup.c
++++ b/arch/mips/mm/gup.c
+@@ -30,7 +30,7 @@ retry:
+ 
+ 	return pte;
+ #else
+-	return ACCESS_ONCE(*ptep);
++	return READ_ONCE(*ptep);
+ #endif
+ }
+ 

@@ -1,0 +1,56 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Thu, 23 Apr 2015 02:00:34 +0100
+Subject: powerpc/gup: Replace ACCESS_ONCE with READ_ONCE
+Forwarded: not-yet
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Change the gup code to replace ACCESS_ONCE with READ_ONCE.
+
+This is not needed upstream as the code has been dropped in
+favour of the generic implementation which does not have this
+problem.
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+--- a/arch/powerpc/mm/gup.c
++++ b/arch/powerpc/mm/gup.c
+@@ -34,7 +34,7 @@ static noinline int gup_pte_range(pmd_t
+ 
+ 	ptep = pte_offset_kernel(&pmd, addr);
+ 	do {
+-		pte_t pte = ACCESS_ONCE(*ptep);
++		pte_t pte = READ_ONCE(*ptep);
+ 		struct page *page;
+ 		/*
+ 		 * Similar to the PMD case, NUMA hinting must take slow path
+@@ -68,7 +68,7 @@ static int gup_pmd_range(pud_t pud, unsi
+ 
+ 	pmdp = pmd_offset(&pud, addr);
+ 	do {
+-		pmd_t pmd = ACCESS_ONCE(*pmdp);
++		pmd_t pmd = READ_ONCE(*pmdp);
+ 
+ 		next = pmd_addr_end(addr, end);
+ 		/*
+@@ -110,7 +110,7 @@ static int gup_pud_range(pgd_t pgd, unsi
+ 
+ 	pudp = pud_offset(&pgd, addr);
+ 	do {
+-		pud_t pud = ACCESS_ONCE(*pudp);
++		pud_t pud = READ_ONCE(*pudp);
+ 
+ 		next = pud_addr_end(addr, end);
+ 		if (pud_none(pud))
+@@ -174,7 +174,7 @@ int __get_user_pages_fast(unsigned long
+ 
+ 	pgdp = pgd_offset(mm, addr);
+ 	do {
+-		pgd_t pgd = ACCESS_ONCE(*pgdp);
++		pgd_t pgd = READ_ONCE(*pgdp);
+ 
+ 		pr_devel("  %016lx: normal pgd %p\n", addr,
+ 			 (void *)pgd_val(pgd));

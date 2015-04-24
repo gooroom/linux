@@ -1,0 +1,29 @@
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Fri, 21 Nov 2014 16:29:40 +0100
+Subject: x86/gup: Replace ACCESS_ONCE with READ_ONCE
+Origin: https://git.kernel.org/linus/14cf3d977b80f5e355f8ac7547cf1b9ff9fb3e09
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+(https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Change the gup code to replace ACCESS_ONCE with READ_ONCE.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Acked-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+---
+ arch/x86/mm/gup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/x86/mm/gup.c
++++ b/arch/x86/mm/gup.c
+@@ -15,7 +15,7 @@
+ static inline pte_t gup_get_pte(pte_t *ptep)
+ {
+ #ifndef CONFIG_X86_PAE
+-	return ACCESS_ONCE(*ptep);
++	return READ_ONCE(*ptep);
+ #else
+ 	/*
+ 	 * With get_user_pages_fast, we walk down the pagetables without taking

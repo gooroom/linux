@@ -1,0 +1,131 @@
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Tue, 6 Jan 2015 22:41:46 +0100
+Subject: ppc/kvm: Replace ACCESS_ONCE with READ_ONCE
+Origin: https://git.kernel.org/linus/5ee07612e9e20817bb99256ab6cf1400fd5aa270
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+(https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Change the ppc/kvm code to replace ACCESS_ONCE with READ_ONCE.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Acked-by: Alexander Graf <agraf@suse.de>
+---
+ arch/powerpc/kvm/book3s_hv_rm_xics.c |  8 ++++----
+ arch/powerpc/kvm/book3s_xics.c       | 16 ++++++++--------
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+
+--- a/arch/powerpc/kvm/book3s_hv_rm_xics.c
++++ b/arch/powerpc/kvm/book3s_hv_rm_xics.c
+@@ -152,7 +152,7 @@ static void icp_rm_down_cppr(struct kvmp
+ 	 * in virtual mode.
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		/* Down_CPPR */
+ 		new_state.cppr = new_cppr;
+@@ -209,7 +209,7 @@ unsigned long kvmppc_rm_h_xirr(struct kv
+ 	 * pending priority
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		xirr = old_state.xisr | (((u32)old_state.cppr) << 24);
+ 		if (!old_state.xisr)
+@@ -260,7 +260,7 @@ int kvmppc_rm_h_ipi(struct kvm_vcpu *vcp
+ 	 * ICP state: Check_IPI
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		/* Set_MFRR */
+ 		new_state.mfrr = mfrr;
+@@ -332,7 +332,7 @@ int kvmppc_rm_h_cppr(struct kvm_vcpu *vc
+ 	icp_rm_clr_vcpu_irq(icp->vcpu);
+ 
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		reject = 0;
+ 		new_state.cppr = cppr;
+--- a/arch/powerpc/kvm/book3s_xics.c
++++ b/arch/powerpc/kvm/book3s_xics.c
+@@ -327,7 +327,7 @@ static bool icp_try_to_deliver(struct kv
+ 		 icp->server_num);
+ 
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		*reject = 0;
+ 
+@@ -512,7 +512,7 @@ static void icp_down_cppr(struct kvmppc_
+ 	 * in virtual mode.
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		/* Down_CPPR */
+ 		new_state.cppr = new_cppr;
+@@ -567,7 +567,7 @@ static noinline unsigned long kvmppc_h_x
+ 	 * pending priority
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		xirr = old_state.xisr | (((u32)old_state.cppr) << 24);
+ 		if (!old_state.xisr)
+@@ -619,7 +619,7 @@ static noinline int kvmppc_h_ipi(struct
+ 	 * ICP state: Check_IPI
+ 	 */
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		/* Set_MFRR */
+ 		new_state.mfrr = mfrr;
+@@ -663,7 +663,7 @@ static int kvmppc_h_ipoll(struct kvm_vcp
+ 		if (!icp)
+ 			return H_PARAMETER;
+ 	}
+-	state = ACCESS_ONCE(icp->state);
++	state = READ_ONCE(icp->state);
+ 	kvmppc_set_gpr(vcpu, 4, ((u32)state.cppr << 24) | state.xisr);
+ 	kvmppc_set_gpr(vcpu, 5, state.mfrr);
+ 	return H_SUCCESS;
+@@ -705,7 +705,7 @@ static noinline void kvmppc_h_cppr(struc
+ 				      BOOK3S_INTERRUPT_EXTERNAL_LEVEL);
+ 
+ 	do {
+-		old_state = new_state = ACCESS_ONCE(icp->state);
++		old_state = new_state = READ_ONCE(icp->state);
+ 
+ 		reject = 0;
+ 		new_state.cppr = cppr;
+@@ -869,7 +869,7 @@ static int xics_debug_show(struct seq_fi
+ 		if (!icp)
+ 			continue;
+ 
+-		state.raw = ACCESS_ONCE(icp->state.raw);
++		state.raw = READ_ONCE(icp->state.raw);
+ 		seq_printf(m, "cpu server %#lx XIRR:%#x PPRI:%#x CPPR:%#x MFRR:%#x OUT:%d NR:%d\n",
+ 			   icp->server_num, state.xisr,
+ 			   state.pending_pri, state.cppr, state.mfrr,
+@@ -1066,7 +1066,7 @@ int kvmppc_xics_set_icp(struct kvm_vcpu
+ 	 * the ICS states before the ICP states.
+ 	 */
+ 	do {
+-		old_state = ACCESS_ONCE(icp->state);
++		old_state = READ_ONCE(icp->state);
+ 
+ 		if (new_state.mfrr <= old_state.mfrr) {
+ 			resend = false;

@@ -1,0 +1,37 @@
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Tue, 6 Jan 2015 22:47:41 +0100
+Subject: ppc/hugetlbfs: Replace ACCESS_ONCE with READ_ONCE
+Origin: https://git.kernel.org/linus/da1a288d8562739aa8ba0273d4fb6b73b856c0d3
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+(https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Change the ppc/hugetlbfs code to replace ACCESS_ONCE with READ_ONCE.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+---
+ arch/powerpc/mm/hugetlbpage.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/powerpc/mm/hugetlbpage.c
++++ b/arch/powerpc/mm/hugetlbpage.c
+@@ -971,7 +971,7 @@ pte_t *find_linux_pte_or_hugepte(pgd_t *
+ 		 */
+ 		pdshift = PUD_SHIFT;
+ 		pudp = pud_offset(&pgd, ea);
+-		pud  = ACCESS_ONCE(*pudp);
++		pud  = READ_ONCE(*pudp);
+ 
+ 		if (pud_none(pud))
+ 			return NULL;
+@@ -983,7 +983,7 @@ pte_t *find_linux_pte_or_hugepte(pgd_t *
+ 		else {
+ 			pdshift = PMD_SHIFT;
+ 			pmdp = pmd_offset(&pud, ea);
+-			pmd  = ACCESS_ONCE(*pmdp);
++			pmd  = READ_ONCE(*pmdp);
+ 			/*
+ 			 * A hugepage collapse is captured by pmd_none, because
+ 			 * it mark the pmd none and do a hpte invalidate.

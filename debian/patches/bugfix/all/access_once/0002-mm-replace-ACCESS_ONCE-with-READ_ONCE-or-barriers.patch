@@ -1,0 +1,38 @@
+From: Christian Borntraeger <borntraeger@de.ibm.com>
+Date: Sun, 7 Dec 2014 21:41:33 +0100
+Subject: mm: replace ACCESS_ONCE with READ_ONCE or barriers
+Origin: https://git.kernel.org/linus/e37c698270633327245beb0fbd8699db8a4b65b4
+
+ACCESS_ONCE does not work reliably on non-scalar types. For
+example gcc 4.6 and 4.7 might remove the volatile tag for such
+accesses during the SRA (scalar replacement of aggregates) step
+(https://gcc.gnu.org/bugzilla/show_bug.cgi?id=58145)
+
+Let's change the code to access the page table elements with
+READ_ONCE that does implicit scalar accesses for the gup code.
+
+mm_find_pmd is tricky, because m68k and sparc(32bit) define pmd_t
+as array of longs. This code requires just that the pmd_present
+and pmd_trans_huge check are done on the same value, so a barrier
+is sufficent.
+
+A similar case is in handle_pte_fault. On ppc44x the word size is
+32 bit, but a pte is 64 bit. A barrier is ok as well.
+
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Cc: linux-mm@kvack.org
+Acked-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+[bwh: Backported to 3.16: drop inapplicable changes]
+---
+--- a/mm/rmap.c
++++ b/mm/rmap.c
+@@ -623,7 +623,8 @@ pmd_t *mm_find_pmd(struct mm_struct *mm,
+ 	 * without holding anon_vma lock for write.  So when looking for a
+ 	 * genuine pmde (in which to find pte), test present and !THP together.
+ 	 */
+-	pmde = ACCESS_ONCE(*pmd);
++	pmde = *pmd;
++	barrier();
+ 	if (!pmd_present(pmde) || pmd_trans_huge(pmde))
+ 		pmd = NULL;
+ out:

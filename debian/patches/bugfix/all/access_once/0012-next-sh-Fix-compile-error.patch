@@ -1,0 +1,35 @@
+From: Guenter Roeck <linux@roeck-us.net>
+Date: Wed, 7 Jan 2015 12:32:28 -0800
+Subject: next: sh: Fix compile error
+Origin: https://git.kernel.org/linus/378af02b1aecabb3756e19c0cbb8cdd9c3b9637f
+
+Commit 927609d622a3 ("kernel: tighten rules for ACCESS ONCE") results in a
+compile failure for sh builds with CONFIG_X2TLB enabled.
+
+arch/sh/mm/gup.c: In function 'gup_get_pte':
+arch/sh/mm/gup.c:20:2: error: invalid initializer
+make[1]: *** [arch/sh/mm/gup.o] Error 1
+
+Replace ACCESS_ONCE with READ_ONCE to fix the problem.
+
+Fixes: 927609d622a3 ("kernel: tighten rules for ACCESS ONCE")
+Cc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Cc: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Guenter Roeck <linux@roeck-us.net>
+Reviewed-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+---
+ arch/sh/mm/gup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/sh/mm/gup.c
++++ b/arch/sh/mm/gup.c
+@@ -17,7 +17,7 @@
+ static inline pte_t gup_get_pte(pte_t *ptep)
+ {
+ #ifndef CONFIG_X2TLB
+-	return ACCESS_ONCE(*ptep);
++	return READ_ONCE(*ptep);
+ #else
+ 	/*
+ 	 * With get_user_pages_fast, we walk down the pagetables without
