@@ -1,0 +1,27 @@
+From: "Martin K. Petersen" <martin.petersen@oracle.com>
+Date: Fri, 27 Mar 2015 15:17:21 -0400
+Subject: libata: Blacklist queued TRIM on Samsung SSD 850 Pro
+Origin: https://git.kernel.org/linus/6fc4d97a4987c5d247655a157a9377996626221a
+
+Blacklist queued TRIM on this drive for now.
+
+Reported-by: Stefan Keller <linux-list@zahlenfresser.de>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+CC: stable@vger.kernel.org
+Signed-off-by: Tejun Heo <tj@kernel.org>
+[bwh: Backported to 3.16: adjust context and drop ZERO_AFTER_TRIM flag]
+Signed-off-by; Ben Hutchings <ben@decadent.org.uk>
+---
+ drivers/ata/libata-core.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/ata/libata-core.c
++++ b/drivers/ata/libata-core.c
+@@ -4229,6 +4229,7 @@ static const struct ata_blacklist_entry
+ 	{ "Micron_M5[15]0*",		"MU01",	ATA_HORKAGE_NO_NCQ_TRIM, },
+ 	{ "Crucial_CT*M550*",		"MU01",	ATA_HORKAGE_NO_NCQ_TRIM, },
+ 	{ "Crucial_CT*MX100*",		"MU01",	ATA_HORKAGE_NO_NCQ_TRIM, },
++	{ "Samsung SSD 850 PRO*",	NULL,	ATA_HORKAGE_NO_NCQ_TRIM, },
+ 
+ 	/*
+ 	 * Some WD SATA-I drives spin up and down erratically when the link
