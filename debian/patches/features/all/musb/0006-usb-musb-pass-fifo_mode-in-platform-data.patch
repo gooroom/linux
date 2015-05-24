@@ -1,0 +1,101 @@
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 24 Nov 2014 11:05:04 -0800
+Subject: [6/8] usb: musb: Pass fifo_mode in platform data
+Origin: https://git.kernel.org/linus/8a77f05aa39be879535f22a9757e703581fa1392
+Bug-Debian: https://bugs.debian.org/773400
+
+This allows setting the correct fifo_mode when multiple
+MUSB glue layers are built-in.
+
+Cc: Fabio Baltieri <fabio.baltieri@linaro.org>
+Cc: Lee Jones <lee.jones@linaro.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Cc: Lars-Peter Clausen <lars@metafoo.de>
+Acked-by: Apelete Seketeli <apelete@seketeli.net>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+---
+ drivers/usb/musb/blackfin.c  |  1 +
+ drivers/usb/musb/da8xx.c     |  1 +
+ drivers/usb/musb/jz4740.c    |  1 +
+ drivers/usb/musb/musb_core.c | 21 ++++++---------------
+ drivers/usb/musb/ux500.c     |  1 +
+ 5 files changed, 10 insertions(+), 15 deletions(-)
+
+--- a/drivers/usb/musb/blackfin.c
++++ b/drivers/usb/musb/blackfin.c
+@@ -474,6 +474,7 @@ static const struct musb_platform_ops bf
+ 	.writew		= bfin_writew,
+ 	.readl		= bfin_readl,
+ 	.writel		= bfin_writel,
++	.fifo_mode	= 2,
+ 	.read_fifo	= bfin_read_fifo,
+ 	.write_fifo	= bfin_write_fifo,
+ 	.enable		= bfin_musb_enable,
+--- a/drivers/usb/musb/da8xx.c
++++ b/drivers/usb/musb/da8xx.c
+@@ -462,6 +462,7 @@ static const struct musb_platform_ops da
+ 	.init		= da8xx_musb_init,
+ 	.exit		= da8xx_musb_exit,
+ 
++	.fifo_mode	= 2,
+ 	.enable		= da8xx_musb_enable,
+ 	.disable	= da8xx_musb_disable,
+ 
+--- a/drivers/usb/musb/jz4740.c
++++ b/drivers/usb/musb/jz4740.c
+@@ -105,6 +105,7 @@ static int jz4740_musb_exit(struct musb
+ 
+ static const struct musb_platform_ops jz4740_musb_ops = {
+ 	.quirks		= MUSB_INDEXED_EP,
++	.fifo_mode	= 2,
+ 	.init		= jz4740_musb_init,
+ 	.exit		= jz4740_musb_exit,
+ };
+--- a/drivers/usb/musb/musb_core.c
++++ b/drivers/usb/musb/musb_core.c
+@@ -1116,21 +1116,7 @@ static void musb_shutdown(struct platfor
+  * We don't currently use dynamic fifo setup capability to do anything
+  * more than selecting one of a bunch of predefined configurations.
+  */
+-#if defined(CONFIG_USB_MUSB_TUSB6010)			\
+-	|| defined(CONFIG_USB_MUSB_TUSB6010_MODULE)	\
+-	|| defined(CONFIG_USB_MUSB_OMAP2PLUS)		\
+-	|| defined(CONFIG_USB_MUSB_OMAP2PLUS_MODULE)	\
+-	|| defined(CONFIG_USB_MUSB_AM35X)		\
+-	|| defined(CONFIG_USB_MUSB_AM35X_MODULE)	\
+-	|| defined(CONFIG_USB_MUSB_DSPS)		\
+-	|| defined(CONFIG_USB_MUSB_DSPS_MODULE)
+-static ushort fifo_mode = 4;
+-#elif defined(CONFIG_USB_MUSB_UX500)			\
+-	|| defined(CONFIG_USB_MUSB_UX500_MODULE)
+-static ushort fifo_mode = 5;
+-#else
+-static ushort fifo_mode = 2;
+-#endif
++static ushort fifo_mode;
+ 
+ /* "modprobe ... fifo_mode=1" etc */
+ module_param(fifo_mode, ushort, 0);
+@@ -2053,6 +2039,11 @@ musb_init_controller(struct device *dev,
+ 		musb->io.ep_select = musb_flat_ep_select;
+ 	}
+ 
++	if (musb->ops->fifo_mode)
++		fifo_mode = musb->ops->fifo_mode;
++	else
++		fifo_mode = 4;
++
+ 	if (musb->ops->fifo_offset)
+ 		musb->io.fifo_offset = musb->ops->fifo_offset;
+ 	else
+--- a/drivers/usb/musb/ux500.c
++++ b/drivers/usb/musb/ux500.c
+@@ -191,6 +191,7 @@ static const struct musb_platform_ops ux
+ 	.quirks		= MUSB_INDEXED_EP,
+ 	.init		= ux500_musb_init,
+ 	.exit		= ux500_musb_exit,
++	.fifo_mode	= 5,
+ 
+ 	.set_vbus	= ux500_musb_set_vbus,
+ };
