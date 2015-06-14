@@ -1,0 +1,83 @@
+From: Jan Kara <jack@suse.cz>
+Date: Wed, 7 Jan 2015 13:46:16 +0100
+Subject: udf: Remove repeated loads blocksize
+Origin: https://git.kernel.org/linus/79144954278d4bb5989f8b903adcac7a20ff2a5a
+
+Store blocksize in a local variable in udf_fill_inode() since it is used
+a lot of times.
+
+Signed-off-by: Jan Kara <jack@suse.cz>
+[bwh: Needed for the following fix. Backported to 3.16: adjust context.]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ fs/udf/inode.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+--- a/fs/udf/inode.c
++++ b/fs/udf/inode.c
+@@ -1365,6 +1365,7 @@ static void udf_fill_inode(struct inode
+ 	struct udf_sb_info *sbi = UDF_SB(inode->i_sb);
+ 	struct udf_inode_info *iinfo = UDF_I(inode);
+ 	unsigned int link_count;
++	int bs = inode->i_sb->s_blocksize;
+ 
+ 	fe = (struct fileEntry *)bh->b_data;
+ 	efe = (struct extendedFileEntry *)bh->b_data;
+@@ -1385,41 +1386,38 @@ static void udf_fill_inode(struct inode
+ 	if (fe->descTag.tagIdent == cpu_to_le16(TAG_IDENT_EFE)) {
+ 		iinfo->i_efe = 1;
+ 		iinfo->i_use = 0;
+-		if (udf_alloc_i_data(inode, inode->i_sb->s_blocksize -
++		if (udf_alloc_i_data(inode, bs -
+ 					sizeof(struct extendedFileEntry))) {
+ 			make_bad_inode(inode);
+ 			return;
+ 		}
+ 		memcpy(iinfo->i_ext.i_data,
+ 		       bh->b_data + sizeof(struct extendedFileEntry),
+-		       inode->i_sb->s_blocksize -
+-					sizeof(struct extendedFileEntry));
++		       bs - sizeof(struct extendedFileEntry));
+ 	} else if (fe->descTag.tagIdent == cpu_to_le16(TAG_IDENT_FE)) {
+ 		iinfo->i_efe = 0;
+ 		iinfo->i_use = 0;
+-		if (udf_alloc_i_data(inode, inode->i_sb->s_blocksize -
+-						sizeof(struct fileEntry))) {
++		if (udf_alloc_i_data(inode, bs - sizeof(struct fileEntry))) {
+ 			make_bad_inode(inode);
+ 			return;
+ 		}
+ 		memcpy(iinfo->i_ext.i_data,
+ 		       bh->b_data + sizeof(struct fileEntry),
+-		       inode->i_sb->s_blocksize - sizeof(struct fileEntry));
++		       bs - sizeof(struct fileEntry));
+ 	} else if (fe->descTag.tagIdent == cpu_to_le16(TAG_IDENT_USE)) {
+ 		iinfo->i_efe = 0;
+ 		iinfo->i_use = 1;
+ 		iinfo->i_lenAlloc = le32_to_cpu(
+ 				((struct unallocSpaceEntry *)bh->b_data)->
+ 				 lengthAllocDescs);
+-		if (udf_alloc_i_data(inode, inode->i_sb->s_blocksize -
++		if (udf_alloc_i_data(inode, bs -
+ 					sizeof(struct unallocSpaceEntry))) {
+ 			make_bad_inode(inode);
+ 			return;
+ 		}
+ 		memcpy(iinfo->i_ext.i_data,
+ 		       bh->b_data + sizeof(struct unallocSpaceEntry),
+-		       inode->i_sb->s_blocksize -
+-					sizeof(struct unallocSpaceEntry));
++		       bs - sizeof(struct unallocSpaceEntry));
+ 		return;
+ 	}
+ 
+@@ -1507,8 +1505,7 @@ static void udf_fill_inode(struct inode
+ 			return;
+ 		}
+ 		/* File in ICB has to fit in there... */
+-		if (inode->i_size > inode->i_sb->s_blocksize -
+-					udf_file_entry_alloc_offset(inode)) {
++		if (inode->i_size > bs - udf_file_entry_alloc_offset(inode)) {
+ 			make_bad_inode(inode);
+ 			return;
+ 		}
