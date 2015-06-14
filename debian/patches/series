@@ -47,8 +47,23 @@ debian/snd-pcsp-disable-autoload.patch
 bugfix/x86/viafb-autoload-on-olpc-xo1.5-only.patch
 debian/qxl-disable-modeset-by-default.patch
 
+# Introduce READ_ONCE and WRITE_ONCE; replace misuse of ACCESS_ONCE.
+# Needed for backports of other fixes.
+bugfix/all/access_once/0001-kernel-Provide-READ_ONCE-and-ASSIGN_ONCE.patch
+bugfix/all/access_once/0002-mm-replace-ACCESS_ONCE-with-READ_ONCE-or-barriers.patch
+bugfix/all/access_once/0003-x86-spinlock-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0004-x86-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0005-mips-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0006-arm64-spinlock-Replace-ACCESS_ONCE-READ_ONCE.patch
+bugfix/all/access_once/0007-arm-spinlock-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0008-powerpc-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0009-ppc-kvm-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0010-ppc-hugetlbfs-Replace-ACCESS_ONCE-with-READ_ONCE.patch
+bugfix/all/access_once/0011-kernel-tighten-rules-for-ACCESS-ONCE.patch
+bugfix/all/access_once/0012-next-sh-Fix-compile-error.patch
+bugfix/all/access_once/0013-kernel-Change-ASSIGN_ONCE-val-x-to-WRITE_ONCE-x-val.patch
+
 # Arch bug fixes
-bugfix/arm/omap-musb-choice.patch
 bugfix/mips/disable-advansys.patch
 bugfix/arm/ixp4xx_iobe.patch
 bugfix/m68k/ethernat-kconfig.patch
@@ -63,9 +78,13 @@ bugfix/x86/acpi-video-add-disable_native_backlight-quirk-for-samsung-510r.patch
 bugfix/x86/acpi-video-disable-native-backlight-on-samsung-series-9.patch
 bugfix/x86/drm-i915-quietly-reject-attempts-to-create-non-pagealigned-stolen-objects.patch
 bugfix/arm/mvebu-do-not-register-custom-DMA-operations-when-coherency-is-disabled.patch
-bugfix/x86/x86-microcode-intel-guard-against-stack-overflow-in-.patch
 bugfix/x86/drm-i915-add-limited-color-range-readout-for-hdmi-dp.patch
 bugfix/x86/powercap-rapl-change-domain-detection-message.patch
+bugfix/arm/ARM-dts-imx53-correct-clock-names-of-SATA-node.patch
+bugfix/arm/arm-mvebu-armada-xp-openblocks-ax3-4-disable-interna.patch
+bugfix/x86/input-synaptics-retrieve-the-extended-capabilities-i.patch
+bugfix/x86/input-synaptics-remove-topbuttonpad-property-for-len.patch
+bugfix/x86/input-synaptics-re-route-tracksticks-buttons-on-the-.patch
 
 # Arch features
 features/mips/MIPS-Support-hard-limit-of-cpu-count-nr_cpu_ids.patch
@@ -152,6 +171,9 @@ features/arm64/drivers-net-xgene-fix-Use-separate-resources.patch
 features/arm64/dtb-Add-10GbE-node-to-APM-X-Gene-SoC-device-tree.patch
 features/arm64/dtb-Add-SGMII-based-1GbE-node-to-APM-X-Gene-SoC-devi.patch
 features/arm64/dtb-xgene-fix-Backward-compatibility-with-older-firm.patch
+features/x86/thinkpad_acpi-support-new-BIOS-version-string-patter.patch
+features/arm64/usb-make-xhci-platform-driver-use-64-bit-or-32-bit-dma.patch
+features/arm64/usb-add-support-for-acpi-identification-to-xhci-platform.patch
 
 # Miscellaneous bug fixes
 bugfix/all/misc-bmp085-Enable-building-as-a-module.patch
@@ -185,15 +207,18 @@ bugfix/all/xen-balloon-cancel-ballooning-if-adding-new-memory-f.patch
 bugfix/all/xen-balloon-Don-t-continue-ballooning-when-BP_ECANCE.patch
 bugfix/all/vfs-read-file_handle-only-once-in-handle_to_path.patch
 bugfix/all/keys-request_key-should-reget-expired-keys-rather-th.patch
-bugfix/all/ib-core-prevent-integer-overflow-in-ib_umem_get.patch
-bugfix/all/btrfs-make-xattr-replace-operations-atomic.patch
-bugfix/all/ext4-fix-zero_range-bug-hidden-by-flag-aliasing.patch
-bugfix/all/ext4-fix-accidental-flag-aliasing-in-ext4_map_blocks.patch
-bugfix/all/ext4-allocate-entire-range-in-zero-range.patch
-bugfix/all/ipv6-don-t-reduce-hop-limit-for-an-interface.patch
 bugfix/all/hid-thingm-fix-workqueue-race-on-remove.patch
 debian/emmc-don-t-initialize-partitions-on-rpmb-flagged-areas.patch
 bugfix/all/xen-netfront-release-per-queue-Tx-and-Rx-resource-wh.patch
+bugfix/all/rtc-hctosys-do-not-treat-lack-of-rtc-device-as-error.patch
+bugfix/all/rtc-hctosys-use-function-name-in-the-error-log.patch
+bugfix/all/ext4-fix-data-corruption-caused-by-unwritten-and-del.patch
+bugfix/all/ext4-move-check-under-lock-scope-to-close-a-race.patch
+bugfix/all/libata-update-crucial-micron-blacklist.patch
+bugfix/all/libata-blacklist-queued-trim-on-samsung-ssd-850-pro.patch
+bugfix/all/config-enable-need_dma_map_state-by-default-when-swi.patch
+bugfix/all/md-raid0-fix-restore-to-sector-variable-in-raid0_make_request.patch
+bugfix/all/cdc_ncm-fix-tx_bytes-statistics.patch
 
 # memfd_create() & kdbus backport
 features/all/kdbus/mm-allow-drivers-to-prevent-new-writable-mappings.patch
@@ -236,6 +261,10 @@ features/all/simplefb-Change-simplefb_init-from-module_init-to-fs.patch
 features/all/simplefb-Fix-build-errors-when-CONFIG_COMMON_CLK-is-.patch
 features/all/simplefb-Fix-build-failure-on-Sparc.patch
 features/all/fbcon-Change-fbcon_init-from-module_init-to-fs_initc.patch
+features/all/power-reset-Add-generic-SYSCON-register-mapped-reset.patch
+features/all/power-reset-corrections-for-simple-syscon-reboot-dri.patch
+features/all/power-reset-adjust-priority-of-simple-syscon-reboot-.patch
+features/all/syscon-reboot-Backport-to-pre-register_restart_handl.patch
 
 # Update r8723au to 3.17
 features/all/r8723au/0001-staging-rtl8723au-rtw_get_wps_ie23a-Remove-unused-de.patch
@@ -552,13 +581,29 @@ features/all/arcmsr/0019-arcmsr-simplify-ioctl-data-read-write.patch
 
 # Add FocalTech support to psmouse
 features/all/psmouse/input-i8042-also-set-the-firmware-id-for-muxed-ports.patch
-features/all/psmouse/input-psmouse-add-psmouse_matches_pnp_id-helper-func.patch
 features/all/psmouse/input-psmouse-add-support-for-detecting-focaltech-ps.patch
 features/all/psmouse/input-psmouse-support-for-the-focaltech-ps-2-protoco.patch
 features/all/psmouse/input-psmouse-remove-hardcoded-touchpad-size-from-th.patch
 features/all/psmouse/input-psmouse-ensure-that-focaltech-reports-consiste.patch
 features/all/psmouse/input-psmouse-disable-changing-resolution-rate-scale.patch
 features/all/psmouse/input-psmouse-disable-palm-detection-in-the-focaltec.patch
+
+# Add i219 support to e1000e
+features/all/e1000e/0001-e1000e-initial-support-for-i219.patch
+features/all/e1000e/0002-e1000e-fix-obscure-comments.patch
+features/all/e1000e/0003-e1000e-remove-calls-to-ioremap-unmap-for-nvm-addr.patch
+features/all/e1000e/0004-e1000e-nvm-write-protect-access-removed-from-spt-hw.patch
+
+# Make musb multiplatform compatible
+features/all/musb/0001-usb-musb-add-function-pointers-for-io-access-functio.patch
+features/all/musb/0002-usb-musb-populate-new-io-functions-for-tusb6010.patch
+features/all/musb/0003-usb-musb-populate-new-io-functions-for-blackfin.patch
+features/all/musb/0004-usb-musb-change-to-use-new-io-access.patch
+features/all/musb/0005-usb-musb-change-end-point-selection-to-use-new-io-ac.patch
+features/all/musb/0006-usb-musb-pass-fifo_mode-in-platform-data.patch
+features/all/musb/0007-usb-musb-allow-multiple-glue-layers-to-be-built-in.patch
+features/all/musb/0008-usb-musb-use-is_enabled-for-tusb6010.patch
+features/all/musb/0009-usb-musb-fix-order-of-conditions-for-assigning-end-p.patch
 
 # Fix ABI changes
 debian/of-fix-abi-changes.patch
@@ -577,26 +622,3 @@ debian/mm-fix-pagecache_get_page-abi-change-in-3.16.7-ckt6.patch
 debian/tcp-fix-abi-change-in-3.16.7-ckt7.patch
 debian/usb-avoid-abi-change-in-3.16.7-ckt8.patch
 debian/procfs-avoid-abi-change-in-3.16.7-ckt8.patch
-
-bugfix/all/btrfs-simplify-insert_orphan_item.patch
-
-bugfix/x86/crypto-aesni-fix-memory-usage-in-GCM-decryption.patch
-bugfix/all/tcp-fix-crash-in-tcp-fast-open.patch
-
-# Introduce READ_ONCE and WRITE_ONCE; replace misuse of ACCESS_ONCE.
-# Needed for backports of other fixes.
-bugfix/all/access_once/0001-kernel-Provide-READ_ONCE-and-ASSIGN_ONCE.patch
-bugfix/all/access_once/0002-mm-replace-ACCESS_ONCE-with-READ_ONCE-or-barriers.patch
-bugfix/all/access_once/0003-x86-spinlock-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0004-x86-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0005-mips-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0006-arm64-spinlock-Replace-ACCESS_ONCE-READ_ONCE.patch
-bugfix/all/access_once/0007-arm-spinlock-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0008-powerpc-gup-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0009-ppc-kvm-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0010-ppc-hugetlbfs-Replace-ACCESS_ONCE-with-READ_ONCE.patch
-bugfix/all/access_once/0011-kernel-tighten-rules-for-ACCESS-ONCE.patch
-bugfix/all/access_once/0012-next-sh-Fix-compile-error.patch
-bugfix/all/access_once/0013-kernel-Change-ASSIGN_ONCE-val-x-to-WRITE_ONCE-x-val.patch
-
-bugfix/all/fs-take-i_mutex-during-prepare_binprm-for-set-ug-id-.patch

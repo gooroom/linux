@@ -1,0 +1,442 @@
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 24 Nov 2014 11:05:02 -0800
+Subject: [4/8] usb: musb: Change to use new IO access
+Origin: https://git.kernel.org/linus/1b40fc57a517878cf4c2e16ce29cc9a066dc1064
+Bug-Debian: https://bugs.debian.org/773400
+
+Change to use new IO access. This allows us to build in multiple
+MUSB glue layers.
+
+[ balbi@ti.com : switch to EXPORT_SYMBOL_GPL()
+	fix long lines ]
+
+Cc: Fabio Baltieri <fabio.baltieri@linaro.org>
+Cc: Lee Jones <lee.jones@linaro.org>
+Cc: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+---
+ drivers/usb/musb/am35x.c     |   3 +-
+ drivers/usb/musb/blackfin.c  |   8 +--
+ drivers/usb/musb/musb_core.c | 143 ++++++++++++++++++++++++++++++++++++++-----
+ drivers/usb/musb/musb_io.h   |  88 +++-----------------------
+ drivers/usb/musb/musb_regs.h |  12 ----
+ drivers/usb/musb/tusb6010.c  |   8 +--
+ drivers/usb/musb/ux500_dma.c |   4 +-
+ 7 files changed, 146 insertions(+), 120 deletions(-)
+
+--- a/drivers/usb/musb/am35x.c
++++ b/drivers/usb/musb/am35x.c
+@@ -407,7 +407,7 @@ static int am35x_musb_exit(struct musb *
+ }
+ 
+ /* AM35x supports only 32bit read operation */
+-void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
++static void am35x_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
+ {
+ 	void __iomem *fifo = hw_ep->fifo;
+ 	u32		val;
+@@ -440,6 +440,7 @@ static const struct musb_platform_ops am
+ 	.init		= am35x_musb_init,
+ 	.exit		= am35x_musb_exit,
+ 
++	.read_fifo	= am35x_read_fifo,
+ 	.enable		= am35x_musb_enable,
+ 	.disable	= am35x_musb_disable,
+ 
+--- a/drivers/usb/musb/blackfin.c
++++ b/drivers/usb/musb/blackfin.c
+@@ -71,7 +71,7 @@ static void binf_writel(void __iomem *ad
+ /*
+  * Load an endpoint's FIFO
+  */
+-void musb_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *src)
++static void bfin_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *src)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem *fifo = hw_ep->fifo;
+@@ -135,7 +135,7 @@ void musb_write_fifo(struct musb_hw_ep *
+ /*
+  * Unload an endpoint's FIFO
+  */
+-void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
++static void bfin_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem *fifo = hw_ep->fifo;
+@@ -474,8 +474,8 @@ static const struct musb_platform_ops bf
+ 	.writew		= bfin_writew,
+ 	.readl		= bfin_readl,
+ 	.writel		= bfin_writel,
+-	.read_fifo	= musb_read_fifo,
+-	.write_fifo	= musb_write_fifo,
++	.read_fifo	= bfin_read_fifo,
++	.write_fifo	= bfin_write_fifo,
+ 	.enable		= bfin_musb_enable,
+ 	.disable	= bfin_musb_disable,
+ 
+--- a/drivers/usb/musb/musb_core.c
++++ b/drivers/usb/musb/musb_core.c
+@@ -225,12 +225,46 @@ static struct usb_phy_io_ops musb_ulpi_a
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+-#if !defined(CONFIG_USB_MUSB_TUSB6010) && !defined(CONFIG_USB_MUSB_BLACKFIN)
++static u32 musb_default_fifo_offset(u8 epnum)
++{
++	return 0x20 + (epnum * 4);
++}
++
++static u8 musb_default_readb(const void __iomem *addr, unsigned offset)
++{
++	return __raw_readb(addr + offset);
++}
++
++static void musb_default_writeb(void __iomem *addr, unsigned offset, u8 data)
++{
++	__raw_writeb(data, addr + offset);
++}
++
++static u16 musb_default_readw(const void __iomem *addr, unsigned offset)
++{
++	return __raw_readw(addr + offset);
++}
++
++static void musb_default_writew(void __iomem *addr, unsigned offset, u16 data)
++{
++	__raw_writew(data, addr + offset);
++}
++
++static u32 musb_default_readl(const void __iomem *addr, unsigned offset)
++{
++	return __raw_readl(addr + offset);
++}
++
++static void musb_default_writel(void __iomem *addr, unsigned offset, u32 data)
++{
++	__raw_writel(data, addr + offset);
++}
+ 
+ /*
+  * Load an endpoint's FIFO
+  */
+-void musb_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *src)
++static void musb_default_write_fifo(struct musb_hw_ep *hw_ep, u16 len,
++				    const u8 *src)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem *fifo = hw_ep->fifo;
+@@ -271,11 +305,10 @@ void musb_write_fifo(struct musb_hw_ep *
+ 	}
+ }
+ 
+-#if !defined(CONFIG_USB_MUSB_AM35X)
+ /*
+  * Unload an endpoint's FIFO
+  */
+-void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
++static void musb_default_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem *fifo = hw_ep->fifo;
+@@ -313,10 +346,40 @@ void musb_read_fifo(struct musb_hw_ep *h
+ 		ioread8_rep(fifo, dst, len);
+ 	}
+ }
+-#endif
+ 
+-#endif	/* normal PIO */
++/*
++ * Old style IO functions
++ */
++u8 (*musb_readb)(const void __iomem *addr, unsigned offset);
++EXPORT_SYMBOL_GPL(musb_readb);
++
++void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
++EXPORT_SYMBOL_GPL(musb_writeb);
++
++u16 (*musb_readw)(const void __iomem *addr, unsigned offset);
++EXPORT_SYMBOL_GPL(musb_readw);
+ 
++void (*musb_writew)(void __iomem *addr, unsigned offset, u16 data);
++EXPORT_SYMBOL_GPL(musb_writew);
++
++u32 (*musb_readl)(const void __iomem *addr, unsigned offset);
++EXPORT_SYMBOL_GPL(musb_readl);
++
++void (*musb_writel)(void __iomem *addr, unsigned offset, u32 data);
++EXPORT_SYMBOL_GPL(musb_writel);
++
++/*
++ * New style IO functions
++ */
++void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *dst)
++{
++	return hw_ep->musb->io.read_fifo(hw_ep, len, dst);
++}
++
++void musb_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *src)
++{
++	return hw_ep->musb->io.write_fifo(hw_ep, len, src);
++}
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+@@ -1456,17 +1519,22 @@ static int musb_core_init(u16 musb_type,
+ 	for (i = 0; i < musb->nr_endpoints; i++) {
+ 		struct musb_hw_ep	*hw_ep = musb->endpoints + i;
+ 
+-		hw_ep->fifo = MUSB_FIFO_OFFSET(i) + mbase;
++		hw_ep->fifo = musb->io.fifo_offset(i) + mbase;
+ #if defined(CONFIG_USB_MUSB_TUSB6010) || defined (CONFIG_USB_MUSB_TUSB6010_MODULE)
+-		hw_ep->fifo_async = musb->async + 0x400 + MUSB_FIFO_OFFSET(i);
+-		hw_ep->fifo_sync = musb->sync + 0x400 + MUSB_FIFO_OFFSET(i);
+-		hw_ep->fifo_sync_va =
+-			musb->sync_va + 0x400 + MUSB_FIFO_OFFSET(i);
++		if (musb->io.quirks & MUSB_IN_TUSB) {
++			hw_ep->fifo_async = musb->async + 0x400 +
++				musb->io.fifo_offset(i);
++			hw_ep->fifo_sync = musb->sync + 0x400 +
++				musb->io.fifo_offset(i);
++			hw_ep->fifo_sync_va =
++				musb->sync_va + 0x400 + musb->io.fifo_offset(i);
+ 
+-		if (i == 0)
+-			hw_ep->conf = mbase - 0x400 + TUSB_EP0_CONF;
+-		else
+-			hw_ep->conf = mbase + 0x400 + (((i - 1) & 0xf) << 2);
++			if (i == 0)
++				hw_ep->conf = mbase - 0x400 + TUSB_EP0_CONF;
++			else
++				hw_ep->conf = mbase + 0x400 +
++					(((i - 1) & 0xf) << 2);
++		}
+ #endif
+ 
+ 		hw_ep->regs = MUSB_EP_OFFSET(i, 0) + mbase;
+@@ -1907,6 +1975,18 @@ musb_init_controller(struct device *dev,
+ 	musb->ops = plat->platform_ops;
+ 	musb->port_mode = plat->mode;
+ 
++	/*
++	 * Initialize the default IO functions. At least omap2430 needs
++	 * these early. We initialize the platform specific IO functions
++	 * later on.
++	 */
++	musb_readb = musb_default_readb;
++	musb_writeb = musb_default_writeb;
++	musb_readw = musb_default_readw;
++	musb_writew = musb_default_writew;
++	musb_readl = musb_default_readl;
++	musb_writel = musb_default_writel;
++
+ 	/* We need musb_read/write functions initialized for PM */
+ 	pm_runtime_use_autosuspend(musb->controller);
+ 	pm_runtime_set_autosuspend_delay(musb->controller, 200);
+@@ -1934,6 +2014,37 @@ musb_init_controller(struct device *dev,
+ 		goto fail2;
+ 	}
+ 
++	if (musb->ops->quirks)
++		musb->io.quirks = musb->ops->quirks;
++
++	if (musb->ops->fifo_offset)
++		musb->io.fifo_offset = musb->ops->fifo_offset;
++	else
++		musb->io.fifo_offset = musb_default_fifo_offset;
++
++	if (musb->ops->readb)
++		musb_readb = musb->ops->readb;
++	if (musb->ops->writeb)
++		musb_writeb = musb->ops->writeb;
++	if (musb->ops->readw)
++		musb_readw = musb->ops->readw;
++	if (musb->ops->writew)
++		musb_writew = musb->ops->writew;
++	if (musb->ops->readl)
++		musb_readl = musb->ops->readl;
++	if (musb->ops->writel)
++		musb_writel = musb->ops->writel;
++
++	if (musb->ops->read_fifo)
++		musb->io.read_fifo = musb->ops->read_fifo;
++	else
++		musb->io.read_fifo = musb_default_read_fifo;
++
++	if (musb->ops->write_fifo)
++		musb->io.write_fifo = musb->ops->write_fifo;
++	else
++		musb->io.write_fifo = musb_default_write_fifo;
++
+ 	if (!musb->xceiv->io_ops) {
+ 		musb->xceiv->io_dev = musb->controller;
+ 		musb->xceiv->io_priv = musb->mregs;
+--- a/drivers/usb/musb/musb_io.h
++++ b/drivers/usb/musb/musb_io.h
+@@ -55,86 +55,12 @@ struct musb_io {
+ 	void	(*write_fifo)(struct musb_hw_ep *hw_ep, u16 len, const u8 *buf);
+ };
+ 
+-#ifndef CONFIG_BLACKFIN
+-
+-/* NOTE:  these offsets are all in bytes */
+-
+-static inline u16 musb_readw(const void __iomem *addr, unsigned offset)
+-	{ return __raw_readw(addr + offset); }
+-
+-static inline u32 musb_readl(const void __iomem *addr, unsigned offset)
+-	{ return __raw_readl(addr + offset); }
+-
+-
+-static inline void musb_writew(void __iomem *addr, unsigned offset, u16 data)
+-	{ __raw_writew(data, addr + offset); }
+-
+-static inline void musb_writel(void __iomem *addr, unsigned offset, u32 data)
+-	{ __raw_writel(data, addr + offset); }
+-
+-
+-#if defined(CONFIG_USB_MUSB_TUSB6010) || defined (CONFIG_USB_MUSB_TUSB6010_MODULE)
+-
+-/*
+- * TUSB6010 doesn't allow 8-bit access; 16-bit access is the minimum.
+- */
+-static inline u8 musb_readb(const void __iomem *addr, unsigned offset)
+-{
+-	u16 tmp;
+-	u8 val;
+-
+-	tmp = __raw_readw(addr + (offset & ~1));
+-	if (offset & 1)
+-		val = (tmp >> 8);
+-	else
+-		val = tmp & 0xff;
+-
+-	return val;
+-}
+-
+-static inline void musb_writeb(void __iomem *addr, unsigned offset, u8 data)
+-{
+-	u16 tmp;
+-
+-	tmp = __raw_readw(addr + (offset & ~1));
+-	if (offset & 1)
+-		tmp = (data << 8) | (tmp & 0xff);
+-	else
+-		tmp = (tmp & 0xff00) | data;
+-
+-	__raw_writew(tmp, addr + (offset & ~1));
+-}
+-
+-#else
+-
+-static inline u8 musb_readb(const void __iomem *addr, unsigned offset)
+-	{ return __raw_readb(addr + offset); }
+-
+-static inline void musb_writeb(void __iomem *addr, unsigned offset, u8 data)
+-	{ __raw_writeb(data, addr + offset); }
+-
+-#endif	/* CONFIG_USB_MUSB_TUSB6010 */
+-
+-#else
+-
+-static inline u8 musb_readb(const void __iomem *addr, unsigned offset)
+-	{ return (u8) (bfin_read16(addr + offset)); }
+-
+-static inline u16 musb_readw(const void __iomem *addr, unsigned offset)
+-	{ return bfin_read16(addr + offset); }
+-
+-static inline u32 musb_readl(const void __iomem *addr, unsigned offset)
+-	{ return (u32) (bfin_read16(addr + offset)); }
+-
+-static inline void musb_writeb(void __iomem *addr, unsigned offset, u8 data)
+-	{ bfin_write16(addr + offset, (u16) data); }
+-
+-static inline void musb_writew(void __iomem *addr, unsigned offset, u16 data)
+-	{ bfin_write16(addr + offset, data); }
+-
+-static inline void musb_writel(void __iomem *addr, unsigned offset, u32 data)
+-	{ bfin_write16(addr + offset, (u16) data); }
+-
+-#endif /* CONFIG_BLACKFIN */
++/* Do not add new entries here, add them the struct musb_io instead */
++extern u8 (*musb_readb)(const void __iomem *addr, unsigned offset);
++extern void (*musb_writeb)(void __iomem *addr, unsigned offset, u8 data);
++extern u16 (*musb_readw)(const void __iomem *addr, unsigned offset);
++extern void (*musb_writew)(void __iomem *addr, unsigned offset, u16 data);
++extern u32 (*musb_readl)(const void __iomem *addr, unsigned offset);
++extern void (*musb_writel)(void __iomem *addr, unsigned offset, u32 data);
+ 
+ #endif
+--- a/drivers/usb/musb/musb_regs.h
++++ b/drivers/usb/musb/musb_regs.h
+@@ -233,14 +233,6 @@
+ #define MUSB_INDEX		0x0E	/* 8 bit */
+ #define MUSB_TESTMODE		0x0F	/* 8 bit */
+ 
+-/* Get offset for a given FIFO from musb->mregs */
+-#if defined(CONFIG_USB_MUSB_TUSB6010) ||	\
+-	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
+-#define MUSB_FIFO_OFFSET(epnum)	(0x200 + ((epnum) * 0x20))
+-#else
+-#define MUSB_FIFO_OFFSET(epnum)	(0x20 + ((epnum) * 4))
+-#endif
+-
+ /*
+  * Additional Control Registers
+  */
+@@ -473,10 +465,6 @@ static inline u8  musb_read_txhubport(vo
+ #define MUSB_INDEX		USB_OFFSET(USB_INDEX)	/* 8 bit */
+ #define MUSB_TESTMODE		USB_OFFSET(USB_TESTMODE)/* 8 bit */
+ 
+-/* Get offset for a given FIFO from musb->mregs */
+-#define MUSB_FIFO_OFFSET(epnum)	\
+-	(USB_OFFSET(USB_EP0_FIFO) + ((epnum) * 8))
+-
+ /*
+  * Additional Control Registers
+  */
+--- a/drivers/usb/musb/tusb6010.c
++++ b/drivers/usb/musb/tusb6010.c
+@@ -207,7 +207,7 @@ static inline void tusb_fifo_read_unalig
+ 	}
+ }
+ 
+-void musb_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *buf)
++static void tusb_write_fifo(struct musb_hw_ep *hw_ep, u16 len, const u8 *buf)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem	*ep_conf = hw_ep->conf;
+@@ -257,7 +257,7 @@ void musb_write_fifo(struct musb_hw_ep *
+ 		tusb_fifo_write_unaligned(fifo, buf, len);
+ }
+ 
+-void musb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *buf)
++static void tusb_read_fifo(struct musb_hw_ep *hw_ep, u16 len, u8 *buf)
+ {
+ 	struct musb *musb = hw_ep->musb;
+ 	void __iomem	*ep_conf = hw_ep->conf;
+@@ -1176,8 +1176,8 @@ static const struct musb_platform_ops tu
+ 	.fifo_offset	= tusb_fifo_offset,
+ 	.readb		= tusb_readb,
+ 	.writeb		= tusb_writeb,
+-	.read_fifo	= musb_read_fifo,
+-	.write_fifo	= musb_write_fifo,
++	.read_fifo	= tusb_read_fifo,
++	.write_fifo	= tusb_write_fifo,
+ 	.enable		= tusb_musb_enable,
+ 	.disable	= tusb_musb_disable,
+ 
+--- a/drivers/usb/musb/ux500_dma.c
++++ b/drivers/usb/musb/ux500_dma.c
+@@ -91,9 +91,9 @@ static bool ux500_configure_channel(stru
+ 	struct scatterlist sg;
+ 	struct dma_slave_config slave_conf;
+ 	enum dma_slave_buswidth addr_width;
+-	dma_addr_t usb_fifo_addr = (MUSB_FIFO_OFFSET(hw_ep->epnum) +
+-					ux500_channel->controller->phy_base);
+ 	struct musb *musb = ux500_channel->controller->private_data;
++	dma_addr_t usb_fifo_addr = (musb->io.fifo_offset(hw_ep->epnum) +
++					ux500_channel->controller->phy_base);
+ 
+ 	dev_dbg(musb->controller,
+ 		"packet_sz=%d, mode=%d, dma_addr=0x%llu, len=%d is_tx=%d\n",

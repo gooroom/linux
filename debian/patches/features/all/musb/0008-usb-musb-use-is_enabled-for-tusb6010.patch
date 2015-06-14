@@ -1,0 +1,76 @@
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 24 Nov 2014 11:05:06 -0800
+Subject: [8/8] usb: musb: Use IS_ENABLED for tusb6010
+Origin: https://git.kernel.org/linus/ebf3992061db1f7b3aa093f37fb308acc74fbc82
+Bug-Debian: https://bugs.debian.org/773400
+
+This removes the ifdef clutter a bit and saves few lines.
+
+It also makes it easier to detect the remaining places
+where we have conditional building of code done based
+on if defined for things like DMA.
+
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Felipe Balbi <balbi@ti.com>
+---
+ drivers/usb/musb/musb_core.c | 2 +-
+ drivers/usb/musb/musb_core.h | 9 +++------
+ drivers/usb/musb/musb_regs.h | 3 ---
+ 3 files changed, 4 insertions(+), 10 deletions(-)
+
+--- a/drivers/usb/musb/musb_core.c
++++ b/drivers/usb/musb/musb_core.c
+@@ -1527,7 +1527,7 @@ static int musb_core_init(u16 musb_type,
+ 		struct musb_hw_ep	*hw_ep = musb->endpoints + i;
+ 
+ 		hw_ep->fifo = musb->io.fifo_offset(i) + mbase;
+-#if defined(CONFIG_USB_MUSB_TUSB6010) || defined (CONFIG_USB_MUSB_TUSB6010_MODULE)
++#if IS_ENABLED(CONFIG_USB_MUSB_TUSB6010)
+ 		if (musb->io.quirks & MUSB_IN_TUSB) {
+ 			hw_ep->fifo_async = musb->async + 0x400 +
+ 				musb->io.fifo_offset(i);
+--- a/drivers/usb/musb/musb_core.h
++++ b/drivers/usb/musb/musb_core.h
+@@ -216,8 +216,7 @@ struct musb_hw_ep {
+ 	void __iomem		*fifo;
+ 	void __iomem		*regs;
+ 
+-#if defined(CONFIG_USB_MUSB_TUSB6010) || \
+-	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
++#if IS_ENABLED(CONFIG_USB_MUSB_TUSB6010)
+ 	void __iomem		*conf;
+ #endif
+ 
+@@ -234,8 +233,7 @@ struct musb_hw_ep {
+ 	struct dma_channel	*tx_channel;
+ 	struct dma_channel	*rx_channel;
+ 
+-#if defined(CONFIG_USB_MUSB_TUSB6010) || \
+-	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
++#if IS_ENABLED(CONFIG_USB_MUSB_TUSB6010)
+ 	/* TUSB has "asynchronous" and "synchronous" dma modes */
+ 	dma_addr_t		fifo_async;
+ 	dma_addr_t		fifo_sync;
+@@ -339,8 +337,7 @@ struct musb {
+ 	void __iomem		*ctrl_base;
+ 	void __iomem		*mregs;
+ 
+-#if defined(CONFIG_USB_MUSB_TUSB6010) || \
+-	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
++#if IS_ENABLED(CONFIG_USB_MUSB_TUSB6010)
+ 	dma_addr_t		async;
+ 	dma_addr_t		sync;
+ 	void __iomem		*sync_va;
+--- a/drivers/usb/musb/musb_regs.h
++++ b/drivers/usb/musb/musb_regs.h
+@@ -280,10 +280,7 @@
+ #define MUSB_FIFOSIZE		0x0F
+ #define MUSB_CONFIGDATA		MUSB_FIFOSIZE	/* Re-used for EP0 */
+ 
+-#if defined(CONFIG_USB_MUSB_TUSB6010) ||	\
+-	defined(CONFIG_USB_MUSB_TUSB6010_MODULE)
+ #include "tusb6010.h"		/* Needed "only" for TUSB_EP0_CONF */
+-#endif
+ 
+ #define MUSB_TXCSR_MODE			0x2000
+ 
