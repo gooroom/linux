@@ -1,0 +1,41 @@
+From: Jan Kara <jack@suse.cz>
+Date: Wed, 7 Jan 2015 13:49:08 +0100
+Subject: udf: Check length of extended attributes and allocation descriptors
+Origin: https://git.kernel.org/linus/925cab7b6a683f791644dfde345f91e87017a023
+
+commit 23b133bdc452aa441fcb9b82cbf6dd05cfd342d0 upstream.
+
+Check length of extended attributes and allocation descriptors when
+loading inodes from disk. Otherwise corrupted filesystems could confuse
+the code and make the kernel oops.
+
+Reported-by: Carl Henrik Lunde <chlunde@ping.uio.no>
+Signed-off-by: Jan Kara <jack@suse.cz>
+[bwh: Backported to 3.16: use make_bad_inode() instead of returning error]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ fs/udf/inode.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/fs/udf/inode.c
++++ b/fs/udf/inode.c
+@@ -1494,6 +1494,19 @@ static void udf_fill_inode(struct inode
+ 		iinfo->i_checkpoint = le32_to_cpu(efe->checkpoint);
+ 	}
+ 
++	/*
++	 * Sanity check length of allocation descriptors and extended attrs to
++	 * avoid integer overflows
++	 */
++	if (iinfo->i_lenEAttr > bs || iinfo->i_lenAlloc > bs) {
++		make_bad_inode(inode);
++		return;
++	}
++	/* Now do exact checks */
++	if (udf_file_entry_alloc_offset(inode) + iinfo->i_lenAlloc > bs) {
++		make_bad_inode(inode);
++		return;
++	}
+ 	/* Sanity checks for files in ICB so that we don't get confused later */
+ 	if (iinfo->i_alloc_type == ICBTAG_FLAG_AD_IN_ICB) {
+ 		/*
