@@ -1,0 +1,50 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Thu, 10 Sep 2015 02:19:59 +0100
+Subject: aufs3: mmap: Fix races in madvise_remove() and sys_msync()
+Bug-Debian: https://bugs.debian.org/796036
+
+In madvise_remove() and sys_msync() we drop the mmap_sem before
+dropping references to the mapped file(s).  As soon as we drop the
+mmap_sem, the vma we got them from might be destroyed by another
+thread, so calling vma_do_fput() is a possible use-after-free.
+
+In these cases we don't actually need a reference to the aufs file, so
+revert to using get_file() and fput() directly.
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+--- a/mm/madvise.c
++++ b/mm/madvise.c
+@@ -327,12 +327,12 @@ static long madvise_remove(struct vm_are
+ 	 * vma's reference to the file) can go away as soon as we drop
+ 	 * mmap_sem.
+ 	 */
+-	vma_get_file(vma);
++	get_file(f);
+ 	up_read(&current->mm->mmap_sem);
+ 	error = do_fallocate(f,
+ 				FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE,
+ 				offset, end - start);
+-	vma_fput(vma);
++	fput(f);
+ 	down_read(&current->mm->mmap_sem);
+ 	return error;
+ }
+--- a/mm/msync.c
++++ b/mm/msync.c
+@@ -84,13 +84,13 @@ SYSCALL_DEFINE3(msync, unsigned long, st
+ 		start = vma->vm_end;
+ 		if ((flags & MS_SYNC) && file &&
+ 				(vma->vm_flags & VM_SHARED)) {
+-			vma_get_file(vma);
++			get_file(file);
+ 			up_read(&mm->mmap_sem);
+ 			if (vma->vm_flags & VM_NONLINEAR)
+ 				error = vfs_fsync(file, 1);
+ 			else
+ 				error = vfs_fsync_range(file, fstart, fend, 1);
+-			vma_fput(vma);
++			fput(file);
+ 			if (error || start >= end)
+ 				goto out;
+ 			down_read(&mm->mmap_sem);
