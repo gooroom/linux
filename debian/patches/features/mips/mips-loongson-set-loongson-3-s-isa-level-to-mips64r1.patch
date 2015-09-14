@@ -1,0 +1,75 @@
+From: Huacai Chen <chenhc@lemote.com>
+Date: Tue, 4 Nov 2014 14:13:23 +0800
+Subject: MIPS: Loongson: Set Loongson-3's ISA level to MIPS64R1
+Origin: https://git.kernel.org/linus/7352c8b13dd9a848b0c5d6209d62761afb164dcb
+
+In CPU manual Loongson-3 is MIPS64R2 compatible, but during tests we
+found that its EI/DI instructions have problems. So we just set the ISA
+level to MIPS64R1.
+
+Signed-off-by: Huacai Chen <chenhc@lemote.com>
+Cc: John Crispin <john@phrozen.org>
+Cc: Steven J. Hill <Steven.Hill@imgtec.com>
+Cc: linux-mips@linux-mips.org
+Cc: Fuxin Zhang <zhangfx@lemote.com>
+Cc: Zhangjin Wu <wuzhangjin@gmail.com>
+Patchwork: https://patchwork.linux-mips.org/patch/8320/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/include/asm/mach-loongson/cpu-feature-overrides.h | 2 --
+ arch/mips/kernel/cpu-probe.c                                | 5 ++++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/include/asm/mach-loongson/cpu-feature-overrides.h b/arch/mips/include/asm/mach-loongson/cpu-feature-overrides.h
+index 7d28f95..6d69332 100644
+--- a/arch/mips/include/asm/mach-loongson/cpu-feature-overrides.h
++++ b/arch/mips/include/asm/mach-loongson/cpu-feature-overrides.h
+@@ -41,10 +41,8 @@
+ #define cpu_has_mcheck		0
+ #define cpu_has_mdmx		0
+ #define cpu_has_mips16		0
+-#define cpu_has_mips32r1	0
+ #define cpu_has_mips32r2	0
+ #define cpu_has_mips3d		0
+-#define cpu_has_mips64r1	0
+ #define cpu_has_mips64r2	0
+ #define cpu_has_mipsmt		0
+ #define cpu_has_prefetch	0
+diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
+index 08dc945..d5a4f38 100644
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -757,26 +757,29 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c, unsigned int cpu)
+ 			c->cputype = CPU_LOONGSON2;
+ 			__cpu_name[cpu] = "ICT Loongson-2";
+ 			set_elf_platform(cpu, "loongson2e");
++			set_isa(c, MIPS_CPU_ISA_III);
+ 			break;
+ 		case PRID_REV_LOONGSON2F:
+ 			c->cputype = CPU_LOONGSON2;
+ 			__cpu_name[cpu] = "ICT Loongson-2";
+ 			set_elf_platform(cpu, "loongson2f");
++			set_isa(c, MIPS_CPU_ISA_III);
+ 			break;
+ 		case PRID_REV_LOONGSON3A:
+ 			c->cputype = CPU_LOONGSON3;
+ 			__cpu_name[cpu] = "ICT Loongson-3";
+ 			set_elf_platform(cpu, "loongson3a");
++			set_isa(c, MIPS_CPU_ISA_M64R1);
+ 			break;
+ 		case PRID_REV_LOONGSON3B_R1:
+ 		case PRID_REV_LOONGSON3B_R2:
+ 			c->cputype = CPU_LOONGSON3;
+ 			__cpu_name[cpu] = "ICT Loongson-3";
+ 			set_elf_platform(cpu, "loongson3b");
++			set_isa(c, MIPS_CPU_ISA_M64R1);
+ 			break;
+ 		}
+ 
+-		set_isa(c, MIPS_CPU_ISA_III);
+ 		c->options = R4K_OPTS |
+ 			     MIPS_CPU_FPU | MIPS_CPU_LLSC |
+ 			     MIPS_CPU_32FPR;
+-- 
+2.1.4
+
