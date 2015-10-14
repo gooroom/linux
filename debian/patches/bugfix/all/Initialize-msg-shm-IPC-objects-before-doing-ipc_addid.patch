@@ -1,0 +1,108 @@
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Wed, 30 Sep 2015 12:48:40 -0400
+Subject: Initialize msg/shm IPC objects before doing ipc_addid()
+Origin: https://git.kernel.org/linus/b9a532277938798b53178d5a66af6e2915cb27cf
+
+As reported by Dmitry Vyukov, we really shouldn't do ipc_addid() before
+having initialized the IPC object state.  Yes, we initialize the IPC
+object in a locked state, but with all the lockless RCU lookup work,
+that IPC object lock no longer means that the state cannot be seen.
+
+We already did this for the IPC semaphore code (see commit e8577d1f0329:
+"ipc/sem.c: fully initialize sem_array before making it visible") but we
+clearly forgot about msg and shm.
+
+Reported-by: Dmitry Vyukov <dvyukov@google.com>
+Cc: Manfred Spraul <manfred@colorfullife.com>
+Cc: Davidlohr Bueso <dbueso@suse.de>
+Cc: stable@vger.kernel.org
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+[carnil: Backported to 3.16: adjust context]
+---
+ ipc/msg.c  | 14 +++++++-------
+ ipc/shm.c  | 13 +++++++------
+ ipc/util.c |  8 ++++----
+ 3 files changed, 18 insertions(+), 17 deletions(-)
+
+--- a/ipc/msg.c
++++ b/ipc/msg.c
+@@ -137,13 +137,6 @@ static int newque(struct ipc_namespace *
+ 		return retval;
+ 	}
+ 
+-	/* ipc_addid() locks msq upon success. */
+-	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
+-	if (id < 0) {
+-		ipc_rcu_putref(msq, msg_rcu_free);
+-		return id;
+-	}
+-
+ 	msq->q_stime = msq->q_rtime = 0;
+ 	msq->q_ctime = get_seconds();
+ 	msq->q_cbytes = msq->q_qnum = 0;
+@@ -153,6 +146,13 @@ static int newque(struct ipc_namespace *
+ 	INIT_LIST_HEAD(&msq->q_receivers);
+ 	INIT_LIST_HEAD(&msq->q_senders);
+ 
++	/* ipc_addid() locks msq upon success. */
++	id = ipc_addid(&msg_ids(ns), &msq->q_perm, ns->msg_ctlmni);
++	if (id < 0) {
++		ipc_rcu_putref(msq, msg_rcu_free);
++		return id;
++	}
++
+ 	ipc_unlock_object(&msq->q_perm);
+ 	rcu_read_unlock();
+ 
+--- a/ipc/shm.c
++++ b/ipc/shm.c
+@@ -547,12 +547,6 @@ static int newseg(struct ipc_namespace *
+ 	if (IS_ERR(file))
+ 		goto no_file;
+ 
+-	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
+-	if (id < 0) {
+-		error = id;
+-		goto no_id;
+-	}
+-
+ 	shp->shm_cprid = task_tgid_vnr(current);
+ 	shp->shm_lprid = 0;
+ 	shp->shm_atim = shp->shm_dtim = 0;
+@@ -562,6 +556,12 @@ static int newseg(struct ipc_namespace *
+ 	shp->shm_file = file;
+ 	shp->shm_creator = current;
+ 
++	id = ipc_addid(&shm_ids(ns), &shp->shm_perm, ns->shm_ctlmni);
++	if (id < 0) {
++		error = id;
++		goto no_id;
++	}
++
+ 	/*
+ 	 * shmid gets reported as "inode#" in /proc/pid/maps.
+ 	 * proc-ps tools use this. Changing this will break them.
+--- a/ipc/util.c
++++ b/ipc/util.c
+@@ -277,6 +277,10 @@ int ipc_addid(struct ipc_ids *ids, struc
+ 	rcu_read_lock();
+ 	spin_lock(&new->lock);
+ 
++	current_euid_egid(&euid, &egid);
++	new->cuid = new->uid = euid;
++	new->gid = new->cgid = egid;
++
+ 	id = idr_alloc(&ids->ipcs_idr, new,
+ 		       (next_id < 0) ? 0 : ipcid_to_idx(next_id), 0,
+ 		       GFP_NOWAIT);
+@@ -289,10 +293,6 @@ int ipc_addid(struct ipc_ids *ids, struc
+ 
+ 	ids->in_use++;
+ 
+-	current_euid_egid(&euid, &egid);
+-	new->cuid = new->uid = euid;
+-	new->gid = new->cgid = egid;
+-
+ 	if (next_id < 0) {
+ 		new->seq = ids->seq++;
+ 		if (ids->seq > IPCID_SEQ_MAX)
