@@ -1,0 +1,43 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Wed, 14 Oct 2015 21:13:59 +0100
+Subject: netlink: Fix ABI change in 3.16.7-ckt18
+Forwarded: not-needed
+
+netlink_alloc_skb() was changed into an inline wrapper for the new
+function __netlink_alloc_skb().  As it was exported, we need to change
+it back to avoid an ABI break.
+
+--- a/include/linux/netlink.h
++++ b/include/linux/netlink.h
+@@ -70,12 +70,9 @@ extern int netlink_has_listeners(struct
+ extern struct sk_buff *__netlink_alloc_skb(struct sock *ssk, unsigned int size,
+ 					   unsigned int ldiff, u32 dst_portid,
+ 					   gfp_t gfp_mask);
+-static inline struct sk_buff *
++extern struct sk_buff *
+ netlink_alloc_skb(struct sock *ssk, unsigned int size, u32 dst_portid,
+-		  gfp_t gfp_mask)
+-{
+-	return __netlink_alloc_skb(ssk, size, 0, dst_portid, gfp_mask);
+-}
++		  gfp_t gfp_mask);
+ 
+ extern int netlink_unicast(struct sock *ssk, struct sk_buff *skb, __u32 portid, int nonblock);
+ extern int netlink_broadcast(struct sock *ssk, struct sk_buff *skb, __u32 portid,
+--- a/net/netlink/af_netlink.c
++++ b/net/netlink/af_netlink.c
+@@ -1929,6 +1929,14 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(__netlink_alloc_skb);
+ 
++struct sk_buff *
++netlink_alloc_skb(struct sock *ssk, unsigned int size, u32 dst_portid,
++		  gfp_t gfp_mask)
++{
++	return __netlink_alloc_skb(ssk, size, 0, dst_portid, gfp_mask);
++}
++EXPORT_SYMBOL_GPL(netlink_alloc_skb);
++
+ int netlink_has_listeners(struct sock *sk, unsigned int group)
+ {
+ 	int res = 0;
