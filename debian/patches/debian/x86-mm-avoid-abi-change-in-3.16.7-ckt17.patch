@@ -1,0 +1,28 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Tue, 22 Sep 2015 18:19:39 +0200
+Subject: x86/mm: Avoid ABI change in 3.16.7-ckt17
+Forwarded: not-needed
+
+Commit 37868fe113ff "x86/ldt: Make modify_ldt synchronous" was
+backported in 3.16.7-ckt17 and made an incompatible change to
+mm_context_t.  Luckily it shrank the structure so we can just insert
+padding to preserve the old layout.  No modular code should be
+touching the members which have changed.
+
+---
+--- a/arch/x86/include/asm/mmu.h
++++ b/arch/x86/include/asm/mmu.h
+@@ -9,7 +9,13 @@
+  * we put the segment information here.
+  */
+ typedef struct {
++#ifdef __GENKSYMS__
++	void *ldt;
++	int size;
++#else
+ 	struct ldt_struct *ldt;
++	int pad;
++#endif
+ 
+ #ifdef CONFIG_X86_64
+ 	/* True if mm supports a task running in 32 bit compatibility mode. */

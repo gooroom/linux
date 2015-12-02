@@ -1,0 +1,35 @@
+From d63951d7442982ef81df585a9c08c2b5fd49f898 Mon Sep 17 00:00:00 2001
+From: David Vrabel <david.vrabel@citrix.com>
+Date: Wed, 4 Mar 2015 11:14:46 +0000
+Subject: [PATCH] xen-netback: return correct ethtool stats
+Origin: http://git.kernel.org/linus/d63951d7442982ef81df585a9c08c2b5fd49f898
+
+Use correct pointer arithmetic to get the pointer to each stat.
+
+Signed-off-by: David Vrabel <david.vrabel@citrix.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/xen-netback/interface.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/net/xen-netback/interface.c b/drivers/net/xen-netback/interface.c
+index f38227a..3aa8648 100644
+--- a/drivers/net/xen-netback/interface.c
++++ b/drivers/net/xen-netback/interface.c
+@@ -340,12 +340,11 @@ static void xenvif_get_ethtool_stats(struct net_device *dev,
+ 	unsigned int num_queues = vif->num_queues;
+ 	int i;
+ 	unsigned int queue_index;
+-	struct xenvif_stats *vif_stats;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(xenvif_stats); i++) {
+ 		unsigned long accum = 0;
+ 		for (queue_index = 0; queue_index < num_queues; ++queue_index) {
+-			vif_stats = &vif->queues[queue_index].stats;
++			void *vif_stats = &vif->queues[queue_index].stats;
+ 			accum += *(unsigned long *)(vif_stats + xenvif_stats[i].offset);
+ 		}
+ 		data[i] = accum;
+-- 
+2.1.4
+

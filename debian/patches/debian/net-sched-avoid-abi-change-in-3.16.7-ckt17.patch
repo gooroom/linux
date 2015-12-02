@@ -1,0 +1,39 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Tue, 22 Sep 2015 21:08:03 +0200
+Subject: net/sched: Avoid ABI change in 3.16.7-ckt17
+Forwarded: not-needed
+
+tcf_hash_release() was changed into an inline wrapper for
+__tcf_hash_release().  As it was exported, we need to change it back
+to avoid an ABI break.
+
+--- a/include/net/act_api.h
++++ b/include/net/act_api.h
+@@ -107,11 +107,7 @@ void tcf_hash_cleanup(struct tc_action *
+ void tcf_hash_insert(struct tc_action *a);
+ 
+ int __tcf_hash_release(struct tc_action *a, bool bind, bool strict);
+-
+-static inline int tcf_hash_release(struct tc_action *a, bool bind)
+-{
+-	return __tcf_hash_release(a, bind, false);
+-}
++int tcf_hash_release(struct tc_action *a, int bind);
+ 
+ int tcf_register_action(struct tc_action_ops *a, unsigned int mask);
+ int tcf_unregister_action(struct tc_action_ops *a);
+--- a/net/sched/act_api.c
++++ b/net/sched/act_api.c
+@@ -45,6 +45,12 @@ void tcf_hash_destroy(struct tc_action *
+ }
+ EXPORT_SYMBOL(tcf_hash_destroy);
+ 
++int tcf_hash_release(struct tc_action *a, int bind)
++{
++	return __tcf_hash_release(a, bind, false);
++}
++EXPORT_SYMBOL(tcf_hash_release);
++
+ int __tcf_hash_release(struct tc_action *a, bool bind, bool strict)
+ {
+ 	struct tcf_common *p = a->priv;

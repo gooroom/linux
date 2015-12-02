@@ -1,0 +1,59 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 26 Jul 2015 14:51:24 +0100
+Subject: [PATCH] Revert "ACPICA: Utilities: split IO address types from data
+ type models."
+Forwarded: not-needed
+
+This reverts commit 2b8760100e1de69b6ff004c986328a82947db4ad, which
+changed the ABI for a huge number of symbols on i386.
+---
+ include/acpi/actypes.h        | 20 --------------------
+ include/acpi/platform/acenv.h |  1 -
+ 2 files changed, 21 deletions(-)
+
+diff --git a/include/acpi/actypes.h b/include/acpi/actypes.h
+index c2a41d2..73c2032 100644
+--- a/include/acpi/actypes.h
++++ b/include/acpi/actypes.h
+@@ -198,29 +198,9 @@ typedef int s32;
+ typedef s32 acpi_native_int;
+ 
+ typedef u32 acpi_size;
+-
+-#ifdef ACPI_32BIT_PHYSICAL_ADDRESS
+-
+-/*
+- * OSPMs can define this to shrink the size of the structures for 32-bit
+- * none PAE environment. ASL compiler may always define this to generate
+- * 32-bit OSPM compliant tables.
+- */
+ typedef u32 acpi_io_address;
+ typedef u32 acpi_physical_address;
+ 
+-#else				/* ACPI_32BIT_PHYSICAL_ADDRESS */
+-
+-/*
+- * It is reported that, after some calculations, the physical addresses can
+- * wrap over the 32-bit boundary on 32-bit PAE environment.
+- * https://bugzilla.kernel.org/show_bug.cgi?id=87971
+- */
+-typedef u64 acpi_io_address;
+-typedef u64 acpi_physical_address;
+-
+-#endif				/* ACPI_32BIT_PHYSICAL_ADDRESS */
+-
+ #define ACPI_MAX_PTR                    ACPI_UINT32_MAX
+ #define ACPI_SIZE_MAX                   ACPI_UINT32_MAX
+ 
+diff --git a/include/acpi/platform/acenv.h b/include/acpi/platform/acenv.h
+index 3cedd43..c8f98b9 100644
+--- a/include/acpi/platform/acenv.h
++++ b/include/acpi/platform/acenv.h
+@@ -76,7 +76,6 @@
+ #define ACPI_LARGE_NAMESPACE_NODE
+ #define ACPI_DATA_TABLE_DISASSEMBLY
+ #define ACPI_SINGLE_THREADED
+-#define ACPI_32BIT_PHYSICAL_ADDRESS
+ #endif
+ 
+ /* acpi_exec configuration. Multithreaded with full AML debugger */

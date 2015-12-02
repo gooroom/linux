@@ -1,0 +1,98 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 21 Sep 2015 13:38:09 +0200
+Subject: bh: Avoid ABI change in 3.16.7-ckt17
+Forwarded: not-needed
+
+__bread() and __getblk() were changed into inline wrappers for the
+corresponding functions with the _gfp suffix.  As they were exported,
+we need to change them back to avoid an ABI break.
+
+---
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -1381,6 +1381,13 @@ __find_get_block(struct block_device *bd
+ }
+ EXPORT_SYMBOL(__find_get_block);
+ 
++struct buffer_head *__getblk(struct block_device *bdev, sector_t block,
++			     unsigned size)
++{
++	return __getblk_gfp(bdev, block, size, __GFP_MOVABLE);
++}
++EXPORT_SYMBOL(__getblk);
++
+ /*
+  * __getblk_gfp() will locate (and, if necessary, create) the buffer_head
+  * which corresponds to the passed block_device, block and size. The
+@@ -1416,6 +1423,23 @@ void __breadahead(struct block_device *b
+ EXPORT_SYMBOL(__breadahead);
+ 
+ /**
++ *  __bread() - reads a specified block and returns the bh
++ *  @bdev: the block_device to read from
++ *  @block: number of block
++ *  @size: size (in bytes) to read
++ *
++ *  Reads a specified block, and returns buffer head that contains it.
++ *  The page cache is allocated from movable area so that it can be migrated.
++ *  It returns NULL if the block was unreadable.
++ */
++struct buffer_head *
++__bread(struct block_device *bdev, sector_t block, unsigned size)
++{
++	return __bread_gfp(bdev, block, size, __GFP_MOVABLE);
++}
++EXPORT_SYMBOL(__bread);
++
++/**
+  *  __bread_gfp() - reads a specified block and returns the bh
+  *  @bdev: the block_device to read from
+  *  @block: number of block
+--- a/include/linux/buffer_head.h
++++ b/include/linux/buffer_head.h
+@@ -175,11 +175,15 @@ void __wait_on_buffer(struct buffer_head
+ wait_queue_head_t *bh_waitq_head(struct buffer_head *bh);
+ struct buffer_head *__find_get_block(struct block_device *bdev, sector_t block,
+ 			unsigned size);
++struct buffer_head *__getblk(struct block_device *bdev, sector_t block,
++			     unsigned size);
+ struct buffer_head *__getblk_gfp(struct block_device *bdev, sector_t block,
+ 				  unsigned size, gfp_t gfp);
+ void __brelse(struct buffer_head *);
+ void __bforget(struct buffer_head *);
+ void __breadahead(struct block_device *, sector_t block, unsigned int size);
++struct buffer_head *
++__bread(struct block_device *bdev, sector_t block, unsigned size);
+ struct buffer_head *__bread_gfp(struct block_device *,
+ 				sector_t block, unsigned size, gfp_t gfp);
+ void invalidate_bh_lrus(void);
+@@ -365,29 +369,6 @@ static inline struct buffer_head *getblk
+ 	return __getblk_gfp(bdev, block, size, 0);
+ }
+ 
+-static inline struct buffer_head *__getblk(struct block_device *bdev,
+-					   sector_t block,
+-					   unsigned size)
+-{
+-	return __getblk_gfp(bdev, block, size, __GFP_MOVABLE);
+-}
+-
+-/**
+- *  __bread() - reads a specified block and returns the bh
+- *  @bdev: the block_device to read from
+- *  @block: number of block
+- *  @size: size (in bytes) to read
+- *
+- *  Reads a specified block, and returns buffer head that contains it.
+- *  The page cache is allocated from movable area so that it can be migrated.
+- *  It returns NULL if the block was unreadable.
+- */
+-static inline struct buffer_head *
+-__bread(struct block_device *bdev, sector_t block, unsigned size)
+-{
+-	return __bread_gfp(bdev, block, size, __GFP_MOVABLE);
+-}
+-
+ extern int __set_page_dirty_buffers(struct page *page);
+ 
+ #else /* CONFIG_BLOCK */
