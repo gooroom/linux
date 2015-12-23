@@ -41,6 +41,12 @@ class Gencontrol(Base):
         'xen': {
             'flavours': config.SchemaItemList(),
             'versions': config.SchemaItemList(),
+        },
+        'packages': {
+            'docs': config.SchemaItemBoolean(),
+            'installer': config.SchemaItemBoolean(),
+            'libc-dev': config.SchemaItemBoolean(),
+
         }
     }
 
@@ -78,6 +84,9 @@ class Gencontrol(Base):
                         '# Translators should edit %s instead.\n'
                         '#\n' % path)
 
+        # Prepare to generate debian/tests/control
+        self.tests_control = None
+
     def do_main_makefile(self, makefile, makeflags, extra):
         fs_enabled = [featureset
                       for featureset in self.config['base', ]['featuresets']
@@ -103,6 +112,8 @@ class Gencontrol(Base):
         makeflags = makeflags.copy()
         makeflags['ALL_FEATURESETS'] = ' '.join(fs_enabled)
         makeflags['ALL_TRIPLETS'] = ' '.join(triplet_enabled)
+        if not self.config.merge('packages').get('docs', True):
+            makeflags['DO_DOCS'] = False
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
         # linux-source-$UPSTREAMVERSION will contain all kconfig files
@@ -110,6 +121,8 @@ class Gencontrol(Base):
 
     def do_main_packages(self, packages, vars, makeflags, extra):
         packages.extend(self.process_packages(self.templates["control.main"], self.vars))
+        if self.config.merge('packages').get('docs', True):
+            packages.extend(self.process_packages(self.templates["control.docs"], self.vars))
 
     arch_makeflags = (
         ('kernel-arch', 'KERNEL_ARCH', False),
@@ -139,19 +152,23 @@ class Gencontrol(Base):
         else:
             headers_arch = self.templates["control.headers.arch"]
             packages_headers_arch = self.process_packages(headers_arch, vars)
+            packages_headers_arch[-1]['Depends'].extend(PackageRelation())
+            extra['headers_arch_depends'] = packages_headers_arch[-1]['Depends']
 
-        libc_dev = self.templates["control.libc-dev"]
-        packages_headers_arch[0:0] = self.process_packages(libc_dev, {})
+        if self.config.merge('packages').get('libc-dev', True):
+            libc_dev = self.templates["control.libc-dev"]
+            packages_headers_arch[0:0] = self.process_packages(libc_dev, {})
+        else:
+            makeflags['DO_LIBC'] = False
 
-        packages_headers_arch[-1]['Depends'].extend(PackageRelation())
-        extra['headers_arch_depends'] = packages_headers_arch[-1]['Depends']
+
 
         self.merge_packages(packages, packages_headers_arch, arch)
 
         cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-arch %s" % makeflags]
         makefile.add('binary-arch_%s_real' % arch, cmds=cmds_binary_arch)
 
-        # Shortcut to aid architecture bootstrapping
+        # For stage1 build profile
         makefile.add('binary-libc-dev_%s' % arch,
                      ['source_none_real'],
                      ["$(MAKE) -f debian/rules.real install-libc-dev_%s %s" %
@@ -163,7 +180,7 @@ class Gencontrol(Base):
                 warnings.warn('Disable installer modules on request (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
             else:
                 raise RuntimeError('Unable to disable installer modules in release build (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
-        else:
+        elif self.config.merge('packages').get('installer', True):
             # Add udebs using kernel-wedge
             installer_def_dir = 'debian/installer'
             installer_arch_dir = os.path.join(installer_def_dir, arch)
@@ -183,6 +200,10 @@ class Gencontrol(Base):
                 if kw_proc.returncode != 0:
                     raise RuntimeError('kernel-wedge exited with code %d' %
                                        kw_proc.returncode)
+
+                # kernel-wedge currently chokes on Build-Profiles so add it now
+                for package in udeb_packages:
+                    package['Build-Profiles'] = '<!stage1>'
 
                 self.merge_packages(packages, udeb_packages, arch)
 
@@ -262,9 +283,14 @@ class Gencontrol(Base):
 
         compiler = config_entry_base.get('compiler', 'gcc')
 
+        # Work out dependency from linux-headers to compiler.  Strip
+        # restrictions, as they don't apply to binary Depends.
         relations_compiler_headers = PackageRelation(
             config_entry_relations.get('headers%' + compiler) or
             config_entry_relations.get(compiler))
+        for group in relations_compiler_headers:
+            for entry in group:
+                entry.restrictions = []
 
         relations_compiler_build_dep = PackageRelation(config_entry_relations[compiler])
         for group in relations_compiler_build_dep:
@@ -329,7 +355,8 @@ class Gencontrol(Base):
 
         vars.setdefault('desc', None)
 
-        packages_own.append(self.process_real_image(image[0], image_fields, vars))
+        image_main = self.process_real_image(image[0], image_fields, vars)
+        packages_own.append(image_main)
         packages_own.extend(self.process_packages(image[1:], vars))
 
         if config_entry_build.get('modules', True):
@@ -354,6 +381,16 @@ class Gencontrol(Base):
             packages_own.extend(self.process_packages(self.templates['control.image-dbg'], vars))
 
         self.merge_packages(packages, packages_own + packages_dummy, arch)
+
+        tests_control = self.process_package(
+            self.templates['tests-control.main'][0], vars)
+        tests_control['Depends'].append(
+            PackageRelationGroup(image_main['Package'],
+                                 override_arches=(arch,)))
+        if self.tests_control:
+            self.tests_control['Depends'].extend(tests_control['Depends'])
+        else:
+            self.tests_control = tests_control
 
         def get_config(*entry_name):
             entry_real = ('image',) + entry_name
@@ -513,11 +550,16 @@ class Gencontrol(Base):
     def write(self, packages, makefile):
         self.write_config()
         super(Gencontrol, self).write(packages, makefile)
+        self.write_tests_control()
 
     def write_config(self):
         f = open("debian/config.defines.dump", 'wb')
         self.config.dump(f)
         f.close()
+
+    def write_tests_control(self):
+        self.write_rfc822(codecs.open("debian/tests/control", 'w', 'utf-8'),
+                          [self.tests_control])
 
 if __name__ == '__main__':
     Gencontrol()()

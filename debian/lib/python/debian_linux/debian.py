@@ -283,7 +283,8 @@ class PackageRelationGroup(list):
 
     def _search_value(self, value):
         for i, j in zip(self, value):
-            if i.name != j.name or i.version != j.version:
+            if i.name != j.name or i.operator != j.operator or \
+               i.version != j.version or i.restrictions != j.restrictions:
                 return None
         return self
 
@@ -309,9 +310,9 @@ class PackageRelationGroup(list):
 
 
 class PackageRelationEntry(object):
-    __slots__ = "name", "operator", "version", "arches"
+    __slots__ = "name", "operator", "version", "arches", "restrictions"
 
-    _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?(?: \[([^]]+)\])?$')
+    _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?(?: \[([^]]+)\])?(?: <([^>]+)>)?$')
 
     class _operator(object):
         OP_LT = 1
@@ -352,6 +353,9 @@ class PackageRelationEntry(object):
         def __str__(self):
             return self.operators_text[self._op]
 
+        def __eq__(self, other):
+            return type(other) == type(self) and self._op == other._op
+
     def __init__(self, value=None, override_arches=None):
         if not isinstance(value, str):
             raise ValueError
@@ -367,6 +371,8 @@ class PackageRelationEntry(object):
             ret.extend((' (', str(self.operator), ' ', self.version, ')'))
         if self.arches:
             ret.extend((' [', ' '.join(self.arches), ']'))
+        if self.restrictions:
+            ret.extend((' <', ' '.join(self.restrictions), '>'))
         return ''.join(ret)
 
     def parse(self, value):
@@ -384,6 +390,10 @@ class PackageRelationEntry(object):
             self.arches = re.split('\s+', match[3])
         else:
             self.arches = []
+        if match[4] is not None:
+            self.restrictions = re.split('\s+', match[4])
+        else:
+            self.restrictions = []
 
 
 class Package(dict):
@@ -418,8 +428,8 @@ class Package(dict):
             pass
         super(Package, self).__setitem__(key, value)
 
-    def iterkeys(self):
-        keys = set(self.keys())
+    def keys(self):
+        keys = set(super(Package, self).keys())
         for i in self._fields.keys():
             if i in self:
                 keys.remove(i)
@@ -427,10 +437,31 @@ class Package(dict):
         for i in keys:
             yield i
 
-    def iteritems(self):
-        for i in self.iterkeys():
+    def items(self):
+        for i in self.keys():
             yield (i, self[i])
 
-    def itervalues(self):
-        for i in self.iterkeys():
+    def values(self):
+        for i in self.keys():
             yield self[i]
+
+
+class TestsControl(dict):
+    _fields = {
+        'Tests': str,
+        'Test-Command': str,
+        'Restrictions': str,
+        'Features': str,
+        'Depends': PackageRelation,
+        'Tests-Directory': str,
+        'Classes': str,
+    }
+
+    def __setitem__(self, key, value):
+        try:
+            cls = self._fields[key]
+            if not isinstance(value, cls):
+                value = cls(value)
+        except KeyError:
+            pass
+        super(TestsControl, self).__setitem__(key, value)

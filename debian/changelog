@@ -1,15 +1,204 @@
-linux (4.2.6-3~bpo8+2) jessie-backports; urgency=medium
+linux (4.3.3-2) unstable; urgency=medium
 
-  * Revert "[x86] psmouse: Enable MOUSE_PS2_VMMOUSE", which breaks
-    xserver-xorg-input-vmmouse and several metapackages in jessie
+  * [armhf,sparc64] Force ZONE_DMA to be enabled, reversing ABI change in
+    4.3.3 (fixes FTBFS)
+  * [sh4] Disable CC_STACKPROTECTOR_STRONG temporarily (fixes FTBFS)
 
- -- Ben Hutchings <ben@decadent.org.uk>  Mon, 14 Dec 2015 23:57:20 +0000
+ -- Ben Hutchings <ben@decadent.org.uk>  Thu, 17 Dec 2015 18:21:52 +0000
 
-linux (4.2.6-3~bpo8+1) jessie-backports; urgency=medium
+linux (4.3.3-1) unstable; urgency=medium
 
-  * Rebuild for jessie-backports.
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.3.2
+    - X.509: Fix the time validation [ver #2]
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.3.3
+    - r8169: fix kasan reported skb use-after-free. (regression in 4.3)
+    - af-unix: fix use-after-free with concurrent readers while splicing
+      (regression in 4.2)
+    - af_unix: don't append consumed skbs to sk_receive_queue
+      (regression in 4.2)
+    - af_unix: take receive queue lock while appending new skb
+      (regression in 4.2)
+    - af-unix: passcred support for sendpage (regression in 4.2)
+    - ipv6: Avoid creating RTF_CACHE from a rt that is not managed by fib6 tree
+      (regression in 4.2)
+    - ipv6: Check expire on DST_NOCACHE route
+    - ipv6: Check rt->dst.from for the DST_NOCACHE route (regression in 4.3)
+    - Revert "ipv6: ndisc: inherit metadata dst when creating ndisc requests"
+      (regression in 4.3)
+    - packet: only allow extra vlan len on ethernet devices
+    - packet: infer protocol from ethernet header if unset
+    - packet: fix tpacket_snd max frame len
+    - sctp: translate host order to network order when setting a hmacid
+    - net/mlx5e: Added self loopback prevention (regression in 4.3)
+    - net/mlx4_core: Fix sleeping while holding spinlock at rem_slave_counters
+      (regression in 4.2)
+    - ip_tunnel: disable preemption when updating per-cpu tstats
+    - net/ip6_tunnel: fix dst leak (regression in 4.3)
+    - tcp: disable Fast Open on timeouts after handshake
+    - tcp: fix potential huge kmalloc() calls in TCP_REPAIR
+    - tcp: initialize tp->copied_seq in case of cross SYN connection
+    - net, scm: fix PaX detected msg_controllen overflow in scm_detach_fds
+    - net: ipmr: fix static mfc/dev leaks on table destruction
+    - net: ip6mr: fix static mfc/dev leaks on table destruction
+    - vrf: fix double free and memory corruption on register_netdevice failure
+    - tipc: fix error handling of expanding buffer headroom (regression in 4.3)
+    - ipv6: distinguish frag queues by device for multicast and link-local
+      packets
+    - bpf, array: fix heap out-of-bounds access when updating elements
+    - ipv6: add complete rcu protection around np->opt
+    - net/neighbour: fix crash at dumping device-agnostic proxy entries
+    - ipv6: sctp: implement sctp_v6_destroy_sock()
+    - openvswitch: fix hangup on vxlan/gre/geneve device deletion
+    - net_sched: fix qdisc_tree_decrease_qlen() races
+    - btrfs: fix resending received snapshot with parent (regression in 4.2)
+    - Btrfs: fix file corruption and data loss after cloning inline extents
+    - Btrfs: fix regression when running delayed references (regression in 4.2)
+    - Btrfs: fix race leading to incorrect item deletion when dropping extents
+    - Btrfs: fix race leading to BUG_ON when running delalloc for nodatacow
+    - Btrfs: fix race when listing an inode's xattrs
+    - rbd: don't put snap_context twice in rbd_queue_workfn()
+    - ext4 crypto: fix memory leak in ext4_bio_write_page()
+    - ext4 crypto: fix bugs in ext4_encrypted_zeroout()
+    - ext4: fix potential use after free in __ext4_journal_stop
+      (regression in 4.2)
+    - ext4, jbd2: ensure entering into panic after recording an error in
+      superblock
+    - nfsd: serialize state seqid morphing operations
+    - nfsd: eliminate sending duplicate and repeated delegations
+    - nfs4: start callback_ident at idr 1
+    - nfs4: resend LAYOUTGET when there is a race that changes the seqid
+    - nfs: if we have no valid attrs, then don't declare the attribute cache
+      valid
+    - ocfs2: fix umask ignored issue
+    - block: fix segment split (regression in 4.3)
+    - ceph: fix message length computation
+    - Btrfs: fix regression running delayed references when using qgroups
+      (regression in 4.2)
 
- -- Héctor Orón Martínez <zumbi@debian.org>  Fri, 11 Dec 2015 10:48:45 +0100
+  [ Ben Hutchings ]
+  * net: add validation for the socket syscall protocol argument (CVE-2015-8543)
+  * [armel/kirkwood] udeb: Override inclusion of gpio_keys in input-modules
+    (fixes FTBFS)
+  * vrf: Fix broken backport of "vrf: fix double free and memory corruption on
+    register_netdevice failure" in 4.3.3
+  * net: Ignore ABI changes due to "ipv6: add complete rcu protection around
+    np->opt", which don't appear to affect out-of-tree modules
+  * tipc: Fix kfree_skb() of uninitialised pointer (regression in 4.3.3)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 15 Dec 2015 21:25:26 +0000
+
+linux (4.3.1-1) unstable; urgency=medium
+
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.3.1
+
+  [ Ben Hutchings ]
+  * Set ABI to 1
+  * [armhf] rtc: Enable RTC_DRV_DS1307, RTC_DRV_PCF8563, RTC_DRV_ARMADA38X
+    (Closes: #807632)
+  * [armhf] Enable MACH_ARMADA_375, MACH_ARMADA_38X, MACH_ARMADA_39X
+    (Closes: #807633)
+  * [armhf] net: Enable MVPP2 as module
+  * [armel/kirkwood] dts: Fix QNAP TS219 power-off (Closes: #807696)
+  * [armhf] udeb: Add leds-modules package containing leds-gpio driver
+    (Closes: #807721)
+  * [x86] drm/i915: Mark uneven memory banks on gen4 desktop as unknown
+    swizzling (Closes: #780363)
+  * Enable CC_STACKPROTECTOR_STRONG (Closes: #805652)
+  * [x86] input: Enable KEYBOARD_GPIO, INPUT_SOC_BUTTON_ARRAY (Closes: #804864)
+  * [x86] nouveau: bios: return actual size of the buffer retrieved via _ROM
+    (Closes: #772716)
+  * [armhf] Add support for Odroid-XU4 (Closes: #804850)
+    - mfd: s2mps11: Add manual shutdown method for Odroid XU3
+    - dts: Fix power off method for exynos5422-odroidxu3-common
+    - dts: Split audio configuration to separate exynos5422-odroidxu3-audio
+    - dts: Add support Odroid XU4 board for exynos5422-odroidxu4
+  * udeb: Add hid-chicony to input-modules (Closes: #766570)
+  * sched: Enable CFS_BANDWIDTH (Closes: #802746)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 13 Dec 2015 00:38:54 +0000
+
+linux (4.3-1~exp2) experimental; urgency=medium
+
+  [ Ben Hutchings ]
+  * mv643xx_eth: Re-enable TSO, fixed upstream in 4.3
+  * debian/control: Move patchutils from Build-Depends to Build-Depends-Indep,
+    as we only use filterdiff when building linux-source-<version>
+  * debian/control,debian/rules: Support a 'stage1' build profile which
+    builds only linux-libc-dev (Closes: #695243)
+  * debian/control: Add ':any' to Build-Depends on python3, to support cross-
+    bootstrap
+  * [armhf] Enable new drivers for Allwinner chips (Closes: #804856)
+    - crypto: Enable CRYPTO_DEV_SUN4I_SS as module
+    - musb: Enable USB_MUSB_SUNXI as module
+  * aufs: Update support patches to aufs4.3-20151116
+  * [armhf] USB: Change USB, USB_GADGET, and various drivers from built-in to
+    modules
+    - musb: Enable USB_MUSB_DUAL_ROLE
+  * [armhf] musb: Disable MUSB_PIO_ONLY and enable USB_INVENTRA_DMA,
+    USB_TI_CPPI41_DMA, USB_TUSB_OMAP_DMA
+
+  [ Ian Campbell ]
+  * [armel/orion5x] Enable Device Tree for orion5x. Patch from Roger Shimizu
+    (Closes: #803159)
+  * [armel/orion5x] Enable CONFIG_DEBUG_LL_UART_8250.
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Fri, 04 Dec 2015 19:36:10 +0000
+
+linux (4.3-1~exp1) experimental; urgency=medium
+
+  * New upstream release
+
+  [ Ben Hutchings ]
+  * netfilter: Enable NFT_DUP_IPV4, NFT_DUP_IPV6 as modules (Closes: #803370)
+  * tests: Add autopkgtest support
+  * [x86] Compile with gcc-5
+  * [x86] Enable PINCTRL_BAYTRAIL (Closes: #797949)
+
+  [ Salvatore Bonaccorso ]
+  * Fix typo in image.plain.postinst template.
+    Add missing space in warn message causing typo "dangling linkto".
+    Thanks to Jakub Wilk <jwilk@debian.org> (Closes: #803323)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Wed, 04 Nov 2015 07:45:13 +0000
+
+linux (4.3~rc7-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+    - [x86] smpboot: Fix CPU #1 boot timeout (Closes: #802464)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Wed, 28 Oct 2015 11:04:27 +0900
+
+linux (4.3~rc5-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Wed, 14 Oct 2015 00:48:41 +0100
+
+linux (4.3~rc4-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * [armhf] dts: Fix Makefile target for sun4i-a10-itead-iteaduino-plus
+    (fixes FTBFS)
+  * [mips*] io: Define ioremap_uc (fixes FTBFS)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 06 Oct 2015 23:27:45 +0100
+
+linux (4.3~rc3-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * Disable CRAMFS; it was obsoleted by squashfs and initramfs
+  * [i386] Replace 586 flavour with 686
+    - Enable support for OLPC and other Geode-based systems in the 686 flavour
+    - udeb: Update kernel-versions
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 27 Sep 2015 21:02:54 +0100
+>>>>>>> cc0d95e242d204760be419811b888b6a84a05671
 
 linux (4.2.6-3) unstable; urgency=medium
 
