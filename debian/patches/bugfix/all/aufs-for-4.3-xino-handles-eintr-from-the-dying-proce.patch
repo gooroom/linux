@@ -1,0 +1,66 @@
+From: "J. R. Okajima" <hooanon05g@gmail.com>
+Date: Mon, 4 Jan 2016 23:33:09 +0900
+Subject: aufs: for 4.3, XINO handles EINTR from the dying process
+Origin: https://github.com/sfjro/aufs4-standalone/commit/5e439ff30c92143d9a9ee3401a84e34c9852533b
+Bug-Debian: https://bugs.debian.org/812207
+
+By the commit
+	296291c 2015-10-23 mm: make sendfile(2) killable
+new_sync_write() (or ->write()) may return EINTR ealier even if it can
+succeed the operation. It causes an endless loop in aufs
+do_xino_fwrite().
+Here is a dirty workaround to retry do_xino_fwrite() in another context
+(workqueue).
+
+Reported-by: Akihiro Suda <suda.kyoto@gmail.com>
+Tested-by: Akihiro Suda <suda.kyoto@gmail.com>
+See-also: http://www.mail-archive.com/aufs-users@lists.sourceforge.net/msg05231.html
+Signed-off-by: J. R. Okajima <hooanon05g@gmail.com>
+[bwh: Backported to aufs3.16: s/vfs_writef_t/au_writef_t/]
+---
+ fs/aufs/xino.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/fs/aufs/xino.c b/fs/aufs/xino.c
+index cde6ce7..e3cab07 100644
+--- a/fs/aufs/xino.c
++++ b/fs/aufs/xino.c
+@@ -53,6 +53,9 @@ ssize_t xino_fread(vfs_readf_t func, struct file *file, void *kbuf, size_t size,
+ 
+ /* ---------------------------------------------------------------------- */
+ 
++static ssize_t xino_fwrite_wkq(au_writef_t func, struct file *file, void *buf,
++			       size_t size, loff_t *pos);
++
+ static ssize_t do_xino_fwrite(au_writef_t func, struct file *file, void *kbuf,
+ 			      size_t size, loff_t *pos)
+ {
+@@ -62,14 +65,26 @@ static ssize_t do_xino_fwrite(vfs_writef_t func, struct file *file, void *kbuf,
+ 		void *k;
+ 		const char __user *u;
+ 	} buf;
++	int i;
++	const int prevent_endless = 10;
+ 
++	i = 0;
+ 	buf.k = kbuf;
+ 	oldfs = get_fs();
+ 	set_fs(KERNEL_DS);
+ 	do {
+-		/* todo: signal_pending? */
+ 		err = func(file, buf.u, size, pos);
+-	} while (err == -EAGAIN || err == -EINTR);
++		if (err == -EINTR
++		    && !au_wkq_test()
++		    && fatal_signal_pending(current)) {
++			set_fs(oldfs);
++			err = xino_fwrite_wkq(func, file, kbuf, size, pos);
++			BUG_ON(err == -EINTR);
++			oldfs = get_fs();
++			set_fs(KERNEL_DS);
++		}
++	} while (i++ < prevent_endless
++		 && (err == -EAGAIN || err == -EINTR));
+ 	set_fs(oldfs);
+ 
+ #if 0 /* reserved for future use */
