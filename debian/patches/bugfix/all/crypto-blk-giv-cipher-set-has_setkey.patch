@@ -1,0 +1,32 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 06 Mar 2016 19:52:46 +0000
+Subject: crypto: {blk,giv}cipher: Set has_setkey
+
+Commit a1383cd86a06 ("crypto: skcipher - Add crypto_skcipher_has_setkey")
+was incorrectly backported to the 3.2.y and 3.16.y stable branches.
+We need to set ablkcipher_tfm::has_setkey in the
+crypto_init_blkcipher_ops_async() and crypto_init_givcipher_ops()
+functions as well as crypto_init_ablkcipher_ops().
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+--- a/crypto/ablkcipher.c
++++ b/crypto/ablkcipher.c
+@@ -457,6 +457,7 @@ static int crypto_init_givcipher_ops(str
+ 	crt->givdecrypt = alg->givdecrypt ?: no_givdecrypt;
+ 	crt->base = __crypto_ablkcipher_cast(tfm);
+ 	crt->ivsize = alg->ivsize;
++	crt->has_setkey = alg->max_keysize;
+ 
+ 	return 0;
+ }
+--- a/crypto/blkcipher.c
++++ b/crypto/blkcipher.c
+@@ -471,6 +471,7 @@ static int crypto_init_blkcipher_ops_asy
+ 	}
+ 	crt->base = __crypto_ablkcipher_cast(tfm);
+ 	crt->ivsize = alg->ivsize;
++	crt->has_setkey = alg->max_keysize;
+ 
+ 	return 0;
+ }

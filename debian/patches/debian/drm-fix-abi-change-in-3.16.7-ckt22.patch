@@ -1,0 +1,25 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 24 Jan 2016 03:16:17 +0000
+Subject: drm: Fxi ABI change in 3.16.7-ckt22
+Forwarded: not-needed
+
+The bitfields at the beginning of drm_file fit in a single word with
+plenty of bits to spare, so just hide the new bitfield from genksyms.
+---
+--- a/include/drm/drmP.h
++++ b/include/drm/drmP.h
+@@ -407,11 +407,14 @@ struct drm_file {
+ 	 * in the plane list
+ 	 */
+ 	unsigned universal_planes:1;
++#ifndef __GENKSYMS__
+ 	/*
+ 	 * This client is allowed to gain master privileges for @master.
+ 	 * Protected by struct drm_device::master_mutex.
+ 	 */
+ 	unsigned allowed_master:1;
++	/* 26 spare bits left */
++#endif
+ 
+ 	struct pid *pid;
+ 	kuid_t uid;

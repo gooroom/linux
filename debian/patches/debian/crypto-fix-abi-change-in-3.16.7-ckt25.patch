@@ -1,0 +1,162 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Wed, 02 Mar 2016 18:33:46 +0000
+Subject: crypto: Fix ABI change in 3.16.7-ckt25
+Forwarded: not-needed
+
+The addition of a has_setkey field to crypto_ahash and ablkcipher_tfm
+broke the ABI for crypto and several driver subsystems that use
+crypto.
+
+As it is effectively a cache of information about the algorithm,
+remove it and look up that information directly in the
+crypto_{ahash,ablkcipher}_has_setkey() functions.
+
+---
+--- a/crypto/ablkcipher.c
++++ b/crypto/ablkcipher.c
+@@ -375,7 +375,6 @@ static int crypto_init_ablkcipher_ops(st
+ 	}
+ 	crt->base = __crypto_ablkcipher_cast(tfm);
+ 	crt->ivsize = alg->ivsize;
+-	crt->has_setkey = alg->max_keysize;
+ 
+ 	return 0;
+ }
+@@ -457,7 +456,6 @@ static int crypto_init_givcipher_ops(str
+ 	crt->givdecrypt = alg->givdecrypt ?: no_givdecrypt;
+ 	crt->base = __crypto_ablkcipher_cast(tfm);
+ 	crt->ivsize = alg->ivsize;
+-	crt->has_setkey = alg->max_keysize;
+ 
+ 	return 0;
+ }
+--- a/crypto/ahash.c
++++ b/crypto/ahash.c
+@@ -444,7 +444,6 @@ static int crypto_ahash_init_tfm(struct
+ 	struct ahash_alg *alg = crypto_ahash_alg(hash);
+ 
+ 	hash->setkey = ahash_nosetkey;
+-	hash->has_setkey = false;
+ 	hash->export = ahash_no_export;
+ 	hash->import = ahash_no_import;
+ 
+@@ -457,10 +456,8 @@ static int crypto_ahash_init_tfm(struct
+ 	hash->finup = alg->finup ?: ahash_def_finup;
+ 	hash->digest = alg->digest;
+ 
+-	if (alg->setkey) {
++	if (alg->setkey)
+ 		hash->setkey = alg->setkey;
+-		hash->has_setkey = true;
+-	}
+ 	if (alg->export)
+ 		hash->export = alg->export;
+ 	if (alg->import)
+--- a/crypto/blkcipher.c
++++ b/crypto/blkcipher.c
+@@ -471,7 +471,6 @@ static int crypto_init_blkcipher_ops_asy
+ 	}
+ 	crt->base = __crypto_ablkcipher_cast(tfm);
+ 	crt->ivsize = alg->ivsize;
+-	crt->has_setkey = alg->max_keysize;
+ 
+ 	return 0;
+ }
+--- a/crypto/shash.c
++++ b/crypto/shash.c
+@@ -24,11 +24,12 @@
+ 
+ static const struct crypto_type crypto_shash_type;
+ 
+-static int shash_no_setkey(struct crypto_shash *tfm, const u8 *key,
+-			   unsigned int keylen)
++int shash_no_setkey(struct crypto_shash *tfm, const u8 *key,
++		    unsigned int keylen)
+ {
+ 	return -ENOSYS;
+ }
++EXPORT_SYMBOL_GPL(shash_no_setkey);
+ 
+ static int shash_setkey_unaligned(struct crypto_shash *tfm, const u8 *key,
+ 				  unsigned int keylen)
+@@ -356,8 +357,6 @@ int crypto_init_shash_ops_async(struct c
+ 	crt->digest = shash_async_digest;
+ 	crt->setkey = shash_async_setkey;
+ 
+-	crt->has_setkey = alg->setkey != shash_no_setkey;
+-
+ 	if (alg->export)
+ 		crt->export = shash_async_export;
+ 	if (alg->import)
+--- a/include/crypto/hash.h
++++ b/include/crypto/hash.h
+@@ -94,7 +94,6 @@ struct crypto_ahash {
+ 		      unsigned int keylen);
+ 
+ 	unsigned int reqsize;
+-	bool has_setkey;
+ 	struct crypto_tfm base;
+ };
+ 
+@@ -185,7 +184,22 @@ int crypto_ahash_setkey(struct crypto_ah
+ 
+ static inline bool crypto_ahash_has_setkey(struct crypto_ahash *tfm)
+ {
+-	return tfm->has_setkey;
++	struct crypto_tfm *basetfm = crypto_ahash_tfm(tfm);
++
++	switch (crypto_tfm_alg_type(basetfm)) {
++	case CRYPTO_ALG_TYPE_SHASH: {
++		extern int shash_no_setkey(struct crypto_shash *tfm,
++					   const u8 *key,
++					   unsigned int keylen);
++		struct shash_alg *alg =	container_of(basetfm->__crt_alg,
++						     struct shash_alg, base);
++
++		return alg->setkey != shash_no_setkey;
++	}
++
++	default:
++		return tfm->setkey != NULL;
++	}
+ }
+ 
+ int crypto_ahash_finup(struct ahash_request *req);
+--- a/include/linux/crypto.h
++++ b/include/linux/crypto.h
+@@ -354,7 +354,6 @@ struct ablkcipher_tfm {
+ 
+ 	unsigned int ivsize;
+ 	unsigned int reqsize;
+-	bool has_setkey;
+ };
+ 
+ struct aead_tfm {
+@@ -667,9 +666,25 @@ static inline int crypto_ablkcipher_setk
+ 
+ static inline bool crypto_ablkcipher_has_setkey(struct crypto_ablkcipher *tfm)
+ {
+-	struct ablkcipher_tfm *crt = crypto_ablkcipher_crt(tfm);
++	struct crypto_tfm *basetfm = crypto_ablkcipher_tfm(tfm);
++
++	switch (crypto_tfm_alg_type(basetfm)) {
++	case CRYPTO_ALG_TYPE_ABLKCIPHER:
++	case CRYPTO_ALG_TYPE_GIVCIPHER: {
++		struct ablkcipher_alg *alg = &basetfm->__crt_alg->cra_ablkcipher;
++
++		return alg->max_keysize != 0;
++	}
++
++	case CRYPTO_ALG_TYPE_BLKCIPHER: {
++		struct blkcipher_alg *alg = &basetfm->__crt_alg->cra_blkcipher;
++
++		return alg->max_keysize != 0;
++	}
+ 
+-	return crt->has_setkey;
++	default:
++		return false;
++	}
+ }
+ 
+ static inline struct crypto_ablkcipher *crypto_ablkcipher_reqtfm(
