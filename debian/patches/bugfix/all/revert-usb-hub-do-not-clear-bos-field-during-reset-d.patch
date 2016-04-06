@@ -1,0 +1,61 @@
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Sat, 20 Feb 2016 14:19:34 -0800
+Subject: Revert "usb: hub: do not clear BOS field during reset device"
+Origin: https://git.kernel.org/linus/e5bdfd50d6f76077bf8441d130c606229e100d40
+
+This reverts commit d8f00cd685f5c8e0def8593e520a7fef12c22407.
+
+Tony writes:
+
+This upstream commit is causing an oops:
+d8f00cd685f5 ("usb: hub: do not clear BOS field during reset device")
+
+This patch has already been included in several -stable kernels.  Here
+are the affected kernels:
+4.5.0-rc4 (current git)
+4.4.2
+4.3.6 (currently in review)
+4.1.18
+3.18.27
+3.14.61
+
+How to reproduce the problem:
+Boot kernel with slub debugging enabled (otherwise memory corruption
+will cause random oopses later instead of immediately)
+Plug in USB 3.0 disk to xhci USB 3.0 port
+dd if=/dev/sdc of=/dev/null bs=65536
+(where /dev/sdc is the USB 3.0 disk)
+Unplug USB cable while dd is still going
+Oops is immediate:
+
+Reported-by: Tony Battersby <tonyb@cybernetics.com>
+Cc: Du, Changbin <changbin.du@intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/core/hub.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -5387,6 +5387,7 @@ static int usb_reset_and_verify_device(s
+ 	}
+ 
+ 	bos = udev->bos;
++	udev->bos = NULL;
+ 
+ 	for (i = 0; i < SET_CONFIG_TRIES; ++i) {
+ 
+@@ -5479,11 +5480,8 @@ done:
+ 	usb_set_usb2_hardware_lpm(udev, 1);
+ 	usb_unlocked_enable_lpm(udev);
+ 	usb_enable_ltm(udev);
+-	/* release the new BOS descriptor allocated  by hub_port_init() */
+-	if (udev->bos != bos) {
+-		usb_release_bos_descriptor(udev);
+-		udev->bos = bos;
+-	}
++	usb_release_bos_descriptor(udev);
++	udev->bos = bos;
+ 	return 0;
+ 
+ re_enumerate:
