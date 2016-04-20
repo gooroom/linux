@@ -14,6 +14,8 @@ CONFIG_ARM_ERRATA_773022=y
 CONFIG_PCI=y
 CONFIG_SMP=y
 CONFIG_SMP_ON_UP=y
+CONFIG_MCPM=y
+CONFIG_NR_CPUS=8
 CONFIG_HIGHMEM=y
 CONFIG_XEN=y
 CONFIG_ARM_APPENDED_DTB=y
@@ -46,6 +48,7 @@ CONFIG_ARCH_EXYNOS=y
 # CONFIG_ARCH_EXYNOS3 is not set
 # CONFIG_ARCH_EXYNOS4 is not set
 CONFIG_ARCH_EXYNOS5=y
+CONFIG_EXYNOS5420_MCPM=y
 
 ##
 ## file: arch/arm/mach-highbank/Kconfig
@@ -102,10 +105,6 @@ CONFIG_ARCH_SUNXI=y
 ## file: arch/arm/mach-tegra/Kconfig
 ##
 CONFIG_ARCH_TEGRA=y
-# CONFIG_ARCH_TEGRA_2x_SOC is not set
-# CONFIG_ARCH_TEGRA_3x_SOC is not set
-# CONFIG_ARCH_TEGRA_114_SOC is not set
-CONFIG_ARCH_TEGRA_124_SOC=y
 
 ##
 ## file: arch/arm/mach-vexpress/Kconfig
@@ -138,11 +137,6 @@ CONFIG_OMAP_SERIAL_WAKE=y
 ## choice: OMAP PM layer selection
 CONFIG_OMAP_PM_NOOP=y
 ## end choice
-
-##
-## file: drivers/amba/Kconfig
-##
-CONFIG_TEGRA_AHB=y
 
 ##
 ## file: drivers/ata/Kconfig
@@ -247,6 +241,11 @@ CONFIG_GPIO_TWL6040=y
 CONFIG_DRM=m
 
 ##
+## file: drivers/gpu/drm/etnaviv/Kconfig
+##
+CONFIG_DRM_ETNAVIV=m
+
+##
 ## file: drivers/gpu/drm/i2c/Kconfig
 ##
 CONFIG_DRM_I2C_NXP_TDA998X=m
@@ -255,7 +254,6 @@ CONFIG_DRM_I2C_NXP_TDA998X=m
 ## file: drivers/gpu/drm/imx/Kconfig
 ##
 CONFIG_DRM_IMX=m
-CONFIG_DRM_IMX_FB_HELPER=m
 CONFIG_DRM_IMX_LDB=m
 CONFIG_DRM_IMX_HDMI=m
 
@@ -263,6 +261,22 @@ CONFIG_DRM_IMX_HDMI=m
 ## file: drivers/gpu/drm/omapdrm/Kconfig
 ##
 CONFIG_DRM_OMAP=m
+
+##
+## file: drivers/gpu/drm/omapdrm/displays/Kconfig
+##
+CONFIG_DISPLAY_ENCODER_TPD12S015=m
+CONFIG_DISPLAY_CONNECTOR_HDMI=m
+CONFIG_DISPLAY_PANEL_SONY_ACX565AKM=m
+
+##
+## file: drivers/gpu/drm/omapdrm/dss/Kconfig
+##
+CONFIG_OMAP2_DSS=m
+CONFIG_OMAP2_DSS_VENC=y
+CONFIG_OMAP4_DSS_HDMI=y
+CONFIG_OMAP5_DSS_HDMI=y
+CONFIG_OMAP2_DSS_SDI=y
 
 ##
 ## file: drivers/gpu/drm/rockchip/Kconfig
@@ -274,7 +288,6 @@ CONFIG_ROCKCHIP_DW_HDMI=m
 ## file: drivers/gpu/drm/tegra/Kconfig
 ##
 CONFIG_DRM_TEGRA=m
-CONFIG_DRM_TEGRA_FBDEV=y
 # CONFIG_DRM_TEGRA_DEBUG is not set
 # CONFIG_DRM_TEGRA_STAGING is not set
 
@@ -691,7 +704,7 @@ CONFIG_SKFP=m
 CONFIG_MDIO_SUN4I=y
 
 ##
-## file: drivers/net/wireless/brcm80211/Kconfig
+## file: drivers/net/wireless/broadcom/brcm80211/Kconfig
 ##
 CONFIG_BRCMFMAC=m
 CONFIG_BRCMFMAC_SDIO=y
@@ -699,7 +712,7 @@ CONFIG_BRCMFMAC_SDIO=y
 ##
 ## file: drivers/net/wireless/ti/Kconfig
 ##
-CONFIG_WL_TI=y
+CONFIG_WLAN_VENDOR_TI=y
 CONFIG_WILINK_PLATFORM_DATA=y
 
 ##
@@ -866,6 +879,14 @@ CONFIG_SCSI_AM53C974=m
 CONFIG_RASPBERRYPI_POWER=y
 
 ##
+## file: drivers/soc/tegra/Kconfig
+##
+# CONFIG_ARCH_TEGRA_2x_SOC is not set
+# CONFIG_ARCH_TEGRA_3x_SOC is not set
+# CONFIG_ARCH_TEGRA_114_SOC is not set
+CONFIG_ARCH_TEGRA_124_SOC=y
+
+##
 ## file: drivers/spi/Kconfig
 ##
 CONFIG_SPI=y
@@ -917,7 +938,6 @@ CONFIG_SERIAL_IMX=y
 CONFIG_SERIAL_IMX_CONSOLE=y
 CONFIG_SERIAL_VT8500=y
 CONFIG_SERIAL_VT8500_CONSOLE=y
-CONFIG_SERIAL_OF_PLATFORM=y
 CONFIG_SERIAL_OMAP=y
 CONFIG_SERIAL_OMAP_CONSOLE=y
 CONFIG_SERIAL_ARC=y
@@ -936,6 +956,7 @@ CONFIG_SERIAL_8250_RUNTIME_UARTS=4
 # CONFIG_SERIAL_8250_EXTENDED is not set
 CONFIG_SERIAL_8250_DW=y
 # CONFIG_SERIAL_8250_EM is not set
+CONFIG_SERIAL_OF_PLATFORM=y
 
 ##
 ## file: drivers/usb/Kconfig
@@ -948,7 +969,6 @@ CONFIG_USB=m
 CONFIG_USB_CHIPIDEA=m
 CONFIG_USB_CHIPIDEA_UDC=y
 CONFIG_USB_CHIPIDEA_HOST=y
-CONFIG_USB_CHIPIDEA_DEBUG=y
 
 ##
 ## file: drivers/usb/dwc2/Kconfig
@@ -1048,22 +1068,6 @@ CONFIG_FB_WM8505=y
 CONFIG_FB_SIMPLE=y
 
 ##
-## file: drivers/video/fbdev/omap2/displays-new/Kconfig
-##
-CONFIG_DISPLAY_ENCODER_TPD12S015=m
-CONFIG_DISPLAY_CONNECTOR_HDMI=m
-CONFIG_DISPLAY_PANEL_SONY_ACX565AKM=m
-
-##
-## file: drivers/video/fbdev/omap2/dss/Kconfig
-##
-CONFIG_OMAP2_DSS=m
-CONFIG_OMAP2_DSS_VENC=y
-CONFIG_OMAP4_DSS_HDMI=y
-CONFIG_OMAP5_DSS_HDMI=y
-CONFIG_OMAP2_DSS_SDI=y
-
-##
 ## file: drivers/video/fbdev/omap2/omapfb/Kconfig
 ##
 CONFIG_FB_OMAP2=m
@@ -1078,6 +1082,8 @@ CONFIG_VIRTIO_MMIO=m
 ##
 CONFIG_DA9052_WATCHDOG=m
 CONFIG_ARM_SP805_WATCHDOG=m
+CONFIG_S3C2410_WATCHDOG=m
+CONFIG_DW_WATCHDOG=m
 CONFIG_OMAP_WATCHDOG=m
 CONFIG_ORION_WATCHDOG=m
 CONFIG_SUNXI_WATCHDOG=m

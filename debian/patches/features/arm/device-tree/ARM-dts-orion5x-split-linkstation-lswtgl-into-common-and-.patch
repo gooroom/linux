@@ -26,9 +26,6 @@ Signed-off-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
  create mode 100644 arch/arm/boot/dts/mvebu-linkstation-gpio-simple.dtsi
  create mode 100644 arch/arm/boot/dts/orion5x-linkstation.dtsi
 
-diff --git a/arch/arm/boot/dts/mvebu-linkstation-fan.dtsi b/arch/arm/boot/dts/mvebu-linkstation-fan.dtsi
-new file mode 100644
-index 000000000000..e211a3c47a76
 --- /dev/null
 +++ b/arch/arm/boot/dts/mvebu-linkstation-fan.dtsi
 @@ -0,0 +1,72 @@
@@ -104,9 +101,6 @@ index 000000000000..e211a3c47a76
 +		marvell,function = "gpio";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/mvebu-linkstation-gpio-simple.dtsi b/arch/arm/boot/dts/mvebu-linkstation-gpio-simple.dtsi
-new file mode 100644
-index 000000000000..68d75e79a360
 --- /dev/null
 +++ b/arch/arm/boot/dts/mvebu-linkstation-gpio-simple.dtsi
 @@ -0,0 +1,105 @@
@@ -215,8 +209,6 @@ index 000000000000..68d75e79a360
 +		marvell,function = "gpio";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/orion5x-linkstation-lswtgl.dts b/arch/arm/boot/dts/orion5x-linkstation-lswtgl.dts
-index aae8a7aceab7..0eead400f427 100644
 --- a/arch/arm/boot/dts/orion5x-linkstation-lswtgl.dts
 +++ b/arch/arm/boot/dts/orion5x-linkstation-lswtgl.dts
 @@ -45,9 +45,10 @@
@@ -401,7 +393,11 @@ index aae8a7aceab7..0eead400f427 100644
 -			regulator-boot-on;
 -			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 -		};
--
++	pmx_power_hdd: pmx-power-hdd {
++		marvell,pins = "mpp1";
++		marvell,function = "gpio";
++	};
+ 
 -		hdd_power: regulator@2 {
 -			compatible = "regulator-fixed";
 -			reg = <2>;
@@ -413,16 +409,16 @@ index aae8a7aceab7..0eead400f427 100644
 -			regulator-boot-on;
 -			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
 -		};
-+	pmx_power_hdd: pmx-power-hdd {
-+		marvell,pins = "mpp1";
++	pmx_led_alarm: pmx-leds {
++		marvell,pins = "mpp2";
 +		marvell,function = "gpio";
  	};
 -};
--
+ 
 -&devbus_bootcs {
 -	status = "okay";
 -	devbus,keep-config;
- 
+-
 -	flash@0 {
 -		compatible = "jedec-flash";
 -		reg = <0 0x40000>;
@@ -442,11 +438,7 @@ index aae8a7aceab7..0eead400f427 100644
 -				reg = <0x30000 0xF000>;
 -				read-only;
 -			};
-+	pmx_led_alarm: pmx-leds {
-+		marvell,pins = "mpp2";
-+		marvell,function = "gpio";
-+	};
- 
+-
 -			uboot_env@3F000 {
 -				reg = <0x3F000 0x1000>;
 -			};
@@ -522,9 +514,6 @@ index aae8a7aceab7..0eead400f427 100644
 -&uart0 {
 -	status = "okay";
 -};
-diff --git a/arch/arm/boot/dts/orion5x-linkstation.dtsi b/arch/arm/boot/dts/orion5x-linkstation.dtsi
-new file mode 100644
-index 000000000000..ed456ab35fd8
 --- /dev/null
 +++ b/arch/arm/boot/dts/orion5x-linkstation.dtsi
 @@ -0,0 +1,180 @@
