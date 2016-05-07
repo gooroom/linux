@@ -1,0 +1,26 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Fri, 01 Apr 2016 02:32:56 +0100
+Subject: tracing: Avoid ABI change in 3.16.7-ckt26
+Forwarded: not-needed
+
+Hide the new #include's from genksyms.
+
+---
+--- a/include/linux/tracepoint.h
++++ b/include/linux/tracepoint.h
+@@ -14,11 +14,15 @@
+  * See the file COPYING for more details.
+  */
+ 
++#ifndef __GENKSYMS__
+ #include <linux/smp.h>
++#endif
+ #include <linux/errno.h>
+ #include <linux/types.h>
++#ifndef __GENKSYMS__
+ #include <linux/percpu.h>
+ #include <linux/cpumask.h>
++#endif
+ #include <linux/rcupdate.h>
+ #include <linux/static_key.h>
+ 
