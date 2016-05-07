@@ -1,0 +1,60 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 01 May 2016 15:39:07 +0200
+Subject: fs: Fix ABI change in 3.16.35
+Forwarded: not-needed
+
+file_open_root() gained an extra parameter to set the file mode.
+Restore the old function signature and define a separate function,
+file_open_root_umode(), that takes the extra parameter.
+
+---
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -947,8 +947,8 @@ struct file *filp_open(const char *filen
+ }
+ EXPORT_SYMBOL(filp_open);
+ 
+-struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+-			    const char *filename, int flags, umode_t mode)
++struct file *file_open_root_umode(struct dentry *dentry, struct vfsmount *mnt,
++				  const char *filename, int flags, umode_t mode)
+ {
+ 	struct open_flags op;
+ 	int err = build_open_flags(flags, mode, &op);
+@@ -959,7 +959,7 @@ struct file *file_open_root(struct dentr
+ 			return ERR_PTR(-ENOTDIR);
+ 	return do_file_open_root(dentry, mnt, filename, &op);
+ }
+-EXPORT_SYMBOL(file_open_root);
++EXPORT_SYMBOL(file_open_root_umode);
+ 
+ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
+ {
+@@ -1106,3 +1106,13 @@ int nonseekable_open(struct inode *inode
+ }
+ 
+ EXPORT_SYMBOL(nonseekable_open);
++
++#undef file_open_root
++struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
++			    const char *filename, int flags)
++{
++	if (flags & O_CREAT)
++		return ERR_PTR(-EINVAL);
++	return file_open_root_umode(dentry, mnt, filename, flags, 0);
++}
++EXPORT_SYMBOL(file_open_root);
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2055,7 +2055,10 @@ extern long do_sys_open(int dfd, const c
+ extern struct file *file_open_name(struct filename *, int, umode_t);
+ extern struct file *filp_open(const char *, int, umode_t);
+ extern struct file *file_open_root(struct dentry *, struct vfsmount *,
+-				   const char *, int, umode_t);
++				   const char *, int);
++extern struct file *file_open_root_umode(struct dentry *, struct vfsmount *,
++					 const char *, int, umode_t);
++#define file_open_root file_open_root_umode
+ extern struct file * dentry_open(const struct path *, int, const struct cred *);
+ extern int filp_close(struct file *, fl_owner_t id);
+ 
