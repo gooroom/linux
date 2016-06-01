@@ -1,0 +1,58 @@
+From: Ching Huang <ching2048@areca.com.tw>
+Date: Wed, 25 Nov 2015 19:45:16 +0800
+Subject: [22/27] arcmsr: make code more readable
+Origin: https://git.kernel.org/linus/d662ad246256e33eb9b25c8e801f4487527f2bfe
+
+[mkp: Fixed checkpatch whitespace warning]
+
+Signed-off-by: Ching Huang <ching2048@areca.com.tw>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Reviewed-by: Hannes Reinicke <hare@suse.de>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+---
+ drivers/scsi/arcmsr/arcmsr.h     |  3 +++
+ drivers/scsi/arcmsr/arcmsr_hba.c | 14 +++++++-------
+ 2 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/scsi/arcmsr/arcmsr.h b/drivers/scsi/arcmsr/arcmsr.h
+index 3bcaaac..48931bd 100644
+--- a/drivers/scsi/arcmsr/arcmsr.h
++++ b/drivers/scsi/arcmsr/arcmsr.h
+@@ -288,6 +288,9 @@ struct FIRMWARE_INFO
+ #define ARCMSR_MESSAGE_RBUFFER			      0x0000ff00
+ /* iop message_rwbuffer for message command */
+ #define ARCMSR_MESSAGE_RWBUFFER			      0x0000fa00
++
++#define MEM_BASE0(x)	(u32 __iomem *)((unsigned long)acb->mem_base0 + x)
++#define MEM_BASE1(x)	(u32 __iomem *)((unsigned long)acb->mem_base1 + x)
+ /* 
+ ************************************************************************
+ **                SPEC. for Areca HBC adapter
+diff --git a/drivers/scsi/arcmsr/arcmsr_hba.c b/drivers/scsi/arcmsr/arcmsr_hba.c
+index 41f9a00..077c3ec 100644
+--- a/drivers/scsi/arcmsr/arcmsr_hba.c
++++ b/drivers/scsi/arcmsr/arcmsr_hba.c
+@@ -2649,13 +2649,13 @@ static bool arcmsr_hbaB_get_config(struct AdapterControlBlock *acb)
+ 	acb->dma_coherent2 = dma_coherent;
+ 	reg = (struct MessageUnit_B *)dma_coherent;
+ 	acb->pmuB = reg;
+-	reg->drv2iop_doorbell= (uint32_t __iomem *)((unsigned long)acb->mem_base0 + ARCMSR_DRV2IOP_DOORBELL);
+-	reg->drv2iop_doorbell_mask = (uint32_t __iomem *)((unsigned long)acb->mem_base0 + ARCMSR_DRV2IOP_DOORBELL_MASK);
+-	reg->iop2drv_doorbell = (uint32_t __iomem *)((unsigned long)acb->mem_base0 + ARCMSR_IOP2DRV_DOORBELL);
+-	reg->iop2drv_doorbell_mask = (uint32_t __iomem *)((unsigned long)acb->mem_base0 + ARCMSR_IOP2DRV_DOORBELL_MASK);
+-	reg->message_wbuffer = (uint32_t __iomem *)((unsigned long)acb->mem_base1 + ARCMSR_MESSAGE_WBUFFER);
+-	reg->message_rbuffer =  (uint32_t __iomem *)((unsigned long)acb->mem_base1 + ARCMSR_MESSAGE_RBUFFER);
+-	reg->message_rwbuffer = (uint32_t __iomem *)((unsigned long)acb->mem_base1 + ARCMSR_MESSAGE_RWBUFFER);
++	reg->drv2iop_doorbell = MEM_BASE0(ARCMSR_DRV2IOP_DOORBELL);
++	reg->drv2iop_doorbell_mask = MEM_BASE0(ARCMSR_DRV2IOP_DOORBELL_MASK);
++	reg->iop2drv_doorbell = MEM_BASE0(ARCMSR_IOP2DRV_DOORBELL);
++	reg->iop2drv_doorbell_mask = MEM_BASE0(ARCMSR_IOP2DRV_DOORBELL_MASK);
++	reg->message_wbuffer = MEM_BASE1(ARCMSR_MESSAGE_WBUFFER);
++	reg->message_rbuffer =  MEM_BASE1(ARCMSR_MESSAGE_RBUFFER);
++	reg->message_rwbuffer = MEM_BASE1(ARCMSR_MESSAGE_RWBUFFER);
+ 	iop_firm_model = (char __iomem *)(&reg->message_rwbuffer[15]);	/*firm_model,15,60-67*/
+ 	iop_firm_version = (char __iomem *)(&reg->message_rwbuffer[17]);	/*firm_version,17,68-83*/
+ 	iop_device_map = (char __iomem *)(&reg->message_rwbuffer[21]);	/*firm_version,21,84-99*/
+-- 
+2.8.1
+

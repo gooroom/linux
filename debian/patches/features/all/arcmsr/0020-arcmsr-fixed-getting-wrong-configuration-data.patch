@@ -1,0 +1,64 @@
+From: Ching Huang <ching2048@areca.com.tw>
+Date: Wed, 25 Nov 2015 19:36:02 +0800
+Subject: [20/27] arcmsr: fixed getting wrong configuration data
+Origin: https://git.kernel.org/linus/251e2d25bfb72b69edd414abfa42a41191d9657a
+
+Fixed getting wrong configuration data of adapter type B and type D.
+
+Signed-off-by: Ching Huang <ching2048@areca.com.tw>
+Reviewed-by: Hannes Reinicke <hare@suse.de>
+Reviewed-by: Johannes Thumshirn <jthumshirn@suse.de>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+---
+ drivers/scsi/arcmsr/arcmsr_hba.c | 20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/scsi/arcmsr/arcmsr_hba.c b/drivers/scsi/arcmsr/arcmsr_hba.c
+index 333db59..397cdd5 100644
+--- a/drivers/scsi/arcmsr/arcmsr_hba.c
++++ b/drivers/scsi/arcmsr/arcmsr_hba.c
+@@ -2694,15 +2694,15 @@ static bool arcmsr_hbaB_get_config(struct AdapterControlBlock *acb)
+ 		acb->firm_model,
+ 		acb->firm_version);
+ 
+-	acb->signature = readl(&reg->message_rwbuffer[1]);
++	acb->signature = readl(&reg->message_rwbuffer[0]);
+ 	/*firm_signature,1,00-03*/
+-	acb->firm_request_len = readl(&reg->message_rwbuffer[2]);
++	acb->firm_request_len = readl(&reg->message_rwbuffer[1]);
+ 	/*firm_request_len,1,04-07*/
+-	acb->firm_numbers_queue = readl(&reg->message_rwbuffer[3]);
++	acb->firm_numbers_queue = readl(&reg->message_rwbuffer[2]);
+ 	/*firm_numbers_queue,2,08-11*/
+-	acb->firm_sdram_size = readl(&reg->message_rwbuffer[4]);
++	acb->firm_sdram_size = readl(&reg->message_rwbuffer[3]);
+ 	/*firm_sdram_size,3,12-15*/
+-	acb->firm_hd_channels = readl(&reg->message_rwbuffer[5]);
++	acb->firm_hd_channels = readl(&reg->message_rwbuffer[4]);
+ 	/*firm_ide_channels,4,16-19*/
+ 	acb->firm_cfg_version = readl(&reg->message_rwbuffer[25]);  /*firm_cfg_version,25,100-103*/
+ 	/*firm_ide_channels,4,16-19*/
+@@ -2880,15 +2880,15 @@ static bool arcmsr_hbaD_get_config(struct AdapterControlBlock *acb)
+ 		iop_device_map++;
+ 		count--;
+ 	}
+-	acb->signature = readl(&reg->msgcode_rwbuffer[1]);
++	acb->signature = readl(&reg->msgcode_rwbuffer[0]);
+ 	/*firm_signature,1,00-03*/
+-	acb->firm_request_len = readl(&reg->msgcode_rwbuffer[2]);
++	acb->firm_request_len = readl(&reg->msgcode_rwbuffer[1]);
+ 	/*firm_request_len,1,04-07*/
+-	acb->firm_numbers_queue = readl(&reg->msgcode_rwbuffer[3]);
++	acb->firm_numbers_queue = readl(&reg->msgcode_rwbuffer[2]);
+ 	/*firm_numbers_queue,2,08-11*/
+-	acb->firm_sdram_size = readl(&reg->msgcode_rwbuffer[4]);
++	acb->firm_sdram_size = readl(&reg->msgcode_rwbuffer[3]);
+ 	/*firm_sdram_size,3,12-15*/
+-	acb->firm_hd_channels = readl(&reg->msgcode_rwbuffer[5]);
++	acb->firm_hd_channels = readl(&reg->msgcode_rwbuffer[4]);
+ 	/*firm_hd_channels,4,16-19*/
+ 	acb->firm_cfg_version = readl(&reg->msgcode_rwbuffer[25]);
+ 	pr_notice("Areca RAID Controller%d: Model %s, F/W %s\n",
+-- 
+2.8.1
+
