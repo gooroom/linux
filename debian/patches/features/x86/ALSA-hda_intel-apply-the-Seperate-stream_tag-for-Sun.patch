@@ -1,0 +1,35 @@
+From: Libin Yang <libin.yang@intel.com>
+Date: Thu, 26 Mar 2015 13:28:39 +0800
+Subject: ALSA: hda_intel: apply the Seperate stream_tag for Sunrise Point
+Origin: https://git.kernel.org/linus/db48abf4367cb1f9e118defee0a37238638c2752
+
+The total stream number of Sunrise Point's input and output stream
+exceeds 15, which will cause some streams do not work because
+of the overflow on SDxCTL.STRM field if using the legacy
+stream tag allocation method.
+
+This patch uses the new stream tag allocation method by add
+the flag AZX_DCAPS_SEPARATE_STREAM_TAG for Skylake platform.
+
+Signed-off-by: Libin Yang <libin.yang@intel.com>
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+---
+ sound/pci/hda/hda_intel.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/pci/hda/hda_intel.c b/sound/pci/hda/hda_intel.c
+index 4ca3d5d..a8a1e14 100644
+--- a/sound/pci/hda/hda_intel.c
++++ b/sound/pci/hda/hda_intel.c
+@@ -1989,7 +1989,7 @@ static const struct pci_device_id azx_ids[] = {
+ 	  .driver_data = AZX_DRIVER_PCH | AZX_DCAPS_INTEL_PCH },
+ 	/* Sunrise Point */
+ 	{ PCI_DEVICE(0x8086, 0xa170),
+-	  .driver_data = AZX_DRIVER_PCH | AZX_DCAPS_INTEL_PCH },
++	  .driver_data = AZX_DRIVER_PCH | AZX_DCAPS_INTEL_SKYLAKE },
+ 	/* Sunrise Point-LP */
+ 	{ PCI_DEVICE(0x8086, 0x9d70),
+ 	  .driver_data = AZX_DRIVER_PCH | AZX_DCAPS_INTEL_SKYLAKE },
+-- 
+2.8.1
+
