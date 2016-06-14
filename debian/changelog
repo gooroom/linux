@@ -1,10 +1,248 @@
-linux (4.5.4-1~bpo8+1) jessie-backports; urgency=medium
+linux (4.6.1-1) unstable; urgency=medium
 
-  * Rebuild for jessie-backports, remaining changes:
-    - Revert changes to use gcc-5 compiler, not found in Jessie.
-  * Bump ABI to 0.bpo.2
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.6.1
 
- -- Héctor Orón Martínez <zumbi@debian.org>  Fri, 13 May 2016 10:20:48 +0200
+  [ Ben Hutchings ]
+  * [mips*r6*] Disable these architectures until dak recognises them as valid
+    in the control file
+  * linux-image: Rewrite maintainer scripts in shell, using the new
+    linux-update-symlinks and linux-check-removal commands
+    (Closes: #692333, #815850).  Drop support for minimal_swap, no_symlinks,
+    use_hard_links and *_hook parameters in  /etc/kernel-img.conf
+    (Closes: #730073).  Remove now-redundant debconf templates.
+  * linux-image: postrm: Update default symlinks before running hook scripts
+  * linux-image: Make a newly installed kernel the default if the package
+    was previously removed
+  * mtd: Disable slram and phram when securelevel is enabled
+  * debian/patches/features/all/rt/genpatch.py: Use Python 3
+  * debian/patches/features/all/rt/genpatch.py: Fix mapping of -rt version to
+    upstream version
+  * debian/patches/features/all/rt/genpatch.py: Use upstream tarball directly
+  * debian/patches/features/all/rt/genpatch.py: Use stable URLs in patch Origin
+    headers
+  * [rt] Update to 4.6.1-rt3:
+    - trace: correct off by one while recording the trace-event
+    - sched,preempt: Fix preempt_count manipulations
+    - kernel/rtmutex: only warn once on a try lock from bad
+    - locallock: add local_lock_on()
+    - kernel/printk: Don't try to print from IRQ/NMI region
+    - mm: perform lru_add_drain_all() remotely
+  * debian/control: Drop obsolete versioned Depends and Breaks
+  * linux-libc-dev: Drop obsolete Replaces/Conflicts with linux-kernel-headers
+  * debian/control: Update policy version to 3.9.8; no changes required
+  * Disable MODULE_SIG for architectures not supported by linux-signed
+  * Set ABI to 1
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 06 Jun 2016 18:13:57 +0100
+
+linux (4.6-1~exp2) experimental; urgency=medium
+
+  [ Ben Hutchings ]
+  * [tilegx] Build a linux-libc-dev package (Closes: #824524; thanks to
+    Helmut Grohne)
+  * [tilegx] linux-libc-dev: Install <arch/*> headers in arch-specific
+    directory (Closes: #823632; thanks to Helmut Grohne)
+  * [rt] Update to 4.6-rc7-rt1 and re-enable
+    - Override SYSTEM_TRUSTED_KEYS to work from the source_rt directory
+  * Fold debian/config/README into debian/README.source
+  * debian/README.source: Rewrite and expand explanation of kernel config file
+    construction
+  * aufs: Update support patches to aufs4.6-20160523
+    - mmap: Fix use-after-free in remap_file_pages(2)
+  * [mips*] Change NFS and various storage and network drivers from built-in
+    to modules
+  * 8139too: Use same configuration on all architectures: enable
+    8139TOO_TUNE_TWISTER, 8139TOO_8129 and disable 8139TOO_PIO
+  * [mipsn32{,r6}{,el}] Build linux-libc-dev and tools packages
+  * [mips{,64}r6{,el}] Add kernel flavours for the Malta platform; build
+    linux-libc-dev and tools packages (Closes: #825024; thanks to YunQiang Su)
+  * [mips*/*-malta] udeb: Add ata-modules package
+  * linux-image: Stop setting $STEM in environment for maintainer script hooks
+  * linux-image: Add workaround for bug #817083 in debconf
+  * linux-image: prerm: Allow removal of running kernel if we can't ask debconf
+    questions (Closes: #825423)
+  * linux-image: prerm: Ignore version of running kernel inside a container or
+    chroot
+  * [s390] udeb: Drop all packages, since s390 no longer has its own kernel
+
+  [ Aurelien Jarno ]
+  * [mips64{,el}] Set CPU to MIPS64 R2.
+  * [mips] Set CPU to MIPS32/64 R2.
+
+  [ Martin Michlmayr ]
+  * [armhf] Enable more NVIDIA Tegra options (TEGRA_IOMMU_SMMU,
+    ARM_TEGRA_DEVFREQ, SND_SOC_TEGRA_*).
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 30 May 2016 04:44:45 +0100
+
+linux (4.6-1~exp1) experimental; urgency=medium
+
+  * New upstream release: http://kernelnewbies.org/Linux_4.6
+
+  [ Ben Hutchings ]
+  * Re-apply "[media] videobuf2-v4l2: Verify planes array in buffer dequeueing",
+    reverted upstream in 4.6
+  * [arm64] Enable RANDOMIZE_BASE (kASLR)
+  * [armhf] dsa: Enable NET_DSA_MV88E6123 as module, replacing
+    NET_DSA_MV88E6123_61_65
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 17 May 2016 02:39:47 +0100
+
+linux (4.6~rc7-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * [hppa] Enable MLONGCALLS (fixes FTBFS)
+  * [alpha] fs: Disable BINFMT_EM86 (obsoleted by binfmt_misc; fixes FTBFS)
+
+  [ Aurelien Jarno ]
+  * [mips*/octeon] Enable EDAC, EDAC_MM_EDAC, EDAC_OCTEON_L2C,
+    EDAC_OCTEON_LMC, EDAC_OCTEON_PC, EDAC_OCTEON_PCI.
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 09 May 2016 03:39:32 +0100
+
+linux (4.6~rc5-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * [armhf] Enable EFI, RTC_DRV_EFI
+  * Update config for renaming/removal/replacement/merging/splitting of various
+    symbols
+  * *lockdep*,linux-perf: Remove '-rcN' from installation paths
+
+  [ Martin Michlmayr ]
+  * [armel, armhf] Use new Marvell CESA driver.
+  * [arm64] Enable support for NVIDIA Tegra.
+  * [arm64] udeb: Create fb-modules.
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Fri, 29 Apr 2016 10:40:36 +0200
+
+linux (4.6~rc3-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * aufs: Update support patches to aufs4.x-rcN-20160328
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Thu, 14 Apr 2016 23:55:15 +0100
+
+linux (4.5.5-1) unstable; urgency=medium
+
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.5.5
+    - decnet: Do not build routes to devices without decnet private data.
+    - route: do not cache fib route info on local routes with oif
+    - packet: fix heap info leak in PACKET_DIAG_MCLIST sock_diag interface
+    - net: sched: do not requeue a NULL skb
+    - bpf/verifier: reject invalid LD_ABS | BPF_DW instruction
+    - cdc_mbim: apply "NDP to end" quirk to all Huawei devices
+    - soreuseport: fix ordering for mixed v4/v6 sockets
+    - net: use skb_postpush_rcsum instead of own implementations
+    - vlan: pull on __vlan_insert_tag error path and fix csum correction
+    - openvswitch: Orphan skbs before IPv6 defrag
+    - openvswitch: use flow protocol when recalculating ipv6 checksums
+    - net/mlx5_core: Fix soft lockup in steering error flow
+    - net/mlx5e: Device's mtu field is u16 and not int
+    - net/mlx5e: Fix minimum MTU
+    - net/mlx5e: Use vport MTU rather than physical port MTU
+    - ipv4/fib: don't warn when primary address is missing if in_dev is dead
+    - net/mlx4_en: fix spurious timestamping callbacks
+    - net: Implement net_dbg_ratelimited() for CONFIG_DYNAMIC_DEBUG case
+    - gre: do not pull header in ICMP error processing
+    - net_sched: introduce qdisc_replace() helper
+    - net_sched: update hierarchical backlog too
+    - sch_htb: update backlog as well
+    - sch_dsmark: update backlog as well
+    - netem: Segment GSO packets on enqueue
+    - ipv6/ila: fix nlsize calculation for lwtunnel
+    - net/mlx4_en: Fix endianness bug in IPV6 csum calculation
+    - [x86] VSOCK: do not disconnect socket when peer has shutdown SEND only
+    - net: bridge: fix old ioctl unlocked net device walk
+    - bridge: fix igmp / mld query parsing
+    - net: fix a kernel infoleak in x25 module (CVE-2016-4580)
+    - net: thunderx: avoid exposing kernel stack
+    - tcp: refresh skb timestamp at retransmit time
+    - net/route: enforce hoplimit max value
+    - ocfs2: revert using ocfs2_acl_chmod to avoid inode cluster lock hang
+    - ocfs2: fix posix_acl_create deadlock
+    - zsmalloc: fix zs_can_compact() integer overflow
+    - mm: thp: calculate the mapcount correctly for THP pages during WP faults
+    - [x86] crypto: qat - fix invalid pf2vf_resp_wq logic
+    - crypto: testmgr - Use kmalloc memory for RSA input
+    - ALSA: usb-audio: Quirk for yet another Phoenix Audio devices (v2)
+    - ALSA: usb-audio: Yet another Phoneix Audio device quirk
+    - ALSA: hda - Fix subwoofer pin on ASUS N751 and N551
+    - ALSA: hda - Fix white noise on Asus UX501VW headset
+    - ALSA: hda - Fix broken reconfig
+    - [armhf] spi: spi-ti-qspi: Fix FLEN and WLEN settings if bits_per_word is
+      overridden
+    - [armhf] spi: spi-ti-qspi: Handle truncated frames properly
+    - perf diff: Fix duplicated output column
+    - perf/core: Disable the event on a truncated AUX record
+    - vfs: rename: check backing inode being equal
+    - workqueue: fix rebind bound workers warning
+    - [armhf] regulator: s2mps11: Fix invalid selector mask and voltages
+      for buck9
+    - [armhf] regulator: axp20x: Fix axp22x ldo_io voltage ranges
+    - atomic_open(): fix the handling of create_error
+    - qla1280: Don't allocate 512kb of host tags
+    - tools lib traceevent: Do not reassign parg after collapse_tree()
+    - [x86] drm/i915: Update CDCLK_FREQ register on BDW after changing cdclk
+      frequency
+    - drm/radeon: fix PLL sharing on DCE6.1 (v2)
+    - [x86] drm/i915: Bail out of pipe config compute loop on LPT
+    - [x86] Revert "drm/i915: start adding dp mst audio"
+    - [x86] drm/i915/bdw: Add missing delay during L3 SQC credit programming
+    - drm/radeon: fix DP link training issue with second 4K monitor
+    - drm/radeon: fix DP mode validation
+    - [x86] drm/amdgpu: fix DP mode validation
+    - btrfs: reada: Fix in-segment calculation for reada
+    - Btrfs: fix truncate_space_check
+    - btrfs: remove error message from search ioctl for nonexistent tree
+    - btrfs: change max_inline default to 2048
+    - Btrfs: fix unreplayable log after snapshot delete + parent dir fsync
+    - Btrfs: fix file loss on log replay after renaming a file and fsync
+    - Btrfs: fix extent_same allowing destination offset beyond i_size
+    - Btrfs: fix deadlock between direct IO reads and buffered writes
+    - Btrfs: fix race when checking if we can skip fsync'ing an inode
+    - Btrfs: do not collect ordered extents when logging that inode exists
+    - btrfs: csum_tree_block: return proper errno value
+    - btrfs: do not write corrupted metadata blocks to disk
+    - Btrfs: fix invalid reference in replace_path
+    - btrfs: handle non-fatal errors in btrfs_qgroup_inherit()
+    - btrfs: fallback to vmalloc in btrfs_compare_tree
+    - Btrfs: don't use src fd for printk
+    - btrfs: Reset IO error counters before start of device replacing
+
+  [ Salvatore Bonaccorso ]
+  * tipc: check nl sock before parsing nested attributes (CVE-2016-4951)
+
+  [ Ben Hutchings ]
+  * aufs: Update support patches to aufs4.5-20160523
+    - mmap: Fix use-after-free in remap_file_pages(2)
+  * Revert "stmmac: Fix 'eth0: No PHY found' regression" (Closes: #823493)
+  * [x86] kvm:vmx: more complete state update on APICv on/off (CVE-2016-4440)
+  * USB: usbfs: fix potential infoleak in devio (CVE-2016-4482)
+  * ALSA: timer: Fix leak in SNDRV_TIMER_IOCTL_PARAMS (CVE-2016-4569)
+  * ALSA: timer: Fix leak in events via snd_timer_user_ccallback or
+    snd_timer_user_tinterrupt (CVE-2016-4578)
+  * dwc3-exynos: Fix deferred probing storm (Closes: #823552; thanks to
+    Steinar H. Gunderson)
+  * Re-apply "[media] videobuf2-v4l2: Verify planes array in buffer dequeueing",
+    reverted upstream in 4.5.5
+
+  [ Roger Shimizu ]
+  * [armhf] Enable SENSORS_PWM_FAN / PWM_SAMSUNG as module, as recommended by
+    Steinar H. Gunderson. (Closes: #824941)
+  * [armhf] For Odroid-U3 (Exynos4) support, enable ARCH_EXYNOS4 / MFD_MAX77686
+    / RTC_DRV_MAX77686 as built-in, and COMMON_CLK_MAX77686
+    / REGULATOR_MAX77686 / MMC_SDHCI_S3C as module. Thanks to
+    Vagrant Cascadian. (Closes: #825139)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 29 May 2016 22:21:11 +0100
 
 linux (4.5.4-1) unstable; urgency=medium
 
