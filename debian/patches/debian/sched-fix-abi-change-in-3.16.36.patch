@@ -1,0 +1,38 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sat, 18 Jun 2016 01:39:40 +0100
+Subject: sched: Fix ABI changes in 3.16.36
+Forwarded: not-needed
+
+These structures are not exposed to modules, so the changes can be
+ignored.  Give genksyms the old definitions so it doesn't change the
+hashes of functions that use them.
+
+---
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -569,10 +569,15 @@ struct rq {
+ 
+ 	unsigned long cpu_capacity;
+ 
++#ifndef __GENKSYMS__
+ 	struct callback_head *balance_callback;
++#endif
+ 
+ 	unsigned char idle_balance;
+ 	/* For active balancing */
++#ifdef __GENKSYMS__
++	int post_schedule;
++#endif
+ 	int active_balance;
+ 	int push_cpu;
+ 	struct cpu_stop_work active_balance_work;
+@@ -1143,6 +1148,9 @@ struct sched_class {
+ 	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
+ 	void (*migrate_task_rq)(struct task_struct *p, int next_cpu);
+ 
++#ifdef __GENKSYMS__
++	void (*post_schedule) (struct rq *this_rq);
++#endif
+ 	void (*task_waking) (struct task_struct *task);
+ 	void (*task_woken) (struct rq *this_rq, struct task_struct *task);
+ 
