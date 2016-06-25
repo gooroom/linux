@@ -23,6 +23,7 @@ sys     0m18.840s
 
 Signed-off-by: Florian Westphal <fw@strlen.de>
 Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  net/ipv4/netfilter/arp_tables.c | 16 ++++++++++++++++
  net/ipv4/netfilter/ip_tables.c  | 16 ++++++++++++++++
@@ -31,16 +32,17 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
 
 --- a/net/ipv4/netfilter/arp_tables.c
 +++ b/net/ipv4/netfilter/arp_tables.c
-@@ -363,6 +363,18 @@ static inline bool unconditional(const s
+@@ -363,6 +363,19 @@ static inline bool unconditional(const s
  	       memcmp(&e->arp, &uncond, sizeof(uncond)) == 0;
  }
  
 +static bool find_jump_target(const struct xt_table_info *t,
++			     const void *entry0,
 +			     const struct arpt_entry *target)
 +{
 +	struct arpt_entry *iter;
 +
-+	xt_entry_foreach(iter, t->entries, t->size) {
++	xt_entry_foreach(iter, entry0, t->size) {
 +		 if (iter == target)
 +			return true;
 +	}
@@ -56,23 +58,24 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  						 pos, newpos);
 +					e = (struct arpt_entry *)
 +						(entry0 + newpos);
-+					if (!find_jump_target(newinfo, e))
++					if (!find_jump_target(newinfo, entry0, e))
 +						return 0;
  				} else {
  					/* ... this is a fallthru */
  					newpos = pos + e->next_offset;
 --- a/net/ipv4/netfilter/ip_tables.c
 +++ b/net/ipv4/netfilter/ip_tables.c
-@@ -439,6 +439,18 @@ ipt_do_table(struct sk_buff *skb,
+@@ -439,6 +439,19 @@ ipt_do_table(struct sk_buff *skb,
  #endif
  }
  
 +static bool find_jump_target(const struct xt_table_info *t,
++			     const void *entry0,
 +			     const struct ipt_entry *target)
 +{
 +	struct ipt_entry *iter;
 +
-+	xt_entry_foreach(iter, t->entries, t->size) {
++	xt_entry_foreach(iter, entry0, t->size) {
 +		 if (iter == target)
 +			return true;
 +	}
@@ -88,23 +91,24 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  						 pos, newpos);
 +					e = (struct ipt_entry *)
 +						(entry0 + newpos);
-+					if (!find_jump_target(newinfo, e))
++					if (!find_jump_target(newinfo, entry0, e))
 +						return 0;
  				} else {
  					/* ... this is a fallthru */
  					newpos = pos + e->next_offset;
 --- a/net/ipv6/netfilter/ip6_tables.c
 +++ b/net/ipv6/netfilter/ip6_tables.c
-@@ -449,6 +449,18 @@ ip6t_do_table(struct sk_buff *skb,
+@@ -449,6 +449,19 @@ ip6t_do_table(struct sk_buff *skb,
  #endif
  }
  
 +static bool find_jump_target(const struct xt_table_info *t,
++			     const void *entry0,
 +			     const struct ip6t_entry *target)
 +{
 +	struct ip6t_entry *iter;
 +
-+	xt_entry_foreach(iter, t->entries, t->size) {
++	xt_entry_foreach(iter, entry0, t->size) {
 +		 if (iter == target)
 +			return true;
 +	}
@@ -120,7 +124,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
  						 pos, newpos);
 +					e = (struct ip6t_entry *)
 +						(entry0 + newpos);
-+					if (!find_jump_target(newinfo, e))
++					if (!find_jump_target(newinfo, entry0, e))
 +						return 0;
  				} else {
  					/* ... this is a fallthru */
