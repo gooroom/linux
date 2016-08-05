@@ -345,6 +345,8 @@ install-libc-dev_$(ARCH):
 # Move include/asm to arch-specific directory
 	mkdir -p $(OUT_DIR)/include/$(DEB_HOST_MULTIARCH)
 	mv $(OUT_DIR)/include/asm $(OUT_DIR)/include/$(DEB_HOST_MULTIARCH)/
+	test ! -d $(OUT_DIR)/include/arch || \
+		mv $(OUT_DIR)/include/arch $(OUT_DIR)/include/$(DEB_HOST_MULTIARCH)/
 
 	+$(MAKE_SELF) install-base
 
@@ -393,7 +395,6 @@ endif
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/build
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/source
 	rm $(PACKAGE_DIR)/lib/firmware -rf
-	dh_installdebconf
 	+$(MAKE_SELF) \
 	  install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_bug \
 	  PACKAGE_DIR='$(PACKAGE_DIR)' PACKAGE_NAME='$(PACKAGE_NAME)' REAL_VERSION='$(REAL_VERSION)'
@@ -487,7 +488,7 @@ install-source: $(BUILD_DIR)/$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION).ta
 	+$(MAKE_SELF) install-base BUILDDEB_ARGS='-Zgzip -z1'
 
 define make-tools
-+mkdir -p $(BUILD_DIR)/build-tools/$(1) && $(MAKE_CLEAN) -C $(BUILD_DIR)/build-tools/$(1) -f $(CURDIR)/debian/rules.d/$(1)/Makefile top_srcdir=$(CURDIR) top_rulesdir=$(CURDIR)/debian/rules.d OUTDIR=$(1) VERSION=$(UPSTREAMVERSION)
++mkdir -p $(BUILD_DIR)/build-tools/$(1) && $(MAKE_CLEAN) -C $(BUILD_DIR)/build-tools/$(1) -f $(CURDIR)/debian/rules.d/$(1)/Makefile top_srcdir=$(CURDIR) top_rulesdir=$(CURDIR)/debian/rules.d OUTDIR=$(1) VERSION=$(VERSION)
 endef
 
 $(STAMPS_DIR)/build-tools:
