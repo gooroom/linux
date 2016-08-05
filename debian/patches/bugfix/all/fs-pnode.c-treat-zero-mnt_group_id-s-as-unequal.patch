@@ -1,0 +1,78 @@
+From: Maxim Patlasov <mpatlasov@virtuozzo.com>
+Date: Tue, 16 Feb 2016 11:45:33 -0800
+Subject: fs/pnode.c: treat zero mnt_group_id-s as unequal
+Origin: https://git.kernel.org/linus/7ae8fd0351f912b075149a1e03a017be8b903b9a
+
+propagate_one(m) calculates "type" argument for copy_tree() like this:
+
+>    if (m->mnt_group_id == last_dest->mnt_group_id) {
+>        type = CL_MAKE_SHARED;
+>    } else {
+>        type = CL_SLAVE;
+>        if (IS_MNT_SHARED(m))
+>           type |= CL_MAKE_SHARED;
+>   }
+
+The "type" argument then governs clone_mnt() behavior with respect to flags
+and mnt_master of new mount. When we iterate through a slave group, it is
+possible that both current "m" and "last_dest" are not shared (although,
+both are slaves, i.e. have non-NULL mnt_master-s). Then the comparison
+above erroneously makes new mount shared and sets its mnt_master to
+last_source->mnt_master. The patch fixes the problem by handling zero
+mnt_group_id-s as though they are unequal.
+
+The similar problem exists in the implementation of "else" clause above
+when we have to ascend upward in the master/slave tree by calling:
+
+>    last_source = last_source->mnt_master;
+>    last_dest = last_source->mnt_parent;
+
+proper number of times. The last step is governed by
+"n->mnt_group_id != last_dest->mnt_group_id" condition that may lie if
+both are zero. The patch fixes this case in the same way as the former one.
+
+[AV: don't open-code an obvious helper...]
+
+Signed-off-by: Maxim Patlasov <mpatlasov@virtuozzo.com>
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+---
+ fs/pnode.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/fs/pnode.c b/fs/pnode.c
+index 6367e1e..c524fdd 100644
+--- a/fs/pnode.c
++++ b/fs/pnode.c
+@@ -202,6 +202,11 @@ static struct mount *last_dest, *last_source, *dest_master;
+ static struct mountpoint *mp;
+ static struct hlist_head *list;
+ 
++static inline bool peers(struct mount *m1, struct mount *m2)
++{
++	return m1->mnt_group_id == m2->mnt_group_id && m1->mnt_group_id;
++}
++
+ static int propagate_one(struct mount *m)
+ {
+ 	struct mount *child;
+@@ -212,7 +217,7 @@ static int propagate_one(struct mount *m)
+ 	/* skip if mountpoint isn't covered by it */
+ 	if (!is_subdir(mp->m_dentry, m->mnt.mnt_root))
+ 		return 0;
+-	if (m->mnt_group_id == last_dest->mnt_group_id) {
++	if (peers(m, last_dest)) {
+ 		type = CL_MAKE_SHARED;
+ 	} else {
+ 		struct mount *n, *p;
+@@ -223,7 +228,7 @@ static int propagate_one(struct mount *m)
+ 					last_source = last_source->mnt_master;
+ 					last_dest = last_source->mnt_parent;
+ 				}
+-				if (n->mnt_group_id != last_dest->mnt_group_id) {
++				if (!peers(n, last_dest)) {
+ 					last_source = last_source->mnt_master;
+ 					last_dest = last_source->mnt_parent;
+ 				}
+-- 
+2.8.1
+

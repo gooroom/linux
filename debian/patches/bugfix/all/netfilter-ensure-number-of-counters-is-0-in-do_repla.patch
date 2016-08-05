@@ -1,0 +1,120 @@
+From: Dave Jones <davej@codemonkey.org.uk>
+Date: Tue, 19 May 2015 20:55:17 -0400
+Subject: netfilter: ensure number of counters is >0 in do_replace()
+Origin: https://git.kernel.org/linus/1086bbe97a074844188c6c988fa0b1a98c3ccbb9
+
+After improving setsockopt() coverage in trinity, I started triggering
+vmalloc failures pretty reliably from this code path:
+
+warn_alloc_failed+0xe9/0x140
+__vmalloc_node_range+0x1be/0x270
+vzalloc+0x4b/0x50
+__do_replace+0x52/0x260 [ip_tables]
+do_ipt_set_ctl+0x15d/0x1d0 [ip_tables]
+nf_setsockopt+0x65/0x90
+ip_setsockopt+0x61/0xa0
+raw_setsockopt+0x16/0x60
+sock_common_setsockopt+0x14/0x20
+SyS_setsockopt+0x71/0xd0
+
+It turns out we don't validate that the num_counters field in the
+struct we pass in from userspace is initialized.
+
+The same problem also exists in ebtables, arptables, ipv6, and the
+compat variants.
+
+Signed-off-by: Dave Jones <davej@codemonkey.org.uk>
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+---
+ net/bridge/netfilter/ebtables.c | 4 ++++
+ net/ipv4/netfilter/arp_tables.c | 6 ++++++
+ net/ipv4/netfilter/ip_tables.c  | 6 ++++++
+ net/ipv6/netfilter/ip6_tables.c | 6 ++++++
+ 4 files changed, 22 insertions(+)
+
+--- a/net/bridge/netfilter/ebtables.c
++++ b/net/bridge/netfilter/ebtables.c
+@@ -1105,6 +1105,8 @@ static int do_replace(struct net *net, c
+ 		return -ENOMEM;
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct ebt_counter))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
+ 
+ 	tmp.name[sizeof(tmp.name) - 1] = 0;
+ 
+@@ -2150,6 +2152,8 @@ static int compat_copy_ebt_replace_from_
+ 		return -ENOMEM;
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct ebt_counter))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
+ 
+ 	memcpy(repl, &tmp, offsetof(struct ebt_replace, hook_entry));
+ 
+--- a/net/ipv4/netfilter/arp_tables.c
++++ b/net/ipv4/netfilter/arp_tables.c
+@@ -1082,6 +1082,9 @@ static int do_replace(struct net *net, c
+ 	/* overflow check */
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
+@@ -1392,6 +1395,9 @@ static int compat_do_replace(struct net
+ 		return -ENOMEM;
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
+--- a/net/ipv4/netfilter/ip_tables.c
++++ b/net/ipv4/netfilter/ip_tables.c
+@@ -1268,6 +1268,9 @@ do_replace(struct net *net, const void _
+ 	/* overflow check */
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
+@@ -1669,6 +1672,9 @@ compat_do_replace(struct net *net, void
+ 		return -ENOMEM;
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
+--- a/net/ipv6/netfilter/ip6_tables.c
++++ b/net/ipv6/netfilter/ip6_tables.c
+@@ -1278,6 +1278,9 @@ do_replace(struct net *net, const void _
+ 	/* overflow check */
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
+@@ -1672,6 +1675,9 @@ compat_do_replace(struct net *net, void
+ 		return -ENOMEM;
+ 	if (tmp.num_counters >= INT_MAX / sizeof(struct xt_counters))
+ 		return -ENOMEM;
++	if (tmp.num_counters == 0)
++		return -EINVAL;
++
+ 	tmp.name[sizeof(tmp.name)-1] = 0;
+ 
+ 	newinfo = xt_alloc_table_info(tmp.size);
