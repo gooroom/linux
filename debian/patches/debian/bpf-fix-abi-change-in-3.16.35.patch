@@ -1,0 +1,28 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 08 May 2016 01:34:11 +0100
+Subject: bpf: Fix ABI change in 3.16.35
+Forwarded: not-needed
+
+There are no longer any in-tree modular users of the old
+sk_{attach,detach}_filter() function, but perhaps there could be out
+of tree.  Anyway, it costs little to add the exports back.
+
+--
+--- a/net/core/filter.c
++++ b/net/core/filter.c
+@@ -1644,6 +1644,7 @@ int sk_attach_filter(struct sock_fprog *
+ {
+ 	return __sk_attach_filter(fprog, sk, sock_owned_by_user(sk));
+ }
++EXPORT_SYMBOL_GPL(sk_attach_filter);
+ 
+ int __sk_detach_filter(struct sock *sk, bool locked)
+ {
+@@ -1668,6 +1669,7 @@ int sk_detach_filter(struct sock *sk)
+ {
+ 	return __sk_detach_filter(sk, sock_owned_by_user(sk));
+ }
++EXPORT_SYMBOL_GPL(sk_detach_filter);
+ 
+ int sk_get_filter(struct sock *sk, struct sock_filter __user *ubuf,
+ 		  unsigned int len)

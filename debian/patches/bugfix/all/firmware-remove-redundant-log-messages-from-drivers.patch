@@ -96,7 +96,7 @@ upstream submission.
      fw_size = firmware->size / sizeof(u32);
 --- a/drivers/bluetooth/ath3k.c
 +++ b/drivers/bluetooth/ath3k.c
-@@ -377,10 +377,8 @@ static int ath3k_load_patch(struct usb_d
+@@ -408,10 +408,8 @@ static int ath3k_load_patch(struct usb_d
  		 le32_to_cpu(fw_version.rom_version));
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
@@ -108,7 +108,7 @@ upstream submission.
  
  	pt_rom_version = get_unaligned_le32(firmware->data +
  					    firmware->size - 8);
-@@ -440,10 +438,8 @@ static int ath3k_load_syscfg(struct usb_
+@@ -471,10 +469,8 @@ static int ath3k_load_syscfg(struct usb_
  		le32_to_cpu(fw_version.rom_version), clk_value, ".dfu");
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
@@ -274,7 +274,7 @@ upstream submission.
  		release_firmware(rdev->me_fw);
 --- a/drivers/gpu/drm/radeon/r100.c
 +++ b/drivers/gpu/drm/radeon/r100.c
-@@ -1017,10 +1017,7 @@ static int r100_cp_init_microcode(struct
+@@ -1021,10 +1021,7 @@ static int r100_cp_init_microcode(struct
  	}
  
  	err = request_firmware(&rdev->me_fw, fw_name, rdev->dev);
@@ -468,7 +468,7 @@ upstream submission.
  		p = kmalloc(fw->size, GFP_KERNEL);
 --- a/drivers/media/dvb-frontends/af9013.c
 +++ b/drivers/media/dvb-frontends/af9013.c
-@@ -1373,16 +1373,8 @@ static int af9013_download_firmware(stru
+@@ -1377,16 +1377,8 @@ static int af9013_download_firmware(stru
  
  	/* request the firmware, this will block and timeout */
  	ret = request_firmware(&fw, fw_file, state->i2c->dev.parent);
@@ -1240,7 +1240,7 @@ upstream submission.
  	if (bp->mips_firmware->size < sizeof(*mips_fw) ||
 --- a/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
 +++ b/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
-@@ -12738,11 +12738,8 @@ static int bnx2x_init_firmware(struct bn
+@@ -12741,11 +12741,8 @@ static int bnx2x_init_firmware(struct bn
  	BNX2X_DEV_INFO("Loading %s\n", fw_file_name);
  
  	rc = request_firmware(&bp->firmware, fw_file_name, &bp->pdev->dev);
@@ -1255,7 +1255,7 @@ upstream submission.
  	if (rc) {
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -11323,11 +11323,8 @@ static int tg3_request_firmware(struct t
+@@ -11336,11 +11336,8 @@ static int tg3_request_firmware(struct t
  {
  	const struct tg3_firmware_hdr *fw_hdr;
  
@@ -1954,9 +1954,9 @@ upstream submission.
  	}
 --- a/drivers/scsi/ipr.c
 +++ b/drivers/scsi/ipr.c
-@@ -3983,10 +3983,8 @@ static ssize_t ipr_store_update_fw(struc
- 	len = snprintf(fname, 99, "%s", buf);
- 	fname[len-1] = '\0';
+@@ -3996,10 +3996,8 @@ static ssize_t ipr_store_update_fw(struc
+ 	if (endline)
+ 		*endline = '\0';
  
 -	if (request_firmware(&fw_entry, fname, &ioa_cfg->pdev->dev)) {
 -		dev_err(&ioa_cfg->pdev->dev, "Firmware file %s not found\n", fname);
@@ -2498,7 +2498,7 @@ upstream submission.
  		}
 --- a/drivers/usb/serial/ti_usb_3410_5052.c
 +++ b/drivers/usb/serial/ti_usb_3410_5052.c
-@@ -1490,10 +1490,8 @@ static int ti_download_firmware(struct t
+@@ -1492,10 +1492,8 @@ static int ti_download_firmware(struct t
  		}
  		status = request_firmware(&fw_p, buf, &dev->dev);
  	}
@@ -2641,7 +2641,7 @@ upstream submission.
  	return err;
 --- a/sound/pci/emu10k1/emu10k1_main.c
 +++ b/sound/pci/emu10k1/emu10k1_main.c
-@@ -887,12 +887,8 @@ static int snd_emu10k1_emu1010_init(stru
+@@ -892,12 +892,8 @@ static int snd_emu10k1_emu1010_init(stru
  		}
  
  		err = request_firmware(&emu->firmware, filename, &emu->pci->dev);
@@ -2657,7 +2657,7 @@ upstream submission.
  			   filename, emu->firmware->size);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -1449,10 +1449,8 @@ static void azx_firmware_cb(const struct
+@@ -1484,10 +1484,8 @@ static void azx_firmware_cb(const struct
  	struct azx *chip = card->private_data;
  	struct pci_dev *pci = chip->pci;
  

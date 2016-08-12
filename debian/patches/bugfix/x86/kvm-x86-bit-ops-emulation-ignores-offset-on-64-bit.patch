@@ -1,0 +1,33 @@
+From: Nadav Amit <namit@cs.technion.ac.il>
+Date: Sun, 15 Jun 2014 16:12:57 +0300
+Subject: KVM: x86: bit-ops emulation ignores offset on 64-bit
+Origin: https://git.kernel.org/linus/7dec5603b6b8dc4c3e1c65d318bd2a5a8c62a424
+Bug-Debian: https://bugs.debian.org/818502
+
+The current emulation of bit operations ignores the offset from the destination
+on 64-bit target memory operands. This patch fixes this behavior.
+
+Signed-off-by: Nadav Amit <namit@cs.technion.ac.il>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+ arch/x86/kvm/emulate.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/arch/x86/kvm/emulate.c
++++ b/arch/x86/kvm/emulate.c
+@@ -1249,12 +1249,14 @@ static void fetch_bit_operand(struct x86
+ 	long sv = 0, mask;
+ 
+ 	if (ctxt->dst.type == OP_MEM && ctxt->src.type == OP_REG) {
+-		mask = ~(ctxt->dst.bytes * 8 - 1);
++		mask = ~((long)ctxt->dst.bytes * 8 - 1);
+ 
+ 		if (ctxt->src.bytes == 2)
+ 			sv = (s16)ctxt->src.val & (s16)mask;
+ 		else if (ctxt->src.bytes == 4)
+ 			sv = (s32)ctxt->src.val & (s32)mask;
++		else
++			sv = (s64)ctxt->src.val & (s64)mask;
+ 
+ 		ctxt->dst.addr.mem.ea += (sv >> 3);
+ 	}

@@ -24,6 +24,7 @@ features/all/aufs3/aufs3-mmap.patch
 features/all/aufs3/aufs3-mmap-fix-races.patch
 features/all/aufs3/aufs3-standalone.patch
 features/all/aufs3/aufs3-add.patch
+features/all/aufs3/aufs-implement-new-f_op-setfl.patch
 # Debian-specific changes
 debian/aufs3-mark-as-staging.patch
 
@@ -88,6 +89,10 @@ bugfix/mips/mips-normalise-code-flow-in-the-cpu-exception-handle.patch
 bugfix/mips/mips-correct-fp-isa-requirements.patch
 bugfix/mips/mips-math-emu-correct-delay-slot-exception-propagation.patch
 bugfix/mips/mips-math-emu-correctly-handle-nop-emulation.patch
+bugfix/mips/MIPS-Allow-emulation-for-unaligned-LSDXC1-instructions.patch
+bugfix/x86/i2c-i801-Use-wait_event_timeout-to-wait-for-interrup.patch
+bugfix/x86/kvm-x86-rename-update_db_bp_intercept-to-update_bp_i.patch
+bugfix/x86/kvm-x86-bit-ops-emulation-ignores-offset-on-64-bit.patch
 
 features/all/readq-writeq-Add-explicit-lo_hi_-read-write-_q-and-h.patch
 
@@ -185,7 +190,6 @@ features/x86/ie31200_edac-introduce-the-driver.patch
 features/x86/ie31200_edac-allocate-mci-and-map-mchbar-first.patch
 
 # Miscellaneous bug fixes
-bugfix/all/misc-bmp085-Enable-building-as-a-module.patch
 bugfix/all/kbuild-use-nostdinc-in-compile-tests.patch
 bugfix/all/disable-some-marvell-phys.patch
 debian/i2o-disable-i2o_ext_adaptec-on-64bit.patch
@@ -221,6 +225,17 @@ bugfix/all/xen-netfront-release-per-queue-Tx-and-Rx-resource-wh.patch
 bugfix/all/rtc-hctosys-do-not-treat-lack-of-rtc-device-as-error.patch
 bugfix/all/rtc-hctosys-use-function-name-in-the-error-log.patch
 bugfix/all/xen-netback-return-correct-ethtool-stats.patch
+bugfix/all/media-uvcvideo-disable-hardware-timestamps-by-defaul.patch
+bugfix/all/nbd-fix-timeout-detection.patch
+bugfix/all/nbd-remove-variable-pid.patch
+bugfix/all/nbd-add-locking-for-tasks.patch
+bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
+bugfix/all/aufs-tiny-extract-a-new-func-xino_fwrite_wkq.patch
+bugfix/all/aufs-for-4.3-xino-handles-eintr-from-the-dying-proce.patch
+bugfix/all/ip_vti-ip6_vti-do-not-touch-skb-mark-on-xmit.patch
+bugfix/all/xfrm-override-skb-mark-with-tunnel-parm.i_key-in-xfr.patch
+bugfix/all/ip_vti-ip6_vti-preserve-skb-mark-after-rcv_cb-call.patch
+bugfix/all/revert-usb-hub-do-not-clear-bos-field-during-reset-d.patch
 
 # memfd_create() & kdbus backport
 features/all/kdbus/mm-allow-drivers-to-prevent-new-writable-mappings.patch
@@ -551,6 +566,7 @@ features/x86/apple-tb/0030-thunderbolt-Use-kcalloc.patch
 features/x86/apple-tb/0031-thunderbolt-Clear-hops-before-overwriting.patch
 features/x86/apple-tb/pci-add-pci_fixup_suspend_late-quirk-pass.patch
 features/x86/apple-tb/pci-suspend-resume-quirks-for-apple-thunderbolt.patch
+features/x86/apple-tb/thunderbolt-fix-double-free-of-drom-buffer.patch
 
 # Add iwlwifi firmware monitor from 3.17
 features/all/iwlwifi-debug/iwlwifi-add-device-firmware-to-fw-error-dump-file.patch
@@ -561,7 +577,7 @@ features/all/iwlwifi-debug/iwlwifi-mvm-don-t-collect-logs-in-the-interrupt-threa
 features/all/iwlwifi-debug/iwlwifi-mvm-kill-iwl_mvm_fw_error_rxf_dump.patch
 features/all/iwlwifi-debug/iwlwifi-mvm-update-layout-of-firmware-error-dump.patch
 
-# Update arcmsr to 3.18
+# Update arcmsr to 4.5
 features/all/arcmsr/0001-arcmsr-fix-command-timeout-under-heavy-load.patch
 features/all/arcmsr/0002-arcmsr-add-code-to-support-msi-x-and-msi-interrupt.patch
 features/all/arcmsr/0003-arcmsr-add-code-to-support-hibernation.patch
@@ -581,6 +597,14 @@ features/all/arcmsr/0016-arcmsr-add-support-new-adapter-arc12x4-series.patch
 features/all/arcmsr/0017-arcmsr-call-scsi_scan_host-at-the-end-of-host-initia.patch
 features/all/arcmsr/0018-arcmsr-simplify-of-updating-doneq_index-and-postq_in.patch
 features/all/arcmsr/0019-arcmsr-simplify-ioctl-data-read-write.patch
+features/all/arcmsr/0020-arcmsr-fixed-getting-wrong-configuration-data.patch
+features/all/arcmsr/0021-arcmsr-fixes-not-release-allocated-resource.patch
+features/all/arcmsr/0022-arcmsr-make-code-more-readable.patch
+features/all/arcmsr/0023-arcmsr-adds-code-to-support-new-Areca-adapter-ARC120.patch
+features/all/arcmsr/0024-arcmsr-changes-driver-version-number.patch
+features/all/arcmsr/0025-arcmsr-more-readability-improvements.patch
+features/all/arcmsr/0026-arcmsr-Split-dma-resource-allocation-to-a-new-functi.patch
+features/all/arcmsr/0027-arcmsr-change-driver-version-to-v1.30.00.22-20151126.patch
 
 # Add FocalTech support to psmouse
 features/all/psmouse/input-i8042-also-set-the-firmware-id-for-muxed-ports.patch
@@ -608,76 +632,12 @@ features/all/musb/0007-usb-musb-allow-multiple-glue-layers-to-be-built-in.patch
 features/all/musb/0008-usb-musb-use-is_enabled-for-tusb6010.patch
 features/all/musb/0009-usb-musb-fix-order-of-conditions-for-assigning-end-p.patch
 
-# Fix ABI changes
-debian/of-fix-abi-changes.patch
-debian/iovec-fix-abi-change-in-3.16.7-ckt1.patch
-debian/truncate-fix-abi-change-in-3.16.7-ckt1.patch
-debian/perf-fix-abi-change-in-3.16.7-ckt2.patch
-debian/arm-thread_info-fix-abi-change-in-3.16.7-ckt3.patch
-debian/pci-fix-abi-change-in-3.16.7-ckt3.patch
-debian/vfs-avoid-abi-change-for-dentry-union-changes.patch
-debian/userns-fix-abi-change-in-3.16.7-ckt4.patch
-debian/revert-quota-store-maximum-space-limit-in-bytes.patch
-debian/revert-quota-switch-get_dqblk-and-set_dqblk-to-use-b.patch
-debian/rmap-fix-abi-change-in-3.16.7-ckt5.patch
-debian/perf-fix-abi-change-in-3.16.7-ckt6.patch
-debian/mm-fix-pagecache_get_page-abi-change-in-3.16.7-ckt6.patch
-debian/tcp-fix-abi-change-in-3.16.7-ckt7.patch
-debian/usb-avoid-abi-change-in-3.16.7-ckt8.patch
-debian/procfs-avoid-abi-change-in-3.16.7-ckt8.patch
-debian/revert-libata-ignore-spurious-phy-event-on-lpm-polic.patch
-debian/udp-fix-abi-change-in-3.16.7-ckt14.patch
-debian/revert-acpica-utilities-split-io-address-types-from-.patch
-debian/x86-mm-avoid-abi-change-in-3.16.7-ckt17.patch
-debian/bh-avoid-abi-change-in-3.16.7-ckt17.patch
-debian/net-sched-avoid-abi-change-in-3.16.7-ckt17.patch
-debian/netlink-fix-abi-change-in-3.16.7-ckt18.patch
+# Skylake audio support
+features/x86/ALSA-hda_controller-Separate-stream_tag-for-input-an.patch
+features/x86/ALSA-hda_intel-apply-the-Seperate-stream_tag-for-Sky.patch
+features/x86/ALSA-hda_intel-apply-the-Seperate-stream_tag-for-Sun.patch
 
-bugfix/x86/i2c-i801-Use-wait_event_timeout-to-wait-for-interrup.patch
-bugfix/all/media-uvcvideo-disable-hardware-timestamps-by-defaul.patch
-bugfix/all/nbd-fix-timeout-detection.patch
-bugfix/all/nbd-remove-variable-pid.patch
-bugfix/all/nbd-add-locking-for-tasks.patch
-debian/ehci-fix-abi-change-in-3.16.7-ckt19.patch
-bugfix/x86/kvm-x86-rename-update_db_bp_intercept-to-update_bp_i.patch
-debian/af_unix-avoid-abi-changes.patch
-bugfix/all/ptrace-being-capable-wrt-a-process-requires-mapped-uids-gids.patch
-debian/ptrace-fix-abi-change-for-priv-esc-fix.patch
-debian/fix-abi-changes-for-cve-2013-4312-fix.patch
-debian/drm-fix-abi-change-in-3.16.7-ckt22.patch
-bugfix/all/aufs-tiny-extract-a-new-func-xino_fwrite_wkq.patch
-bugfix/all/aufs-for-4.3-xino-handles-eintr-from-the-dying-proce.patch
-bugfix/all/af_unix-guard-against-other-sk-in-unix_dgram_sendmsg.patch
-bugfix/all/aio-properly-check-iovec-sizes.patch
-debian/enclosure-fix-abi-change-in-3.16.7-ckt23.patch
-debian/revert-cgroup-make-sure-a-parent-css-isn-t-offlined.patch
-bugfix/all/crypto-blk-giv-cipher-set-has_setkey.patch
-debian/crypto-fix-abi-change-in-3.16.7-ckt25.patch
-bugfix/all/ip_vti-ip6_vti-do-not-touch-skb-mark-on-xmit.patch
-bugfix/all/xfrm-override-skb-mark-with-tunnel-parm.i_key-in-xfr.patch
-bugfix/all/ip_vti-ip6_vti-preserve-skb-mark-after-rcv_cb-call.patch
-bugfix/all/revert-drm-radeon-hold-reference-to-fences-in-radeon.patch
-bugfix/all/revert-drm-radeon-call-hpd_irq_event-on-resume.patch
-bugfix/all/revert-usb-hub-do-not-clear-bos-field-during-reset-d.patch
-bugfix/all/include-linux-poison.h-fix-list_poison-1-2-offset.patch
-bugfix/s390/s390-mm-four-page-table-levels-vs.-fork.patch
-bugfix/x86/x86-iopl-64-properly-context-switch-iopl-on-xen-pv.patch
-bugfix/x86/x86-entry-compat-add-missing-clac-to-entry_int80_32.patch
-bugfix/all/USB-usbip-fix-potential-out-of-bounds-write.patch
-bugfix/all/netfilter-x_tables-validate-e-target_offset-early.patch
-bugfix/all/netfilter-x_tables-make-sure-e-next_offset-covers-remaining-blob.patch
-bugfix/all/netfilter-x_tables-fix-unconditional-helper.patch
-bugfix/all/ipv4-don-t-do-expensive-useless-work-during-inetdev-.patch
-bugfix/x86/x86-standardize-mmap_rnd-usage.patch
-bugfix/x86/x86-mm-32-enable-full-randomization-on-i386-and-x86_32.patch
-bugfix/all/cdc_ncm-do-not-call-usbnet_link_change-from-cdc_ncm_.patch
-bugfix/all/usbnet-cleanup-after-bind-in-probe.patch
-bugfix/all/atl2-disable-unimplemented-scatter-gather-feature.patch
-bugfix/all/mm-hugetlb-allow-hugepages_supported-to-be-architect.patch
-bugfix/x86/x86-mm-xen-Suppress-hugetlbfs-in-PV-guests.patch
-bugfix/all/get_rock_ridge_filename-handle-malformed-NM-entries.patch
-bugfix/all/fs-pnode.c-treat-zero-mnt_group_id-s-as-unequal.patch
-bugfix/all/propogate_mnt-Handle-the-first-propogated-copy-being.patch
+# Security fixes
 bugfix/all/usb-usbfs-fix-potential-infoleak-in-devio.patch
 bugfix/all/alsa-timer-fix-leak-in-sndrv_timer_ioctl_params.patch
 bugfix/all/alsa-timer-fix-leak-in-events-via-snd_timer_user_cca.patch
@@ -686,22 +646,6 @@ bugfix/all/tipc-fix-an-infoleak-in-tipc_nl_compat_link_dump.patch
 bugfix/all/rds-fix-an-infoleak-in-rds_inc_info_copy.patch
 bugfix/all/ecryptfs-fix-handling-of-directory-opening.patch
 bugfix/all/ecryptfs-forbid-opening-files-without-mmap-handler.patch
-bugfix/all/input-aiptek-fix-crash-on-detecting-device-without-e.patch
-bugfix/all/alsa-usb-audio-fix-null-dereference-in-create_fixed_.patch
-bugfix/all/alsa-usb-audio-add-sanity-checks-for-endpoint-access.patch
-bugfix/all/input-ati_remote2-fix-crashes-on-detecting-device-wi.patch
-bugfix/all/input-powermate-fix-oops-with-malicious-usb-descript.patch
-bugfix/all/input-gtco-fix-crash-on-detecting-device-without-end.patch
-bugfix/all/usb-mct_u232-add-sanity-checking-in-probe.patch
-bugfix/all/usb-cypress_m8-add-endpoint-sanity-check.patch
-bugfix/all/usb-cdc-acm-more-sanity-checking.patch
-bugfix/all/usb-digi_acceleport-do-sanity-checking-for-the-numbe.patch
-bugfix/all/mm-migrate-dirty-page-without-clear_page_dirty_for_io-etc.patch
-bugfix/all/net-fix-infoleak-in-llc.patch
-bugfix/all/net-fix-infoleak-in-rtnetlink.patch
-bugfix/all/net-fix-a-kernel-infoleak-in-x25-module.patch
-bugfix/all/ib-security-restrict-use-of-the-write-interface.patch
-bugfix/all/ppp-take-reference-on-channels-netns.patch
 bugfix/all/keys-potential-uninitialized-variable.patch
 bugfix/all/netfilter-x_tables-don-t-move-to-non-existent-next-r.patch
 bugfix/all/netfilter-x_tables-validate-targets-of-jumps.patch
@@ -721,11 +665,53 @@ bugfix/all/netfilter-x_tables-do-compat-validation-via-translat.patch
 bugfix/all/netfilter-x_tables-introduce-and-use-xt_copy_counter.patch
 bugfix/all/posix_acl-Add-set_posix_acl.patch
 bugfix/all/nfsd-check-permissions-when-setting-ACLs.patch
-debian/migrate-fix-abi-change-in-3.16.36.patch
 bugfix/all/netfilter-ensure-number-of-counters-is-0-in-do_repla.patch
+bugfix/all/batman-adv-fix-double-put-of-vlan-object.patch
 bugfix/all/Revert-netfilter-ensure-number-of-counters-is-0-in-d.patch
 bugfix/all/alsa-compress-fix-an-integer-overflow-check.patch
 bugfix/x86/misc-mic-fix-for-double-fetch-security-bug-in-vop-dr.patch
 bugfix/powerpc/powerpc-tm-always-reclaim-in-start_thread-for-exec-c.patch
 bugfix/all/hid-hiddev-validate-num_values-for-hidiocgusages-hid.patch
 bugfix/s390/s390-sclp_ctl-fix-potential-information-leak-with-de.patch
+
+# Fix ABI changes
+debian/of-fix-abi-changes.patch
+debian/iovec-fix-abi-change-in-3.16.7-ckt1.patch
+debian/truncate-fix-abi-change-in-3.16.7-ckt1.patch
+debian/perf-fix-abi-change-in-3.16.7-ckt2.patch
+debian/arm-thread_info-fix-abi-change-in-3.16.7-ckt3.patch
+debian/pci-fix-abi-changes-in-3.16.y.patch
+debian/vfs-avoid-abi-change-for-dentry-union-changes.patch
+debian/userns-fix-abi-change-in-3.16.7-ckt4.patch
+debian/revert-quota-store-maximum-space-limit-in-bytes.patch
+debian/revert-quota-switch-get_dqblk-and-set_dqblk-to-use-b.patch
+debian/rmap-fix-abi-change-in-3.16.7-ckt5.patch
+debian/perf-fix-abi-change-in-3.16.7-ckt6.patch
+debian/mm-fix-pagecache_get_page-abi-change-in-3.16.7-ckt6.patch
+debian/tcp-fix-abi-change-in-3.16.7-ckt7.patch
+debian/usb-avoid-abi-change-in-3.16.7-ckt8.patch
+debian/procfs-avoid-abi-change-in-3.16.7-ckt8.patch
+debian/revert-libata-ignore-spurious-phy-event-on-lpm-polic.patch
+debian/udp-fix-abi-change-in-3.16.7-ckt14.patch
+debian/revert-acpica-utilities-split-io-address-types-from-.patch
+debian/x86-mm-avoid-abi-change-in-3.16.7-ckt17.patch
+debian/bh-avoid-abi-change-in-3.16.7-ckt17.patch
+debian/net-sched-avoid-abi-change-in-3.16.7-ckt17.patch
+debian/netlink-fix-abi-change-in-3.16.7-ckt18.patch
+debian/ehci-fix-abi-change-in-3.16.7-ckt19.patch
+debian/af_unix-avoid-abi-changes.patch
+debian/ptrace-fix-abi-change-for-priv-esc-fix.patch
+debian/fix-abi-changes-for-cve-2013-4312-fix.patch
+debian/drm-fix-abi-change-in-3.16.7-ckt22.patch
+debian/enclosure-fix-abi-change-in-3.16.7-ckt23.patch
+debian/revert-cgroup-make-sure-a-parent-css-isn-t-offlined.patch
+debian/crypto-fix-abi-change-in-3.16.7-ckt25.patch
+debian/revert-net-ipv6-add-sysctl-option-accept_ra_min_hop_limit.patch
+debian/revert-libata-align-ata_device-s-id-on-a-cacheline.patch
+debian/tracing-avoid-abi-change-in-3.16.7-ckt26.patch
+debian/route-fix-abi-change-in-3.16.7-ckt26.patch
+debian/fs-fix-abi-change-in-3.16.35.patch
+debian/bpf-fix-abi-change-in-3.16.35.patch
+debian/fs-fix-abi-change-for-aufs-f_setfl-fix.patch
+debian/migrate-fix-abi-change-in-3.16.36.patch
+debian/sched-fix-abi-change-in-3.16.36.patch
