@@ -19,7 +19,7 @@ version of the module that implements the file_operations.
 ---
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -59,8 +59,20 @@ int setfl(int fd, struct file * filp, un
+@@ -59,8 +59,21 @@ int setfl(int fd, struct file * filp, un
  
  	if (filp->f_op->check_flags)
  		error = filp->f_op->check_flags(arg);
@@ -34,7 +34,8 @@ version of the module that implements the file_operations.
 +#ifdef CONFIG_AUFS_FS_MODULE
 +	if (!error && filp->f_op->owner &&
 +	    !strcmp(filp->f_op->owner->name, "aufs") &&
-+	    strstr(filp->f_op->owner->version, "+setfl"))
++	    strstr(filp->f_op->owner->version, "+setfl") &&
++	    filp->f_op->setfl)
  		error = filp->f_op->setfl(filp, arg);
 +#endif
 +
