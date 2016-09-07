@@ -1,10 +1,175 @@
-linux (4.6.4-1~bpo8+1) jessie-backports; urgency=medium
+linux (4.7.2-1~bpo8+1) jessie-backports; urgency=medium
 
   * Rebuild for jessie-backports, remaining changes:
     - Revert changes to use gcc-5 compiler, not found in Jessie.
   * Bump ABI to 0.bpo.1
 
  -- Héctor Orón Martínez <zumbi@debian.org>  Fri, 12 Aug 2016 01:02:56 +0200
+
+linux (4.7.2-1) unstable; urgency=medium
+
+  * New upstream release: https://kernelnewbies.org/Linux_4.7
+    - media: fix airspy usb probe error path (CVE-2016-5400)
+    - libata: LITE-ON CX1-JB256-HP needs lower max_sectors (Closes: #830971)
+    - tcp: make challenge acks less predictable (CVE-2016-5696)
+  * New stable update:
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.7.1
+    - vfs: ioctl: prevent double-fetch in dedupe ioctl (CVE-2016-6516)
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.7.2
+    - [powerpc*] KVM: Book3S HV: Save/restore TM state in H_CEDE (CVE-2016-5412)
+    - audit: fix a double fetch in audit_log_single_execve_arg() (CVE-2016-6136)
+
+  [ Ben Hutchings ]
+  * sched: Enable SCHEDSTATS (Closes: #796674)
+  * Re-enable various config options disabled by name and type changes in 4.7:
+    - nfc: NFC_PN533_USB replaced NFC_PN533
+    - [armhf] dsa: NET_DSA_MV88E6XXX replaced NET_DSA_MV88E6{123,131,171}
+    - [x86] ACPI: ACPI_TABLE_UPGRADE replaced ACPI_INITRD_TABLE_OVERRIDE
+    - rxrpc: Enable RXKAD as part of af_rxrpc module
+    - [x86] 8250: Enable SERIAL_8250_FINTEK as built-in
+  * cgroups: Enable memory controller by default
+  * [armfh] udeb: Add efi-modules
+  * linux-kbuild: Include headers_install.sh and unifdef (Closes: #832359)
+  * udeb: Include cdc_ncm in nic-usb-modules (Closes: #833918)
+  * usbip: Use the locally-installed <linux/usbip.h>
+  * Exclude redundant and unreproducible files from binary packages
+    (Closes: #830268)
+    - usbip: Put all autotools-generated files in the build directory
+    - linux-headers: Exclude all .cmd files
+  * [arm*] Enable SECCOMP (Closes: #833183)
+  * [hppa] Fix automatic selection of cr16 clocksource
+  * [hppa] Fix order of EREFUSED define in errno.h
+  * aufs: Update support patches to aufs4.7-20160822 (Closes: #834764)
+  * [powerpc*] ipmi: Enable IPMI_POWERNV as module (Closes: #833861)
+  * kbuild: Do not use hyphen in exported variable name (Closes: #833561)
+  * fat: Mitigate the lack of UTF-8 case folding by enabling
+    FAT_DEFAULT_UTF8 and setting FAT_DEFAULT_IOCHARSET to "ascii"
+    (Closes: #833238)
+  * [arm64] Add support for securelevel and Secure Boot (Closes: #831827,
+    thanks to Linn Crosetto):
+    - efi: Disable secure boot if shim is in insecure mode
+    - Add kernel config option to set securelevel when in Secure Boot mode
+    - Enable EFI_SECURE_BOOT_SECURELEVEL
+  * tcp: fix use after free in tcp_xmit_retransmit_queue() (CVE-2016-6828)
+  * aacraid: Check size values after double-fetch from user (CVE-2016-6480)
+  * liblockdep: Move dummy definition of prandom_u32() to fix missing
+    declaration
+  * debian/rules.real: Avoid error message when usbip's config.h doesn't exist
+
+  [ Martin Michlmayr ]
+  * [armhf] Enable MMC_SDHCI_IPROC and HW_RANDOM_BCM2835 for BCM2835.
+  * [arm64] Add USB support for NVIDIA Jetson TX1 Developer Kit:
+    - pinctrl: max77620: add pincontrol driver for MAX77620/MAX20024
+    - gpio: max77620: add gpio driver for MAX77620/MAX20024
+    - gpio: max77620: Configure interrupt trigger level
+    - gpio: max77620: use the new open drain callback
+    - gpio: max77620: get gpio value based on direction
+    - arm64: tegra: Add PMIC support on Jetson TX1
+    - arm64: tegra: p2597: Add SDMMC power supplies
+    - arm64: tegra: Add DSI panel on Jetson TX1
+    - arm64: tegra: Add Tegra210 XUSB pad controller
+    - arm64: tegra: Add Tegra210 XUSB controller
+    - arm64: tegra: Enable debug serial on Jetson TX1
+    - arm64: tegra: Enable XUSB controller on Jetson TX1
+    - arm64: tegra: Correct Tegra210 XUSB mailbox interrupt
+  * [arm64] Enable REGULATOR_FIXED_VOLTAGE.
+  * [arm64] Enable ARM64_ERRATUM_834220.
+  * [arm64] Build in SERIAL_TEGRA.
+  * [arm64] Enable REGULATOR_PWM, DRM_PANEL_SIMPLE, BACKLIGHT_GENERIC
+    and BACKLIGHT_LP855X for Jetson TX1.
+  * [arm64] Enable BATTERY_BQ27XXX, MFD_CROS_EC_I2C, I2C_CROS_EC_TUNNEL
+    for Google Pixel C.
+  * [arm64] Enable more Qualcomm options: PINCTRL_QCOM_SPMI_PMIC,
+    SPMI_MSM_PMIC_ARB, QCOM_SPMI_IADC, QCOM_SPMI_VADC, MFD_SPMI_PMIC,
+    REGULATOR_QCOM_SPMI, QCOM_SPMI_TEMP_ALARM, CHARGER_QCOM_SMBB,
+    USB_CHIPIDEA, USB_HSIC_USB3503, RTC_DRV_PM8XXX, EXTCON_USB_GPIO,
+    QCOM_COINCELL, and INPUT_PM8941_PWRKEY.
+
+  [ Uwe Kleine-König ]
+  * Fix perf to be able to find debug info based on build-id. (Closes:
+    #833096)
+
+  [ Nicolas LE CAM ]
+  * [amd64] Suggest grub-efi-amd64 instead of grub-efi dummy transitionnal
+    package (Closes: #835459)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sun, 28 Aug 2016 15:56:10 +0100
+
+linux (4.7~rc7-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Aurelien Jarno ]
+  * [mipsel] Remove loongson-2e and loongson-2f flavours (Closes: #827790).
+  * [mipsel/4kc-malta, mipsel/5kc-malta] Build for R2 ISA.
+
+  [ Martin Michlmayr ]
+  * [armhf, arm64] Enable DRM_TEGRA_STAGING.
+
+  [ Ben Hutchings ]
+  * [x86] KASLR, power: Remove x86 hibernation restrictions
+  * fanotify: Enable FANOTIFY_ACCESS_PERMISSIONS (Closes: #690737)
+    - Warn and taint kernel if this feature is actually used
+  * Define Auto-Built-Package field when running dpkg-gencontrol, as dpkg-source
+    doesn't like to see it in debian/control
+  * debian/lib/python/debian_linux/debian.py: Handle packages with only short
+    descriptions
+  * Change names and descriptions of linux-image debug symbol packages to match
+    debhelper
+
+  [ Bastian Blank ]
+  * Mark debug symbols packages to move them into the debug archive.
+  * Build debug symbols for all images.
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Thu, 14 Jul 2016 13:35:22 +0100
+
+linux (4.7~rc4-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * [armel] Disable module signing for all flavours (fixes FTBFS)
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Tue, 21 Jun 2016 00:41:23 +0100
+
+linux (4.7~rc3-1~exp1) experimental; urgency=medium
+
+  * New upstream release candidate
+
+  [ Ben Hutchings ]
+  * bug script: Put binary package name and version in the info file so
+    linux-signed can easily replace them
+  * Move merge_packages function from debian/bin/gencontrol.py to
+    gencontrol module
+  * udeb: Drop packages for modules that will later be signed
+  * linux-image: Add '-unsigned' suffix to packages with modules that will
+    later be signed
+    - Add Conflicts and Replaces relations to signed packages (Closes: #827618)
+  * [rt] Disable until it is updated for 4.7 or later
+  * cpupower: Bump soname version and rename library package accordingly
+  * debian/rules.d/Makefile: Override architecture detection when building
+    userland headers
+  * linux-cpupower: Define PACKAGE_BUGREPORT to refer to reportbug, not upstream
+  * debian/README.source: Document the supported build profiles
+  * debian/control: Fix build-dependencies for cross-building
+    - Add workaround for libdpkg-perl bugs #827628, #827633
+  * Add support for the nopython build profile, disabling the linux-perf package
+  * Fix build rules for userland tools to support cross-building
+
+  [ Martin Michlmayr ]
+  * [armhf, arm64] Enable PHY_TEGRA_XUSB and USB_XHCI_TEGRA.
+  * [arm64] Enable MAX77620 and PCA9539 which are required by Jetson TX1.
+  * [arm64] Enable TEGRA210_ADMA.
+  * [arm64] Enable THERMAL.
+  * [armhf] Enable TEGRA_SOCTHERM.
+  * [armhf] Enable SPI_TEGRA114.
+  * [arm64] Enable more QCOM options (QCOM_SMP2P, QCOM_SMSM, QCOM_WCNSS_CTRL,
+    PHY_QCOM_UFS, QCOM_QFPROM).
+
+  [ Aurelien Jarno ]
+  * [ppc64*] Enable SPAPR_TCE_IOMMU, VFIO and VFIO_PCI (Closes: #826367).
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Sat, 18 Jun 2016 23:50:39 +0100
 
 linux (4.6.4-1) unstable; urgency=medium
 
@@ -367,6 +532,8 @@ linux (4.6-1~exp2) experimental; urgency=medium
   * linux-image: prerm: Ignore version of running kernel inside a container or
     chroot
   * [s390] udeb: Drop all packages, since s390 no longer has its own kernel
+  * udeb: Drop packages for modules that will later be signed; these packages
+    will be taken over by src:linux-signed
 
   [ Aurelien Jarno ]
   * [mips64{,el}] Set CPU to MIPS64 R2.

@@ -5,13 +5,19 @@ srcdir := $(top_srcdir)/tools/usb/usbip
 # sub-make command line.
 unexport MAKEFLAGS
 
+all: export CFLAGS := $(shell dpkg-buildflags --get CFLAGS)
+all: export CPPFLAGS := $(shell dpkg-buildflags --get CFLAGS) \
+	-isystem $(top_srcdir)/debian/build/build-tools/include
+all: export LDFLAGS := $(shell dpkg-buildflags --get LDFLAGS)
 all:
-	cd $(srcdir) && ./autogen.sh
-	$(shell dpkg-buildflags --export=cmdline) $(srcdir)/configure \
+	rsync -a $(srcdir)/ .
+	./autogen.sh
+	./configure \
 		--prefix=/usr \
 		--with-tcp-wrappers \
 		--with-usbids-dir=/usr/share/misc \
-		--disable-shared
+		--disable-shared \
+		--host=$(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 	$(MAKE)
 
 install:
@@ -21,5 +27,4 @@ ifneq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 endif
 
 clean:
-	rm -rf $(addprefix $(srcdir)/,autom4te.cache aclocal.m4 compile config.guess config.h.in config.sub configure depcomp install-sh ltmain.sh missing)
-	find $(srcdir)/ -name Makefile.in -delete
+	rm -rf *
