@@ -1,0 +1,76 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 08 May 2016 17:54:21 +0100
+Subject: fs: Fix ABI change for aufs F_SETFL fix
+Forwarded: not-needed
+Bug-Debian: https://bugs.debian.org/627782
+
+struct file_operations is not embedded in any larger structures so it
+is safe to extend it.  Move setfl to the end and hide it from
+genksyms.
+
+setfl() still needs to be able to tell whether the
+file_operations::setfl pointer is valid, though.  My first thought was
+to look at the file's superblock, but that won't work because
+e.g. dentries for character devices point to the superblock of the
+filesystem where the device node was found!  Instead, add a keyword to
+the version string of aufs and make do_setfl() check the name and
+version of the module that implements the file_operations.
+
+---
+--- a/fs/fcntl.c
++++ b/fs/fcntl.c
+@@ -59,8 +59,21 @@ int setfl(int fd, struct file * filp, un
+ 
+ 	if (filp->f_op->check_flags)
+ 		error = filp->f_op->check_flags(arg);
+-	if (!error && filp->f_op->setfl)
++
++	/*
++	 * bwh: setfl() is an extension to file_operations.  For ABI
++	 * compatibility, we can't assume the pointer is even valid.
++	 * Since only aufs will implement it, check that the file ops
++	 * are implemented by a version of aufs that does.  (Ugh.)
++	 */
++#ifdef CONFIG_AUFS_FS_MODULE
++	if (!error && filp->f_op->owner &&
++	    !strcmp(filp->f_op->owner->name, "aufs") &&
++	    strstr(filp->f_op->owner->version, "+setfl") &&
++	    filp->f_op->setfl)
+ 		error = filp->f_op->setfl(filp, arg);
++#endif
++
+ 	if (error)
+ 		return error;
+ 
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1503,7 +1503,6 @@ struct file_operations {
+ 	ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
+ 	unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
+ 	int (*check_flags)(int);
+-	int (*setfl)(struct file *, unsigned long);
+ 	int (*flock) (struct file *, int, struct file_lock *);
+ 	ssize_t (*splice_write)(struct pipe_inode_info *, struct file *, loff_t *, size_t, unsigned int);
+ 	ssize_t (*splice_read)(struct file *, loff_t *, struct pipe_inode_info *, size_t, unsigned int);
+@@ -1511,6 +1510,10 @@ struct file_operations {
+ 	long (*fallocate)(struct file *file, int mode, loff_t offset,
+ 			  loff_t len);
+ 	int (*show_fdinfo)(struct seq_file *m, struct file *f);
++#ifndef __GENKSYMS__
++	/* bwh: For aufs only */
++	int (*setfl)(struct file *, unsigned long);
++#endif
+ };
+ 
+ struct inode_operations {
+--- a/include/uapi/linux/aufs_type.h
++++ b/include/uapi/linux/aufs_type.h
+@@ -39,7 +39,7 @@
+ 
+ #include <linux/limits.h>
+ 
+-#define AUFS_VERSION	"3.16-20140908"
++#define AUFS_VERSION	"3.16-20140908+setfl"
+ 
+ /* todo? move this to linux-2.6.19/include/magic.h */
+ #define AUFS_SUPER_MAGIC	('a' << 24 | 'u' << 16 | 'f' << 8 | 's')

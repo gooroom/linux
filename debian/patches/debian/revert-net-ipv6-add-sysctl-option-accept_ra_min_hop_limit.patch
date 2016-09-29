@@ -1,0 +1,123 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 01 May 2016 23:15:07 +0200
+Subject: Revert "net/ipv6: add sysctl option accept_ra_min_hop_limit"
+Forwarded: not-needed
+
+This reverts commit efd019f933a538e4147aee811e6b2dd7a1aafdef which was
+commit 8013d1d7eafb0589ca766db6b74026f76b7f5cb4 upstream.  It added a
+new member to struct ipv6_devconf, which is embedded in struct
+inet6_dev, which changes the symbol versions of many functions.  I
+don't think anything outside ipv6 should be touching either structure,
+but I'm hesitant to just hide the new member from genksyms.
+
+---
+--- a/Documentation/networking/ip-sysctl.txt
++++ b/Documentation/networking/ip-sysctl.txt
+@@ -1210,14 +1210,6 @@ accept_ra_defrtr - BOOLEAN
+ 	Functional default: enabled if accept_ra is enabled.
+ 			    disabled if accept_ra is disabled.
+ 
+-accept_ra_min_hop_limit - INTEGER
+-	Minimum hop limit Information in Router Advertisement.
+-
+-	Hop limit Information in Router Advertisement less than this
+-	variable shall be ignored.
+-
+-	Default: 1
+-
+ accept_ra_pinfo - BOOLEAN
+ 	Learn Prefix Information in Router Advertisement.
+ 
+--- a/include/linux/ipv6.h
++++ b/include/linux/ipv6.h
+@@ -29,7 +29,6 @@ struct ipv6_devconf {
+ 	__s32		max_desync_factor;
+ 	__s32		max_addresses;
+ 	__s32		accept_ra_defrtr;
+-	__s32		accept_ra_min_hop_limit;
+ 	__s32		accept_ra_pinfo;
+ #ifdef CONFIG_IPV6_ROUTER_PREF
+ 	__s32		accept_ra_rtr_pref;
+--- a/include/uapi/linux/ipv6.h
++++ b/include/uapi/linux/ipv6.h
+@@ -163,12 +163,6 @@ enum {
+ 	DEVCONF_MLDV1_UNSOLICITED_REPORT_INTERVAL,
+ 	DEVCONF_MLDV2_UNSOLICITED_REPORT_INTERVAL,
+ 	DEVCONF_SUPPRESS_FRAG_NDISC,
+-	DEVCONF_ACCEPT_RA_FROM_LOCAL,
+-	DEVCONF_USE_OPTIMISTIC,
+-	DEVCONF_ACCEPT_RA_MTU,
+-	DEVCONF_STABLE_SECRET,
+-	DEVCONF_USE_OIF_ADDRS_ONLY,
+-	DEVCONF_ACCEPT_RA_MIN_HOP_LIMIT,
+ 	DEVCONF_MAX
+ };
+ 
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -186,7 +186,6 @@ static struct ipv6_devconf ipv6_devconf
+ 	.max_desync_factor	= MAX_DESYNC_FACTOR,
+ 	.max_addresses		= IPV6_MAX_ADDRESSES,
+ 	.accept_ra_defrtr	= 1,
+-	.accept_ra_min_hop_limit= 1,
+ 	.accept_ra_pinfo	= 1,
+ #ifdef CONFIG_IPV6_ROUTER_PREF
+ 	.accept_ra_rtr_pref	= 1,
+@@ -223,7 +222,6 @@ static struct ipv6_devconf ipv6_devconf_
+ 	.max_desync_factor	= MAX_DESYNC_FACTOR,
+ 	.max_addresses		= IPV6_MAX_ADDRESSES,
+ 	.accept_ra_defrtr	= 1,
+-	.accept_ra_min_hop_limit= 1,
+ 	.accept_ra_pinfo	= 1,
+ #ifdef CONFIG_IPV6_ROUTER_PREF
+ 	.accept_ra_rtr_pref	= 1,
+@@ -4296,7 +4294,6 @@ static inline void ipv6_store_devconf(st
+ 	array[DEVCONF_MAX_DESYNC_FACTOR] = cnf->max_desync_factor;
+ 	array[DEVCONF_MAX_ADDRESSES] = cnf->max_addresses;
+ 	array[DEVCONF_ACCEPT_RA_DEFRTR] = cnf->accept_ra_defrtr;
+-	array[DEVCONF_ACCEPT_RA_MIN_HOP_LIMIT] = cnf->accept_ra_min_hop_limit;
+ 	array[DEVCONF_ACCEPT_RA_PINFO] = cnf->accept_ra_pinfo;
+ #ifdef CONFIG_IPV6_ROUTER_PREF
+ 	array[DEVCONF_ACCEPT_RA_RTR_PREF] = cnf->accept_ra_rtr_pref;
+@@ -5080,13 +5077,6 @@ static struct addrconf_sysctl_table
+ 			.maxlen		= sizeof(int),
+ 			.mode		= 0644,
+ 			.proc_handler	= proc_dointvec,
+-		},
+-		{
+-			.procname	= "accept_ra_min_hop_limit",
+-			.data		= &ipv6_devconf.accept_ra_min_hop_limit,
+-			.maxlen		= sizeof(int),
+-			.mode		= 0644,
+-			.proc_handler	= proc_dointvec,
+ 		},
+ 		{
+ 			.procname	= "accept_ra_pinfo",
+--- a/net/ipv6/ndisc.c
++++ b/net/ipv6/ndisc.c
+@@ -1189,16 +1189,18 @@ static void ndisc_router_discovery(struc
+ 
+ 	if (rt)
+ 		rt6_set_expires(rt, jiffies + (HZ * lifetime));
+-	if (in6_dev->cnf.accept_ra_min_hop_limit < 256 &&
+-	    ra_msg->icmph.icmp6_hop_limit) {
+-		if (in6_dev->cnf.accept_ra_min_hop_limit <= ra_msg->icmph.icmp6_hop_limit) {
++	if (ra_msg->icmph.icmp6_hop_limit) {
++		/* Only set hop_limit on the interface if it is higher than
++		 * the current hop_limit.
++		 */
++		if (in6_dev->cnf.hop_limit < ra_msg->icmph.icmp6_hop_limit) {
+ 			in6_dev->cnf.hop_limit = ra_msg->icmph.icmp6_hop_limit;
+-			if (rt)
+-				dst_metric_set(&rt->dst, RTAX_HOPLIMIT,
+-					       ra_msg->icmph.icmp6_hop_limit);
+ 		} else {
+-			ND_PRINTK(2, warn, "RA: Got route advertisement with lower hop_limit than minimum\n");
++			ND_PRINTK(2, warn, "RA: Got route advertisement with lower hop_limit than current\n");
+ 		}
++		if (rt)
++			dst_metric_set(&rt->dst, RTAX_HOPLIMIT,
++				       ra_msg->icmph.icmp6_hop_limit);
+ 	}
+ 
+ skip_defrtr:

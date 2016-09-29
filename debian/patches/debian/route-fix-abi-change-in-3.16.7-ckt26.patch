@@ -1,0 +1,23 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 08 May 2016 01:24:55 +0100
+Subject: route: Fix ABI change in 3.16.7-ckt26
+Forwarded: not-needed
+
+struct fib_nh_exception is always created and destroyed in
+net/ipv4/route.c and the new 'rcu' member will also only be used
+there.  It's already at the end of the structure so just hide it from
+genksyms.
+
+---
+--- a/include/net/ip_fib.h
++++ b/include/net/ip_fib.h
+@@ -59,7 +59,9 @@ struct fib_nh_exception {
+ 	struct rtable __rcu		*fnhe_rth_input;
+ 	struct rtable __rcu		*fnhe_rth_output;
+ 	unsigned long			fnhe_stamp;
++#ifndef __GENKSYMS__
+ 	struct rcu_head			rcu;
++#endif
+ };
+ 
+ struct fnhe_hash_bucket {
