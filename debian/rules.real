@@ -435,6 +435,11 @@ ifeq ($(DEBUG),True)
 	find $(PACKAGE_DIR) -name '*.ko' | sed 's|$(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/kernel/||' | while read module ; do \
 	  $(CROSS_COMPILE)objcopy --add-gnu-debuglink=$(DIR)/$$module $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/kernel/$$module || exit; \
 	done
+# stripping the modules removes signatures as well - if automated signing is enabled with
+# an ephemeral key, re-do the sign step
+	+if grep -qs '^CONFIG_MODULE_SIG_ALL=y' $(DIR)/.config; then \
+		$(MAKE_CLEAN) -C $(DIR) modules_sign INSTALL_MOD_PATH='$(CURDIR)'/$(PACKAGE_DIR); \
+	fi
 endif
 	cp $(DIR)/.config $(PACKAGE_DIR)/boot/config-$(REAL_VERSION)
 	cp $(DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(REAL_VERSION)
