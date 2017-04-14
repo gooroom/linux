@@ -1,7 +1,7 @@
 Subject: net: Use cpu_chill() instead of cpu_relax()
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 07 Mar 2012 21:10:04 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.6/older/patches-4.6.2-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.18-rt14.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -50,9 +50,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/llist.h>
 +#include <linux/delay.h>
  
+ #include "rds_single_path.h"
  #include "ib_mr.h"
- 
-@@ -209,7 +210,7 @@ static inline void wait_clean_list_grace
+@@ -210,7 +211,7 @@ static inline void wait_clean_list_grace
  	for_each_online_cpu(cpu) {
  		flag = &per_cpu(clean_list_grace, cpu);
  		while (test_bit(CLEAN_LIST_BUSY_BIT, flag))
