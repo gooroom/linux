@@ -1,0 +1,59 @@
+From: Michal Hocko <mhocko@suse.com>
+Date: Wed, 14 Jun 2017 08:18:00 +0200
+Subject: mm: do not collapse stack gap into THP
+Bug-Debian-Security: https://security-tracker.debian.org/tracker/CVE-2017-1000364
+
+Oleg has noticed that khugepaged will happilly collapse stack vma (as
+long as it is not an early stack - see is_vma_temporary_stack) and
+it might effectively remove the stack gap area as well because a larger
+part of the stack vma is usually populated. The same applies to the
+page fault handler.
+
+Fix this by checking stack_guard_area when revalidating a VMA
+in hugepage_vma_revalidate.  We do not want to hook/replace
+is_vma_temporary_stack() check because THP might be still useful for
+stack, all we need is excluding the gap from collapsing into a THP.
+
+Also check the to-be-created THP in do_huge_pmd_anonymous_page to
+make sure it is completely outside of the gap area because we we could
+create THP covering the gap area.
+
+Noticed-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ mm/huge_memory.c | 3 +++
+ mm/khugepaged.c  | 4 ++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index a84909cf20d3..a8b6881bb2a2 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -664,6 +664,9 @@ int do_huge_pmd_anonymous_page(struct vm_fault *vmf)
+ 
+ 	if (haddr < vma->vm_start || haddr + HPAGE_PMD_SIZE > vma->vm_end)
+ 		return VM_FAULT_FALLBACK;
++	if (stack_guard_area(vma, haddr) ||
++			stack_guard_area(vma, haddr + HPAGE_PMD_SIZE))
++		return VM_FAULT_FALLBACK;
+ 	if (unlikely(anon_vma_prepare(vma)))
+ 		return VM_FAULT_OOM;
+ 	if (unlikely(khugepaged_enter(vma, vma->vm_flags)))
+diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+index 945fd1ca49b5..75d7fff36957 100644
+--- a/mm/khugepaged.c
++++ b/mm/khugepaged.c
+@@ -858,6 +858,10 @@ static int hugepage_vma_revalidate(struct mm_struct *mm, unsigned long address,
+ 		return SCAN_ADDRESS_RANGE;
+ 	if (!hugepage_vma_check(vma))
+ 		return SCAN_VMA_CHECK;
++
++	/* never try to collapse stack gap */
++	if (stack_guard_area(vma, hstart) || stack_guard_area(vma, hend))
++		return SCAN_ADDRESS_RANGE;
+ 	return 0;
+ }
+ 
+-- 
+2.11.0
+

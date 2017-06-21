@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 17:19:44 +0100
 Subject: mm/workingset: Do not protect workingset_shadow_nodes with irq off
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.18-rt14.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.30-rt20.tar.xz
 
 workingset_shadow_nodes is protected by local_irq_disable(). Some users
 use spin_lock_irq().
@@ -138,8 +138,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	pr_info("workingset: timestamp_bits=%d max_order=%d bucket_order=%u\n",
  	       timestamp_bits, max_order, bucket_order);
  
--	ret = list_lru_init_key(&workingset_shadow_nodes, &shadow_nodes_key);
-+	ret = list_lru_init_key(&__workingset_shadow_nodes, &shadow_nodes_key);
+-	ret = __list_lru_init(&workingset_shadow_nodes, true, &shadow_nodes_key);
++	ret = __list_lru_init(&__workingset_shadow_nodes, true, &shadow_nodes_key);
  	if (ret)
  		goto err;
  	ret = register_shrinker(&workingset_shadow_shrinker);
