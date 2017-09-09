@@ -1,0 +1,25 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 18 Jul 2011 17:08:34 +0200
+Subject: [PATCH 266/332] powerpc: Disable highmem on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bdeab8ed38c8e990839380fd983e14e2c5ed979b
+
+The current highmem handling on -RT is not compatible and needs fixups.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/powerpc/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index e66bc552ef48..7b9f0a58ffb6 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -322,7 +322,7 @@ menu "Kernel options"
+ 
+ config HIGHMEM
+ 	bool "High memory support"
+-	depends on PPC32
++	depends on PPC32 && !PREEMPT_RT_FULL
+ 
+ source kernel/Kconfig.hz
+ source kernel/Kconfig.preempt
