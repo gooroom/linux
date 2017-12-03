@@ -1,0 +1,25 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 03 Dec 2017 17:48:24 +0000
+Subject: mips: inst: Avoid ABI change in 4.9.136
+Forwarded: not-needed
+
+Commit cea8cd498f4f "MIPS: microMIPS: Fix decoding of swsp16 instruction"
+changed the signed-ness (and name!) of a field of struct mm16_r5_format.
+This indirectly changes the ABI of kprobes.  I don't think the change is
+really that important, so hide it from genksyms.
+
+---
+--- a/arch/mips/include/uapi/asm/inst.h
++++ b/arch/mips/include/uapi/asm/inst.h
+@@ -964,7 +964,11 @@ struct mm16_r3_format {		/* Load from gl
+ struct mm16_r5_format {		/* Load/store from stack pointer format */
+ 	__BITFIELD_FIELD(unsigned int opcode : 6,
+ 	__BITFIELD_FIELD(unsigned int rt : 5,
++#if !defined(__KERNEL__) || !defined(__GENKSYMS__)
+ 	__BITFIELD_FIELD(unsigned int imm : 5,
++#else
++	__BITFIELD_FIELD(signed int simmediate : 5,
++#endif
+ 	__BITFIELD_FIELD(unsigned int : 16, /* Ignored */
+ 	;))))
+ };
