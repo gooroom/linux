@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
-Subject: [PATCH 238/337] net: Use skbufhead with raw lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1905dc0c1210165c7d2d6470194c5ee7184cd5f1
+Subject: [PATCH 238/351] net: Use skbufhead with raw lock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=dec2aeb787791e57345571a64c65130d02050638
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 32 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 23db1ae37464..17e39e7e17ad 100644
+index 47c7f5b8f675..6e05a76da2bf 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -2856,6 +2856,7 @@ struct softnet_data {
@@ -27,7 +27,7 @@ index 23db1ae37464..17e39e7e17ad 100644
  };
  
 diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 32810f279f8e..0db6e31161f6 100644
+index 601dfa849d30..dca387a8fa6b 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -284,6 +284,7 @@ struct sk_buff_head {
@@ -52,7 +52,7 @@ index 32810f279f8e..0db6e31161f6 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 20860f0a0d29..c56ec08be8ac 100644
+index 885db5d6613c..f39b2a53b716 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -211,14 +211,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)

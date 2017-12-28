@@ -1,7 +1,8 @@
+From faea6ad3f29e5328706c402375fa5ccc1652994a Mon Sep 17 00:00:00 2001
 From: Juri Lelli <juri.lelli@gmail.com>
 Date: Tue, 13 May 2014 15:30:20 +0200
-Subject: [PATCH 127/337] sched/deadline: dl_task_timer has to be irqsafe
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c94b687c21266f84da0aae87b7a104c01731d610
+Subject: [PATCH 127/351] sched/deadline: dl_task_timer has to be irqsafe
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.68-rt60.tar.xz
 
 As for rt_period_timer, dl_task_timer has to be irqsafe.
 
@@ -11,15 +12,13 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/sched/deadline.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index c95c5122b105..e00accf92a4b 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -687,6 +687,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
+@@ -693,6 +693,7 @@ void init_dl_task_timer(struct sched_dl_
  
  	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
  	timer->function = dl_task_timer;
 +	timer->irqsafe = 1;
  }
  
- static
+ /*

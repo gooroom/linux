@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
-Subject: [PATCH 168/337] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c5ea0f2b2eb5af340799124ac6370d92aa536903
+Subject: [PATCH 168/351] fs/nfs: turn rmdir_sem into a semaphore
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7653ba0a36c73c6d9996c4ed69516e30fcb66fe4
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -21,10 +21,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 43 insertions(+), 4 deletions(-)
 
 diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index d04ec3814779..63ed5180e544 100644
+index 65566d5fcf39..c1cc9707bbb3 100644
 --- a/fs/nfs/dir.c
 +++ b/fs/nfs/dir.c
-@@ -1806,7 +1806,11 @@ int nfs_rmdir(struct inode *dir, struct dentry *dentry)
+@@ -1807,7 +1807,11 @@ int nfs_rmdir(struct inode *dir, struct dentry *dentry)
  
  	trace_nfs_rmdir_enter(dir, dentry);
  	if (d_really_is_positive(dentry)) {
@@ -36,7 +36,7 @@ index d04ec3814779..63ed5180e544 100644
  		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
  		/* Ensure the VFS deletes this inode */
  		switch (error) {
-@@ -1816,7 +1820,11 @@ int nfs_rmdir(struct inode *dir, struct dentry *dentry)
+@@ -1817,7 +1821,11 @@ int nfs_rmdir(struct inode *dir, struct dentry *dentry)
  		case -ENOENT:
  			nfs_dentry_handle_enoent(dentry);
  		}

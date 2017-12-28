@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 122/337] timers: Prepare for full preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b751d60567969430e20976920a7598dabcd1abdd
+Subject: [PATCH 122/351] timers: Prepare for full preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=58e8faf5b24512964f01f7792831e9f596c489f0
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -29,10 +29,10 @@ index 51d601f192d4..83cea629efe1 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 409b8b292ebc..21c4ebbd6178 100644
+index fe82f403abe4..46adabdde922 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -525,11 +525,14 @@ void resched_cpu(int cpu)
+@@ -524,11 +524,14 @@ void resched_cpu(int cpu)
   */
  int get_nohz_timer_target(void)
  {
@@ -49,7 +49,7 @@ index 409b8b292ebc..21c4ebbd6178 100644
  
  	rcu_read_lock();
  	for_each_domain(cpu, sd) {
-@@ -548,6 +551,8 @@ int get_nohz_timer_target(void)
+@@ -547,6 +550,8 @@ int get_nohz_timer_target(void)
  		cpu = housekeeping_any_cpu();
  unlock:
  	rcu_read_unlock();
