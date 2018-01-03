@@ -89,7 +89,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
   *  @addr: the start address of the range
 --- a/arch/x86/include/asm/tlbflush.h
 +++ b/arch/x86/include/asm/tlbflush.h
-@@ -13,6 +13,7 @@ static inline void __invpcid(unsigned lo
+@@ -12,6 +12,7 @@ static inline void __invpcid(unsigned lo
  			     unsigned long type)
  {
  	struct { u64 d[2]; } desc = { { pcid, addr } };
@@ -97,7 +97,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/*
  	 * The memory clobber is because the whole point is to invalidate
  	 * stale TLB entries and, especially if we're flushing global
-@@ -131,27 +132,42 @@ static inline void cr4_set_bits_and_upda
+@@ -132,27 +133,42 @@ static inline void cr4_set_bits_and_upda
  	cr4_set_bits(mask);
  }
  
@@ -153,7 +153,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  static inline void __native_flush_tlb_global_irq_disabled(void)
-@@ -167,9 +183,13 @@ static inline void __native_flush_tlb_gl
+@@ -168,9 +184,13 @@ static inline void __native_flush_tlb_gl
  
  static inline void __native_flush_tlb_global(void)
  {
@@ -168,7 +168,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		/*
  		 * Using INVPCID is considerably faster than a pair of writes
  		 * to CR4 sandwiched inside an IRQ flag save/restore.
-@@ -186,10 +206,9 @@ static inline void __native_flush_tlb_gl
+@@ -187,10 +207,9 @@ static inline void __native_flush_tlb_gl
  	 * be called from deep inside debugging code.)
  	 */
  	raw_local_irq_save(flags);
@@ -180,7 +180,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  }
  
  static inline void __native_flush_tlb_single(unsigned long addr)
-@@ -200,9 +219,12 @@ static inline void __native_flush_tlb_si
+@@ -201,9 +220,12 @@ static inline void __native_flush_tlb_si
  	 *
  	 * The ASIDs used below are hard-coded.  But, we must not
  	 * call invpcid(type=1/2) before CR4.PCIDE=1.  Just call
@@ -196,7 +196,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	}
 --- a/arch/x86/kernel/cpu/common.c
 +++ b/arch/x86/kernel/cpu/common.c
-@@ -324,33 +324,12 @@ static __always_inline void setup_smap(s
+@@ -306,33 +306,12 @@ static __always_inline void setup_smap(s
  	}
  }
  
@@ -230,7 +230,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  			 * INVPCID has two "groups" of types:
  			 * 1/2: Invalidate an individual address
  			 * 3/4: Invalidate all contexts
-@@ -375,6 +354,7 @@ static void setup_pcid(struct cpuinfo_x8
+@@ -357,6 +336,7 @@ static void setup_pcid(struct cpuinfo_x8
  			clear_cpu_cap(c, X86_FEATURE_PCID);
  		}
  	}
@@ -338,8 +338,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +#include <asm/kaiser.h>
  
  /*
-  *	TLB flushing, formerly SMP-only
-@@ -38,34 +39,23 @@ static void load_new_mm_cr3(pgd_t *pgdir
+  *	Smarter SMP flushing macros.
+@@ -40,34 +41,23 @@ static void load_new_mm_cr3(pgd_t *pgdir
  {
  	unsigned long new_mm_cr3 = __pa(pgdir);
  
