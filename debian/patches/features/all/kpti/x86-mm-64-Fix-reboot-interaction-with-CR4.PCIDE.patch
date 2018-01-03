@@ -1,0 +1,45 @@
+From 04bdf71d9f7412364e9bae93f321e6bf776cd1d4 Mon Sep 17 00:00:00 2001
+From: Andy Lutomirski <luto@kernel.org>
+Date: Sun, 8 Oct 2017 21:53:05 -0700
+Subject: [PATCH] x86/mm/64: Fix reboot interaction with CR4.PCIDE
+
+commit 924c6b900cfdf376b07bccfd80e62b21914f8a5a upstream.
+
+Trying to reboot via real mode fails with PCID on: long mode cannot
+be exited while CR4.PCIDE is set.  (No, I have no idea why, but the
+SDM and actual CPUs are in agreement here.)  The result is a GPF and
+a hang instead of a reboot.
+
+I didn't catch this in testing because neither my computer nor my VM
+reboots this way.  I can trigger it with reboot=bios, though.
+
+Fixes: 660da7c9228f ("x86/mm: Enable CR4.PCIDE on supported systems")
+Reported-and-tested-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+Signed-off-by: Andy Lutomirski <luto@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Borislav Petkov <bp@alien8.de>
+Link: https://lkml.kernel.org/r/f1e7d965998018450a7a70c2823873686a8b21c0.1507524746.git.luto@kernel.org
+Cc: Hugh Dickins <hughd@google.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/x86/kernel/reboot.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index 067f9813fd2c..ce020a69bba9 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -106,6 +106,10 @@ void __noreturn machine_real_restart(unsigned int type)
+ 	load_cr3(initial_page_table);
+ #else
+ 	write_cr3(real_mode_header->trampoline_pgd);
++
++	/* Exiting long mode will fail if CR4.PCIDE is set. */
++	if (static_cpu_has(X86_FEATURE_PCID))
++		cr4_clear_bits(X86_CR4_PCIDE);
+ #endif
+ 
+ 	/* Jump to the identity-mapped low memory code */
+-- 
+2.15.1
+
