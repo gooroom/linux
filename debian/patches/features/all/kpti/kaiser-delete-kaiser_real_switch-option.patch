@@ -1,0 +1,79 @@
+From foo@baz Wed Jan  3 20:37:21 CET 2018
+From: Hugh Dickins <hughd@google.com>
+Date: Sun, 3 Sep 2017 18:30:43 -0700
+Subject: kaiser: delete KAISER_REAL_SWITCH option
+
+From: Hugh Dickins <hughd@google.com>
+
+
+We fail to see what CONFIG_KAISER_REAL_SWITCH is for: it seems to be
+left over from early development, and now just obscures tricky parts
+of the code.  Delete it before adding PCIDs, or nokaiser boot option.
+
+(Or if there is some good reason to keep the option, then it needs
+a help text - and a "depends on KAISER", so that all those without
+KAISER are not asked the question.  But we'd much rather delete it.)
+
+Signed-off-by: Hugh Dickins <hughd@google.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/x86/entry/entry_64.S     |    4 ----
+ arch/x86/include/asm/kaiser.h |    4 ----
+ security/Kconfig              |    4 ----
+ 3 files changed, 12 deletions(-)
+
+--- a/arch/x86/entry/entry_64.S
++++ b/arch/x86/entry/entry_64.S
+@@ -1317,9 +1317,7 @@ ENTRY(nmi)
+ 	/* %rax is saved above, so OK to clobber here */
+ 	movq	%cr3, %rax
+ 	pushq	%rax
+-#ifdef CONFIG_KAISER_REAL_SWITCH
+ 	andq	$(~KAISER_SHADOW_PGD_OFFSET), %rax
+-#endif
+ 	movq	%rax, %cr3
+ #endif
+ 	call	do_nmi
+@@ -1560,9 +1558,7 @@ end_repeat_nmi:
+ 	/* %rax is saved above, so OK to clobber here */
+ 	movq	%cr3, %rax
+ 	pushq	%rax
+-#ifdef CONFIG_KAISER_REAL_SWITCH
+ 	andq	$(~KAISER_SHADOW_PGD_OFFSET), %rax
+-#endif
+ 	movq	%rax, %cr3
+ #endif
+ 
+--- a/arch/x86/include/asm/kaiser.h
++++ b/arch/x86/include/asm/kaiser.h
+@@ -21,17 +21,13 @@
+ 
+ .macro _SWITCH_TO_KERNEL_CR3 reg
+ movq %cr3, \reg
+-#ifdef CONFIG_KAISER_REAL_SWITCH
+ andq $(~KAISER_SHADOW_PGD_OFFSET), \reg
+-#endif
+ movq \reg, %cr3
+ .endm
+ 
+ .macro _SWITCH_TO_USER_CR3 reg
+ movq %cr3, \reg
+-#ifdef CONFIG_KAISER_REAL_SWITCH
+ orq $(KAISER_SHADOW_PGD_OFFSET), \reg
+-#endif
+ movq \reg, %cr3
+ .endm
+ 
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -41,10 +41,6 @@ config KAISER
+ 
+ 	  If you are unsure how to answer this question, answer Y.
+ 
+-config KAISER_REAL_SWITCH
+-	bool "KAISER: actually switch page tables"
+-	default y
+-
+ config SECURITYFS
+ 	bool "Enable the securityfs filesystem"
+ 	help

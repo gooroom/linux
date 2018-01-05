@@ -1,0 +1,82 @@
+From 1e7f3d8875ee92983bd754982af7f4f044dd057d Mon Sep 17 00:00:00 2001
+From: Andy Lutomirski <luto@kernel.org>
+Date: Thu, 29 Jun 2017 08:53:19 -0700
+Subject: [PATCH] x86/mm: Disable PCID on 32-bit kernels
+
+commit cba4671af7550e008f7a7835f06df0763825bf3e upstream.
+
+32-bit kernels on new hardware will see PCID in CPUID, but PCID can
+only be used in 64-bit mode.  Rather than making all PCID code
+conditional, just disable the feature on 32-bit builds.
+
+Signed-off-by: Andy Lutomirski <luto@kernel.org>
+Reviewed-by: Nadav Amit <nadav.amit@gmail.com>
+Reviewed-by: Borislav Petkov <bp@suse.de>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Arjan van de Ven <arjan@linux.intel.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Mel Gorman <mgorman@suse.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Rik van Riel <riel@redhat.com>
+Cc: linux-mm@kvack.org
+Link: http://lkml.kernel.org/r/2e391769192a4d31b808410c383c6bf0734bc6ea.1498751203.git.luto@kernel.org
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Cc: Hugh Dickins <hughd@google.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/x86/include/asm/disabled-features.h | 4 +++-
+ arch/x86/kernel/cpu/bugs.c               | 8 ++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/include/asm/disabled-features.h b/arch/x86/include/asm/disabled-features.h
+index 85599ad4d024..21c5ac15657b 100644
+--- a/arch/x86/include/asm/disabled-features.h
++++ b/arch/x86/include/asm/disabled-features.h
+@@ -21,11 +21,13 @@
+ # define DISABLE_K6_MTRR	(1<<(X86_FEATURE_K6_MTRR & 31))
+ # define DISABLE_CYRIX_ARR	(1<<(X86_FEATURE_CYRIX_ARR & 31))
+ # define DISABLE_CENTAUR_MCR	(1<<(X86_FEATURE_CENTAUR_MCR & 31))
++# define DISABLE_PCID		0
+ #else
+ # define DISABLE_VME		0
+ # define DISABLE_K6_MTRR	0
+ # define DISABLE_CYRIX_ARR	0
+ # define DISABLE_CENTAUR_MCR	0
++# define DISABLE_PCID		(1<<(X86_FEATURE_PCID & 31))
+ #endif /* CONFIG_X86_64 */
+ 
+ #ifdef CONFIG_X86_INTEL_MEMORY_PROTECTION_KEYS
+@@ -43,7 +45,7 @@
+ #define DISABLED_MASK1	0
+ #define DISABLED_MASK2	0
+ #define DISABLED_MASK3	(DISABLE_CYRIX_ARR|DISABLE_CENTAUR_MCR|DISABLE_K6_MTRR)
+-#define DISABLED_MASK4	0
++#define DISABLED_MASK4	(DISABLE_PCID)
+ #define DISABLED_MASK5	0
+ #define DISABLED_MASK6	0
+ #define DISABLED_MASK7	0
+diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
+index bd17db15a2c1..0b6124315441 100644
+--- a/arch/x86/kernel/cpu/bugs.c
++++ b/arch/x86/kernel/cpu/bugs.c
+@@ -19,6 +19,14 @@
+ 
+ void __init check_bugs(void)
+ {
++#ifdef CONFIG_X86_32
++	/*
++	 * Regardless of whether PCID is enumerated, the SDM says
++	 * that it can't be enabled in 32-bit mode.
++	 */
++	setup_clear_cpu_cap(X86_FEATURE_PCID);
++#endif
++
+ 	identify_boot_cpu();
+ #ifndef CONFIG_SMP
+ 	pr_info("CPU: ");
+-- 
+2.15.1
+
