@@ -657,6 +657,57 @@ linux (4.9.72-1) UNRELEASED; urgency=medium
 
  -- Ben Hutchings <ben@decadent.org.uk>  Thu, 28 Dec 2017 02:16:23 +0000
 
+linux (4.9.65-3+deb9u2) stretch-security; urgency=high
+
+  * x86: setup PCID, preparation work for KPTI.
+    - x86/mm/64: Fix reboot interaction with CR4.PCIDE
+    - x86/mm: Add the 'nopcid' boot option to turn off PCID
+    - x86/mm: Disable PCID on 32-bit kernels
+    - x86/mm: Enable CR4.PCIDE on supported systems
+  * [amd64] Implement Kernel Page Table Isolation (KPTI, aka KAISER)
+    (CVE-2017-5754)
+    - kaiser: add "nokaiser" boot option, using ALTERNATIVE
+    - kaiser: align addition to x86/mm/Makefile
+    - kaiser: asm/tlbflush.h handle noPGE at lower level
+    - kaiser: cleanups while trying for gold link
+    - kaiser: delete KAISER_REAL_SWITCH option
+    - kaiser: disabled on Xen PV
+    - kaiser: do not set _PAGE_NX on pgd_none
+    - kaiser: drop is_atomic arg to kaiser_pagetable_walk()
+    - kaiser: enhanced by kernel and user PCIDs
+    - kaiser: ENOMEM if kaiser_pagetable_walk() NULL
+    - kaiser: fix build and FIXME in alloc_ldt_struct()
+    - kaiser: fix perf crashes
+    - kaiser: fix regs to do_nmi() ifndef CONFIG_KAISER
+    - kaiser: fix unlikely error in alloc_ldt_struct()
+    - kaiser: KAISER depends on SMP
+    - kaiser: kaiser_flush_tlb_on_return_to_user() check PCID
+    - kaiser: kaiser_remove_mapping() move along the pgd
+    - KAISER: Kernel Address Isolation
+    - x86_64: KAISER - do not map kernel in user mode
+    - kaiser: load_new_mm_cr3() let SWITCH_USER_CR3 flush user
+    - kaiser: merged update
+    - kaiser: name that 0x1000 KAISER_SHADOW_PGD_OFFSET
+    - kaiser: paranoid_entry pass cr3 need to paranoid_exit
+    - kaiser: PCID 0 for kernel and 128 for user
+    - kaiser: stack map PAGE_SIZE at THREAD_SIZE-PAGE_SIZE
+    - kaiser: tidied up asm/kaiser.h somewhat
+    - kaiser: tidied up kaiser_add/remove_mapping slightly
+    - kaiser: use ALTERNATIVE instead of x86_cr3_pcid_noflush
+    - kaiser: vmstat show NR_KAISERTABLE as nr_overhead
+    - kaiser: x86_cr3_pcid_noflush and x86_cr3_pcid_user
+    - KPTI: Rename to PAGE_TABLE_ISOLATION
+    - KPTI: Report when enabled
+    - x86/boot: Add early cmdline parsing for options with arguments
+    - x86/kaiser: Check boottime cmdline params
+    - x86/kaiser: Move feature detection up
+    - x86/kaiser: Reenable PARAVIRT
+    - x86/kaiser: Rename and simplify X86_FEATURE_KAISER handling
+    - x86/paravirt: Dont patch flush_tlb_single
+  * Bump ABI to 5.
+
+ -- Yves-Alexis Perez <corsac@debian.org>  Thu, 04 Jan 2018 12:12:40 +0100
+
 linux (4.9.65-3+deb9u1) stretch-security; urgency=high
 
   * dccp: CVE-2017-8824: use-after-free in DCCP code

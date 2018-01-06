@@ -1,0 +1,42 @@
+From foo@baz Wed Jan  3 20:37:21 CET 2018
+From: Jiri Kosina <jkosina@suse.cz>
+Date: Tue, 2 Jan 2018 14:19:49 +0100
+Subject: kaiser: disabled on Xen PV
+
+From: Jiri Kosina <jkosina@suse.cz>
+
+
+Kaiser cannot be used on paravirtualized MMUs (namely reading and writing CR3).
+This does not work with KAISER as the CR3 switch from and to user space PGD
+would require to map the whole XEN_PV machinery into both.
+
+More importantly, enabling KAISER on Xen PV doesn't make too much sense, as PV
+guests use distinct %cr3 values for kernel and user already.
+
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/x86/mm/kaiser.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/x86/mm/kaiser.c
++++ b/arch/x86/mm/kaiser.c
+@@ -263,6 +263,9 @@ void __init kaiser_check_boottime_disabl
+ 	char arg[5];
+ 	int ret;
+ 
++	if (boot_cpu_has(X86_FEATURE_XENPV))
++		goto silent_disable;
++
+ 	ret = cmdline_find_option(boot_command_line, "pti", arg, sizeof(arg));
+ 	if (ret > 0) {
+ 		if (!strncmp(arg, "on", 2))
+@@ -290,6 +293,8 @@ enable:
+ 
+ disable:
+ 	pr_info("Kernel/User page tables isolation: disabled\n");
++
++silent_disable:
+ 	kaiser_enabled = 0;
+ 	setup_clear_cpu_cap(X86_FEATURE_KAISER);
+ }

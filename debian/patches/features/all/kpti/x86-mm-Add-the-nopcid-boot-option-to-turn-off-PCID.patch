@@ -1,0 +1,77 @@
+From e6a29320de005792c06f2deec2c77b19c42d1e6a Mon Sep 17 00:00:00 2001
+From: Andy Lutomirski <luto@kernel.org>
+Date: Thu, 29 Jun 2017 08:53:20 -0700
+Subject: [PATCH] x86/mm: Add the 'nopcid' boot option to turn off PCID
+
+commit 0790c9aad84901ca1bdc14746175549c8b5da215 upstream.
+
+The parameter is only present on x86_64 systems to save a few bytes,
+as PCID is always disabled on x86_32.
+
+Signed-off-by: Andy Lutomirski <luto@kernel.org>
+Reviewed-by: Nadav Amit <nadav.amit@gmail.com>
+Reviewed-by: Borislav Petkov <bp@suse.de>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Arjan van de Ven <arjan@linux.intel.com>
+Cc: Borislav Petkov <bp@alien8.de>
+Cc: Dave Hansen <dave.hansen@intel.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Mel Gorman <mgorman@suse.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Rik van Riel <riel@redhat.com>
+Cc: linux-mm@kvack.org
+Link: http://lkml.kernel.org/r/8bbb2e65bcd249a5f18bfb8128b4689f08ac2b60.1498751203.git.luto@kernel.org
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Cc: Hugh Dickins <hughd@google.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ Documentation/kernel-parameters.txt |  2 ++
+ arch/x86/kernel/cpu/common.c        | 18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 86a6746f6833..152ec4e87b57 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -2795,6 +2795,8 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 	nopat		[X86] Disable PAT (page attribute table extension of
+ 			pagetables) support.
+ 
++	nopcid		[X86-64] Disable the PCID cpu feature.
++
+ 	norandmaps	Don't use address space randomization.  Equivalent to
+ 			echo 0 > /proc/sys/kernel/randomize_va_space
+ 
+diff --git a/arch/x86/kernel/cpu/common.c b/arch/x86/kernel/cpu/common.c
+index 4eece91ada37..81c8a535175d 100644
+--- a/arch/x86/kernel/cpu/common.c
++++ b/arch/x86/kernel/cpu/common.c
+@@ -163,6 +163,24 @@ static int __init x86_mpx_setup(char *s)
+ }
+ __setup("nompx", x86_mpx_setup);
+ 
++#ifdef CONFIG_X86_64
++static int __init x86_pcid_setup(char *s)
++{
++	/* require an exact match without trailing characters */
++	if (strlen(s))
++		return 0;
++
++	/* do not emit a message if the feature is not present */
++	if (!boot_cpu_has(X86_FEATURE_PCID))
++		return 1;
++
++	setup_clear_cpu_cap(X86_FEATURE_PCID);
++	pr_info("nopcid: PCID feature disabled\n");
++	return 1;
++}
++__setup("nopcid", x86_pcid_setup);
++#endif
++
+ static int __init x86_noinvpcid_setup(char *s)
+ {
+ 	/* noinvpcid doesn't accept parameters */
+-- 
+2.15.1
+
