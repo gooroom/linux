@@ -1,0 +1,76 @@
+From ab8170a378dae140de23b93116c35658de16edbc Mon Sep 17 00:00:00 2001
+From: Yves-Alexis Perez <corsac@debian.org>
+Date: Sun, 7 Jan 2018 14:50:46 +0100
+Subject: [PATCH] Revert "mm, hugetlbfs: introduce ->split() to vm_operations_struct"
+Forwarded: not-needed
+
+This reverts commit cebe139e5712d6925a9b70f3769df6818b6c14dd, which was
+commit 31383c6865a578834dd953d9dbc88e6b19fe3997 upstream. It introduces
+an ABI break and the depending commits are not in 4.9.
+
+---
+ include/linux/mm.h | 1 -
+ mm/hugetlb.c       | 8 --------
+ mm/mmap.c          | 8 +++-----
+ 3 files changed, 3 insertions(+), 14 deletions(-)
+
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 2217e2f18247..6c9e1ad12831 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -347,7 +347,6 @@ struct fault_env {
+ struct vm_operations_struct {
+ 	void (*open)(struct vm_area_struct * area);
+ 	void (*close)(struct vm_area_struct * area);
+-	int (*split)(struct vm_area_struct * area, unsigned long addr);
+ 	int (*mremap)(struct vm_area_struct * area);
+ 	int (*fault)(struct vm_area_struct *vma, struct vm_fault *vmf);
+ 	int (*pmd_fault)(struct vm_area_struct *, unsigned long address,
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index 6ff65c405243..65c36acf8a6b 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -3135,13 +3135,6 @@ static void hugetlb_vm_op_close(struct vm_area_struct *vma)
+ 	}
+ }
+ 
+-static int hugetlb_vm_op_split(struct vm_area_struct *vma, unsigned long addr)
+-{
+-	if (addr & ~(huge_page_mask(hstate_vma(vma))))
+-		return -EINVAL;
+-	return 0;
+-}
+-
+ /*
+  * We cannot handle pagefaults against hugetlb pages at all.  They cause
+  * handle_mm_fault() to try to instantiate regular-sized pages in the
+@@ -3158,7 +3151,6 @@ const struct vm_operations_struct hugetlb_vm_ops = {
+ 	.fault = hugetlb_vm_op_fault,
+ 	.open = hugetlb_vm_op_open,
+ 	.close = hugetlb_vm_op_close,
+-	.split = hugetlb_vm_op_split,
+ };
+ 
+ static pte_t make_huge_pte(struct vm_area_struct *vma, struct page *page,
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 5b48adb4aa56..75d263bd8739 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -2538,11 +2538,9 @@ static int __split_vma(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	struct vm_area_struct *new;
+ 	int err;
+ 
+-	if (vma->vm_ops && vma->vm_ops->split) {
+-		err = vma->vm_ops->split(vma, addr);
+-		if (err)
+-			return err;
+-	}
++	if (is_vm_hugetlb_page(vma) && (addr &
++					~(huge_page_mask(hstate_vma(vma)))))
++		return -EINVAL;
+ 
+ 	new = kmem_cache_alloc(vm_area_cachep, GFP_KERNEL);
+ 	if (!new)
+-- 
+2.15.1
+
