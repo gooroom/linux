@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 248/351] irqwork: push most work into softirq context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=40070118a2f4f6e3e2ee709cbccbea10f1f31404
+Subject: [PATCH 248/337] irqwork: push most work into softirq context
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=89020e73eaac64e9b206c0183d5077a51927be7c
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/irq_work.h |  1 +
  kernel/irq_work.c        | 47 ++++++++++++++++++++++++++++++++++-------------
- kernel/sched/core.c      |  1 +
+ kernel/sched/rt.c        |  1 +
  kernel/time/tick-sched.c |  1 +
  kernel/time/timer.c      |  6 +++++-
  5 files changed, 42 insertions(+), 14 deletions(-)
@@ -146,18 +146,18 @@ index bcf107ce0854..0ddaf1e66d8c 100644
  }
  EXPORT_SYMBOL_GPL(irq_work_run);
  
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 63f536082449..ca7927521f2f 100644
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -6030,6 +6030,7 @@ static int init_rootdomain(struct root_domain *rd)
- 	rd->rto_cpu = -1;
- 	raw_spin_lock_init(&rd->rto_lock);
- 	init_irq_work(&rd->rto_push_work, rto_push_irq_work_func);
-+	rd->rto_push_work.flags |= IRQ_WORK_HARD_IRQ;
+diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
+index f5a1132f9014..b0691f4e7d49 100644
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -102,6 +102,7 @@ void init_rt_rq(struct rt_rq *rt_rq)
+ 	rt_rq->push_cpu = nr_cpu_ids;
+ 	raw_spin_lock_init(&rt_rq->push_lock);
+ 	init_irq_work(&rt_rq->push_work, push_irq_work_func);
++	rt_rq->push_work.flags |= IRQ_WORK_HARD_IRQ;
  #endif
- 
- 	init_dl_bw(&rd->dl_bw);
+ #endif /* CONFIG_SMP */
+ 	/* We start is dequeued state, because no RT tasks are queued */
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
 index 4367249e0dde..66d85482a96e 100644
 --- a/kernel/time/tick-sched.c
