@@ -1,0 +1,85 @@
+From 50deb025f5ccc9b5b2e36031c88deff9bc3aebca Mon Sep 17 00:00:00 2001
+From: Yves-Alexis Perez <corsac@debian.org>
+Date: Sat, 17 Feb 2018 15:57:01 +0100
+Subject: [PATCH] Revert "sched/rt: Up the root domain ref count when passing it around via IPIs"
+Forwarded: Not needed
+
+This reverts commit a384e5437f705972d2884cea17b931c1a2cd3277 which is
+commit 364f56653708ba8bcdefd4f0da2a42904baa8eeb upstream. It has to be
+applied on top of 1c37ff78298a6b6063649123356a312e1cce12ca which has
+been reverted in Debian to prevent an ABI change.
+---
+ kernel/sched/core.c  | 13 -------------
+ kernel/sched/rt.c    |  9 ++-------
+ kernel/sched/sched.h |  2 --
+ 3 files changed, 2 insertions(+), 22 deletions(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index bce3a7ad4253..e5066955cc3a 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -5864,19 +5864,6 @@ static void rq_attach_root(struct rq *rq, struct root_domain *rd)
+ 		call_rcu_sched(&old_rd->rcu, free_rootdomain);
+ }
+ 
+-void sched_get_rd(struct root_domain *rd)
+-{
+-	atomic_inc(&rd->refcount);
+-}
+-
+-void sched_put_rd(struct root_domain *rd)
+-{
+-	if (!atomic_dec_and_test(&rd->refcount))
+-		return;
+-
+-	call_rcu_sched(&rd->rcu, free_rootdomain);
+-}
+-
+ static int init_rootdomain(struct root_domain *rd)
+ {
+ 	memset(rd, 0, sizeof(*rd));
+diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
+index 30aeff8f741c..7a360d6f6798 100644
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -1979,11 +1979,8 @@ static void tell_cpu_to_push(struct rq *rq)
+ 
+ 	rto_start_unlock(&rq->rd->rto_loop_start);
+ 
+-	if (cpu >= 0) {
+-		/* Make sure the rd does not get freed while pushing */
+-		sched_get_rd(rq->rd);
++	if (cpu >= 0)
+ 		irq_work_queue_on(&rq->rd->rto_push_work, cpu);
+-	}
+ }
+ 
+ /* Called from hardirq context */
+@@ -2011,10 +2008,8 @@ void rto_push_irq_work_func(struct irq_work *work)
+ 
+ 	raw_spin_unlock(&rq->rd->rto_lock);
+ 
+-	if (cpu < 0) {
+-		sched_put_rd(rd);
++	if (cpu < 0)
+ 		return;
+-	}
+ 
+ 	/* Try the next RT overloaded CPU */
+ 	irq_work_queue_on(&rq->rd->rto_push_work, cpu);
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index f564a1d2c9d5..cff985feb6e7 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -590,8 +590,6 @@ struct root_domain {
+ };
+ 
+ extern struct root_domain def_root_domain;
+-extern void sched_get_rd(struct root_domain *rd);
+-extern void sched_put_rd(struct root_domain *rd);
+ 
+ #ifdef HAVE_RT_PUSH_IPI
+ extern void rto_push_irq_work_func(struct irq_work *work);
+-- 
+2.16.1
+
