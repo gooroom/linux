@@ -1,0 +1,40 @@
+From 222f20f140623ef6033491d0103ee0875fe87d35 Mon Sep 17 00:00:00 2001
+From: Nicholas Piggin <npiggin@gmail.com>
+Date: Wed, 10 Jan 2018 03:07:15 +1100
+Subject: powerpc/64s: Simple RFI macro conversions
+
+From: Nicholas Piggin <npiggin@gmail.com>
+
+commit 222f20f140623ef6033491d0103ee0875fe87d35 upstream.
+
+[just the top part of this commit, to fix a 4.9.y build error - gregkh]
+
+This commit does simple conversions of rfi/rfid to the new macros that
+include the expected destination context. By simple we mean cases
+where there is a single well known destination context, and it's
+simply a matter of substituting the instruction for the appropriate
+macro.
+
+Signed-off-by: Nicholas Piggin <npiggin@gmail.com>
+Signed-off-by: Michael Ellerman <mpe@ellerman.id.au>
+Cc: Yves-Alexis Perez <corsac@debian.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/powerpc/kernel/entry_64.S |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/powerpc/kernel/entry_64.S
++++ b/arch/powerpc/kernel/entry_64.S
+@@ -39,6 +39,11 @@
+ #include <asm/tm.h>
+ #include <asm/ppc-opcode.h>
+ #include <asm/export.h>
++#ifdef CONFIG_PPC_BOOK3S
++#include <asm/exception-64s.h>
++#else
++#include <asm/exception-64e.h>
++#endif
+ 
+ /*
+  * System calls.
