@@ -4,7 +4,7 @@ Subject: [PATCH 182/351] kernel/locking: use an exclusive wait_q for sleepers
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b4b54803cec1806371a6dc409b6b2b3550efc1ed
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e7b5667852b30a0d208f9b209f49114e14f8b156
 
 If a task is queued as a sleeper for a wakeup and never goes to
 schedule() (because it just obtained the lock) then it will receive a
@@ -78,10 +78,10 @@ index 0fc34f29f28c..7cc3ab932a7e 100644
  #ifdef CONFIG_RT_MUTEXES
  	/* PI waiters blocked on a rt_mutex held by this task */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 11fa53573d26..276acd8acf0a 100644
+index 5bcb777b6913..2529725eefa2 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -558,6 +558,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
+@@ -564,6 +564,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
  	tsk->splice_pipe = NULL;
  	tsk->task_frag.page = NULL;
  	tsk->wake_q.next = NULL;
@@ -144,3 +144,6 @@ index ea1c44f014b8..7adb41e4b0f6 100644
  
  		/*
  		 * wake_up_process() implies a wmb() to pair with the queueing
+-- 
+2.16.1
+

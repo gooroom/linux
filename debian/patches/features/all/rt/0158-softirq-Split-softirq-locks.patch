@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
 Subject: [PATCH 158/351] softirq: Split softirq locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0b7bf6e470ff75f2c425b4b3a33ff62828aef37d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6f73b05df89c4225e74483e11b76975b27f3ab5
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -199,10 +199,10 @@ index 4ffeb8ce1795..9aa9fef1d48d 100644
  #define PF_EXITPIDONE	0x00000008	/* pi exit done on shut down */
  #define PF_VCPU		0x00000010	/* I'm a virtual CPU */
 diff --git a/init/main.c b/init/main.c
-index 25bac88bc66e..a4a61e7d2248 100644
+index 99f026565608..48ffaaad8ac9 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -506,6 +506,7 @@ asmlinkage __visible void __init start_kernel(void)
+@@ -508,6 +508,7 @@ asmlinkage __visible void __init start_kernel(void)
  	setup_command_line(command_line);
  	setup_nr_cpu_ids();
  	setup_per_cpu_areas();
@@ -408,7 +408,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  
  	/*
  	 * Mask out PF_MEMALLOC s current task context is borrowed for the
-@@ -266,36 +419,7 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
+@@ -266,36 +419,7 @@ restart:
  	/* Reset the pending bitmask before enabling irqs */
  	set_softirq_pending(0);
  
@@ -810,10 +810,10 @@ index 8669000c2aa3..ec9b3611f886 100644
  	.thread_fn		= run_ksoftirqd,
  	.thread_comm		= "ksoftirqd/%u",
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 14eaf34cbbc9..4367249e0dde 100644
+index 89191db4861a..4c185caffcce 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -882,14 +882,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
+@@ -897,14 +897,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
  		return false;
  
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {
@@ -830,10 +830,10 @@ index 14eaf34cbbc9..4367249e0dde 100644
  	}
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index a275a8c147e7..885db5d6613c 100644
+index 88bc38b1eecc..01cde21ebf9a 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3867,11 +3867,9 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -3868,11 +3868,9 @@ int netif_rx_ni(struct sk_buff *skb)
  
  	trace_netif_rx_ni_entry(skb);
  
@@ -847,3 +847,6 @@ index a275a8c147e7..885db5d6613c 100644
  
  	return err;
  }
+-- 
+2.16.1
+

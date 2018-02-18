@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 307/351] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2c5d2d126e0f30f647697b91068e7f113ae47960
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=70684857fa6c605cb4170b716c4a865b9824efb3
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -368,7 +368,7 @@ index 0cbc7654192a..f29c4f961104 100644
  	 * The idle tasks have their own, simple scheduling class:
  	 */
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 7a68c631d5b5..f9189909640b 100644
+index 3d862f5b0331..c6db32c0c557 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -3518,7 +3518,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -444,7 +444,7 @@ index 7a68c631d5b5..f9189909640b 100644
  		check_preempt_curr(rq, p, 0);
  }
 diff --git a/kernel/sched/features.h b/kernel/sched/features.h
-index 11258a0feae7..6d28fcd08872 100644
+index 852cfc5bb77b..36086f74e011 100644
 --- a/kernel/sched/features.h
 +++ b/kernel/sched/features.h
 @@ -47,6 +47,9 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
@@ -478,7 +478,7 @@ index 5dc95852c984..280c7d5a7657 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 2b7caaae94a2..b9cf63aba3f9 100644
+index 038f9b758913..d7c01658f877 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -1897,6 +1897,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -611,3 +611,6 @@ index badf130635f1..65a6dde71a7d 100644
  	if (entry->migrate_disable)
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
+-- 
+2.16.1
+

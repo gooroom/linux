@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 11:01:26 +0100
 Subject: [PATCH 223/351] block: blk-mq: Use swait
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4015dace9fb83207d95049fcdbbf01fa008a61ef
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=dae952cdaff7dc43087149d7671f04e9978efc21
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -45,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 1ff9fbcbe320..5808a85a7974 100644
+index a36124682875..e8341f78f119 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -663,7 +663,7 @@ int blk_queue_enter(struct request_queue *q, bool nowait)
@@ -76,7 +76,7 @@ index 1ff9fbcbe320..5808a85a7974 100644
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index c7bc5e66330d..48c9652a701c 100644
+index e26bbdff3735..82500641f37b 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -72,7 +72,7 @@ EXPORT_SYMBOL_GPL(blk_mq_freeze_queue_start);
@@ -119,3 +119,6 @@ index 3b519c3a498e..ec7a4676f8a8 100644
  	struct percpu_ref	q_usage_counter;
  	struct list_head	all_q_node;
  
+-- 
+2.16.1
+

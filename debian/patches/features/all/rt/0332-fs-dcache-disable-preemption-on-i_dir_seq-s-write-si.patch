@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 20 Oct 2017 11:29:53 +0200
 Subject: [PATCH 332/351] fs/dcache: disable preemption on i_dir_seq's write
  side
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=24f0a4011408dc71877405d8963009b53bbb212f
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c4ca4a1117ebbd37d952fa2b315bc37f7fe0d568
 
 i_dir_seq is an opencoded seqcounter. Based on the code it looks like we
 could have two writers in parallel despite the fact that the d_lock is
@@ -60,7 +60,7 @@ index 37948da28742..f0719b2f1be5 100644
  	r_seq = read_seqbegin(&rename_lock);
  	dentry = __d_lookup_rcu(parent, name, &d_seq);
  	if (unlikely(dentry)) {
-@@ -2477,7 +2479,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
+@@ -2477,7 +2479,7 @@ retry:
  		goto retry;
  	}
  	hlist_bl_lock(b);
@@ -95,7 +95,7 @@ index 9588780ad43e..9b37abd354c9 100644
  	struct dentry *res;
  	struct list_head *p;
  	bool skipped;
-@@ -122,8 +122,9 @@ static struct dentry *next_positive(struct dentry *parent,
+@@ -122,8 +122,9 @@ retry:
  static void move_cursor(struct dentry *cursor, struct list_head *after)
  {
  	struct dentry *parent = cursor->d_parent;
@@ -127,3 +127,6 @@ index d705ae084edd..ab1946f4a729 100644
  	};
  
  	__u32			i_generation;
+-- 
+2.16.1
+

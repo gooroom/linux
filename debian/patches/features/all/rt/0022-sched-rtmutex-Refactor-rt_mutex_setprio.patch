@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 23 Mar 2017 15:56:11 +0100
 Subject: [PATCH 022/351] sched/rtmutex: Refactor rt_mutex_setprio()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3ff82e8189c758a01961537730b076c9c1a64aa4
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=04b2bcf16e442a8c2137eb8b79a19fb45f1d9a96
 
 Upstream commit acd58620e415aee4a43a808d7d2fd87259ee0001
 
@@ -363,7 +363,7 @@ index 7c4614c54a26..3d2bcd9d4c88 100644
  		if (!dl_prio(p->normal_prio) ||
  		    (pi_task && dl_entity_preempt(&pi_task->dl, &p->dl))) {
  			p->dl.dl_boosted = 1;
-@@ -3732,6 +3768,11 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
+@@ -3732,6 +3768,11 @@ out_unlock:
  	balance_callback(rq);
  	preempt_enable();
  }
@@ -388,7 +388,7 @@ index 7c4614c54a26..3d2bcd9d4c88 100644
  
  	if (dl_prio(p->prio))
  		p->sched_class = &dl_sched_class;
-@@ -4266,7 +4306,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -4266,7 +4306,7 @@ change:
  		 * the runqueue. This will be done when the task deboost
  		 * itself.
  		 */
@@ -397,3 +397,6 @@ index 7c4614c54a26..3d2bcd9d4c88 100644
  		if (new_effective_prio == oldprio)
  			queue_flags &= ~DEQUEUE_MOVE;
  	}
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 199/351] completion: Use simple wait queues
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=439088f209b2b5919065a6c444a5596999d88acd
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=869f15816077e674b9c65767a33343cdd903d168
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -37,7 +37,7 @@ index bca6935a94db..d7a35ee34d03 100644
  		}
  		break;
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index 4fce83266926..5e902a89d8e6 100644
+index 7b107e43b1c4..f1e8534a1748 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
 @@ -1593,7 +1593,7 @@ static void ffs_data_put(struct ffs_data *ffs)
@@ -50,7 +50,7 @@ index 4fce83266926..5e902a89d8e6 100644
  		kfree(ffs);
  	}
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index f69dbd4bcd18..3b7638322f9f 100644
+index b8534d3f8bb0..8fcaf02e21b0 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
 @@ -347,7 +347,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
@@ -370,3 +370,6 @@ index 82f0dff90030..e2e224c59c0a 100644
  void swake_up(struct swait_queue_head *q)
  {
  	unsigned long flags;
+-- 
+2.16.1
+

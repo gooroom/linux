@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH 227/351] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=db8a4c70e86b558691babe8b6afdce311ccf840c
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=24c7fe99a845f6453c0effe78f40bf51af529ead
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -119,7 +119,7 @@ index e7d125c23aa6..072a2f724437 100644
  	if (unlikely(IS_DEADDIR(dir_inode)))
  		return -ENOENT;
 diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index c1cc9707bbb3..5f08183dddcd 100644
+index 24c0a094d61e..2510f2be8557 100644
 --- a/fs/nfs/dir.c
 +++ b/fs/nfs/dir.c
 @@ -485,7 +485,7 @@ static
@@ -235,3 +235,6 @@ index e2e224c59c0a..ef027ff3250a 100644
  	raw_spin_lock_irq(&q->lock);
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
+-- 
+2.16.1
+
