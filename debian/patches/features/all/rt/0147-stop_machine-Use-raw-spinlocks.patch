@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 29 Jun 2011 11:01:51 +0200
-Subject: [PATCH 147/337] stop_machine: Use raw spinlocks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b252d1f6f5a81015d22439f751518c01c02ebed7
+Subject: [PATCH 147/351] stop_machine: Use raw spinlocks
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0d0f119725304cedcc89a2c577345794a75a7101
 
 Use raw-locks in stomp_machine() to allow locking in irq-off regions.
 
@@ -51,7 +51,7 @@ index 56d142c31c6e..8b89dbedeaff 100644
  
  	err = -ENOENT;
  	if (!stopper1->enabled || !stopper2->enabled)
-@@ -255,8 +255,8 @@ static int cpu_stop_queue_two_works(int cpu1, struct cpu_stop_work *work1,
+@@ -255,8 +255,8 @@ retry:
  	__cpu_stop_queue_work(stopper1, work1);
  	__cpu_stop_queue_work(stopper2, work2);
  unlock:
@@ -90,7 +90,7 @@ index 56d142c31c6e..8b89dbedeaff 100644
  
  	if (work) {
  		cpu_stop_fn_t fn = work->fn;
-@@ -475,15 +475,7 @@ static void cpu_stopper_thread(unsigned int cpu)
+@@ -475,15 +475,7 @@ repeat:
  		struct cpu_stop_done *done = work->done;
  		int ret;
  
@@ -116,3 +116,6 @@ index 56d142c31c6e..8b89dbedeaff 100644
  		INIT_LIST_HEAD(&stopper->works);
  	}
  
+-- 
+2.16.1
+

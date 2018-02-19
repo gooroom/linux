@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 148/337] hotplug: Lightweight get online cpus
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=01de561afbecd8d23ebc75df920d534b1b694bb9
+Subject: [PATCH 148/351] hotplug: Lightweight get online cpus
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=02ae35952fc21dc5fe58fb990b5cba72285ffdb5
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -50,7 +50,7 @@ index dcfcdd563f69..5e52d28c20c1 100644
  #define __hotcpu_notifier(fn, pri)	do { (void)(fn); } while (0)
  /* These aren't inline functions due to a GCC bug. */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 164b86a8b4e2..759dd49b28f6 100644
+index dac06acbae9d..c320c7464472 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -239,6 +239,100 @@ static struct {
@@ -200,3 +200,6 @@ index 164b86a8b4e2..759dd49b28f6 100644
  	cpu_hotplug_done();
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
+-- 
+2.16.1
+

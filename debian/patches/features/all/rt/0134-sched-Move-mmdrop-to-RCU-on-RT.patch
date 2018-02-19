@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 134/337] sched: Move mmdrop to RCU on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=56fb498d5ad66ae81a08993090a36977522d31d7
+Subject: [PATCH 134/351] sched: Move mmdrop to RCU on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=87f8c415569dcfe9cb98074c69d3ef723a25c837
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -59,10 +59,10 @@ index a1363ac435ce..34c29a31f94b 100644
  {
  	struct mm_struct *mm = container_of(work, struct mm_struct, async_put_work);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index a9f95368ca66..eac2a145ccb8 100644
+index 08a834f25b82..613a26994992 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -874,6 +874,19 @@ void __mmdrop(struct mm_struct *mm)
+@@ -880,6 +880,19 @@ void __mmdrop(struct mm_struct *mm)
  }
  EXPORT_SYMBOL_GPL(__mmdrop);
  
@@ -83,10 +83,10 @@ index a9f95368ca66..eac2a145ccb8 100644
  {
  	VM_BUG_ON(atomic_read(&mm->mm_users));
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e5499de0dfeb..72efa74ab1c2 100644
+index b3515090f4fe..a49d6550d483 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2786,8 +2786,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2785,8 +2785,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	finish_arch_post_lock_switch();
  
  	fire_sched_in_preempt_notifiers(current);
@@ -100,7 +100,7 @@ index e5499de0dfeb..72efa74ab1c2 100644
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
  			prev->sched_class->task_dead(prev);
-@@ -5588,6 +5592,8 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5587,6 +5591,8 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -109,7 +109,7 @@ index e5499de0dfeb..72efa74ab1c2 100644
  /*
   * Ensures that the idle task is using init_mm right before its cpu goes
   * offline.
-@@ -5602,7 +5608,12 @@ void idle_task_exit(void)
+@@ -5601,7 +5607,12 @@ void idle_task_exit(void)
  		switch_mm(mm, &init_mm, current);
  		finish_arch_post_lock_switch();
  	}
@@ -123,7 +123,7 @@ index e5499de0dfeb..72efa74ab1c2 100644
  }
  
  /*
-@@ -7563,6 +7574,10 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7568,6 +7579,10 @@ int sched_cpu_dying(unsigned int cpu)
  	update_max_interval();
  	nohz_balance_exit_idle(cpu);
  	hrtick_clear(rq);
@@ -134,3 +134,6 @@ index e5499de0dfeb..72efa74ab1c2 100644
  	return 0;
  }
  #endif
+-- 
+2.16.1
+

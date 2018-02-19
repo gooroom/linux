@@ -1,8 +1,8 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:27 -0500
-Subject: [PATCH 146/337] stop_machine: convert stop_machine_run() to
+Subject: [PATCH 146/351] stop_machine: convert stop_machine_run() to
  PREEMPT_RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4ea73f3223404bca9867551c10a54e8cf9fc0280
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b3669c804d4c03313c09bc469edf05768b591a73
 
 Instead of playing with non-preemption, introduce explicit
 startup serialization. This is more robust and cleaner as
@@ -19,7 +19,7 @@ diff --git a/kernel/stop_machine.c b/kernel/stop_machine.c
 index ec9ab2f01489..56d142c31c6e 100644
 --- a/kernel/stop_machine.c
 +++ b/kernel/stop_machine.c
-@@ -475,6 +475,16 @@ static void cpu_stopper_thread(unsigned int cpu)
+@@ -475,6 +475,16 @@ repeat:
  		struct cpu_stop_done *done = work->done;
  		int ret;
  
@@ -36,3 +36,6 @@ index ec9ab2f01489..56d142c31c6e 100644
  		/* cpu stop callbacks must not sleep, make in_atomic() == T */
  		preempt_count_inc();
  		ret = fn(arg);
+-- 
+2.16.1
+

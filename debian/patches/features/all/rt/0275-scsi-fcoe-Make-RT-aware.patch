@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 12 Nov 2011 14:00:48 +0100
-Subject: [PATCH 275/337] scsi/fcoe: Make RT aware.
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2d71f57dbcb1b81b297c502992ef16b65687b406
+Subject: [PATCH 275/351] scsi/fcoe: Make RT aware.
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bf4f2748cb7f77936ecfc2b232e464d96630989e
 
 Do not disable preemption while taking sleeping locks. All user look safe
 for migrate_diable() only.
@@ -17,7 +17,7 @@ diff --git a/drivers/scsi/fcoe/fcoe.c b/drivers/scsi/fcoe/fcoe.c
 index 9bd41a35a78a..8e2d436c2e3f 100644
 --- a/drivers/scsi/fcoe/fcoe.c
 +++ b/drivers/scsi/fcoe/fcoe.c
-@@ -1455,11 +1455,11 @@ static int fcoe_rcv(struct sk_buff *skb, struct net_device *netdev,
+@@ -1455,11 +1455,11 @@ err2:
  static int fcoe_alloc_paged_crc_eof(struct sk_buff *skb, int tlen)
  {
  	struct fcoe_percpu_s *fps;
@@ -110,3 +110,6 @@ index 16ca31ad5ec0..c3987347e762 100644
  
  	/* peek cache of free slot */
  	if (pool->left != FC_XID_UNKNOWN) {
+-- 
+2.16.1
+

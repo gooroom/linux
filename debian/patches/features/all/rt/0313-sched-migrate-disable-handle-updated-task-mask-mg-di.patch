@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 19 Jun 2017 09:55:47 +0200
-Subject: [PATCH 313/337] sched/migrate disable: handle updated task-mask
+Subject: [PATCH 313/351] sched/migrate disable: handle updated task-mask
  mg-dis section
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0cc18eca766071aa16020d7b59713631fc83b2f3
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0c05aacc2ebbcc9dd3bee25dc486c1411d0d4b27
 
 If task's cpumask changes while in the task is in a migrate_disable()
 section then we don't react on it after a migrate_enable(). It matters
@@ -34,10 +34,10 @@ index 9ff3bc25e63f..e775696b480a 100644
  	int migrate_disable_atomic;
  # endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 8a91130d4f17..d0312ccba0d3 100644
+index f29c4f961104..5ebcf53bcf3d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1150,18 +1150,14 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
+@@ -1149,18 +1149,14 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
  	p->nr_cpus_allowed = cpumask_weight(new_mask);
  }
  
@@ -58,7 +58,7 @@ index 8a91130d4f17..d0312ccba0d3 100644
  	queued = task_on_rq_queued(p);
  	running = task_current(rq, p);
  
-@@ -1184,6 +1180,20 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1183,6 +1179,20 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  		set_curr_task(rq, p);
  }
  
@@ -79,7 +79,7 @@ index 8a91130d4f17..d0312ccba0d3 100644
  static DEFINE_PER_CPU(struct cpumask, sched_cpumasks);
  static DEFINE_MUTEX(sched_down_mutex);
  static cpumask_t sched_down_cpumask;
-@@ -3448,6 +3458,43 @@ void migrate_enable(void)
+@@ -3447,6 +3457,43 @@ void migrate_enable(void)
  	 */
  	p->migrate_disable = 0;
  
@@ -123,3 +123,6 @@ index 8a91130d4f17..d0312ccba0d3 100644
  	unpin_current_cpu();
  	preempt_enable();
  	preempt_lazy_enable();
+-- 
+2.16.1
+

@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 126/337] hrtimer: Fixup hrtimer callback changes for
+Subject: [PATCH 126/351] hrtimer: Fixup hrtimer callback changes for
  preempt-rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0db1110e1d4dabbfd79dd961085c31fb0d750b17
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=863b090b016280d244d619cd444efb46d01589c4
 
 In preempt-rt we can not call the callbacks which take sleeping locks
 from the timer interrupt context.
@@ -68,7 +68,7 @@ index b7c2d54af68e..65d0671f20b4 100644
  	unsigned int			active_bases;
  	unsigned int			clock_was_set_seq;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 21c4ebbd6178..7e90cd2e5794 100644
+index 46adabdde922..7944079a4d71 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -345,6 +345,7 @@ static void init_rq_hrtick(struct rq *rq)
@@ -80,7 +80,7 @@ index 21c4ebbd6178..7e90cd2e5794 100644
  #else	/* CONFIG_SCHED_HRTICK */
  static inline void hrtick_clear(struct rq *rq)
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index f139f22ce30d..f5a1132f9014 100644
+index 9c131168d933..340a0a5d435c 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -47,6 +47,7 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
@@ -299,7 +299,7 @@ index c84f04b3c394..0ac7cd65a163 100644
 +		INIT_LIST_HEAD(&cpu_base->clock_base[i].expired);
  	}
  
- 	cpu_base->cpu = cpu;
+ 	cpu_base->active_bases = 0;
 @@ -1733,9 +1842,26 @@ int hrtimers_dead_cpu(unsigned int scpu)
  
  #endif /* CONFIG_HOTPLUG_CPU */

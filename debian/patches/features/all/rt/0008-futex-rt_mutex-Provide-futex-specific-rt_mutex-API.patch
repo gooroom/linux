@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:51 +0100
-Subject: [PATCH 008/337] futex,rt_mutex: Provide futex specific rt_mutex API
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=662f450daf0090547a48b5f5d970e9b5da579561
+Subject: [PATCH 008/351] futex,rt_mutex: Provide futex specific rt_mutex API
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9664bf5786b3b8fcee37fb0ef1399bb74d214e62
 
 Upstream commit 5293c2efda37775346885c7e924d4ef7018ea60b
 
@@ -87,7 +87,7 @@ index 5729150be0bd..cf07ae476b76 100644
  			locked = 1;
  			goto out;
  		}
-@@ -2567,7 +2565,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2567,7 +2565,7 @@ retry_private:
  	if (!trylock) {
  		ret = rt_mutex_timed_futex_lock(&q.pi_state->pi_mutex, to);
  	} else {
@@ -96,7 +96,7 @@ index 5729150be0bd..cf07ae476b76 100644
  		/* Fixup the trylock return value: */
  		ret = ret ? 0 : -EWOULDBLOCK;
  	}
-@@ -2590,7 +2588,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2590,7 +2588,7 @@ retry_private:
  	 * it and return the fault to userspace.
  	 */
  	if (ret && (rt_mutex_owner(&q.pi_state->pi_mutex) == current))
@@ -225,3 +225,6 @@ index e317e1cbb3eb..2441c2d2e6f3 100644
  extern void rt_mutex_adjust_prio(struct task_struct *task);
  
  #ifdef CONFIG_DEBUG_RT_MUTEXES
+-- 
+2.16.1
+

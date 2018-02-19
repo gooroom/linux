@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 16:58:19 +0200
-Subject: [PATCH 038/337] iommu/iova: don't disable preempt around
+Subject: [PATCH 038/351] iommu/iova: don't disable preempt around
  this_cpu_ptr()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d08d5d682448e8fa67703cc671e31302725c3232
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c158b77fa43676c17836d6abaab1130975997e82
 
 Commit 583248e6620a ("iommu/iova: Disable preemption around use of
 this_cpu_ptr()") disables preemption while accessing a per-CPU variable.
@@ -38,7 +38,7 @@ index e23001bfcfee..359d5d169ec0 100644
  
  static bool iova_rcache_insert(struct iova_domain *iovad,
  			       unsigned long pfn,
-@@ -420,10 +421,8 @@ alloc_iova_fast(struct iova_domain *iovad, unsigned long size,
+@@ -420,10 +421,8 @@ retry:
  
  		/* Try replenishing IOVAs by flushing rcache. */
  		flushed_rcache = true;
@@ -83,3 +83,6 @@ index e23001bfcfee..359d5d169ec0 100644
  
  	return iova_pfn;
  }
+-- 
+2.16.1
+

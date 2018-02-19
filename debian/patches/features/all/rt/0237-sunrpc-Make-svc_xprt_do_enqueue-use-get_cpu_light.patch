@@ -1,8 +1,8 @@
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 16:05:28 +0100
-Subject: [PATCH 237/337] sunrpc: Make svc_xprt_do_enqueue() use
+Subject: [PATCH 237/351] sunrpc: Make svc_xprt_do_enqueue() use
  get_cpu_light()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a3b9f8002eb757f68c39b4d93528e36df7a6df92
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0be5d32740a97c9862e99ed2e659cac04c669051
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
 |in_atomic(): 1, irqs_disabled(): 0, pid: 3194, name: rpc.nfsd
@@ -46,7 +46,7 @@ index 9c9db55a0c1e..e6583b018a72 100644
  	pool = svc_pool_for_cpu(xprt->xpt_server, cpu);
  
  	atomic_long_inc(&pool->sp_stats.packets);
-@@ -432,7 +432,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
+@@ -432,7 +432,7 @@ redo_search:
  
  		atomic_long_inc(&pool->sp_stats.threads_woken);
  		wake_up_process(rqstp->rq_task);
@@ -55,7 +55,7 @@ index 9c9db55a0c1e..e6583b018a72 100644
  		goto out;
  	}
  	rcu_read_unlock();
-@@ -453,7 +453,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
+@@ -453,7 +453,7 @@ redo_search:
  		goto redo_search;
  	}
  	rqstp = NULL;
@@ -64,3 +64,6 @@ index 9c9db55a0c1e..e6583b018a72 100644
  out:
  	trace_svc_xprt_do_enqueue(xprt, rqstp);
  }
+-- 
+2.16.1
+

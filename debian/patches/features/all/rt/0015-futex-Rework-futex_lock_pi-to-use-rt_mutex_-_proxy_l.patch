@@ -1,8 +1,8 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:58 +0100
-Subject: [PATCH 015/337] futex: Rework futex_lock_pi() to use
+Subject: [PATCH 015/351] futex: Rework futex_lock_pi() to use
  rt_mutex_*_proxy_lock()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7e0a6276be286d44985d89760fc09f9ba0a084a8
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=90a45078102926c03ae09b6f91d03579e5269576
 
 Upstream commit cfafcd117da0216520568c195cb2f6cd1980c4bb
 
@@ -148,7 +148,7 @@ index b72be871ac27..bff0a7e0cec5 100644
  	struct futex_hash_bucket *hb;
  	struct futex_q q = futex_q_init;
  	int res, ret;
-@@ -2638,24 +2644,51 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2638,24 +2644,51 @@ retry_private:
  		}
  	}
  
@@ -271,3 +271,6 @@ index fedd5abe0b52..4fe3f32da3c5 100644
  extern int rt_mutex_futex_trylock(struct rt_mutex *l);
  
  extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
+-- 
+2.16.1
+

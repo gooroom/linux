@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 23 Nov 2016 16:29:32 +0100
-Subject: [PATCH 203/337] locking/percpu-rwsem: Remove preempt_disable variants
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=399ce8dd4a30ec58a2419404f48455ebc911f0f4
+Subject: [PATCH 203/351] locking/percpu-rwsem: Remove preempt_disable variants
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2381562be08f61925fe295f141f273c74f4320fd
 
 Effective revert commit:
 
@@ -29,7 +29,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	if (request->fl_flags & FL_ACCESS)
  		goto find_conflict;
-@@ -976,7 +976,7 @@ static int flock_lock_inode(struct inode *inode, struct file_lock *request)
+@@ -976,7 +976,7 @@ find_conflict:
  
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -65,7 +65,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  
  	time_out_leases(inode, &dispose);
-@@ -1512,13 +1512,13 @@ int __break_lease(struct inode *inode, unsigned int mode, unsigned int type)
+@@ -1512,13 +1512,13 @@ restart:
  	locks_insert_block(fl, new_fl);
  	trace_break_lease_block(inode, new_fl);
  	spin_unlock(&ctx->flc_lock);
@@ -81,7 +81,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	trace_break_lease_unblock(inode, new_fl);
  	locks_delete_block(new_fl);
-@@ -1535,7 +1535,7 @@ int __break_lease(struct inode *inode, unsigned int mode, unsigned int type)
+@@ -1535,7 +1535,7 @@ restart:
  	}
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -117,7 +117,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	time_out_leases(inode, &dispose);
  	error = check_conflicting_open(dentry, arg, lease->fl_flags);
-@@ -1765,7 +1765,7 @@ generic_add_lease(struct file *filp, long arg, struct file_lock **flp, void **pr
+@@ -1765,7 +1765,7 @@ out_setup:
  		lease->fl_lmops->lm_setup(lease, priv);
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -220,3 +220,6 @@ index 82d54a4b9988..ea940f451606 100644
  extern void percpu_down_write(struct percpu_rw_semaphore *);
  extern void percpu_up_write(struct percpu_rw_semaphore *);
  
+-- 
+2.16.1
+

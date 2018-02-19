@@ -65,6 +65,7 @@ bugfix/x86/platform-x86-ideapad-laptop-add-several-models-to-no.patch
 bugfix/powerpc/powerpc-invalidate-erat-on-powersave-wakeup-for-power9.patch
 bugfix/arm/arm-dts-exynos-add-dwc3-susphy-quirk.patch
 bugfix/mips/mips-remove-pt_regs-adjustments-in-indirect-syscall-.patch
+bugfix/powerpc/powerpc-64s-simple-rfi-macro-conversions.patch
 
 # Arch features
 features/mips/MIPS-increase-MAX-PHYSMEM-BITS-on-Loongson-3-only.patch
@@ -98,7 +99,6 @@ bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch
 bugfix/all/kbuild-do-not-use-hyphen-in-exported-variable-name.patch
 bugfix/all/partially-revert-usb-kconfig-using-select-for-usb_co.patch
 bugfix/all/kbuild-include-addtree-remove-quotes-before-matching-path.patch
-bugfix/all/mm-mmap.c-do-not-blow-on-prot_none-map_fixed-holes-i.patch
 bugfix/all/mm-mmap.c-expand_downwards-don-t-require-the-gap-if-.patch
 bugfix/x86/mmap-remember-the-map_fixed-flag-as-vm_fixed.patch
 bugfix/x86/mmap-add-an-exception-to-the-stack-gap-for-hotspot-jvm.patch
@@ -135,33 +135,10 @@ features/all/securelevel/arm64-add-kernel-config-option-to-set-securelevel-wh.pa
 debian/i386-686-pae-pci-set-pci-nobios-by-default.patch
 debian/time-mark-timer_stats-as-broken.patch
 bugfix/all/tracing-Use-strlcpy-instead-of-strcpy-in-__trace_fin.patch
-bugfix/all/media-cx231xx-cards-fix-NULL-deref-on-missing-associ.patch
-bugfix/all/mm-thp-Do-not-make-page-table-dirty-unconditionally-.patch
-bugfix/all/dccp-cve-2017-8824-use-after-free-in-dccp-code.patch
-bugfix/all/media-dvb-usb-v2-lmedm04-Improve-logic-checking-of-w.patch
-bugfix/all/media-dvb-usb-v2-lmedm04-move-ts2020-attach-to-dm04_.patch
-bugfix/all/media-hdpvr-fix-an-error-handling-path-in-hdpvr_prob.patch
-bugfix/all/bpf-adjust-insn_aux_data-when-patching-insns.patch
-bugfix/all/bpf-fix-branch-pruning-logic.patch
-bugfix/all/bpf-reject-out-of-bounds-stack-pointer-calculation.patch
-bugfix/all/bpf-fix-incorrect-sign-extension-in-check_alu_op.patch
-bugfix/all/bpf-verifier-fix-states_equal-comparison-of-pointer-and-unknown.patch
-bugfix/all/netfilter-nfnetlink_cthelper-add-missing-permission-.patch
-bugfix/all/netlink-add-netns-check-on-taps.patch
-bugfix/all/netfilter-xt_osf-add-missing-permission-checks.patch
-bugfix/all/usb-core-prevent-malicious-bnuminterfaces-overflow.patch
-bugfix/all/net-ipv4-fix-for-a-race-condition-in-raw_sendmsg.patch
-bugfix/all/kvm-fix-stack-out-of-bounds-read-in-write_mmio.patch
-bugfix/all/crypto-salsa20-fix-blkcipher_walk-API-usage.patch
-bugfix/all/crypto-hmac-require-that-the-underlying-hash-algorit.patch
-bugfix/all/keys-add-missing-permission-check-for-request_key-de.patch
-bugfix/x86/kvm-vmx-remove-i-o-port-0x80-bypass-on-intel-hosts.patch
-bugfix/all/bluetooth-prevent-stack-info-leak-from-the-efs-element.patch
 
 # Fix exported symbol versions
 bugfix/ia64/revert-ia64-move-exports-to-definitions.patch
 bugfix/sparc/revert-sparc-move-exports-to-definitions.patch
-bugfix/s390/revert-s390-move-exports-to-definitions.patch
 bugfix/m68k/revert-m68k-move-exports-to-definitions.patch
 bugfix/alpha/revert-alpha-move-exports-to-actual-definitions.patch
 bugfix/powerpc/powerpc-remove-mac-on-linux-hooks.patch
@@ -182,7 +159,6 @@ bugfix/x86/revert-perf-build-fix-libunwind-feature-detection-on.patch
 bugfix/all/tools-build-remove-bpf-run-time-check-at-build-time.patch
 bugfix/all/tools-lib-traceevent-fix-use-of-uninitialized-variables.patch
 bugfix/all/cpupower-bump-soname-version.patch
-bugfix/all/cpupower-fix-checks-for-cpu-existence.patch
 bugfix/all/liblockdep-fix-undefined-symbol-prandom_u32.patch
 bugfix/all/liblockdep-define-the-array_size-macro.patch
 bugfix/all/liblockdep-enable-wall-by-default.patch
@@ -190,59 +166,4 @@ bugfix/all/liblockdep-fix-unused-value-warnings.patch
 bugfix/all/liblockdep-fix-set-but-not-used-warnings.patch
 bugfix/all/liblockdep-fix-defined-but-not-used-warning-for-init.patch
 
-# Setup PCID, prepare for KPTI
-features/all/kpti/x86-mm-Disable-PCID-on-32-bit-kernels.patch
-features/all/kpti/x86-mm-Add-the-nopcid-boot-option-to-turn-off-PCID.patch
-features/all/kpti/x86-mm-Enable-CR4.PCIDE-on-supported-systems.patch
-features/all/kpti/x86-mm-64-Fix-reboot-interaction-with-CR4.PCIDE.patch
-
-# Kernel Page Table Isolation
-features/all/kpti/x86-boot-add-early-cmdline-parsing-for-options-with-arguments.patch
-features/all/kpti/kaiser-kernel-address-isolation.patch
-features/all/kpti/kaiser-merged-update.patch
-features/all/kpti/kaiser-do-not-set-_page_nx-on-pgd_none.patch
-features/all/kpti/kaiser-stack-map-page_size-at-thread_size-page_size.patch
-features/all/kpti/kaiser-fix-build-and-fixme-in-alloc_ldt_struct.patch
-features/all/kpti/kaiser-kaiser-depends-on-smp.patch
-features/all/kpti/kaiser-fix-regs-to-do_nmi-ifndef-config_kaiser.patch
-features/all/kpti/kaiser-fix-perf-crashes.patch
-features/all/kpti/kaiser-enomem-if-kaiser_pagetable_walk-null.patch
-features/all/kpti/kaiser-tidied-up-asm-kaiser.h-somewhat.patch
-features/all/kpti/kaiser-tidied-up-kaiser_add-remove_mapping-slightly.patch
-features/all/kpti/kaiser-align-addition-to-x86-mm-makefile.patch
-features/all/kpti/kaiser-cleanups-while-trying-for-gold-link.patch
-features/all/kpti/kaiser-name-that-0x1000-kaiser_shadow_pgd_offset.patch
-features/all/kpti/kaiser-delete-kaiser_real_switch-option.patch
-features/all/kpti/kaiser-vmstat-show-nr_kaisertable-as-nr_overhead.patch
-features/all/kpti/kaiser-enhanced-by-kernel-and-user-pcids.patch
-features/all/kpti/kaiser-load_new_mm_cr3-let-switch_user_cr3-flush-user.patch
-features/all/kpti/kaiser-pcid-0-for-kernel-and-128-for-user.patch
-features/all/kpti/kaiser-x86_cr3_pcid_noflush-and-x86_cr3_pcid_user.patch
-features/all/kpti/kaiser-paranoid_entry-pass-cr3-need-to-paranoid_exit.patch
-features/all/kpti/kaiser-kaiser_remove_mapping-move-along-the-pgd.patch
-features/all/kpti/kaiser-fix-unlikely-error-in-alloc_ldt_struct.patch
-features/all/kpti/kaiser-add-nokaiser-boot-option-using-alternative.patch
-features/all/kpti/x86-kaiser-rename-and-simplify-x86_feature_kaiser-handling.patch
-features/all/kpti/x86-kaiser-check-boottime-cmdline-params.patch
-features/all/kpti/kaiser-use-alternative-instead-of-x86_cr3_pcid_noflush.patch
-features/all/kpti/kaiser-drop-is_atomic-arg-to-kaiser_pagetable_walk.patch
-features/all/kpti/kaiser-asm-tlbflush.h-handle-nopge-at-lower-level.patch
-features/all/kpti/kaiser-kaiser_flush_tlb_on_return_to_user-check-pcid.patch
-features/all/kpti/x86-paravirt-dont-patch-flush_tlb_single.patch
-features/all/kpti/x86-kaiser-reenable-paravirt.patch
-features/all/kpti/kaiser-disabled-on-xen-pv.patch
-features/all/kpti/x86-kaiser-move-feature-detection-up.patch
-features/all/kpti/kpti-rename-to-page_table_isolation.patch
-features/all/kpti/kpti-report-when-enabled.patch
-
 # ABI maintenance
-debian/ip6_fib-avoid-abi-change-in-4.9.51.patch
-debian/inet_frag-limit-abi-change-in-4.9.51.patch
-debian/s390-mm-avoid-abi-change-in-4.9.52.patch
-debian/mac80211-avoid-abi-change-in-4.9.53.patch
-debian/mmc-sdio-avoid-abi-change-in-4.9.54.patch
-debian/keys-limit-abi-change-in-4.9.59.patch
-debian/netfilter-nat-avoid-abi-change-in-4.9.63.patch
-debian/mm-page_alloc-avoid-abi-change-in-4.9.65.patch
-debian/revert-phy-increase-size-of-mii_bus_id_size-and-bus_id.patch
-debian/revert-bpf-one-perf-event-close-won-t-free-bpf-program-atta.patch

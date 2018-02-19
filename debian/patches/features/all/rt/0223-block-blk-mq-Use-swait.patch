@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 11:01:26 +0100
-Subject: [PATCH 223/337] block: blk-mq: Use swait
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b02e2361c5e42553a61ea4bbc94935952174fe6e
+Subject: [PATCH 223/351] block: blk-mq: Use swait
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=dae952cdaff7dc43087149d7671f04e9978efc21
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -45,10 +45,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index f3537ddd3c0b..e531da0c9232 100644
+index a36124682875..e8341f78f119 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -662,7 +662,7 @@ int blk_queue_enter(struct request_queue *q, bool nowait)
+@@ -663,7 +663,7 @@ int blk_queue_enter(struct request_queue *q, bool nowait)
  		if (nowait)
  			return -EBUSY;
  
@@ -57,7 +57,7 @@ index f3537ddd3c0b..e531da0c9232 100644
  				!atomic_read(&q->mq_freeze_depth) ||
  				blk_queue_dying(q));
  		if (blk_queue_dying(q))
-@@ -682,7 +682,7 @@ static void blk_queue_usage_counter_release(struct percpu_ref *ref)
+@@ -683,7 +683,7 @@ static void blk_queue_usage_counter_release(struct percpu_ref *ref)
  	struct request_queue *q =
  		container_of(ref, struct request_queue, q_usage_counter);
  
@@ -66,7 +66,7 @@ index f3537ddd3c0b..e531da0c9232 100644
  }
  
  static void blk_rq_timed_out_timer(unsigned long data)
-@@ -751,7 +751,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
+@@ -753,7 +753,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id)
  	q->bypass_depth = 1;
  	__set_bit(QUEUE_FLAG_BYPASS, &q->queue_flags);
  
@@ -76,7 +76,7 @@ index f3537ddd3c0b..e531da0c9232 100644
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index c7bc5e66330d..48c9652a701c 100644
+index e26bbdff3735..82500641f37b 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -72,7 +72,7 @@ EXPORT_SYMBOL_GPL(blk_mq_freeze_queue_start);
@@ -119,3 +119,6 @@ index 3b519c3a498e..ec7a4676f8a8 100644
  	struct percpu_ref	q_usage_counter;
  	struct list_head	all_q_node;
  
+-- 
+2.16.1
+

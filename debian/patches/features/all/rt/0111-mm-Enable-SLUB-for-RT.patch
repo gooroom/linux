@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Oct 2012 10:32:35 +0100
-Subject: [PATCH 111/337] mm: Enable SLUB for RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=088b1f5d0b2e1e58abd54f4918462329ce8805c7
+Subject: [PATCH 111/351] mm: Enable SLUB for RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2063da132ac29def6e7ea1df8ab99fdc05b6c90d
 
 Make SLUB RT aware by converting locks to raw and using free lists to
 move the freeing out of the lock held region.
@@ -41,7 +41,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	slab_lock(page);
  
  	if (s->flags & SLAB_CONSISTENCY_CHECKS) {
-@@ -1179,7 +1179,7 @@ static noinline int free_debug_processing(
+@@ -1179,7 +1179,7 @@ out:
  			 bulk_cnt, cnt);
  
  	slab_unlock(page);
@@ -135,7 +135,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	return object;
  }
  
-@@ -2076,7 +2106,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
+@@ -2076,7 +2106,7 @@ redo:
  			 * that acquire_slab() will see a slab page that
  			 * is frozen
  			 */
@@ -144,7 +144,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  		}
  	} else {
  		m = M_FULL;
-@@ -2087,7 +2117,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
+@@ -2087,7 +2117,7 @@ redo:
  			 * slabs from diagnostic functions will not see
  			 * any frozen slabs.
  			 */
@@ -153,7 +153,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  		}
  	}
  
-@@ -2122,7 +2152,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
+@@ -2122,7 +2152,7 @@ redo:
  		goto redo;
  
  	if (lock)
@@ -254,7 +254,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	void *freelist;
  	struct page *page;
  
-@@ -2561,6 +2615,13 @@ static void *___slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
+@@ -2561,6 +2615,13 @@ load_freelist:
  	VM_BUG_ON(!c->page->frozen);
  	c->freelist = get_freepointer(s, freelist);
  	c->tid = next_tid(c->tid);
@@ -268,7 +268,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	return freelist;
  
  new_slab:
-@@ -2592,7 +2653,7 @@ static void *___slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
+@@ -2592,7 +2653,7 @@ new_slab:
  	deactivate_slab(s, page, get_freepointer(s, freelist));
  	c->page = NULL;
  	c->freelist = NULL;
@@ -323,7 +323,7 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	return;
  
  slab_empty:
-@@ -2891,7 +2954,7 @@ static void __slab_free(struct kmem_cache *s, struct page *page,
+@@ -2891,7 +2954,7 @@ slab_empty:
  		remove_full(s, n, page);
  	}
  
@@ -467,3 +467,6 @@ index edc79ca3c6d5..bc7a5d448150 100644
  	}
  
  	for (i = 0; i < t.count; i++) {
+-- 
+2.16.1
+

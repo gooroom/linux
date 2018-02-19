@@ -1,7 +1,7 @@
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 131/337] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f88c7aa6e259ba6563d72369fa05c25276130d61
+Subject: [PATCH 131/351] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=445d2175788f295bf923f8bae167ffc09f1e74b1
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -57,10 +57,10 @@ index 040ae135ecb0..b6be669490e4 100644
  /* process credentials */
  	const struct cred __rcu *ptracer_cred; /* Tracer's credentials at attach */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index c508b761e494..bc418dcfcda1 100644
+index fca238739495..2572a2547f3e 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1436,6 +1436,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1442,6 +1442,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {
@@ -307,3 +307,6 @@ index 39008d78927a..633f4eaca9e7 100644
  /*
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
+-- 
+2.16.1
+

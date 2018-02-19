@@ -1,7 +1,7 @@
 From: Marcelo Tosatti <mtosatti@redhat.com>
 Date: Wed, 8 Apr 2015 20:33:25 -0300
-Subject: [PATCH 274/337] KVM: lapic: mark LAPIC timer handler as irqsafe
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=06e7d370f6e8b3574b81b21afa774d357eded19b
+Subject: [PATCH 274/351] KVM: lapic: mark LAPIC timer handler as irqsafe
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=30c73399111caf3f35bcfce7301af46f8559feb0
 
 Since lapic timer handler only wakes up a simple waitqueue,
 it can be executed from hardirq context.
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 3f05c044720b..fe68afd37162 100644
+index b24b3c6d686e..02a062b0de5d 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -1939,6 +1939,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -1944,6 +1944,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
  		     HRTIMER_MODE_ABS_PINNED);
  	apic->lapic_timer.timer.function = apic_timer_fn;
@@ -26,3 +26,6 @@ index 3f05c044720b..fe68afd37162 100644
  
  	/*
  	 * APIC is created enabled. This will prevent kvm_lapic_set_base from
+-- 
+2.16.1
+

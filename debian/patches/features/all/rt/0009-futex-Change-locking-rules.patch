@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:52 +0100
-Subject: [PATCH 009/337] futex: Change locking rules
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2c9c5639e513bf6832f81c5d6b51d048fc59c172
+Subject: [PATCH 009/351] futex: Change locking rules
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=27d36f21a268964814c3780f878797d1f52fef51
 
 Upstream commit 734009e96d1983ad739e5b656e03430b3660c913
 
@@ -254,7 +254,7 @@ index cf07ae476b76..2d2267efc3cc 100644
  	if (ret) {
  		raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
  		return ret;
-@@ -1822,7 +1906,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
+@@ -1822,7 +1906,7 @@ retry_private:
  			 * If that call succeeds then we have pi_state and an
  			 * initial refcount on it.
  			 */
@@ -294,7 +294,7 @@ index cf07ae476b76..2d2267efc3cc 100644
  	 */
  retry:
  	if (get_futex_value_locked(&uval, uaddr))
-@@ -2165,47 +2251,60 @@ static int fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
+@@ -2165,47 +2251,60 @@ retry:
  	 * itself.
  	 */
  	if (pi_state->owner != NULL) {
@@ -370,3 +370,6 @@ index cf07ae476b76..2d2267efc3cc 100644
  }
  
  static long futex_wait_restart(struct restart_block *restart);
+-- 
+2.16.1
+

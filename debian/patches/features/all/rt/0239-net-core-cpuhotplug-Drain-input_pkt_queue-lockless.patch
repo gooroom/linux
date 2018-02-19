@@ -1,7 +1,7 @@
 From: Grygorii Strashko <grygorii.strashko@ti.com>
 Date: Fri, 9 Oct 2015 09:25:49 -0500
-Subject: [PATCH 239/337] net/core/cpuhotplug: Drain input_pkt_queue lockless
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=55a5ced518564f319c29ca3ad553eae1099277a2
+Subject: [PATCH 239/351] net/core/cpuhotplug: Drain input_pkt_queue lockless
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=fdae29d570c9095ea729054c587bf42084e3883e
 
 I can constantly see below error report with 4.1 RT-kernel on TI ARM dra7-evm
 if I'm trying to unplug cpu1:
@@ -35,10 +35,10 @@ Cc: stable-rt@vger.kernel.org
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c56ec08be8ac..1e8b69e8c007 100644
+index 9ff83f117a6b..cdabeb2a2024 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -8068,7 +8068,7 @@ static int dev_cpu_callback(struct notifier_block *nfb,
+@@ -8069,7 +8069,7 @@ static int dev_cpu_callback(struct notifier_block *nfb,
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -47,3 +47,6 @@ index c56ec08be8ac..1e8b69e8c007 100644
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
+-- 
+2.16.1
+

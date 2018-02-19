@@ -1,7 +1,7 @@
 From: Daniel Wagner <wagi@monom.org>
 Date: Tue, 17 Feb 2015 09:37:44 +0100
-Subject: [PATCH 214/337] thermal: Defer thermal wakups to threads
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7ddac21ed20be526d2dfaf95904b4c951e5e28f8
+Subject: [PATCH 214/351] thermal: Defer thermal wakups to threads
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cb01363f3e7f68880927b0d8c7a4c3965824a2e8
 
 On RT the spin lock in pkg_temp_thermal_platfrom_thermal_notify will
 call schedule while we run in irq context.
@@ -116,7 +116,7 @@ index 95f4c1bcdb4c..0be934799bff 100644
  	spin_lock_init(&pkg_work_lock);
  	platform_thermal_package_notify =
  			pkg_temp_thermal_platform_thermal_notify;
-@@ -609,7 +652,7 @@ static int __init pkg_temp_thermal_init(void)
+@@ -609,7 +652,7 @@ err_ret:
  	kfree(pkg_work_scheduled);
  	platform_thermal_package_notify = NULL;
  	platform_thermal_package_rate_control = NULL;
@@ -133,3 +133,6 @@ index 95f4c1bcdb4c..0be934799bff 100644
  	for_each_online_cpu(i)
  		cancel_delayed_work_sync(
  			&per_cpu(pkg_temp_thermal_threshold_work, i));
+-- 
+2.16.1
+

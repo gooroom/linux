@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:59 +0100
-Subject: [PATCH 016/337] futex: Futex_unlock_pi() determinism
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6fdee8cb79c1db1d1ab8052913d32d8681336b6a
+Subject: [PATCH 016/351] futex: Futex_unlock_pi() determinism
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=fd72c867d3785a7108ab03348ca8f3571619e9ed
 
 Upstream commit bebe5b514345f09be2c15e414d076b02ecb9cce8
 
@@ -56,7 +56,7 @@ index bff0a7e0cec5..3d1be05af5ec 100644
  		 *
  		 * When this happens, give up our locks and try again, giving
  		 * the futex_lock_pi() instance time to complete, either by
-@@ -2793,15 +2788,18 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2793,15 +2788,18 @@ retry:
  		if (pi_state->owner != current)
  			goto out_unlock;
  
@@ -81,3 +81,6 @@ index bff0a7e0cec5..3d1be05af5ec 100644
  		spin_unlock(&hb->lock);
  
  		ret = wake_futex_pi(uaddr, uval, pi_state);
+-- 
+2.16.1
+

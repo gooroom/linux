@@ -1,7 +1,7 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Fri, 2 Mar 2012 10:36:57 -0500
-Subject: [PATCH 284/337] cpu: Make hotplug.lock a "sleeping" spinlock on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=314cb8364a81d3e6d347d4269d1986c4b91e7618
+Subject: [PATCH 284/351] cpu: Make hotplug.lock a "sleeping" spinlock on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f48fa279d7ecb444429c7265e567a113f61b6ea7
 
 Tasks can block on hotplug.lock in pin_current_cpu(), but their state
 might be != RUNNING. So the mutex wakeup will set the state
@@ -24,7 +24,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 25 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 4b8f59bee8d9..9bb0d333bfc7 100644
+index 7c28baf1a9d6..238f11eb99ae 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -210,10 +210,16 @@ static int cpu_hotplug_disabled;
@@ -69,7 +69,7 @@ index 4b8f59bee8d9..9bb0d333bfc7 100644
  /* Lockdep annotations for get/put_online_cpus() and cpu_hotplug_begin/end() */
  #define cpuhp_lock_acquire_read() lock_map_acquire_read(&cpu_hotplug.dep_map)
  #define cpuhp_lock_acquire_tryread() \
-@@ -268,8 +286,8 @@ void pin_current_cpu(void)
+@@ -268,8 +286,8 @@ retry:
  		return;
  	}
  	preempt_enable();
@@ -115,3 +115,6 @@ index 4b8f59bee8d9..9bb0d333bfc7 100644
  	cpuhp_lock_release();
  }
  
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 248/337] irqwork: push most work into softirq context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=89020e73eaac64e9b206c0183d5077a51927be7c
+Subject: [PATCH 248/351] irqwork: push most work into softirq context
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9efd8f0964c1f409fc3b896bf8b8d5af088e4281
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/irq_work.h |  1 +
  kernel/irq_work.c        | 47 ++++++++++++++++++++++++++++++++++-------------
- kernel/sched/rt.c        |  1 +
+ kernel/sched/core.c      |  1 +
  kernel/time/tick-sched.c |  1 +
  kernel/time/timer.c      |  6 +++++-
  5 files changed, 42 insertions(+), 14 deletions(-)
@@ -146,20 +146,20 @@ index bcf107ce0854..0ddaf1e66d8c 100644
  }
  EXPORT_SYMBOL_GPL(irq_work_run);
  
-diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index f5a1132f9014..b0691f4e7d49 100644
---- a/kernel/sched/rt.c
-+++ b/kernel/sched/rt.c
-@@ -102,6 +102,7 @@ void init_rt_rq(struct rt_rq *rt_rq)
- 	rt_rq->push_cpu = nr_cpu_ids;
- 	raw_spin_lock_init(&rt_rq->push_lock);
- 	init_irq_work(&rt_rq->push_work, push_irq_work_func);
-+	rt_rq->push_work.flags |= IRQ_WORK_HARD_IRQ;
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 63f536082449..ca7927521f2f 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6030,6 +6030,7 @@ static int init_rootdomain(struct root_domain *rd)
+ 	rd->rto_cpu = -1;
+ 	raw_spin_lock_init(&rd->rto_lock);
+ 	init_irq_work(&rd->rto_push_work, rto_push_irq_work_func);
++	rd->rto_push_work.flags |= IRQ_WORK_HARD_IRQ;
  #endif
- #endif /* CONFIG_SMP */
- 	/* We start is dequeued state, because no RT tasks are queued */
+ 
+ 	init_dl_bw(&rd->dl_bw);
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 4367249e0dde..66d85482a96e 100644
+index 4c185caffcce..c573b1a848b6 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -220,6 +220,7 @@ static void nohz_full_kick_func(struct irq_work *work)
@@ -171,10 +171,10 @@ index 4367249e0dde..66d85482a96e 100644
  
  /*
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index d8e1c2c5397c..fad6d60bf4e0 100644
+index cdb291bf5ec1..4cdec3d24423 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1663,7 +1663,7 @@ void update_process_times(int user_tick)
+@@ -1661,7 +1661,7 @@ void update_process_times(int user_tick)
  	scheduler_tick();
  	run_local_timers();
  	rcu_check_callbacks(user_tick);
@@ -183,7 +183,7 @@ index d8e1c2c5397c..fad6d60bf4e0 100644
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1716,6 +1716,10 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
+@@ -1714,6 +1714,10 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  	 */
  	base->must_forward_clk = false;
  
@@ -192,5 +192,8 @@ index d8e1c2c5397c..fad6d60bf4e0 100644
 +#endif
 +
  	__run_timers(base);
- 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON) && base->nohz_active)
+ 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
+-- 
+2.16.1
+

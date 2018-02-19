@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 19:39:56 +0200
-Subject: [PATCH 180/337] rt: Add the preempt-rt lock replacement APIs
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=457e24ade25eae59f688efdb747354212679c927
+Subject: [PATCH 180/351] rt: Add the preempt-rt lock replacement APIs
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cc1a1eac39001cfd85d534228f4c1ac6807d4181
 
 Map spinlocks, rwlocks, rw_semaphores and semaphores to the rt_mutex
 based locking functions for preempt-rt.
@@ -985,7 +985,7 @@ index b6c06e5886e5..2e074d63e8fa 100644
  
  	return ret;
  }
-@@ -2667,7 +2668,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2667,7 +2668,7 @@ retry_private:
  		goto no_block;
  	}
  
@@ -1700,7 +1700,7 @@ index 9d664eee062f..b99ddf374df1 100644
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -936,6 +974,339 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
+@@ -936,6 +974,339 @@ takeit:
  	return 1;
  }
  
@@ -2355,7 +2355,7 @@ index 9aa0fccd5d43..76d0b40d9193 100644
 +
 +#endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 42c29b743057..5adfa81cf487 100644
+index dcc12e735b50..ea1c44f014b8 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -454,7 +454,7 @@ void wake_q_add(struct wake_q_head *head, struct task_struct *task)
@@ -2379,3 +2379,6 @@ index 42c29b743057..5adfa81cf487 100644
  		put_task_struct(task);
  	}
  }
+-- 
+2.16.1
+

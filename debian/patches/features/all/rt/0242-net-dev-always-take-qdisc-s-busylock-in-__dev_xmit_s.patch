@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 30 Mar 2016 13:36:29 +0200
-Subject: [PATCH 242/337] net: dev: always take qdisc's busylock in
+Subject: [PATCH 242/351] net: dev: always take qdisc's busylock in
  __dev_xmit_skb()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bb3ef0d2787a11cc7f93e6c6c54643b6804d38e6
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1b0074b088c08c29594c87ab2d72fc1897cc0bf7
 
 The root-lock is dropped before dev_hard_start_xmit() is invoked and after
 setting the __QDISC___STATE_RUNNING bit. If this task is now pushed away
@@ -21,10 +21,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 6bd54aa226a9..fe2afb8d4807 100644
+index 476381189495..ef55906b0263 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3113,7 +3113,11 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
+@@ -3114,7 +3114,11 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
  	 * This permits qdisc->running owner to get the lock more
  	 * often and dequeue packets faster.
  	 */
@@ -36,3 +36,6 @@ index 6bd54aa226a9..fe2afb8d4807 100644
  	if (unlikely(contended))
  		spin_lock(&q->busylock);
  
+-- 
+2.16.1
+

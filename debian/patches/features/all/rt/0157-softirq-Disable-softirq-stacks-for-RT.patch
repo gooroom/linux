@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
-Subject: [PATCH 157/337] softirq: Disable softirq stacks for RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b47013cf2cc9fcb75e4e33a42a51e4d8a303b1d9
+Subject: [PATCH 157/351] softirq: Disable softirq stacks for RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9eec17ae19d578dec415cb169547e30726de55fc
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.
@@ -119,10 +119,10 @@ index 5cbf03c14981..6067d9379e5b 100644
  #ifdef CONFIG_HOTPLUG_CPU
  void fixup_irqs(void)
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index e7b0e7ff4c58..38dedcf62e01 100644
+index af4e58132d91..d573f0603a32 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -894,6 +894,7 @@ EXPORT_SYMBOL(native_load_gs_index)
+@@ -925,6 +925,7 @@ bad_gs:
  	jmp	2b
  	.previous
  
@@ -130,7 +130,7 @@ index e7b0e7ff4c58..38dedcf62e01 100644
  /* Call softirq on interrupt stack. Interrupts are off. */
  ENTRY(do_softirq_own_stack)
  	pushq	%rbp
-@@ -906,6 +907,7 @@ ENTRY(do_softirq_own_stack)
+@@ -937,6 +938,7 @@ ENTRY(do_softirq_own_stack)
  	decl	PER_CPU_VAR(irq_count)
  	ret
  END(do_softirq_own_stack)
@@ -171,3 +171,6 @@ index 5819d557f5fd..c2bcbd41e0ad 100644
  void do_softirq_own_stack(void);
  #else
  static inline void do_softirq_own_stack(void)
+-- 
+2.16.1
+

@@ -1,8 +1,8 @@
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Fri, 3 Jul 2009 08:44:29 -0500
-Subject: [PATCH 084/337] ata: Do not disable interrupts in ide code for
+Subject: [PATCH 084/351] ata: Do not disable interrupts in ide code for
  preempt-rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=08eddc120c6d066deabeed3048c1398735a95e9a
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7a8541c8f9c862bd666c00e7b2aeb652c50bd027
 
 Use the local_irq_*_nort variants.
 
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/ata/libata-sff.c b/drivers/ata/libata-sff.c
-index 051b6158d1b7..7ad293bef6ed 100644
+index 8d22acdf90f0..64fbad747da9 100644
 --- a/drivers/ata/libata-sff.c
 +++ b/drivers/ata/libata-sff.c
 @@ -678,9 +678,9 @@ unsigned int ata_sff_data_xfer_noirq(struct ata_device *dev, unsigned char *buf,
@@ -47,7 +47,7 @@ index 051b6158d1b7..7ad293bef6ed 100644
  	} else {
  		buf = page_address(page);
  		ap->ops->sff_data_xfer(qc->dev, buf + offset, qc->sect_size,
-@@ -864,7 +864,7 @@ static int __atapi_pio_bytes(struct ata_queued_cmd *qc, unsigned int bytes)
+@@ -864,7 +864,7 @@ next_sg:
  		unsigned long flags;
  
  		/* FIXME: use bounce buffer */
@@ -56,7 +56,7 @@ index 051b6158d1b7..7ad293bef6ed 100644
  		buf = kmap_atomic(page);
  
  		/* do the actual data transfer */
-@@ -872,7 +872,7 @@ static int __atapi_pio_bytes(struct ata_queued_cmd *qc, unsigned int bytes)
+@@ -872,7 +872,7 @@ next_sg:
  								count, rw);
  
  		kunmap_atomic(buf);
@@ -65,3 +65,6 @@ index 051b6158d1b7..7ad293bef6ed 100644
  	} else {
  		buf = page_address(page);
  		consumed = ap->ops->sff_data_xfer(dev,  buf + offset,
+-- 
+2.16.1
+

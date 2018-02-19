@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Aug 2013 17:48:46 +0200
-Subject: [PATCH 201/337] genirq: Do not invoke the affinity callback via a
+Subject: [PATCH 201/351] genirq: Do not invoke the affinity callback via a
  workqueue on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c8f2280b172185fcaa3ec345a2a6394ca78df2e2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2b2d780da0d611b2eff54d8a20f5e682add6758e
 
 Joe Korty reported, that __irq_set_affinity_locked() schedules a
 workqueue while holding a rawlock which results in a might_sleep()
@@ -93,7 +93,7 @@ index 562df8dc14be..5f14e0d7c0c7 100644
  	struct irq_desc *desc = irq_to_desc(notify->irq);
  	cpumask_var_t cpumask;
  	unsigned long flags;
-@@ -298,6 +301,35 @@ static void irq_affinity_notify(struct work_struct *work)
+@@ -298,6 +301,35 @@ out:
  	kref_put(&notify->kref, notify->release);
  }
  
@@ -142,3 +142,6 @@ index 562df8dc14be..5f14e0d7c0c7 100644
  	}
  
  	raw_spin_lock_irqsave(&desc->lock, flags);
+-- 
+2.16.1
+

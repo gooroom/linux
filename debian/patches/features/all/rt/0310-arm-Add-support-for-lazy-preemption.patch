@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 310/337] arm: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e414bbae124500da942ed41613776f2b7647be3a
+Subject: [PATCH 310/351] arm: Add support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f1525c3e455016b38cc009bea13b8e6ac346e814
 
 Implement the arm pieces for lazy preempt.
 
@@ -83,7 +83,7 @@ diff --git a/arch/arm/kernel/entry-armv.S b/arch/arm/kernel/entry-armv.S
 index 9f157e7c51e7..468e224d76aa 100644
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -220,11 +220,18 @@ ENDPROC(__dabt_svc)
+@@ -220,11 +220,18 @@ __irq_svc:
  
  #ifdef CONFIG_PREEMPT
  	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
@@ -104,7 +104,7 @@ index 9f157e7c51e7..468e224d76aa 100644
  #endif
  
  	svc_exit r5, irq = 1			@ return from exception
-@@ -239,8 +246,14 @@ ENDPROC(__irq_svc)
+@@ -239,8 +246,14 @@ svc_preempt:
  1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
  	ldr	r0, [tsk, #TI_FLAGS]		@ get new tasks TI_FLAGS
  	tst	r0, #_TIF_NEED_RESCHED
@@ -124,7 +124,7 @@ diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
 index 10c3283d6c19..8872937862cc 100644
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
-@@ -36,7 +36,9 @@
+@@ -36,7 +36,9 @@ ret_fast_syscall:
   UNWIND(.cantunwind	)
  	disable_irq_notrace			@ disable interrupts
  	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
@@ -135,7 +135,7 @@ index 10c3283d6c19..8872937862cc 100644
  	bne	fast_work_pending
  
  	/* perform architecture specific actions before user return */
-@@ -62,8 +64,11 @@ ENDPROC(ret_fast_syscall)
+@@ -62,8 +64,11 @@ ret_fast_syscall:
  	str	r0, [sp, #S_R0 + S_OFF]!	@ save returned r0
  	disable_irq_notrace			@ disable interrupts
  	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
@@ -162,3 +162,6 @@ index 7b8f2141427b..96541e00b74a 100644
  			schedule();
  		} else {
  			if (unlikely(!user_mode(regs)))
+-- 
+2.16.1
+

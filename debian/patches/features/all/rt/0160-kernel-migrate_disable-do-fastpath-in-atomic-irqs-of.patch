@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Feb 2016 18:18:01 +0100
-Subject: [PATCH 160/337] kernel: migrate_disable() do fastpath in atomic &
+Subject: [PATCH 160/351] kernel: migrate_disable() do fastpath in atomic &
  irqs-off
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=796979a2ed1d3cb4976b68865f536ad874b4ca39
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1097bc35502855e923364872984f78c1c75bdfc1
 
 With interrupts off it makes no sense to do the long path since we can't
 leave the CPU anyway. Also we might end up in a recursion with lockdep.
@@ -13,10 +13,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d1e319e59cc2..42c29b743057 100644
+index e506ecc2f962..dcc12e735b50 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3300,7 +3300,7 @@ void migrate_disable(void)
+@@ -3299,7 +3299,7 @@ void migrate_disable(void)
  {
  	struct task_struct *p = current;
  
@@ -25,7 +25,7 @@ index d1e319e59cc2..42c29b743057 100644
  #ifdef CONFIG_SCHED_DEBUG
  		p->migrate_disable_atomic++;
  #endif
-@@ -3327,7 +3327,7 @@ void migrate_enable(void)
+@@ -3326,7 +3326,7 @@ void migrate_enable(void)
  {
  	struct task_struct *p = current;
  
@@ -34,3 +34,6 @@ index d1e319e59cc2..42c29b743057 100644
  #ifdef CONFIG_SCHED_DEBUG
  		p->migrate_disable_atomic--;
  #endif
+-- 
+2.16.1
+

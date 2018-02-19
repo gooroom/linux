@@ -1,7 +1,7 @@
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 093/337] signal/x86: Delay calling signals in atomic
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0d18d119a615ac1aaf0259dc54a5a2cb1904e8bf
+Subject: [PATCH 093/351] signal/x86: Delay calling signals in atomic
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=052dbbc75fe7b6ccd197db6dd6070bd80623db16
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -94,10 +94,10 @@ index bfe832b3fc9f..040ae135ecb0 100644
  	unsigned long sas_ss_sp;
  	size_t sas_ss_size;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index be9753809dc7..99918dcd836f 100644
+index 8c4d357f484f..4d094ae3a625 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1224,8 +1224,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
+@@ -1226,8 +1226,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
   * We don't want to have recursive SIGSEGV's etc, for example,
   * that is why we also clear SIGNAL_UNKILLABLE.
   */
@@ -108,7 +108,7 @@ index be9753809dc7..99918dcd836f 100644
  {
  	unsigned long int flags;
  	int ret, blocked, ignored;
-@@ -1250,6 +1250,39 @@ force_sig_info(int sig, struct siginfo *info, struct task_struct *t)
+@@ -1252,6 +1252,39 @@ force_sig_info(int sig, struct siginfo *info, struct task_struct *t)
  	return ret;
  }
  
@@ -148,3 +148,6 @@ index be9753809dc7..99918dcd836f 100644
  /*
   * Nuke all other threads in the group.
   */
+-- 
+2.16.1
+

@@ -1,8 +1,8 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:55 +0100
-Subject: [PATCH 012/337] futex: Pull rt_mutex_futex_unlock() out from under
+Subject: [PATCH 012/351] futex: Pull rt_mutex_futex_unlock() out from under
  hb->lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=af0a782aab0f7d89bed7636e9f42ff46f863cbec
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2128fbc9dc8cc940dc5af625ec8cd4577a1228b5
 
 Upstream commit 16ffa12d742534d4ff73e8b3a4e81c1de39196f0
 
@@ -188,7 +188,7 @@ index 81439b91133b..f23864847549 100644
  	 * We have to replace the newowner TID in the user space variable.
  	 * This must be atomic as we have to preserve the owner died bit here.
  	 *
-@@ -2248,7 +2246,7 @@ static int fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
+@@ -2248,7 +2246,7 @@ retry:
  	if (get_futex_value_locked(&uval, uaddr))
  		goto handle_fault;
  
@@ -216,7 +216,7 @@ index 81439b91133b..f23864847549 100644
  	struct futex_hash_bucket *hb;
  	struct futex_q q = futex_q_init;
  	int res, ret;
-@@ -2669,12 +2672,19 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2669,12 +2672,19 @@ retry_private:
  	 * If fixup_owner() faulted and was unable to handle the fault, unlock
  	 * it and return the fault to userspace.
  	 */
@@ -238,7 +238,7 @@ index 81439b91133b..f23864847549 100644
  	goto out_put_key;
  
  out_unlock_put_key:
-@@ -2737,10 +2747,36 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2737,10 +2747,36 @@ retry:
  	 */
  	top_waiter = futex_top_waiter(hb, &key);
  	if (top_waiter) {
@@ -278,7 +278,7 @@ index 81439b91133b..f23864847549 100644
  		 */
  		if (!ret)
  			goto out_putkey;
-@@ -2755,7 +2791,6 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2755,7 +2791,6 @@ retry:
  		 * setting the FUTEX_WAITERS bit. Try again.
  		 */
  		if (ret == -EAGAIN) {
@@ -286,7 +286,7 @@ index 81439b91133b..f23864847549 100644
  			put_futex_key(&key);
  			goto retry;
  		}
-@@ -2763,7 +2798,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2763,7 +2798,7 @@ retry:
  		 * wake_futex_pi has detected invalid state. Tell user
  		 * space.
  		 */
@@ -295,7 +295,7 @@ index 81439b91133b..f23864847549 100644
  	}
  
  	/*
-@@ -2773,8 +2808,10 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2773,8 +2808,10 @@ retry:
  	 * preserve the WAITERS bit not the OWNER_DIED one. We are the
  	 * owner.
  	 */
@@ -307,7 +307,7 @@ index 81439b91133b..f23864847549 100644
  
  	/*
  	 * If uval has changed, let user space handle it.
-@@ -2788,7 +2825,6 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2788,7 +2825,6 @@ out_putkey:
  	return ret;
  
  pi_faulted:
@@ -359,3 +359,6 @@ index 81439b91133b..f23864847549 100644
  	if (ret == -EINTR) {
  		/*
  		 * We've already been requeued, but cannot restart by calling
+-- 
+2.16.1
+

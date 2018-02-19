@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 309/337] x86: Support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e6288b8306dd6af26fee8fbc81219daf514ec853
+Subject: [PATCH 309/351] x86: Support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1935a4dd2c0c07942bfd1baf53664c2495aa956f
 
 Implement the x86 pieces for lazy preempt.
 
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 79 insertions(+), 3 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 14c824810efd..f8a995c90c01 100644
+index ab7c90867543..e96c2975af4f 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -17,6 +17,7 @@ config X86_64
@@ -164,10 +164,10 @@ diff --git a/arch/x86/include/asm/thread_info.h b/arch/x86/include/asm/thread_in
 index ad6f5eb07a95..5ceb3a1c2b1a 100644
 --- a/arch/x86/include/asm/thread_info.h
 +++ b/arch/x86/include/asm/thread_info.h
-@@ -54,11 +54,14 @@ struct task_struct;
- 
+@@ -55,11 +55,14 @@ struct task_struct;
  struct thread_info {
  	unsigned long		flags;		/* low level flags */
+ 	u32			status;		/* thread synchronous flags */
 +	int                     preempt_lazy_count;     /* 0 => lazy preemptable
 +							   <0 => BUG */
  };

@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 17:19:44 +0100
-Subject: [PATCH 091/337] mm/workingset: Do not protect workingset_shadow_nodes
+Subject: [PATCH 091/351] mm/workingset: Do not protect workingset_shadow_nodes
  with irq off
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f51fcc2e58905a6a37f21f24a1bc83781132f86f
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e01dc61368f759609b2cda8aedc66bdf47085eaa
 
 workingset_shadow_nodes is protected by local_irq_disable(). Some users
 use spin_lock_irq().
@@ -94,7 +94,7 @@ diff --git a/mm/workingset.c b/mm/workingset.c
 index 4c4f05655e6e..b97b1e87b54c 100644
 --- a/mm/workingset.c
 +++ b/mm/workingset.c
-@@ -334,7 +334,8 @@ void workingset_activation(struct page *page)
+@@ -334,7 +334,8 @@ out:
   * point where they would still be useful.
   */
  
@@ -161,3 +161,6 @@ index 4c4f05655e6e..b97b1e87b54c 100644
  err:
  	return ret;
  }
+-- 
+2.16.1
+
