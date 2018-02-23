@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Jul 2011 09:56:44 +0200
-Subject: [PATCH 140/337] sched: Take RT softirq semantics into account in
+Subject: [PATCH 140/351] sched: Take RT softirq semantics into account in
  cond_resched()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c68feb2dc054c13cc9f680b6b53347dbc58a62d2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d90d18ca9c6c80c0d348e1d9d88b6c3f168fd6a5
 
 The softirq semantics work different on -RT. There is no SOFTIRQ_MASK in
 the preemption counter which leads to the BUG_ON() statement in
@@ -37,10 +37,10 @@ index 7deb4bff4e06..4ffeb8ce1795 100644
  static inline void cond_resched_rcu(void)
  {
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e2d0ab845b09..de08805c512f 100644
+index 91d3f785d764..ced1266c7ef7 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -5093,6 +5093,7 @@ int __cond_resched_lock(spinlock_t *lock)
+@@ -5092,6 +5092,7 @@ int __cond_resched_lock(spinlock_t *lock)
  }
  EXPORT_SYMBOL(__cond_resched_lock);
  
@@ -48,7 +48,7 @@ index e2d0ab845b09..de08805c512f 100644
  int __sched __cond_resched_softirq(void)
  {
  	BUG_ON(!in_softirq());
-@@ -5106,6 +5107,7 @@ int __sched __cond_resched_softirq(void)
+@@ -5105,6 +5106,7 @@ int __sched __cond_resched_softirq(void)
  	return 0;
  }
  EXPORT_SYMBOL(__cond_resched_softirq);
@@ -56,3 +56,6 @@ index e2d0ab845b09..de08805c512f 100644
  
  /**
   * yield - yield the current processor to other threads.
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH 311/337] powerpc: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=85443034430dea1a00d1b6697e12641cb3c210f8
+Subject: [PATCH 311/351] powerpc: Add support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f6af764099f79c3afb9d1f2c41714c489121f0f6
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 33 insertions(+), 11 deletions(-)
 
 diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 7b9f0a58ffb6..619485b777d2 100644
+index cdf9c16c1284..601e27701a4a 100644
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
 @@ -135,6 +135,7 @@ config PPC
@@ -92,7 +92,7 @@ diff --git a/arch/powerpc/kernel/entry_32.S b/arch/powerpc/kernel/entry_32.S
 index 3841d749a430..6dbaeff192b9 100644
 --- a/arch/powerpc/kernel/entry_32.S
 +++ b/arch/powerpc/kernel/entry_32.S
-@@ -835,7 +835,14 @@ user_exc_return:		/* r10 contains MSR_KERNEL here */
+@@ -835,7 +835,14 @@ resume_kernel:
  	cmpwi	0,r0,0		/* if non-zero, just restore regs and return */
  	bne	restore
  	andi.	r8,r8,_TIF_NEED_RESCHED
@@ -107,7 +107,7 @@ index 3841d749a430..6dbaeff192b9 100644
  	lwz	r3,_MSR(r1)
  	andi.	r0,r3,MSR_EE	/* interrupts off? */
  	beq	restore		/* don't schedule if so */
-@@ -846,11 +853,11 @@ user_exc_return:		/* r10 contains MSR_KERNEL here */
+@@ -846,11 +853,11 @@ resume_kernel:
  	 */
  	bl	trace_hardirqs_off
  #endif
@@ -122,7 +122,7 @@ index 3841d749a430..6dbaeff192b9 100644
  #ifdef CONFIG_TRACE_IRQFLAGS
  	/* And now, to properly rebalance the above, we tell lockdep they
  	 * are being turned back on, which will happen when we return
-@@ -1171,7 +1178,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRED_STWCX)
+@@ -1171,7 +1178,7 @@ global_dbcr0:
  #endif /* !(CONFIG_4xx || CONFIG_BOOKE) */
  
  do_work:			/* r10 contains MSR_KERNEL here */
@@ -131,7 +131,7 @@ index 3841d749a430..6dbaeff192b9 100644
  	beq	do_user_signal
  
  do_resched:			/* r10 contains MSR_KERNEL here */
-@@ -1192,7 +1199,7 @@ do_resched:			/* r10 contains MSR_KERNEL here */
+@@ -1192,7 +1199,7 @@ recheck:
  	MTMSRD(r10)		/* disable interrupts */
  	CURRENT_THREAD_INFO(r9, r1)
  	lwz	r9,TI_FLAGS(r9)
@@ -153,7 +153,7 @@ index caa659671599..891080c4a41e 100644
  	beq	2f
  	bl	restore_interrupts
  	SCHEDULE_USER
-@@ -718,10 +718,18 @@ _GLOBAL(ret_from_except_lite)
+@@ -718,10 +718,18 @@ resume_kernel:
  
  #ifdef CONFIG_PREEMPT
  	/* Check if we need to preempt */
@@ -173,7 +173,7 @@ index caa659671599..891080c4a41e 100644
  	cmpwi	cr1,r8,0
  	ld	r0,SOFTE(r1)
  	cmpdi	r0,0
-@@ -738,7 +746,7 @@ _GLOBAL(ret_from_except_lite)
+@@ -738,7 +746,7 @@ resume_kernel:
  	/* Re-test flags and eventually loop */
  	CURRENT_THREAD_INFO(r9, r1)
  	ld	r4,TI_FLAGS(r9)
@@ -182,3 +182,6 @@ index caa659671599..891080c4a41e 100644
  	bne	1b
  
  	/*
+-- 
+2.16.1
+

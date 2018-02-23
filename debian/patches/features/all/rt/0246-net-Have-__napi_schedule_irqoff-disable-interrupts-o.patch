@@ -1,8 +1,8 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 246/337] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 246/351] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=57363272528096c2cfbcedc43453e35ca0829e2d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8adebf29a8b9a62aceebf306460f36f0289e008b
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index cc281a9c74f9..67af02914bf8 100644
+index dcad41b4e3b3..85fc72b8a92b 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -396,7 +396,19 @@ typedef enum rx_handler_result rx_handler_result_t;
@@ -52,10 +52,10 @@ index cc281a9c74f9..67af02914bf8 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index fe2afb8d4807..665c7c0ca816 100644
+index ef55906b0263..661ec4bccdb9 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4959,6 +4959,7 @@ void __napi_schedule(struct napi_struct *n)
+@@ -4960,6 +4960,7 @@ void __napi_schedule(struct napi_struct *n)
  }
  EXPORT_SYMBOL(__napi_schedule);
  
@@ -63,7 +63,7 @@ index fe2afb8d4807..665c7c0ca816 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -4970,6 +4971,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -4971,6 +4972,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -71,3 +71,6 @@ index fe2afb8d4807..665c7c0ca816 100644
  
  void __napi_complete(struct napi_struct *n)
  {
+-- 
+2.16.1
+

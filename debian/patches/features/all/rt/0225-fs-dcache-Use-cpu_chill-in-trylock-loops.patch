@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 225/337] fs: dcache: Use cpu_chill() in trylock loops
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ff1c5f15f6e1ba4875f1bdc5afb420a09c29515f
+Subject: [PATCH 225/351] fs: dcache: Use cpu_chill() in trylock loops
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e48dafadb556e118cb5039dc3b42fed66a934819
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -31,7 +31,7 @@ diff --git a/fs/autofs4/expire.c b/fs/autofs4/expire.c
 index d8e6d421c27f..2e689ab1306b 100644
 --- a/fs/autofs4/expire.c
 +++ b/fs/autofs4/expire.c
-@@ -148,7 +148,7 @@ static struct dentry *get_next_positive_dentry(struct dentry *prev,
+@@ -148,7 +148,7 @@ again:
  			parent = p->d_parent;
  			if (!spin_trylock(&parent->d_lock)) {
  				spin_unlock(&p->d_lock);
@@ -61,7 +61,7 @@ index 10f848262852..112ef2773fe3 100644
  	if (unlikely(!dentry))
  		return;
  
-@@ -815,9 +818,18 @@ void dput(struct dentry *dentry)
+@@ -815,9 +818,18 @@ repeat:
  	return;
  
  kill_it:
@@ -83,7 +83,7 @@ index 10f848262852..112ef2773fe3 100644
  		goto repeat;
  	}
  }
-@@ -2352,7 +2364,7 @@ void d_delete(struct dentry * dentry)
+@@ -2352,7 +2364,7 @@ again:
  	if (dentry->d_lockref.count == 1) {
  		if (!spin_trylock(&inode->i_lock)) {
  			spin_unlock(&dentry->d_lock);
@@ -113,3 +113,6 @@ index 295b02091d1f..da188c6966a3 100644
  		preempt_disable();
  	}
  	/*
+-- 
+2.16.1
+

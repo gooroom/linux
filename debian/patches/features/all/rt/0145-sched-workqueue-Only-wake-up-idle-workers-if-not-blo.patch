@@ -1,8 +1,8 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Mon, 18 Mar 2013 15:12:49 -0400
-Subject: [PATCH 145/337] sched/workqueue: Only wake up idle workers if not
+Subject: [PATCH 145/351] sched/workqueue: Only wake up idle workers if not
  blocked on sleeping spin lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7f2fd82c31764f821e0269619366bf67556763f0
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=faa945788918d0aeadd195969ceceefcc309d132
 
 In -rt, most spin_locks() turn into mutexes. One of these spin_lock
 conversions is performed on the workqueue gcwq->lock. When the idle
@@ -24,10 +24,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1fbb4b394e0f..d1e319e59cc2 100644
+index 7451d4e3d92f..e506ecc2f962 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3478,8 +3478,10 @@ static void __sched notrace __schedule(bool preempt)
+@@ -3477,8 +3477,10 @@ static void __sched notrace __schedule(bool preempt)
  			 * If a worker went to sleep, notify and ask workqueue
  			 * whether it wants to wake up a task to maintain
  			 * concurrency.
@@ -39,3 +39,6 @@ index 1fbb4b394e0f..d1e319e59cc2 100644
  				struct task_struct *to_wakeup;
  
  				to_wakeup = wq_worker_sleeping(prev);
+-- 
+2.16.1
+

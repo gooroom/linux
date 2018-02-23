@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 8 Feb 2016 16:15:28 +0100
-Subject: [PATCH 291/337] rt/locking: Reenable migration accross schedule
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2998fe5f1af780d1f99001d1e271748884504ba7
+Subject: [PATCH 291/351] rt/locking: Reenable migration accross schedule
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c1eade0214f020acd609f2bf375b9cef7512872a
 
 We currently disable migration across lock acquisition. That includes the part
 where we block on the lock and schedule out. We cannot disable migration after
@@ -21,7 +21,7 @@ diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
 index 6e52bce66a26..78a6c4a223c1 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -980,14 +980,19 @@ static int __try_to_take_rt_mutex(struct rt_mutex *lock,
+@@ -980,14 +980,19 @@ takeit:
   * preemptible spin_lock functions:
   */
  static inline void rt_spin_lock_fastlock(struct rt_mutex *lock,
@@ -112,3 +112,6 @@ index 6e52bce66a26..78a6c4a223c1 100644
  }
  EXPORT_SYMBOL(rt_spin_lock_nested);
  #endif
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 132/337] sched: Move task_struct cleanup to RCU
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b77fa6e4d827d90789f68f00336673262ebdcc50
+Subject: [PATCH 132/351] sched: Move task_struct cleanup to RCU
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=211d7d106577d939aa490fdbd9547cdea83a4d36
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -51,10 +51,10 @@ index b6be669490e4..a1363ac435ce 100644
  struct task_struct *task_rcu_dereference(struct task_struct **ptask);
  struct task_struct *try_get_task_struct(struct task_struct **ptask);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index bc418dcfcda1..a9f95368ca66 100644
+index 2572a2547f3e..08a834f25b82 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -376,7 +376,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
+@@ -378,7 +378,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
  	if (atomic_dec_and_test(&sig->sigcnt))
  		free_signal_struct(sig);
  }
@@ -65,7 +65,7 @@ index bc418dcfcda1..a9f95368ca66 100644
  void __put_task_struct(struct task_struct *tsk)
  {
  	WARN_ON(!tsk->exit_state);
-@@ -393,7 +395,18 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -395,7 +397,18 @@ void __put_task_struct(struct task_struct *tsk)
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
  }
@@ -84,3 +84,6 @@ index bc418dcfcda1..a9f95368ca66 100644
  
  void __init __weak arch_task_cache_init(void) { }
  
+-- 
+2.16.1
+

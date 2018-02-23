@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 050/337] timekeeping: Split jiffies seqlock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0d01fc515e88cc6373019507929bbe2097edc58f
+Subject: [PATCH 050/351] timekeeping: Split jiffies seqlock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2be4fad0c4b85fb583c111d4127e6269afc95906
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -76,7 +76,7 @@ index 4fcd99e12aa0..5a47f2e98faf 100644
  		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 3bcb61b52f6c..10cb224cb9d4 100644
+index dae1a45be504..184ad05416ca 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -62,7 +62,8 @@ static void tick_do_update_jiffies64(ktime_t now)
@@ -121,7 +121,7 @@ index 3bcb61b52f6c..10cb224cb9d4 100644
  	return period;
  }
  
-@@ -673,10 +678,10 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
+@@ -678,10 +683,10 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
  
  	/* Read jiffies and the time when jiffies were updated last */
  	do {
@@ -133,7 +133,7 @@ index 3bcb61b52f6c..10cb224cb9d4 100644
 +	} while (read_seqcount_retry(&jiffies_seq, seq));
  	ts->last_jiffies = basejiff;
  
- 	if (rcu_needs_cpu(basemono, &next_rcu) ||
+ 	/*
 diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
 index d831827d7ab0..76d982c11ac3 100644
 --- a/kernel/time/timekeeping.c
@@ -165,3 +165,6 @@ index 704f595ce83f..763a3e5121ff 100644
  
  #define CS_NAME_LEN	32
  
+-- 
+2.16.1
+

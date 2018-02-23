@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:53 +0100
-Subject: [PATCH 010/337] futex: Cleanup refcounting
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bf5f66e96794f917af360b0f7230c1a5131b6fcb
+Subject: [PATCH 010/351] futex: Cleanup refcounting
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1b910ebd1754af99e179636c0f1c5ce5e8cc1401
 
 Upstream commit bf92cf3a5100f5a0d5f9834787b130159397cb22
 
@@ -67,7 +67,7 @@ index 2d2267efc3cc..b970b95f0508 100644
  	raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
  	*ps = pi_state;
  	return 0;
-@@ -1989,7 +1994,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
+@@ -1989,7 +1994,7 @@ retry_private:
  			 * refcount on the pi_state and store the pointer in
  			 * the futex_q object of the waiter.
  			 */
@@ -76,3 +76,6 @@ index 2d2267efc3cc..b970b95f0508 100644
  			this->pi_state = pi_state;
  			ret = rt_mutex_start_proxy_lock(&pi_state->pi_mutex,
  							this->rt_waiter,
+-- 
+2.16.1
+

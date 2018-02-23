@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 13 Sep 2011 16:42:35 +0200
-Subject: [PATCH 142/337] sched: Disable TTWU_QUEUE on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=55f29c10da86a6338ea5eb77791be6212c52a516
+Subject: [PATCH 142/351] sched: Disable TTWU_QUEUE on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=94fb6eca39d3d7cea515939b9a5e23ac9faa5228
 
 The queued remote wakeup mechanism can introduce rather large
 latencies if the number of migrated tasks is high. Disable it for RT.
@@ -12,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 5 insertions(+)
 
 diff --git a/kernel/sched/features.h b/kernel/sched/features.h
-index 69631fa46c2f..11258a0feae7 100644
+index 1b3c8189b286..852cfc5bb77b 100644
 --- a/kernel/sched/features.h
 +++ b/kernel/sched/features.h
 @@ -45,11 +45,16 @@ SCHED_FEAT(LB_BIAS, true)
@@ -30,5 +30,8 @@ index 69631fa46c2f..11258a0feae7 100644
  SCHED_FEAT(TTWU_QUEUE, true)
 +#endif
  
- #ifdef HAVE_RT_PUSH_IPI
  /*
+  * When doing wakeups, attempt to limit superfluous scans of the LLC domain.
+-- 
+2.16.1
+

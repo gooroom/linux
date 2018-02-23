@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 10 Apr 2017 18:03:36 +0200
-Subject: [PATCH 027/337] futex: Avoid freeing an active timer
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5fbb627cf9d5e65aab28543edfcb090333e97e4a
+Subject: [PATCH 027/351] futex: Avoid freeing an active timer
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=82bd1cda28c182eff0a12b3d5a6ad1dbcc60e908
 
 Upstream commit 97181f9bd57405b879403763284537e27d46963d
 
@@ -41,7 +41,7 @@ diff --git a/kernel/futex.c b/kernel/futex.c
 index 3c5173f520c6..51455f2fb072 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2735,8 +2735,10 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2735,8 +2735,10 @@ out_unlock_put_key:
  out_put_key:
  	put_futex_key(&q.key);
  out:
@@ -53,3 +53,6 @@ index 3c5173f520c6..51455f2fb072 100644
  	return ret != -EINTR ? ret : -ERESTARTNOINTR;
  
  uaddr_faulted:
+-- 
+2.16.1
+

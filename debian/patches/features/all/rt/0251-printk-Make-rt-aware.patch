@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 251/337] printk: Make rt aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c2ae7c26d3d24fa1901a2b62d5f4f337df60a63f
+Subject: [PATCH 251/351] printk: Make rt aware
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5b229fecc157b0b16348edeae05400295b9d5914
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -73,7 +73,7 @@ index 35fb8be3e811..b0fd37e9ebac 100644
  	return;
  out:
  	raw_spin_unlock_irqrestore(&logbuf_lock, flags);
-@@ -2477,13 +2494,17 @@ void console_unlock(void)
+@@ -2477,13 +2494,17 @@ skip:
  		console_idx = log_next(console_idx);
  		console_seq++;
  		console_prev = msg->flags;
@@ -92,3 +92,6 @@ index 35fb8be3e811..b0fd37e9ebac 100644
  		if (do_cond_resched)
  			cond_resched();
  	}
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 17 Nov 2017 16:21:00 +0100
-Subject: [PATCH 336/337] md/raid5: do not disable interrupts
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8231d7b6018bbf12f3476a35080b648a9ae63680
+Subject: [PATCH 336/351] md/raid5: do not disable interrupts
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f5dcddfeaf286d0e114585418ad2ff260c4fb688
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:974
 |in_atomic(): 0, irqs_disabled(): 1, pid: 2992, name: lvm
@@ -35,7 +35,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
-index 4d8cfce1de86..4dde911925dc 100644
+index 710bb5d009a8..8d2c9d70042e 100644
 --- a/drivers/md/raid5.c
 +++ b/drivers/md/raid5.c
 @@ -429,7 +429,7 @@ void raid5_release_stripe(struct stripe_head *sh)
@@ -47,7 +47,7 @@ index 4d8cfce1de86..4dde911925dc 100644
  	/* we are ok here if STRIPE_ON_RELEASE_LIST is set or not */
  	if (atomic_dec_and_lock(&sh->count, &conf->device_lock)) {
  		INIT_LIST_HEAD(&list);
-@@ -438,7 +438,7 @@ void raid5_release_stripe(struct stripe_head *sh)
+@@ -438,7 +438,7 @@ slow_path:
  		spin_unlock(&conf->device_lock);
  		release_inactive_stripe_list(conf, &list, hash);
  	}
@@ -56,3 +56,6 @@ index 4d8cfce1de86..4dde911925dc 100644
  }
  
  static inline void remove_hash(struct stripe_head *sh)
+-- 
+2.16.1
+

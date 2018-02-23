@@ -1,8 +1,8 @@
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
-Subject: [PATCH 319/337] drivers/zram: Don't disable preemption in
+Subject: [PATCH 319/351] drivers/zram: Don't disable preemption in
  zcomp_stream_get/put()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0d80fa696e6e94f272e238d727cca1084e7c275d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=419fe7dc006767e3be9e00494fbebd2f6bbb5dad
 
 In v4.7, the driver switched to percpu compression streams, disabling
 preemption via get/put_cpu_ptr(). Use a per-zcomp_strm lock here. We
@@ -66,7 +66,7 @@ index 478cac2ed465..f7a6efdc3285 100644
  
  /* dynamic per-device compression frontend */
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 553954c4ffd0..2038d138f286 100644
+index 22009186b3df..47d033b8a966 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -577,6 +577,7 @@ static int zram_decompress_page(struct zram *zram, char *mem, u32 index)
@@ -96,3 +96,6 @@ index 553954c4ffd0..2038d138f286 100644
  	zram_unlock_table(&meta->table[index]);
  
  	/* Should NEVER happen. Return bio error if it does. */
+-- 
+2.16.1
+

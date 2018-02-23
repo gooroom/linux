@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:42:26 +0200
-Subject: [PATCH 229/337] workqueue: Use local irq lock instead of irq disable
+Subject: [PATCH 229/351] workqueue: Use local irq lock instead of irq disable
  regions
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=84d2d95aedc05ad942092a2662021dc95434acbc
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d2774944585ea9690dfd3412410e11f1b4bec752
 
 Use a local_irq_lock as a replacement for irq off regions. We keep the
 semantic of irq-off in regard to the pool->lock and remain preemptible.
@@ -17,9 +17,9 @@ index e6b8a8d6b5c3..ced32b9827ac 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -48,6 +48,7 @@
- #include <linux/nodemask.h>
  #include <linux/moduleparam.h>
  #include <linux/uaccess.h>
+ #include <linux/nmi.h>
 +#include <linux/locallock.h>
  
  #include "workqueue_internal.h"

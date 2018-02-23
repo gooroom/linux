@@ -1,7 +1,7 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 4 Mar 2014 12:28:32 -0500
-Subject: [PATCH 222/337] cpu_chill: Add a UNINTERRUPTIBLE hrtimer_nanosleep
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6efac0bf07bffbcf39794fb62807e3e2e0cc3583
+Subject: [PATCH 222/351] cpu_chill: Add a UNINTERRUPTIBLE hrtimer_nanosleep
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=978af46238db61018ec1ad2e6a8a11f8d6212952
 
 We hit another bug that was caused by switching cpu_chill() from
 msleep() to hrtimer_nanosleep().
@@ -62,7 +62,7 @@ index 73b62329b722..0797bd6eadb4 100644
  		goto out;
  
  	rmtp = restart->nanosleep.rmtp;
-@@ -1723,8 +1725,10 @@ long __sched hrtimer_nanosleep_restart(struct restart_block *restart)
+@@ -1723,8 +1725,10 @@ out:
  	return ret;
  }
  
@@ -84,7 +84,7 @@ index 73b62329b722..0797bd6eadb4 100644
  		goto out;
  
  	/* Absolute timers do not update the rmtp value and restart: */
-@@ -1764,6 +1768,12 @@ long hrtimer_nanosleep(struct timespec *rqtp, struct timespec __user *rmtp,
+@@ -1764,6 +1768,12 @@ out:
  	return ret;
  }
  
@@ -107,3 +107,6 @@ index 73b62329b722..0797bd6eadb4 100644
  	if (!freeze_flag)
  		current->flags &= ~PF_NOFREEZE;
  }
+-- 
+2.16.1
+

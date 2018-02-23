@@ -1,7 +1,7 @@
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Mon, 16 Jul 2012 08:07:43 +0000
-Subject: [PATCH 285/337] cpu/rt: Rework cpu down for PREEMPT_RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=fde3d6ee50fb07d2830f370f029202054ee0a93a
+Subject: [PATCH 285/351] cpu/rt: Rework cpu down for PREEMPT_RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3c9d5469540588bbba3240e21ebad0cd71cf4324
 
 Bringing a CPU down is a pain with the PREEMPT_RT kernel because
 tasks can be preempted in many more places than in non-RT. In
@@ -80,7 +80,7 @@ index f49f4970ce30..9bb98e2bc6d0 100644
  
  #ifdef CONFIG_NO_HZ_COMMON
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 9bb0d333bfc7..acac23803b36 100644
+index 238f11eb99ae..763512dfe168 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -210,16 +210,10 @@ static int cpu_hotplug_disabled;
@@ -441,10 +441,10 @@ index 9bb0d333bfc7..acac23803b36 100644
  	 * Prevent irq alloc/free while the dying cpu reorganizes the
  	 * interrupt affinities.
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f787ad3e9d90..2a4c083bf44f 100644
+index ca7927521f2f..0cbc7654192a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1152,6 +1152,84 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1151,6 +1151,84 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  		set_curr_task(rq, p);
  }
  
@@ -529,3 +529,6 @@ index f787ad3e9d90..2a4c083bf44f 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
+-- 
+2.16.1
+

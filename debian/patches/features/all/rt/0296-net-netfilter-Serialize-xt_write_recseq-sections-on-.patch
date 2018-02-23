@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 28 Oct 2012 11:18:08 +0100
-Subject: [PATCH 296/337] net: netfilter: Serialize xt_write_recseq sections on
+Subject: [PATCH 296/351] net: netfilter: Serialize xt_write_recseq sections on
  RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=95c43b67ac7a15d75be176d10670d7a743cd0927
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8df5a185fc0603a4325a2e6b64228dbf8dbf1797
 
 The netfilter code relies only on the implicit semantics of
 local_bh_disable() for serializing wt_write_recseq sections. RT breaks
@@ -55,7 +55,7 @@ index 2ad1a2b289b5..b4d10155af54 100644
  
  /*
 diff --git a/net/netfilter/core.c b/net/netfilter/core.c
-index 004af030ef1a..b64f751bda45 100644
+index d869ea50623e..5cafa87b030b 100644
 --- a/net/netfilter/core.c
 +++ b/net/netfilter/core.c
 @@ -22,12 +22,18 @@
@@ -77,3 +77,6 @@ index 004af030ef1a..b64f751bda45 100644
  static DEFINE_MUTEX(afinfo_mutex);
  
  const struct nf_afinfo __rcu *nf_afinfo[NFPROTO_NUMPROTO] __read_mostly;
+-- 
+2.16.1
+

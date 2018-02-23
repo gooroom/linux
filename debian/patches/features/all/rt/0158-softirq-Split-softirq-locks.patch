@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 158/337] softirq: Split softirq locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0112322af2f6d051879c9bb97beb1c4b10368220
+Subject: [PATCH 158/351] softirq: Split softirq locks
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6f73b05df89c4225e74483e11b76975b27f3ab5
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -24,8 +24,6 @@ softirq elevation in the context of user space tasks or interrupt
 threads.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-[bwh: Adjust context to apply after "x86/uaccess, sched/preempt: Verify
- access_ok() context"]
 ---
  include/linux/bottom_half.h |  34 +++
  include/linux/interrupt.h   |  15 +-
@@ -37,6 +35,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  net/core/dev.c              |   6 +-
  8 files changed, 480 insertions(+), 95 deletions(-)
 
+diff --git a/include/linux/bottom_half.h b/include/linux/bottom_half.h
+index 8fdcb783197d..d07dbeec7bc1 100644
 --- a/include/linux/bottom_half.h
 +++ b/include/linux/bottom_half.h
 @@ -3,6 +3,39 @@
@@ -86,6 +86,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +#endif
  
  #endif /* _LINUX_BH_H */
+diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
+index c2bcbd41e0ad..127cfbd8f129 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -469,10 +469,11 @@ struct softirq_action
@@ -102,7 +104,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void do_softirq_own_stack(void);
  #else
  static inline void do_softirq_own_stack(void)
-@@ -480,6 +481,9 @@ static inline void do_softirq_own_stack(
+@@ -480,6 +481,9 @@ static inline void do_softirq_own_stack(void)
  	__do_softirq();
  }
  #endif
@@ -112,7 +114,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  extern void open_softirq(int nr, void (*action)(struct softirq_action *));
  extern void softirq_init(void);
-@@ -487,6 +491,7 @@ extern void __raise_softirq_irqoff(unsig
+@@ -487,6 +491,7 @@ extern void __raise_softirq_irqoff(unsigned int nr);
  
  extern void raise_softirq_irqoff(unsigned int nr);
  extern void raise_softirq(unsigned int nr);
@@ -120,7 +122,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  DECLARE_PER_CPU(struct task_struct *, ksoftirqd);
  
-@@ -644,6 +649,12 @@ void tasklet_hrtimer_cancel(struct taskl
+@@ -644,6 +649,12 @@ void tasklet_hrtimer_cancel(struct tasklet_hrtimer *ttimer)
  	tasklet_kill(&ttimer->tasklet);
  }
  
@@ -133,6 +135,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * Autoprobing for irqs:
   *
+diff --git a/include/linux/preempt.h b/include/linux/preempt.h
+index 2eed4b5fd08e..0c7346289422 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -50,7 +50,11 @@
@@ -173,6 +177,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define in_nmi()		(preempt_count() & NMI_MASK)
  #define in_task()		(!(preempt_count() & \
  				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 4ffeb8ce1795..9aa9fef1d48d 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1980,6 +1980,8 @@ struct task_struct {
@@ -184,7 +190,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  	unsigned long	task_state_change;
-@@ -2300,6 +2302,7 @@ extern void thread_group_cputime_adjuste
+@@ -2300,6 +2302,7 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut,
  /*
   * Per process flags
   */
@@ -192,9 +198,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define PF_EXITING	0x00000004	/* getting shut down */
  #define PF_EXITPIDONE	0x00000008	/* pi exit done on shut down */
  #define PF_VCPU		0x00000010	/* I'm a virtual CPU */
+diff --git a/init/main.c b/init/main.c
+index 99f026565608..48ffaaad8ac9 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -506,6 +506,7 @@ asmlinkage __visible void __init start_k
+@@ -508,6 +508,7 @@ asmlinkage __visible void __init start_kernel(void)
  	setup_command_line(command_line);
  	setup_nr_cpu_ids();
  	setup_per_cpu_areas();
@@ -202,6 +210,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	boot_cpu_state_init();
  	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
  
+diff --git a/kernel/softirq.c b/kernel/softirq.c
+index 8669000c2aa3..ec9b3611f886 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -26,6 +26,7 @@
@@ -212,7 +222,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/irq.h>
  
  #define CREATE_TRACE_POINTS
-@@ -63,6 +64,98 @@ const char * const softirq_to_name[NR_SO
+@@ -63,6 +64,98 @@ const char * const softirq_to_name[NR_SOFTIRQS] = {
  	"TASKLET", "SCHED", "HRTIMER", "RCU"
  };
  
@@ -387,7 +397,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
   * preempt_count and SOFTIRQ_OFFSET usage:
   * - preempt_count is changed by SOFTIRQ_OFFSET on entering or leaving
-@@ -244,10 +399,8 @@ asmlinkage __visible void __softirq_entr
+@@ -244,10 +399,8 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
  	unsigned long end = jiffies + MAX_SOFTIRQ_TIME;
  	unsigned long old_flags = current->flags;
  	int max_restart = MAX_SOFTIRQ_RESTART;
@@ -436,10 +446,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	pending = local_softirq_pending();
  	if (pending) {
-@@ -332,6 +456,246 @@ asmlinkage __visible void do_softirq(voi
+@@ -331,6 +455,246 @@ asmlinkage __visible void do_softirq(void)
+ 	local_irq_restore(flags);
  }
  
- /*
++/*
 + * This function must run with irqs disabled!
 + */
 +void raise_softirq_irqoff(unsigned int nr)
@@ -679,10 +690,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +}
 +
 +#endif /* PREEMPT_RT_FULL */
-+/*
+ /*
   * Enter an interrupt context.
   */
- void irq_enter(void)
 @@ -342,9 +706,9 @@ void irq_enter(void)
  		 * Prevent raise_softirq from needlessly waking up ksoftirqd
  		 * here, as softirq will be serviced on return from interrupt.
@@ -790,7 +800,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  #ifdef CONFIG_HOTPLUG_CPU
-@@ -830,6 +1164,8 @@ static int takeover_tasklets(unsigned in
+@@ -830,6 +1164,8 @@ static int takeover_tasklets(unsigned int cpu)
  
  static struct smp_hotplug_thread softirq_threads = {
  	.store			= &ksoftirqd,
@@ -799,9 +809,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	.thread_should_run	= ksoftirqd_should_run,
  	.thread_fn		= run_ksoftirqd,
  	.thread_comm		= "ksoftirqd/%u",
+diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
+index 89191db4861a..4c185caffcce 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -882,14 +882,7 @@ static bool can_stop_idle_tick(int cpu,
+@@ -897,14 +897,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
  		return false;
  
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {
@@ -817,9 +829,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		return false;
  	}
  
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 88bc38b1eecc..01cde21ebf9a 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3867,11 +3867,9 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -3868,11 +3868,9 @@ int netif_rx_ni(struct sk_buff *skb)
  
  	trace_netif_rx_ni_entry(skb);
  
@@ -833,3 +847,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	return err;
  }
+-- 
+2.16.1
+

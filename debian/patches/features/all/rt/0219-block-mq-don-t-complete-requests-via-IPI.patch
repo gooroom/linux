@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
-Subject: [PATCH 219/337] block/mq: don't complete requests via IPI
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=46263aac56691867feed51bfb1d7747221d5e532
+Subject: [PATCH 219/351] block/mq: don't complete requests via IPI
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f723d2bd5fd9d1e66cdd861a221604518dc8188e
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 25 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 8477b6e281df..f3537ddd3c0b 100644
+index ed5a0e92c718..a36124682875 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -125,6 +125,9 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
@@ -29,7 +29,7 @@ index 8477b6e281df..f3537ddd3c0b 100644
  	rq->q = q;
  	rq->__sector = (sector_t) -1;
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 1be09013d7ff..c7bc5e66330d 100644
+index e8671fcf2a68..e26bbdff3735 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -177,6 +177,9 @@ static void blk_mq_rq_ctx_init(struct request_queue *q, struct blk_mq_ctx *ctx,
@@ -109,3 +109,6 @@ index f6a816129856..3b519c3a498e 100644
  		u64 fifo_time;
  	};
  
+-- 
+2.16.1
+

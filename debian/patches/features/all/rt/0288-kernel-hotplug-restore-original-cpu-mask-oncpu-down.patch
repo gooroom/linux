@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 14 Jun 2013 17:16:35 +0200
-Subject: [PATCH 288/337] kernel/hotplug: restore original cpu mask oncpu/down
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=245499da3dfa9ba88deee88fea53c6dff6293f82
+Subject: [PATCH 288/351] kernel/hotplug: restore original cpu mask oncpu/down
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f2b33955bd328bbb1f854e7ee5b78dd4a7b82f19
 
 If a task which is allowed to run only on CPU X puts CPU Y down then it
 will be allowed on all CPUs but the on CPU Y after it comes back from
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index d4a29d33e52b..bdf5331e9afd 100644
+index 42e0d25e2a0c..38f834b63ccf 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -1179,6 +1179,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
@@ -49,7 +49,7 @@ index d4a29d33e52b..bdf5331e9afd 100644
  	}
  
  	cpu_hotplug_begin();
-@@ -1251,6 +1259,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1251,6 +1259,9 @@ out_cancel:
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
  		cpu_notify_nofail(CPU_POST_DEAD, cpu);
@@ -59,3 +59,6 @@ index d4a29d33e52b..bdf5331e9afd 100644
  	return ret;
  }
  
+-- 
+2.16.1
+

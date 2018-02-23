@@ -1,7 +1,7 @@
 From: Haris Okanovic <haris.okanovic@ni.com>
 Date: Fri, 3 Feb 2017 17:26:44 +0100
-Subject: [PATCH 164/337] timers: Don't wake ktimersoftd on every tick
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e913831ac1d76839e8227a5f7442c5b6b8b896b6
+Subject: [PATCH 164/351] timers: Don't wake ktimersoftd on every tick
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2125e9bf9e38673518c0d104e90cd260f734b699
 
 We recently upgraded from 4.1 to 4.6 and noticed a minor latency
 regression caused by an additional thread wakeup (ktimersoftd) in
@@ -204,7 +204,7 @@ index d8e1c2c5397c..6482b81edbf1 100644
  	/* Raise the softirq only if required. */
 -	if (time_before(jiffies, base->clk)) {
 +	if (time_before(jiffies, base->clk) || !tick_find_expired(base)) {
- 		if (!IS_ENABLED(CONFIG_NO_HZ_COMMON) || !base->nohz_active)
+ 		if (!IS_ENABLED(CONFIG_NO_HZ_COMMON))
  			return;
  		/* CPU is awake, so check the deferrable base. */
  		base++;

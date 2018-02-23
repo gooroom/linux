@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 22 Jul 2011 08:07:08 +0200
-Subject: [PATCH 092/337] signal: Make __lock_task_sighand() RT aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=93daf40302460b94cb4a913b133eb419c301a004
+Subject: [PATCH 092/351] signal: Make __lock_task_sighand() RT aware
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=633fe15be6997ab799c7bf0e0d6127955fd95fe6
 
 local_irq_save() + spin_lock(&sighand->siglock) does not work on
 -RT. Use the nort variants.
@@ -12,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 739615d8d5ae..be9753809dc7 100644
+index 64e8df5e3f39..8c4d357f484f 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1284,12 +1284,12 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
+@@ -1286,12 +1286,12 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
  		 * Disable interrupts early to avoid deadlocks.
  		 * See rcu_read_unlock() comment header for details.
  		 */
@@ -30,7 +30,7 @@ index 739615d8d5ae..be9753809dc7 100644
  			break;
  		}
  		/*
-@@ -1310,7 +1310,7 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
+@@ -1312,7 +1312,7 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
  		}
  		spin_unlock(&sighand->siglock);
  		rcu_read_unlock();
@@ -39,3 +39,6 @@ index 739615d8d5ae..be9753809dc7 100644
  	}
  
  	return sighand;
+-- 
+2.16.1
+

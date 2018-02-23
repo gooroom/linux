@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
-Subject: [PATCH 135/337] kernel/sched: move stack + kprobe clean up to
+Subject: [PATCH 135/351] kernel/sched: move stack + kprobe clean up to
  __put_task_struct()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=664930cec95254bbb4179a4f07ac7440c61a8008
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e1ede5aeb9189edb708ee5ad29f9591bd6fe436f
 
 There is no need to free the stack before the task struct. This also
 comes handy on -RT because we can't free memory in preempt disabled
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 10 insertions(+), 9 deletions(-)
 
 diff --git a/kernel/fork.c b/kernel/fork.c
-index eac2a145ccb8..11fa53573d26 100644
+index 613a26994992..5bcb777b6913 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -76,6 +76,7 @@
+@@ -77,6 +77,7 @@
  #include <linux/compiler.h>
  #include <linux/sysctl.h>
  #include <linux/kcov.h>
@@ -27,7 +27,7 @@ index eac2a145ccb8..11fa53573d26 100644
  
  #include <asm/pgtable.h>
  #include <asm/pgalloc.h>
-@@ -385,6 +386,15 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -387,6 +388,15 @@ void __put_task_struct(struct task_struct *tsk)
  	WARN_ON(atomic_read(&tsk->usage));
  	WARN_ON(tsk == current);
  
@@ -44,10 +44,10 @@ index eac2a145ccb8..11fa53573d26 100644
  	task_numa_free(tsk);
  	security_task_free(tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 72efa74ab1c2..80328674b249 100644
+index a49d6550d483..c330f971d6db 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2796,15 +2796,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2795,15 +2795,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  		if (prev->sched_class->task_dead)
  			prev->sched_class->task_dead(prev);
  
@@ -63,3 +63,6 @@ index 72efa74ab1c2..80328674b249 100644
  		put_task_struct(prev);
  	}
  
+-- 
+2.16.1
+

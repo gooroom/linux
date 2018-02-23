@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:36:00 +0100
-Subject: [PATCH 017/337] futex: Drop hb->lock before enqueueing on the rtmutex
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b72363875eb723bc944b961e1b0b7dc1a16d2962
+Subject: [PATCH 017/351] futex: Drop hb->lock before enqueueing on the rtmutex
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c74962bd11419fc8c525d92e20b4d36bf45f0532
 
 Upstream commit 56222b212e8edb1cf51f5dd73ff645809b082b40
 
@@ -57,7 +57,7 @@ diff --git a/kernel/futex.c b/kernel/futex.c
 index 3d1be05af5ec..cdd205aa929e 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2653,20 +2653,33 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2653,20 +2653,33 @@ retry_private:
  		goto no_block;
  	}
  
@@ -96,7 +96,7 @@ index 3d1be05af5ec..cdd205aa929e 100644
  
  	if (unlikely(to))
  		hrtimer_start_expires(&to->timer, HRTIMER_MODE_ABS);
-@@ -2679,6 +2692,9 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2679,6 +2692,9 @@ retry_private:
  	 * first acquire the hb->lock before removing the lock from the
  	 * rt_mutex waitqueue, such that we can keep the hb and rt_mutex
  	 * wait lists consistent.
@@ -106,7 +106,7 @@ index 3d1be05af5ec..cdd205aa929e 100644
  	 */
  	if (ret && !rt_mutex_cleanup_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter))
  		ret = 0;
-@@ -2790,10 +2806,6 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2790,10 +2806,6 @@ retry:
  
  		get_pi_state(pi_state);
  		/*
@@ -209,3 +209,6 @@ index 4fe3f32da3c5..25ccf716b936 100644
  extern int rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
+-- 
+2.16.1
+

@@ -1,7 +1,7 @@
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
-Subject: [PATCH 312/337] arch/arm64: Add lazy preempt support
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9c33a92c15600cdd791b69292a44bbc1a07ae61c
+Subject: [PATCH 312/351] arch/arm64: Add lazy preempt support
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b62f9f211a57bab9f2f1d1d969fe8ba291c91325
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -86,7 +86,7 @@ diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
 index b4c7db434654..433d846f4f51 100644
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
-@@ -430,11 +430,16 @@ ENDPROC(el1_sync)
+@@ -430,11 +430,16 @@ el1_irq:
  
  #ifdef CONFIG_PREEMPT
  	ldr	w24, [tsk, #TI_PREEMPT]		// get preempt count
@@ -106,7 +106,7 @@ index b4c7db434654..433d846f4f51 100644
  #endif
  #ifdef CONFIG_TRACE_IRQFLAGS
  	bl	trace_hardirqs_on
-@@ -448,6 +453,7 @@ ENDPROC(el1_irq)
+@@ -448,6 +453,7 @@ el1_preempt:
  1:	bl	preempt_schedule_irq		// irq en/disable is done inside
  	ldr	x0, [tsk, #TI_FLAGS]		// get new tasks TI_FLAGS
  	tbnz	x0, #TIF_NEED_RESCHED, 1b	// needs rescheduling?
@@ -127,3 +127,6 @@ index 404dd67080b9..639dc6d12e72 100644
  			schedule();
  		} else {
  			local_irq_enable();
+-- 
+2.16.1
+

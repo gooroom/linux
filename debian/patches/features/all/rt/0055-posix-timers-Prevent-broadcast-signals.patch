@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:29:20 -0500
-Subject: [PATCH 055/337] posix-timers: Prevent broadcast signals
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9277888ef4e387f9bfed9808071b58d13ded6367
+Subject: [PATCH 055/351] posix-timers: Prevent broadcast signals
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b8f85936d5dd673f54627519805222e318b90824
 
 Posix timers should not send broadcast signals and kernel only
 signals. Prevent it.
@@ -21,15 +21,15 @@ index f2826c35e918..81aec84e65e7 100644
  	struct task_struct *rtn = current->group_leader;
 +	int sig = event->sigev_signo;
  
- 	if ((event->sigev_notify & SIGEV_THREAD_ID ) &&
- 		(!(rtn = find_task_by_vpid(event->sigev_notify_thread_id)) ||
+ 	switch (event->sigev_notify) {
+ 	case SIGEV_SIGNAL | SIGEV_THREAD_ID:
 @@ -514,7 +515,8 @@ static struct pid *good_sigevent(sigevent_t * event)
- 		return NULL;
- 
- 	if (((event->sigev_notify & ~SIGEV_THREAD_ID) != SIGEV_NONE) &&
--	    ((event->sigev_signo <= 0) || (event->sigev_signo > SIGRTMAX)))
-+	    (sig <= 0 || sig > SIGRTMAX || sig_kernel_only(sig) ||
-+	     sig_kernel_coredump(sig)))
- 		return NULL;
- 
- 	return task_pid(rtn);
+ 		/* FALLTHRU */
+ 	case SIGEV_SIGNAL:
+ 	case SIGEV_THREAD:
+-		if (event->sigev_signo <= 0 || event->sigev_signo > SIGRTMAX)
++	  if (sig <= 0 || sig > SIGRTMAX || sig_kernel_only(sig) ||
++	     sig_kernel_coredump(sig))
+ 			return NULL;
+ 		/* FALLTHRU */
+ 	case SIGEV_NONE:

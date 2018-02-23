@@ -1,8 +1,8 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Thu, 29 Sep 2011 12:24:30 -0500
-Subject: [PATCH 051/337] tracing: Account for preempt off in
+Subject: [PATCH 051/351] tracing: Account for preempt off in
  preempt_schedule()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e4b525e75300bad6232c6a165a322ddd1d04d4c4
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3f4a2d6fd00249efcd12ababd6e50be22bd163a7
 
 The preempt_schedule() uses the preempt_disable_notrace() version
 because it can cause infinite recursion by the function tracer as
@@ -28,10 +28,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 9 insertions(+)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 42f27d3e307f..4ffc51451f16 100644
+index 3564d9d41495..1127df1b3463 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3584,7 +3584,16 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
+@@ -3583,7 +3583,16 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
  		 * an infinite recursion.
  		 */
  		prev_ctx = exception_enter();
@@ -48,3 +48,6 @@ index 42f27d3e307f..4ffc51451f16 100644
  		exception_exit(prev_ctx);
  
  		preempt_latency_stop(1);
+-- 
+2.16.1
+
