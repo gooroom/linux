@@ -1,0 +1,32 @@
+From: Michael Ellerman <mpe@ellerman.id.au>
+Date: Thu, 22 Feb 2018 23:35:43 +1100
+Subject: powerpc/64s: Fix conversion of slb_miss_common to use
+ RFI_TO_USER/KERNEL
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit/?id=3146a32b39cd78722869bca6e839b3c59155e012
+
+The back port of commit c7305645eb0c ("powerpc/64s: Convert
+slb_miss_common to use RFI_TO_USER/KERNEL") missed a hunk needed to
+restore cr6.
+
+Fixes: 48cc95d4e4d6 ("powerpc/64s: Convert slb_miss_common to use RFI_TO_USER/KERNEL")
+Signed-off-by: Michael Ellerman <mpe@ellerman.id.au>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/powerpc/kernel/exceptions-64s.S | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/powerpc/kernel/exceptions-64s.S b/arch/powerpc/kernel/exceptions-64s.S
+index 96db6c3adebe..d0be752ea86c 100644
+--- a/arch/powerpc/kernel/exceptions-64s.S
++++ b/arch/powerpc/kernel/exceptions-64s.S
+@@ -680,6 +680,7 @@ END_MMU_FTR_SECTION_IFCLR(MMU_FTR_TYPE_RADIX)
+ .machine	push
+ .machine	"power4"
+ 	mtcrf	0x80,r9
++	mtcrf	0x02,r9		/* I/D indication is in cr6 */
+ 	mtcrf	0x01,r9		/* slb_allocate uses cr0 and cr7 */
+ .machine	pop
+ 
+-- 
+2.16.1
+
