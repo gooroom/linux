@@ -1,7 +1,8 @@
+From 9b5afac03d000bcdb4bead5ac09c7040e0996b65 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:53 +0100
 Subject: [PATCH 010/351] futex: Cleanup refcounting
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1b910ebd1754af99e179636c0f1c5ce5e8cc1401
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Upstream commit bf92cf3a5100f5a0d5f9834787b130159397cb22
 
@@ -25,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 2d2267efc3cc..b970b95f0508 100644
+index 9782a924abb5..aea641b45e38 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -801,7 +801,7 @@ static int refill_pi_state_cache(void)
@@ -67,7 +68,7 @@ index 2d2267efc3cc..b970b95f0508 100644
  	raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
  	*ps = pi_state;
  	return 0;
-@@ -1989,7 +1994,7 @@ retry_private:
+@@ -1992,7 +1997,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  			 * refcount on the pi_state and store the pointer in
  			 * the futex_q object of the waiter.
  			 */

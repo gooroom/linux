@@ -1,7 +1,8 @@
+From 117795abce152579fc28871b099a13fde5c707cf Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH 227/351] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=24c7fe99a845f6453c0effe78f40bf51af529ead
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -97,7 +98,7 @@ index 4bbad745415a..5f91ca248ab0 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index e7d125c23aa6..072a2f724437 100644
+index 6cfb45f262aa..968c574d4aba 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -1626,7 +1626,7 @@ static struct dentry *lookup_slow(const struct qstr *name,
@@ -109,7 +110,7 @@ index e7d125c23aa6..072a2f724437 100644
  
  	inode_lock_shared(inode);
  	/* Don't go there if it's already dead */
-@@ -3089,7 +3089,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3092,7 +3092,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;

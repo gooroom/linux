@@ -1,10 +1,11 @@
+From 9ef558266fa883fecbf72ff230f3f7f62d1a723a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Jun 2017 17:53:34 +0200
 Subject: [PATCH 182/351] kernel/locking: use an exclusive wait_q for sleepers
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e7b5667852b30a0d208f9b209f49114e14f8b156
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 If a task is queued as a sleeper for a wakeup and never goes to
 schedule() (because it just obtained the lock) then it will receive a
@@ -103,7 +104,7 @@ index b99ddf374df1..c1a3b9f099de 100644
  		wake_q_add(wake_q, waiter->task);
  	raw_spin_unlock(&current->pi_lock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ea1c44f014b8..7adb41e4b0f6 100644
+index f1d6396e4c9e..06cf3bb6682f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -430,9 +430,15 @@ static bool set_nr_if_polling(struct task_struct *p)

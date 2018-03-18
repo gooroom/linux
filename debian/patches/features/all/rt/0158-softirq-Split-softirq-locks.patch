@@ -1,7 +1,8 @@
+From 9809fdeb6e67e2a9631e1c30b978340797736496 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
 Subject: [PATCH 158/351] softirq: Split softirq locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6f73b05df89c4225e74483e11b76975b27f3ab5
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -408,7 +409,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  
  	/*
  	 * Mask out PF_MEMALLOC s current task context is borrowed for the
-@@ -266,36 +419,7 @@ restart:
+@@ -266,36 +419,7 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
  	/* Reset the pending bitmask before enabling irqs */
  	set_softirq_pending(0);
  
@@ -830,10 +831,10 @@ index 89191db4861a..4c185caffcce 100644
  	}
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 88bc38b1eecc..01cde21ebf9a 100644
+index 17e292a0d649..5010b5a39672 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3868,11 +3868,9 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -3879,11 +3879,9 @@ int netif_rx_ni(struct sk_buff *skb)
  
  	trace_netif_rx_ni_entry(skb);
  

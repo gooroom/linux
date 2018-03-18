@@ -1,8 +1,9 @@
+From 5e0534d34d8b61d56ce0c356de99d25e3908ac77 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 8 Mar 2017 14:23:35 +0100
 Subject: [PATCH 081/351] futex: workaround migrate_disable/enable in different
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8365747b9d7498a94e4003ab9e673b55189ef735
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 migrate_disable()/migrate_enable() takes a different path in atomic() vs
 !atomic() context. These little hacks ensure that we don't underflow / overflow
@@ -16,10 +17,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 20 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index c1d2034800aa..1ec1a9910beb 100644
+index 885dbf0e7f42..c34db3e3e882 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2670,9 +2670,18 @@ retry_private:
+@@ -2673,9 +2673,18 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * lock handoff sequence.
  	 */
  	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -38,7 +39,7 @@ index c1d2034800aa..1ec1a9910beb 100644
  
  	if (ret) {
  		if (ret == 1)
-@@ -2816,10 +2825,21 @@ retry:
+@@ -2819,10 +2828,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		 * observed.
  		 */
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);

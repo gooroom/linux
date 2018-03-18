@@ -1,7 +1,8 @@
+From 9f71ae1c02060caf8f81dc6ecbc35480d128e463 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 18 Aug 2017 10:09:09 +0200
 Subject: [PATCH 342/351] kernel/hrtimer: migrate deferred timer on CPU down
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c68b48ed0f09f3f51b5a2f30663c02aa38b43717
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 hrtimers, which were deferred to the softirq context, and expire between
 softirq shutdown and hrtimer migration are dangling around. If the CPU
@@ -18,10 +19,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 5 insertions(+)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 0797bd6eadb4..39e4435b8451 100644
+index 35281d42a4f4..7d5434ade900 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1860,6 +1860,11 @@ static void migrate_hrtimer_list(struct hrtimer_clock_base *old_base,
+@@ -1863,6 +1863,11 @@ static void migrate_hrtimer_list(struct hrtimer_clock_base *old_base,
  		 */
  		enqueue_hrtimer(timer, new_base);
  	}

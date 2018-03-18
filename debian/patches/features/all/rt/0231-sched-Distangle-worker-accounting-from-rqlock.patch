@@ -1,7 +1,8 @@
+From b7a8f15da1f08af52373a82302e0a3c30e8484fe Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
 Subject: [PATCH 231/351] sched: Distangle worker accounting from rqlock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b4dc9dc2358796a570687c5430d5e8373d514a83
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -30,7 +31,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 41 insertions(+), 97 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 13cf7061ee36..63f536082449 100644
+index be5521ab2a24..5450178e2d42 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1723,10 +1723,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl
@@ -44,7 +45,7 @@ index 13cf7061ee36..63f536082449 100644
  }
  
  /*
-@@ -2163,53 +2159,6 @@ out:
+@@ -2163,53 +2159,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
  	return success;
  }
  
@@ -157,10 +158,10 @@ index 13cf7061ee36..63f536082449 100644
  EXPORT_SYMBOL(schedule);
  
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 4b4b49654445..618ce6bae95a 100644
+index e7a723d06ee3..0cd62cff9a16 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -842,43 +842,32 @@ static void wake_up_worker(struct worker_pool *pool)
+@@ -843,43 +843,32 @@ static void wake_up_worker(struct worker_pool *pool)
  }
  
  /**
@@ -215,7 +216,7 @@ index 4b4b49654445..618ce6bae95a 100644
  	struct worker_pool *pool;
  
  	/*
-@@ -887,13 +876,15 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
+@@ -888,13 +877,15 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
  	 * checking NOT_RUNNING.
  	 */
  	if (worker->flags & WORKER_NOT_RUNNING)
@@ -235,7 +236,7 @@ index 4b4b49654445..618ce6bae95a 100644
  
  	/*
  	 * The counterpart of the following dec_and_test, implied mb,
-@@ -907,9 +898,12 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
+@@ -908,9 +899,12 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
  	 * lock is safe.
  	 */
  	if (atomic_dec_and_test(&pool->nr_running) &&

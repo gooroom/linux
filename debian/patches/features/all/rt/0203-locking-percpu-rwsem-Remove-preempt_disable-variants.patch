@@ -1,7 +1,8 @@
+From d08486eb4f82fd3c9215ad720c46891f2fc5c268 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 23 Nov 2016 16:29:32 +0100
 Subject: [PATCH 203/351] locking/percpu-rwsem: Remove preempt_disable variants
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2381562be08f61925fe295f141f273c74f4320fd
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Effective revert commit:
 
@@ -29,7 +30,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	if (request->fl_flags & FL_ACCESS)
  		goto find_conflict;
-@@ -976,7 +976,7 @@ find_conflict:
+@@ -976,7 +976,7 @@ static int flock_lock_inode(struct inode *inode, struct file_lock *request)
  
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -65,7 +66,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  
  	time_out_leases(inode, &dispose);
-@@ -1512,13 +1512,13 @@ restart:
+@@ -1512,13 +1512,13 @@ int __break_lease(struct inode *inode, unsigned int mode, unsigned int type)
  	locks_insert_block(fl, new_fl);
  	trace_break_lease_block(inode, new_fl);
  	spin_unlock(&ctx->flc_lock);
@@ -81,7 +82,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	trace_break_lease_unblock(inode, new_fl);
  	locks_delete_block(new_fl);
-@@ -1535,7 +1535,7 @@ restart:
+@@ -1535,7 +1535,7 @@ int __break_lease(struct inode *inode, unsigned int mode, unsigned int type)
  	}
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -117,7 +118,7 @@ index 22c5b4aa4961..269c6a44449a 100644
  	spin_lock(&ctx->flc_lock);
  	time_out_leases(inode, &dispose);
  	error = check_conflicting_open(dentry, arg, lease->fl_flags);
-@@ -1765,7 +1765,7 @@ out_setup:
+@@ -1765,7 +1765,7 @@ generic_add_lease(struct file *filp, long arg, struct file_lock **flp, void **pr
  		lease->fl_lmops->lm_setup(lease, priv);
  out:
  	spin_unlock(&ctx->flc_lock);

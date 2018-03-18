@@ -1,7 +1,8 @@
+From 72938f331535983c45376000d4d58123d537f4d9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
 Subject: [PATCH 251/351] printk: Make rt aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5b229fecc157b0b16348edeae05400295b9d5914
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -73,7 +74,7 @@ index 35fb8be3e811..b0fd37e9ebac 100644
  	return;
  out:
  	raw_spin_unlock_irqrestore(&logbuf_lock, flags);
-@@ -2477,13 +2494,17 @@ skip:
+@@ -2477,13 +2494,17 @@ void console_unlock(void)
  		console_idx = log_next(console_idx);
  		console_seq++;
  		console_prev = msg->flags;

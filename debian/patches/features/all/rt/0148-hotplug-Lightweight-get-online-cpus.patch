@@ -1,7 +1,8 @@
+From 1917b51a57ba833503d5a6df6ed888f94ca84d72 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
 Subject: [PATCH 148/351] hotplug: Lightweight get online cpus
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=02ae35952fc21dc5fe58fb990b5cba72285ffdb5
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -18,10 +19,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 122 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index dcfcdd563f69..5e52d28c20c1 100644
+index 058f53f31770..983d466d8502 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -173,9 +173,6 @@ static inline void cpu_notifier_register_done(void)
+@@ -180,9 +180,6 @@ static inline void cpu_notifier_register_done(void)
  #endif /* CONFIG_SMP */
  extern struct bus_type cpu_subsys;
  
@@ -31,7 +32,7 @@ index dcfcdd563f69..5e52d28c20c1 100644
  #ifdef CONFIG_HOTPLUG_CPU
  /* Stop CPUs going up and down. */
  
-@@ -185,6 +182,8 @@ extern void get_online_cpus(void);
+@@ -192,6 +189,8 @@ extern void get_online_cpus(void);
  extern void put_online_cpus(void);
  extern void cpu_hotplug_disable(void);
  extern void cpu_hotplug_enable(void);
@@ -40,7 +41,7 @@ index dcfcdd563f69..5e52d28c20c1 100644
  #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
  #define __hotcpu_notifier(fn, pri)	__cpu_notifier(fn, pri)
  #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
-@@ -202,6 +201,8 @@ static inline void cpu_hotplug_done(void) {}
+@@ -209,6 +208,8 @@ static inline void cpu_hotplug_done(void) {}
  #define put_online_cpus()	do { } while (0)
  #define cpu_hotplug_disable()	do { } while (0)
  #define cpu_hotplug_enable()	do { } while (0)

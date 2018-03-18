@@ -1,7 +1,8 @@
+From 762b81c5570664b98702f8a5621ba6dd22444847 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 134/351] sched: Move mmdrop to RCU on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=87f8c415569dcfe9cb98074c69d3ef723a25c837
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -83,7 +84,7 @@ index 08a834f25b82..613a26994992 100644
  {
  	VM_BUG_ON(atomic_read(&mm->mm_users));
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b3515090f4fe..a49d6550d483 100644
+index 88e47d47b20d..c0833cbc1fbf 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2785,8 +2785,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -123,7 +124,7 @@ index b3515090f4fe..a49d6550d483 100644
  }
  
  /*
-@@ -7568,6 +7579,10 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7581,6 +7592,10 @@ int sched_cpu_dying(unsigned int cpu)
  	update_max_interval();
  	nohz_balance_exit_idle(cpu);
  	hrtick_clear(rq);

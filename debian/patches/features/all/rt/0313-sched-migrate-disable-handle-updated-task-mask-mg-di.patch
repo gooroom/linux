@@ -1,8 +1,9 @@
+From e975e726e3029fe78c3e2262619fc16d17169f17 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 19 Jun 2017 09:55:47 +0200
 Subject: [PATCH 313/351] sched/migrate disable: handle updated task-mask
  mg-dis section
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0c05aacc2ebbcc9dd3bee25dc486c1411d0d4b27
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 If task's cpumask changes while in the task is in a migrate_disable()
 section then we don't react on it after a migrate_enable(). It matters
@@ -34,7 +35,7 @@ index 9ff3bc25e63f..e775696b480a 100644
  	int migrate_disable_atomic;
  # endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f29c4f961104..5ebcf53bcf3d 100644
+index 55fc27bb4ca8..1cc16d7f1241 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1149,18 +1149,14 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma

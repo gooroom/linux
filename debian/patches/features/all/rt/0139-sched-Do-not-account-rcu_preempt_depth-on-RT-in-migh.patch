@@ -1,8 +1,9 @@
+From fec669685bd9659ea929a8d6a778c5911b9e1c5e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 7 Jun 2011 09:19:06 +0200
 Subject: [PATCH 139/351] sched: Do not account rcu_preempt_depth on RT in
  might_sleep()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ee56a76b24dc7648b13f4e9165f77f44d8c56b81
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 RT changes the rcu_preempt_depth semantics, so we cannot check for it
 in might_sleep().
@@ -39,10 +40,10 @@ index 01f71e1d2e94..00dc4a9474c0 100644
  
  /* Internal to kernel */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7769837b3926..91d3f785d764 100644
+index 07a1da7ac287..712c1db2c8da 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7864,7 +7864,7 @@ void __init sched_init(void)
+@@ -7877,7 +7877,7 @@ void __init sched_init(void)
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  static inline int preempt_count_equals(int preempt_offset)
  {

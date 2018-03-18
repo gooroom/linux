@@ -1,8 +1,9 @@
+From 1b26103a3af4c01d8790e4c82187b42bb60a3ee2 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Mon, 18 Mar 2013 15:12:49 -0400
 Subject: [PATCH 145/351] sched/workqueue: Only wake up idle workers if not
  blocked on sleeping spin lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=faa945788918d0aeadd195969ceceefcc309d132
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 In -rt, most spin_locks() turn into mutexes. One of these spin_lock
 conversions is performed on the workqueue gcwq->lock. When the idle
@@ -24,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7451d4e3d92f..e506ecc2f962 100644
+index 61a9efca24d8..f3c0b5ecc0ea 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3477,8 +3477,10 @@ static void __sched notrace __schedule(bool preempt)

@@ -1,7 +1,8 @@
+From 614751c3936627c4c902aa4f8e6d4c546d214979 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Fri, 26 May 2017 19:16:07 +0200
 Subject: [PATCH 165/351] Revert "timers: Don't wake ktimersoftd on every tick"
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8c542fd7c49aa94da131596fb7694f2ba3ea0995
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 This reverts commit 032f93cae150a ("timers: Don't wake ktimersoftd on
 every tick").
@@ -21,8 +22,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/time/timer.c | 96 ++++++++++++++++-------------------------------------
  1 file changed, 29 insertions(+), 67 deletions(-)
 
-diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 6482b81edbf1..d8e1c2c5397c 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -207,8 +207,6 @@ struct timer_base {
@@ -34,7 +33,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  } ____cacheline_aligned;
  
  static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
-@@ -1368,8 +1366,7 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
+@@ -1366,8 +1364,7 @@ static void call_timer_fn(struct timer_l
  	}
  }
  
@@ -44,7 +43,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  {
  	while (!hlist_empty(head)) {
  		struct timer_list *timer;
-@@ -1400,38 +1397,21 @@ static inline void __expire_timers(struct timer_base *base,
+@@ -1398,38 +1395,21 @@ static inline void __expire_timers(struc
  	}
  }
  
@@ -88,7 +87,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  		}
  		/* Is it time to look at the next level? */
  		if (clk & LVL_CLK_MASK)
-@@ -1439,6 +1419,7 @@ static void __collect_expired_timers(struct timer_base *base)
+@@ -1437,6 +1417,7 @@ static void __collect_expired_timers(str
  		/* Shift clock for the next level granularity */
  		clk >>= LVL_CLK_SHIFT;
  	}
@@ -96,7 +95,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  }
  
  #ifdef CONFIG_NO_HZ_COMMON
-@@ -1637,7 +1618,8 @@ void timer_clear_idle(void)
+@@ -1635,7 +1616,8 @@ void timer_clear_idle(void)
  	base->is_idle = false;
  }
  
@@ -106,7 +105,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  {
  	/*
  	 * NOHZ optimization. After a long idle sleep we need to forward the
-@@ -1654,49 +1636,20 @@ static void collect_expired_timers(struct timer_base *base)
+@@ -1652,49 +1634,20 @@ static void collect_expired_timers(struc
  		if (time_after(next, jiffies)) {
  			/* The call site will increment clock! */
  			base->clk = jiffies - 1;
@@ -161,7 +160,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  /*
   * Called from the timer interrupt handler to charge one tick to the current
   * process.  user_tick is 1 if the tick is user time, 0 for system.
-@@ -1723,11 +1676,22 @@ void update_process_times(int user_tick)
+@@ -1721,11 +1674,22 @@ void update_process_times(int user_tick)
   */
  static inline void __run_timers(struct timer_base *base)
  {
@@ -186,7 +185,7 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  	raw_spin_unlock_irq(&base->lock);
  	wakeup_timer_waiters(base);
  }
-@@ -1766,12 +1730,12 @@ void run_local_timers(void)
+@@ -1764,12 +1728,12 @@ void run_local_timers(void)
  
  	hrtimer_run_queues();
  	/* Raise the softirq only if required. */
@@ -201,15 +200,15 @@ index 6482b81edbf1..d8e1c2c5397c 100644
  			return;
  	}
  	raise_softirq(TIMER_SOFTIRQ);
-@@ -1941,7 +1905,6 @@ int timers_dead_cpu(unsigned int cpu)
- 		raw_spin_lock_nested(&old_base->lock, SINGLE_DEPTH_NESTING);
+@@ -1960,7 +1924,6 @@ int timers_dead_cpu(unsigned int cpu)
+ 		forward_timer_base(new_base);
  
  		BUG_ON(old_base->running_timer);
 -		BUG_ON(old_base->expired_count);
  
  		for (i = 0; i < WHEEL_SIZE; i++)
  			migrate_timer_list(new_base, old_base->vectors + i);
-@@ -1968,7 +1931,6 @@ static void __init init_timer_cpu(int cpu)
+@@ -1987,7 +1950,6 @@ static void __init init_timer_cpu(int cp
  #ifdef CONFIG_PREEMPT_RT_FULL
  		init_swait_queue_head(&base->wait_for_running_timer);
  #endif

@@ -1,8 +1,9 @@
+From 1a6e7b03066ac093622d484696198d8d2e5b1996 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
 Subject: [PATCH 136/351] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=89749d46a961a5ae02f6e66a09c29272c97c5675
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -38,7 +39,7 @@ index 34c29a31f94b..aa26cea7618f 100644
  #ifdef CONFIG_SMP
   extern void kick_process(struct task_struct *tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index c330f971d6db..109e6fbaf970 100644
+index 7a09d8af5791..eba37e0102b0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2033,8 +2033,25 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -88,10 +89,10 @@ index c330f971d6db..109e6fbaf970 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index cff985feb6e7..5dc95852c984 100644
+index f564a1d2c9d5..304fdd7df094 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1162,6 +1162,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
+@@ -1164,6 +1164,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
  #define WF_SYNC		0x01		/* waker goes to sleep after wakeup */
  #define WF_FORK		0x02		/* child wakeup after fork */
  #define WF_MIGRATED	0x4		/* internal use, task got migrated */

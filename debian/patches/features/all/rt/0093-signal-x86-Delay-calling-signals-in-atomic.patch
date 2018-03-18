@@ -1,7 +1,8 @@
+From 432d15ec53e80bf34842a6be12736f4b6b8e03d9 Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 093/351] signal/x86: Delay calling signals in atomic
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=052dbbc75fe7b6ccd197db6dd6070bd80623db16
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -37,10 +38,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 59 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/entry/common.c b/arch/x86/entry/common.c
-index bdd9cc59d20f..90c7c6aa1ed3 100644
+index b0cd306dc527..4167a5f7fd47 100644
 --- a/arch/x86/entry/common.c
 +++ b/arch/x86/entry/common.c
-@@ -148,6 +148,13 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+@@ -149,6 +149,13 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
  		if (cached_flags & _TIF_NEED_RESCHED)
  			schedule();
  

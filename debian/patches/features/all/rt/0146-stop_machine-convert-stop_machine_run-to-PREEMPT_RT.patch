@@ -1,8 +1,9 @@
+From 0999562380a270cdd809005b3edb88f5da859956 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:27 -0500
 Subject: [PATCH 146/351] stop_machine: convert stop_machine_run() to
  PREEMPT_RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b3669c804d4c03313c09bc469edf05768b591a73
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Instead of playing with non-preemption, introduce explicit
 startup serialization. This is more robust and cleaner as
@@ -19,7 +20,7 @@ diff --git a/kernel/stop_machine.c b/kernel/stop_machine.c
 index ec9ab2f01489..56d142c31c6e 100644
 --- a/kernel/stop_machine.c
 +++ b/kernel/stop_machine.c
-@@ -475,6 +475,16 @@ repeat:
+@@ -475,6 +475,16 @@ static void cpu_stopper_thread(unsigned int cpu)
  		struct cpu_stop_done *done = work->done;
  		int ret;
  

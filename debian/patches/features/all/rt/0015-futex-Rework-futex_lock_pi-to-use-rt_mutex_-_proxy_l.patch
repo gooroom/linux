@@ -1,8 +1,9 @@
+From b07f57f5c1f2436164ae093dce091825eca9b106 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:58 +0100
 Subject: [PATCH 015/351] futex: Rework futex_lock_pi() to use
  rt_mutex_*_proxy_lock()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=90a45078102926c03ae09b6f91d03579e5269576
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Upstream commit cfafcd117da0216520568c195cb2f6cd1980c4bb
 
@@ -90,10 +91,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 62 insertions(+), 42 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index b72be871ac27..bff0a7e0cec5 100644
+index da387cc33dc1..141ace23179e 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2098,20 +2098,7 @@ queue_unlock(struct futex_hash_bucket *hb)
+@@ -2101,20 +2101,7 @@ queue_unlock(struct futex_hash_bucket *hb)
  	hb_waiters_dec(hb);
  }
  
@@ -115,7 +116,7 @@ index b72be871ac27..bff0a7e0cec5 100644
  {
  	int prio;
  
-@@ -2128,6 +2115,24 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
+@@ -2131,6 +2118,24 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
  	plist_node_init(&q->list, prio);
  	plist_add(&q->list, &hb->chain);
  	q->task = current;
@@ -140,7 +141,7 @@ index b72be871ac27..bff0a7e0cec5 100644
  	spin_unlock(&hb->lock);
  }
  
-@@ -2586,6 +2591,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2589,6 +2594,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  {
  	struct hrtimer_sleeper timeout, *to = NULL;
  	struct futex_pi_state *pi_state = NULL;
@@ -148,7 +149,7 @@ index b72be871ac27..bff0a7e0cec5 100644
  	struct futex_hash_bucket *hb;
  	struct futex_q q = futex_q_init;
  	int res, ret;
-@@ -2638,24 +2644,51 @@ retry_private:
+@@ -2641,24 +2647,51 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		}
  	}
  

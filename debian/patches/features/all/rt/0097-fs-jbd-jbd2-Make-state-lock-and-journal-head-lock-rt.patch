@@ -1,8 +1,9 @@
+From 8f5da887954939b14b79197449210780260112fb Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 10:11:25 +0100
 Subject: [PATCH 097/351] fs: jbd/jbd2: Make state lock and journal head lock
  rt safe
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4424d2b599a4e94a39a2b493163f99d5ffdd7038
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 bit_spin_locks break under RT.
 
@@ -44,7 +45,7 @@ index 87c4ed37ee77..0744157a97ca 100644
  }
  
 diff --git a/include/linux/jbd2.h b/include/linux/jbd2.h
-index dfaa1f4dcb0c..d57dd06544a1 100644
+index d073470cb342..9118fdac753d 100644
 --- a/include/linux/jbd2.h
 +++ b/include/linux/jbd2.h
 @@ -347,32 +347,56 @@ static inline struct journal_head *bh2jh(struct buffer_head *bh)

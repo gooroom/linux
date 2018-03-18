@@ -1,8 +1,9 @@
+From 4d3eea6ca68f1481ae8b334b306eac864211db5d Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:57 +0100
 Subject: [PATCH 014/351] futex,rt_mutex: Restructure
  rt_mutex_finish_proxy_lock()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e9695784910ea84ea42a074b89acdaad81da4a1b
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Upstream commit 38d589f2fd08f1296aea3ce62bebd185125c6d81
 
@@ -41,10 +42,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 55 insertions(+), 12 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 5708b1840e0f..b72be871ac27 100644
+index ea7feb899973..da387cc33dc1 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -3031,10 +3031,13 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3034,10 +3034,13 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  		 */
  		WARN_ON(!q.pi_state);
  		pi_mutex = &q.pi_state->pi_mutex;

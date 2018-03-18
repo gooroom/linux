@@ -1,7 +1,8 @@
+From 5480a2a1b3d5fd83a4c9dbfe214992c7b4f4ead9 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
 Subject: [PATCH 122/351] timers: Prepare for full preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=40f847c09e9cdd2b3a8b6ccad002322c40aa25bf
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -29,7 +30,7 @@ index ec86e4e55ea3..8e5b680d1275 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index fe82f403abe4..46adabdde922 100644
+index 9e73ad474900..9b1ac09d9b3a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -524,11 +524,14 @@ void resched_cpu(int cpu)
@@ -59,7 +60,7 @@ index fe82f403abe4..46adabdde922 100644
  }
  /*
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index f61ccaf457ae..fbfd67e6d4b6 100644
+index 21ba5c2b8a74..084556738e8c 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -195,6 +195,9 @@ EXPORT_SYMBOL(jiffies_64);

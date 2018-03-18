@@ -1,7 +1,8 @@
+From 028fc04a347700f3b2ce8a4b8bb2d8c9281051f7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 17 Jun 2011 15:42:38 +0200
 Subject: [PATCH 080/351] Intrduce migrate_disable() + cpu_light()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=87c55d018a3d7363ee05842f9b5f0fe5c721956b
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Introduce migrate_disable(). The task can't be pushed to another CPU but can
 be preempted.
@@ -41,10 +42,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 125 insertions(+), 11 deletions(-)
 
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index e571128ad99a..dcfcdd563f69 100644
+index 2f475ad89a0d..058f53f31770 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -173,6 +173,9 @@ static inline void cpu_notifier_register_done(void)
+@@ -180,6 +180,9 @@ static inline void cpu_notifier_register_done(void)
  #endif /* CONFIG_SMP */
  extern struct bus_type cpu_subsys;
  
@@ -158,7 +159,7 @@ index 68123c1fe549..891c533724f5 100644
   * Callback to arch code if there's nosmp or maxcpus=0 on the
   * boot command line:
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1127df1b3463..fe82f403abe4 100644
+index b97c8f30f882..9e73ad474900 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1099,6 +1099,11 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)

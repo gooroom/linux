@@ -1,7 +1,8 @@
+From 9dad8aa7035c24959b08592b70a3005954f476d8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 20:51:03 +0100
 Subject: [PATCH 221/351] rt: Introduce cpu_chill()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=54d4cf381c2f94bb088c104d770e72a0460b28bd
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Add cpu_chill() to replace cpu_relax(). cpu_chill()
@@ -102,10 +103,10 @@ index a6ecb34cf547..37caab306336 100644
 +
  #endif /* defined(_LINUX_DELAY_H) */
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 4bd08d62151d..73b62329b722 100644
+index c5a0bd4d7d9c..513cb6288c2f 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1778,6 +1778,25 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
+@@ -1780,6 +1780,25 @@ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
  	return hrtimer_nanosleep(&tu, rmtp, HRTIMER_MODE_REL, CLOCK_MONOTONIC);
  }
  

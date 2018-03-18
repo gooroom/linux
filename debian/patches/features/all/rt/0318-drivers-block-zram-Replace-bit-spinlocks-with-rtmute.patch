@@ -1,8 +1,9 @@
+From 011960bed618a9fe257a86af13c32125246e0bdc Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
 Subject: [PATCH 318/351] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7350eb986f8fe252f549ffdca187625a19d1ca96
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
 OTOH, they're a lot less wasteful than an rtmutex per page.
@@ -69,7 +70,7 @@ index b7c0b69a02f5..22009186b3df 100644
  
  	if (is_partial_io(bvec))
  		/* Use  a temporary buffer to decompress the page */
-@@ -700,10 +702,10 @@ compress_again:
+@@ -700,10 +702,10 @@ static int zram_bvec_write(struct zram *zram, struct bio_vec *bvec, u32 index,
  		if (user_mem)
  			kunmap_atomic(user_mem);
  		/* Free memory associated with this sector now. */
@@ -82,7 +83,7 @@ index b7c0b69a02f5..22009186b3df 100644
  
  		atomic64_inc(&zram->stats.zero_pages);
  		ret = 0;
-@@ -794,12 +796,12 @@ compress_again:
+@@ -794,12 +796,12 @@ static int zram_bvec_write(struct zram *zram, struct bio_vec *bvec, u32 index,
  	 * Free memory associated with this sector
  	 * before overwriting unused sectors.
  	 */

@@ -1,7 +1,8 @@
+From 921ee69416d4e7ed916c9ffc27f640d6c08172a5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
 Subject: [PATCH 240/351] net: move xmit_recursion to per-task variable on -RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=90aaaffd3a478e67386aa23013c9416e40912822
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -96,10 +97,10 @@ index a1331f77fad3..bdf040606769 100644
  	int pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index cdabeb2a2024..2617fcce0555 100644
+index 765b8dc7bf59..a6d8df0f635b 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3177,8 +3177,10 @@ static void skb_update_prio(struct sk_buff *skb)
+@@ -3188,8 +3188,10 @@ static void skb_update_prio(struct sk_buff *skb)
  #define skb_update_prio(skb)
  #endif
  
@@ -110,7 +111,7 @@ index cdabeb2a2024..2617fcce0555 100644
  
  /**
   *	dev_loopback_xmit - loop back @skb
-@@ -3412,8 +3414,7 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
+@@ -3423,8 +3425,7 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
  		int cpu = smp_processor_id(); /* ok because BHs are off */
  
  		if (txq->xmit_lock_owner != cpu) {
@@ -120,7 +121,7 @@ index cdabeb2a2024..2617fcce0555 100644
  				goto recursion_alert;
  
  			skb = validate_xmit_skb(skb, dev);
-@@ -3423,9 +3424,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
+@@ -3434,9 +3435,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
  			HARD_TX_LOCK(dev, txq, cpu);
  
  			if (!netif_xmit_stopped(txq)) {
@@ -133,10 +134,10 @@ index cdabeb2a2024..2617fcce0555 100644
  					HARD_TX_UNLOCK(dev, txq);
  					goto out;
 diff --git a/net/core/filter.c b/net/core/filter.c
-index 4eb4ce0aeef4..4f09d6a57217 100644
+index e8c89d2d2bc0..e7a46cb1859b 100644
 --- a/net/core/filter.c
 +++ b/net/core/filter.c
-@@ -1645,7 +1645,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
+@@ -1647,7 +1647,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
  {
  	int ret;
  
@@ -145,7 +146,7 @@ index 4eb4ce0aeef4..4f09d6a57217 100644
  		net_crit_ratelimited("bpf: recursion limit reached on datapath, buggy bpf program?\n");
  		kfree_skb(skb);
  		return -ENETDOWN;
-@@ -1653,9 +1653,9 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
+@@ -1655,9 +1655,9 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
  
  	skb->dev = dev;
  

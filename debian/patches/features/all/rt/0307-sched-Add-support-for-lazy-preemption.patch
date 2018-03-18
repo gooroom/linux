@@ -1,7 +1,8 @@
+From c3c3d848188d633a54086c16a17e9b518533c158 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 307/351] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=70684857fa6c605cb4170b716c4a865b9824efb3
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -229,7 +230,7 @@ index f8a2982bdbde..11dbe26a8279 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 0cbc7654192a..f29c4f961104 100644
+index 82bdbd180c9c..55fc27bb4ca8 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -522,6 +522,38 @@ void resched_curr(struct rq *rq)
@@ -458,10 +459,10 @@ index 852cfc5bb77b..36086f74e011 100644
  
  /*
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 5dc95852c984..280c7d5a7657 100644
+index 304fdd7df094..dd50789ec065 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1346,6 +1346,15 @@ extern void init_sched_fair_class(void);
+@@ -1348,6 +1348,15 @@ extern void init_sched_fair_class(void);
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  

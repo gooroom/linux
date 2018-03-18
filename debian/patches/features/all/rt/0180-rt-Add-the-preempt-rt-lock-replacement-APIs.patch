@@ -1,7 +1,8 @@
+From 9f4d85374b031bec6f744993b5618a300fda9c79 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 19:39:56 +0200
 Subject: [PATCH 180/351] rt: Add the preempt-rt lock replacement APIs
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cc1a1eac39001cfd85d534228f4c1ac6807d4181
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Map spinlocks, rwlocks, rw_semaphores and semaphores to the rt_mutex
 based locking functions for preempt-rt.
@@ -957,7 +958,7 @@ index 000000000000..3e3d8c5f7a9a
 +
 +#endif
 diff --git a/kernel/futex.c b/kernel/futex.c
-index b6c06e5886e5..2e074d63e8fa 100644
+index e11bfac31102..1e4c72447456 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -1399,6 +1399,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
@@ -985,7 +986,7 @@ index b6c06e5886e5..2e074d63e8fa 100644
  
  	return ret;
  }
-@@ -2667,7 +2668,7 @@ retry_private:
+@@ -2670,7 +2671,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		goto no_block;
  	}
  
@@ -994,7 +995,7 @@ index b6c06e5886e5..2e074d63e8fa 100644
  
  	/*
  	 * On PREEMPT_RT_FULL, when hb->lock becomes an rt_mutex, we must not
-@@ -3034,7 +3035,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3037,7 +3038,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  	 * The waiter is allocated on our stack, manipulated by the requeue
  	 * code while we sleep on uaddr.
  	 */
@@ -1700,7 +1701,7 @@ index 9d664eee062f..b99ddf374df1 100644
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -936,6 +974,339 @@ takeit:
+@@ -936,6 +974,339 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
  	return 1;
  }
  
@@ -2355,7 +2356,7 @@ index 9aa0fccd5d43..76d0b40d9193 100644
 +
 +#endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index dcc12e735b50..ea1c44f014b8 100644
+index eed2761aad69..f1d6396e4c9e 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -454,7 +454,7 @@ void wake_q_add(struct wake_q_head *head, struct task_struct *task)

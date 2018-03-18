@@ -1,7 +1,8 @@
+From cc76ad7ab9a46abeb09ae2dd5fbd2ae212838347 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
 Subject: [PATCH 105/351] mm/swap: Convert to percpu locked
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a0f74584591df2bd7416681bd5da8151ee8f98e3
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -31,7 +32,7 @@ diff --git a/mm/compaction.c b/mm/compaction.c
 index 70e6bec46dc2..6678ed58b7c6 100644
 --- a/mm/compaction.c
 +++ b/mm/compaction.c
-@@ -1593,10 +1593,12 @@ check_drain:
+@@ -1593,10 +1593,12 @@ static enum compact_result compact_zone(struct zone *zone, struct compact_contro
  				block_start_pfn(cc->migrate_pfn, cc->order);
  
  			if (cc->last_migrated_pfn < current_block_start) {
@@ -47,10 +48,10 @@ index 70e6bec46dc2..6678ed58b7c6 100644
  				cc->last_migrated_pfn = 0;
  			}
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index f06a57ee00b4..0e3df89b76a5 100644
+index 22cd1ad382c4..163413923f7c 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -6623,7 +6623,9 @@ static int page_alloc_cpu_notify(struct notifier_block *self,
+@@ -6618,7 +6618,9 @@ static int page_alloc_cpu_notify(struct notifier_block *self,
  	int cpu = (unsigned long)hcpu;
  
  	if (action == CPU_DEAD || action == CPU_DEAD_FROZEN) {

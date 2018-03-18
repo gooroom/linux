@@ -1,7 +1,8 @@
+From 9437afd3f0eb8c992cffb543fc1f509c0a4d769a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 199/351] completion: Use simple wait queues
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=869f15816077e674b9c65767a33343cdd903d168
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -37,7 +38,7 @@ index bca6935a94db..d7a35ee34d03 100644
  		}
  		break;
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index 7b107e43b1c4..f1e8534a1748 100644
+index d90bf57ba30e..22f0d5a6a07f 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
 @@ -1593,7 +1593,7 @@ static void ffs_data_put(struct ffs_data *ffs)
@@ -306,7 +307,7 @@ index 8d0f35debf35..b62cf6400fe0 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index da02e71c58e8..13cf7061ee36 100644
+index 94721a568f78..be5521ab2a24 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3335,7 +3335,10 @@ void migrate_disable(void)

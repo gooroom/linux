@@ -1,8 +1,9 @@
+From 3a2897c2520deeaf548e76e2fef77aa15275977c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 17 Feb 2017 19:44:39 +0100
 Subject: [PATCH 002/351] lockdep: Handle statically initialized PER_CPU locks
  proper
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a7f8460e57b57e670938611374b0fc11f195c555
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
 
 If a PER_CPU struct which contains a spin_lock is statically initialized
 via:
@@ -45,7 +46,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  5 files changed, 67 insertions(+), 36 deletions(-)
 
 diff --git a/include/linux/module.h b/include/linux/module.h
-index 0c3207d26ac0..3d3d2188c7d9 100644
+index d2224a09b4b5..57059d466c27 100644
 --- a/include/linux/module.h
 +++ b/include/linux/module.h
 @@ -496,6 +496,7 @@ static inline int module_is_live(struct module *mod)
@@ -158,7 +159,7 @@ index 6599c7f3071d..43f06eda837a 100644
  	}
  	/*
 diff --git a/kernel/module.c b/kernel/module.c
-index 0e54d5bf0097..289616d8ccfd 100644
+index 07bfb9971f2f..b729ef9c2e2f 100644
 --- a/kernel/module.c
 +++ b/kernel/module.c
 @@ -660,16 +660,7 @@ static void percpu_modcopy(struct module *mod,
