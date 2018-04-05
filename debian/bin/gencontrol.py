@@ -177,6 +177,8 @@ class Gencontrol(Base):
             makeflags['ABINAME'] = vars['abiname'] = \
                 self.abiname_version + abiname_part
 
+        build_signed = self.config.merge('build', arch).get('signed-code', False)
+
         # Some userland architectures require kernels from another
         # (Debian) architecture, e.g. x32/amd64.
         # And some derivatives don't need the headers-all packages
@@ -226,11 +228,6 @@ class Gencontrol(Base):
             installer_def_dir = 'debian/installer'
             installer_arch_dir = os.path.join(installer_def_dir, arch)
             if os.path.isdir(installer_arch_dir):
-                # If we're going to build signed udebs later, don't actually
-                # generate udebs.  Just test that we *can* build, so we find
-                # configuration errors before building linux-signed.
-                test_build = self.config.merge('build', arch).get('signed-code', False)
-
                 kw_env = os.environ.copy()
                 kw_env['KW_DEFCONFIG_DIR'] = installer_def_dir
                 kw_env['KW_CONFIG_DIR'] = installer_arch_dir
@@ -251,7 +248,11 @@ class Gencontrol(Base):
                 for package in udeb_packages:
                     package['Build-Profiles'] = '<!stage1>'
 
-                if not test_build:
+                # If we're going to build signed udebs later, don't actually
+                # generate udebs.  Just test that we *can* build, so we find
+                # configuration errors before building linux-signed.
+
+                if not build_signed:
                     merge_packages(packages, udeb_packages, arch)
 
                 # These packages must be built after the per-flavour/
@@ -264,7 +265,19 @@ class Gencontrol(Base):
                               "PACKAGE_NAMES='%s' UDEB_UNSIGNED_TEST_BUILD=%s" %
                               (arch, makeflags,
                                ' '.join(p['Package'] for p in udeb_packages),
-                               test_build)])
+                               build_signed)])
+
+        # This also needs to be built after the per-flavour/per-featureset
+        # packages.
+        if build_signed:
+            merge_packages(packages,
+                           self.process_packages(
+                               self.templates['control.signed-template'], vars),
+                           arch)
+            makefile.add(
+                'binary-arch_%s' % arch,
+                cmds=["$(MAKE) -f debian/rules.real install-signed-template_%s %s" %
+                      (arch, makeflags)])
 
     def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
         config_base = self.config.merge('base', arch, featureset)
