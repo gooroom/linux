@@ -25,7 +25,7 @@ class Gencontrol(Base):
         },
         'build': {
             'debug-info': config.SchemaItemBoolean(),
-            'signed-modules': config.SchemaItemBoolean(),
+            'signed-code': config.SchemaItemBoolean(),
             'vdso': config.SchemaItemBoolean(),
         },
         'description': {
@@ -229,7 +229,7 @@ class Gencontrol(Base):
                 # If we're going to build signed udebs later, don't actually
                 # generate udebs.  Just test that we *can* build, so we find
                 # configuration errors before building linux-signed.
-                test_build = self.config.merge('build', arch).get('signed-modules', False)
+                test_build = self.config.merge('build', arch).get('signed-code', False)
 
                 kw_env = os.environ.copy()
                 kw_env['KW_DEFCONFIG_DIR'] = installer_def_dir
@@ -386,7 +386,7 @@ class Gencontrol(Base):
         packages_dummy = []
         packages_own = []
 
-        build_signed = config_entry_build.get('signed-modules')
+        build_signed = config_entry_build.get('signed-code')
 
         image = self.templates[build_signed and "control.image-unsigned"
                                or "control.image"]
