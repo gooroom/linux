@@ -35,26 +35,32 @@ class Changelog(list):
             self.distribution, self.source, self.version, self.urgency = \
                 distribution, source, version, urgency
 
-    def __init__(self, dir='', version=None):
+    def __init__(self, dir='', version=None, file=None):
         if version is None:
             version = Version
-        with open(os.path.join(dir, "debian/changelog"), encoding="UTF-8") as f:
-            while True:
-                line = f.readline()
-                if not line:
-                    break
-                match = self._re.match(line)
-                if not match:
-                    continue
-                try:
-                    v = version(match.group('version'))
-                except Exception:
-                    if not len(self):
-                        raise
-                    v = Version(match.group('version'))
-                self.append(self.Entry(match.group('distribution'),
-                                       match.group('source'), v,
-                                       match.group('urgency')))
+        if file:
+            self._parse(version, file)
+        else:
+            with open(os.path.join(dir, "debian/changelog"), encoding="UTF-8") as f:
+                self._parse(version, f)
+
+    def _parse(self, version, f):
+        while True:
+            line = f.readline()
+            if not line:
+                break
+            match = self._re.match(line)
+            if not match:
+                continue
+            try:
+                v = version(match.group('version'))
+            except Exception:
+                if not len(self):
+                    raise
+                v = Version(match.group('version'))
+            self.append(self.Entry(match.group('distribution'),
+                                   match.group('source'), v,
+                                   match.group('urgency')))
 
 
 class Version(object):
