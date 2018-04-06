@@ -244,16 +244,22 @@ class Gencontrol(Base):
                     raise RuntimeError('kernel-wedge exited with code %d' %
                                        kw_proc.returncode)
 
-                # kernel-wedge currently chokes on Build-Profiles so add it now
-                for package in udeb_packages:
-                    package['Build-Profiles'] = '<!stage1>'
-
                 # If we're going to build signed udebs later, don't actually
                 # generate udebs.  Just test that we *can* build, so we find
                 # configuration errors before building linux-signed.
 
-                if not build_signed:
-                    merge_packages(packages, udeb_packages, arch)
+                # kernel-wedge currently chokes on Build-Profiles so add it now
+                for package in udeb_packages:
+                    if build_signed:
+                        # XXX This is a hack to exclude the udebs from
+                        # the package list while still being able to
+                        # convince debhelper and kernel-wedge to go
+                        # part way to building them.
+                        package['Build-Profiles'] = '<pkg.linux.udeb-unsigned-test-build>'
+                    else:
+                        package['Build-Profiles'] = '<!stage1>'
+
+                merge_packages(packages, udeb_packages, arch)
 
                 # These packages must be built after the per-flavour/
                 # per-featureset packages.  Also, this won't work
