@@ -27,7 +27,6 @@ class Gencontrol(Base):
                                                image_binary_version)
 
         self.abiname = config_entry['abiname']
-        self.signed_version = re.sub(r'\+b(\d+)$', r'.b\1', image_binary_version)
         self.vars = {
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
@@ -35,7 +34,6 @@ class Gencontrol(Base):
             'abiname': self.abiname,
             'imagebinaryversion': image_binary_version,
             'imagesourceversion': self.version.complete,
-            'signedversion': self.signed_version,
             'arch': arch,
         }
 
@@ -53,8 +51,8 @@ class Gencontrol(Base):
     def do_main_setup(self, vars, makeflags, extra):
         makeflags['VERSION'] = self.version.linux_version
         makeflags['GENCONTROL_ARGS'] = (
-            '-DBuilt-Using="linux (= %(imagesourceversion)s)"' % vars)
-        makeflags['PACKAGE_VERSION'] = self.signed_version
+            '-v%(imagebinaryversion)s -DBuilt-Using="linux (= %(imagesourceversion)s)"' % vars)
+        makeflags['PACKAGE_VERSION'] = vars['imagebinaryversion']
 
     def do_main_packages(self, packages, vars, makeflags, extra):
         # Assume that arch:all packages do not get binNMU'd
@@ -180,27 +178,30 @@ class Gencontrol(Base):
     def write_changelog(self):
         changelog_text = self.substitute(self.templates['changelog.in'],
                                          self.vars)
-
-        # We probably need to insert a new version entry
         changelog = Changelog(file=io.StringIO(changelog_text))
-        if changelog[0].version.complete != self.signed_version:
-            vars = self.vars.copy()
-            vars['distribution'] = self.changelog[0].distribution
-            vars['urgency'] = self.changelog[0].urgency
-            vars['date'] = time.strftime("%a, %d %b %Y %H:%M:%S +0000",
-                                         time.gmtime())
-            changelog_text = (self.substitute('''\
-linux-signed-@arch@ (@signedversion@) @distribution@; urgency=@urgency@
+
+        # We need to insert a new version entry.
+        # Take the distribution and urgency from the linux changelog, and
+        # the base version from the changelog template.
+        vars = self.vars.copy()
+        vars['distribution'] = self.changelog[0].distribution
+        vars['urgency'] = self.changelog[0].urgency
+        vars['date'] = time.strftime("%a, %d %b %Y %H:%M:%S +0000",
+                                     time.gmtime())
+        vars['signedsourceversion'] = (changelog[0].version.complete + '+' +
+                                       re.sub(r'-', r'+',
+                                              vars['imagebinaryversion']))
+
+        with codecs.open(self.template_debian_dir + '/changelog', 'w', 'utf-8') as f:
+            f.write(self.substitute('''\
+linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
 
   * Update to linux @imagebinaryversion@
 
  -- Debian signing service <ftpmaster@debian.org>  @date@
 
 ''',
-                                              vars) +
-                              changelog_text)
-
-        with codecs.open(self.template_debian_dir + '/changelog', 'w', 'utf-8') as f:
+                                    vars))
             f.write(changelog_text)
 
     def write_files_json(self):
