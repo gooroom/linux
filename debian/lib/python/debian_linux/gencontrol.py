@@ -95,7 +95,8 @@ class Gencontrol(object):
 
     def do_source(self, packages):
         source = self.templates["control.source"][0]
-        source['Source'] = self.changelog[0].source
+        if not source.get('Source'):
+            source['Source'] = self.changelog[0].source
         packages['source'] = self.process_package(source, self.vars)
 
     def do_main(self, packages, makefile):
