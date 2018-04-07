@@ -186,8 +186,8 @@ class Gencontrol(Base):
         vars = self.vars.copy()
         vars['distribution'] = self.changelog[0].distribution
         vars['urgency'] = self.changelog[0].urgency
-        vars['date'] = time.strftime("%a, %d %b %Y %H:%M:%S +0000",
-                                     time.gmtime())
+        vars['maintainer'] = self.changelog[0].maintainer
+        vars['date'] = self.changelog[0].date
         vars['signedsourceversion'] = (changelog[0].version.complete + '+' +
                                        re.sub(r'-', r'+',
                                               vars['imagebinaryversion']))
@@ -198,7 +198,7 @@ linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
 
   * Update to linux @imagebinaryversion@
 
- -- Debian signing service <ftpmaster@debian.org>  @date@
+ -- @maintainer@  @date@
 
 ''',
                                     vars))
