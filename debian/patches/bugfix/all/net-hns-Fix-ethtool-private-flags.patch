@@ -1,0 +1,79 @@
+From: Matthias Brugger <matthias.bgg@gmail.com>
+Date: Thu, 15 Mar 2018 17:54:20 +0100
+Subject: net: hns: Fix ethtool private flags
+Origin: https://git.kernel.org/linus/d61d263c8d82db7c4404a29ebc29674b1c0c05c9
+Bug-Debian-Security: https://security-tracker.debian.org/tracker/CVE-2017-18222
+
+The driver implementation returns support for private flags, while
+no private flags are present. When asked for the number of private
+flags it returns the number of statistic flag names.
+
+Fix this by returning EOPNOTSUPP for not implemented ethtool flags.
+
+Signed-off-by: Matthias Brugger <mbrugger@suse.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/hisilicon/hns/hns_dsaf_gmac.c | 2 +-
+ drivers/net/ethernet/hisilicon/hns/hns_dsaf_ppe.c  | 2 +-
+ drivers/net/ethernet/hisilicon/hns/hns_dsaf_rcb.c  | 2 +-
+ drivers/net/ethernet/hisilicon/hns/hns_ethtool.c   | 4 +++-
+ 4 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_gmac.c b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_gmac.c
+index 86944bc3b273..74bd260ca02a 100644
+--- a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_gmac.c
++++ b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_gmac.c
+@@ -666,7 +666,7 @@ static void hns_gmac_get_strings(u32 stringset, u8 *data)
+ 
+ static int hns_gmac_get_sset_count(int stringset)
+ {
+-	if (stringset == ETH_SS_STATS || stringset == ETH_SS_PRIV_FLAGS)
++	if (stringset == ETH_SS_STATS)
+ 		return ARRAY_SIZE(g_gmac_stats_string);
+ 
+ 	return 0;
+diff --git a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_ppe.c b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_ppe.c
+index b62816c1574e..93e71e27401b 100644
+--- a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_ppe.c
++++ b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_ppe.c
+@@ -422,7 +422,7 @@ void hns_ppe_update_stats(struct hns_ppe_cb *ppe_cb)
+ 
+ int hns_ppe_get_sset_count(int stringset)
+ {
+-	if (stringset == ETH_SS_STATS || stringset == ETH_SS_PRIV_FLAGS)
++	if (stringset == ETH_SS_STATS)
+ 		return ETH_PPE_STATIC_NUM;
+ 	return 0;
+ }
+diff --git a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_rcb.c b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_rcb.c
+index 6f3570cfb501..e2e28532e4dc 100644
+--- a/drivers/net/ethernet/hisilicon/hns/hns_dsaf_rcb.c
++++ b/drivers/net/ethernet/hisilicon/hns/hns_dsaf_rcb.c
+@@ -876,7 +876,7 @@ void hns_rcb_get_stats(struct hnae_queue *queue, u64 *data)
+  */
+ int hns_rcb_get_ring_sset_count(int stringset)
+ {
+-	if (stringset == ETH_SS_STATS || stringset == ETH_SS_PRIV_FLAGS)
++	if (stringset == ETH_SS_STATS)
+ 		return HNS_RING_STATIC_REG_NUM;
+ 
+ 	return 0;
+diff --git a/drivers/net/ethernet/hisilicon/hns/hns_ethtool.c b/drivers/net/ethernet/hisilicon/hns/hns_ethtool.c
+index 7ea7f8a4aa2a..2e14a3ae1d8b 100644
+--- a/drivers/net/ethernet/hisilicon/hns/hns_ethtool.c
++++ b/drivers/net/ethernet/hisilicon/hns/hns_ethtool.c
+@@ -993,8 +993,10 @@ int hns_get_sset_count(struct net_device *netdev, int stringset)
+ 			cnt--;
+ 
+ 		return cnt;
+-	} else {
++	} else if (stringset == ETH_SS_STATS) {
+ 		return (HNS_NET_STATS_CNT + ops->get_sset_count(h, stringset));
++	} else {
++		return -EOPNOTSUPP;
+ 	}
+ }
+ 
+-- 
+2.17.0
+
