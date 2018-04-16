@@ -291,6 +291,7 @@ class Gencontrol(Base):
 
     flavour_makeflags_base = (
         ('compiler', 'COMPILER', False),
+        ('compiler-filename', 'COMPILER', True),
         ('kernel-arch', 'KERNEL_ARCH', False),
         ('cflags', 'CFLAGS_KERNEL', True),
         ('override-host-type', 'OVERRIDE_HOST_TYPE', True),
