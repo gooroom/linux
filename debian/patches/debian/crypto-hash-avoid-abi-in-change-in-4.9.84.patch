@@ -1,0 +1,26 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Wed, 18 Apr 2018 01:15:53 +0100
+Subject: crypto: hash: Avoid ABI change in 4.9.84
+Forwarded: not-needed
+
+Add back the crypto_ahash::has_setkey field removed by commit
+9fa68f620041be04720d0cbfb1bd3ddfc6310b24.  It will only be
+uninitialised padding now, but it doesn't appear to have been used by
+anything out-of-tree so this should be OK.  Just to make sure of
+this, rename it so any remaining users will no longer build.
+
+---
+--- a/include/crypto/hash.h
++++ b/include/crypto/hash.h
+@@ -205,6 +205,11 @@ struct crypto_ahash {
+ 		      unsigned int keylen);
+ 
+ 	unsigned int reqsize;
++#ifdef __GENKSYMS__
++	bool has_setkey;
++#else
++	bool padding_was_has_setkey;
++#endif
+ 	struct crypto_tfm base;
+ };
+ 

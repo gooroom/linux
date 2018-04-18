@@ -1,0 +1,21 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Wed, 18 Apr 2018 02:29:25 +0100
+Subject: fs: Avoid ABI change in 4.9.85
+Forwarded: not-needed
+
+The addition of a #include to <linux/fs.h> changed a few symbol
+versions.  Hide it from genksyms to avoid this.
+
+---
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -18,7 +18,9 @@
+ #include <linux/bug.h>
+ #include <linux/mutex.h>
+ #include <linux/rwsem.h>
++#ifndef __GENKSYMS__
+ #include <linux/mm_types.h>
++#endif
+ #include <linux/capability.h>
+ #include <linux/semaphore.h>
+ #include <linux/fiemap.h>
