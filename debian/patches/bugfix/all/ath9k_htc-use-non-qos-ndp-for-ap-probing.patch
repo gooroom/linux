@@ -1,0 +1,31 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Wed, 21 Mar 2018 11:00:14 +0100
+Subject: ath9k_htc: use non-QoS NDP for AP probing
+Origin: https://git.kernel.org/linus/60b01bcce97191f473fa869df2713143936d6ef4
+Bug-Debian: https://bugs.debian.org/891060
+
+When switching mac80211 to use QoS NDP, it turned out that
+ath9k_htc is somehow broken by this, e.g. see
+https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=891060.
+
+Fix this by using the new mac80211 flag to go back to the
+old, incorrect, behaviour for this driver.
+
+Fixes: 7b6ddeaf27ec ("mac80211: use QoS NDP for AP probing")
+Reported-by: Ben Caradoc-Davies <ben@transient.nz>
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ drivers/net/wireless/ath/ath9k/htc_drv_init.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_init.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+@@ -729,6 +729,7 @@ static void ath9k_set_hw_capab(struct at
+ 	ieee80211_hw_set(hw, SPECTRUM_MGMT);
+ 	ieee80211_hw_set(hw, SIGNAL_DBM);
+ 	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
++	ieee80211_hw_set(hw, DOESNT_SUPPORT_QOS_NDP);
+ 
+ 	if (ath9k_ps_enable)
+ 		ieee80211_hw_set(hw, SUPPORTS_PS);
