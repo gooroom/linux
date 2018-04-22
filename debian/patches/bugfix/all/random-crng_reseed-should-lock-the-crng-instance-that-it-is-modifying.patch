@@ -1,0 +1,35 @@
+From: Theodore Ts'o <tytso@mit.edu>
+Date: Thu, 12 Apr 2018 00:50:45 -0400
+Subject: random: crng_reseed() should lock the crng instance that it is
+ modifying
+Origin: https://git.kernel.org/linus/0bb29a849a6433b72e249eea7695477b02056e94
+
+Reported-by: Jann Horn <jannh@google.com>
+Fixes: 1e7f583af67b ("random: make /dev/urandom scalable for silly...")
+Cc: stable@kernel.org # 4.8+
+Signed-off-by: Theodore Ts'o <tytso@mit.edu>
+Reviewed-by: Jann Horn <jannh@google.com>
+---
+ drivers/char/random.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -862,7 +862,7 @@ static void crng_reseed(struct crng_stat
+ 		_crng_backtrack_protect(&primary_crng, buf.block,
+ 					CHACHA20_KEY_SIZE);
+ 	}
+-	spin_lock_irqsave(&primary_crng.lock, flags);
++	spin_lock_irqsave(&crng->lock, flags);
+ 	for (i = 0; i < 8; i++) {
+ 		unsigned long	rv;
+ 		if (!arch_get_random_seed_long(&rv) &&
+@@ -879,7 +879,7 @@ static void crng_reseed(struct crng_stat
+ 		wake_up_interruptible(&crng_init_wait);
+ 		pr_notice("random: crng init done\n");
+ 	}
+-	spin_unlock_irqrestore(&primary_crng.lock, flags);
++	spin_unlock_irqrestore(&crng->lock, flags);
+ }
+ 
+ static inline void maybe_reseed_primary_crng(void)
