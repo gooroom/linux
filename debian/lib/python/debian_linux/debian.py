@@ -25,7 +25,7 @@ class Changelog(list):
 (?P<urgency>
     \w+
 )
-\n
+(?:,|\n)
 """
     _top_re = re.compile(_top_rules, re.X)
     _bottom_rules = r"""
