@@ -25,7 +25,7 @@ class Changelog(list):
 (?P<urgency>
     \w+
 )
-\n
+(?:,|\n)
 """
     _top_re = re.compile(_top_rules, re.X)
     _bottom_rules = r"""
@@ -181,9 +181,10 @@ class VersionLinux(Version):
     )?
     |
     (?P<revision_other>
-        [^-]+
+        [^-+]+
     )
 )
+(?:\+b\d+)?
 $
 """
     _version_linux_re = re.compile(_version_linux_rules, re.X)
