@@ -76,6 +76,10 @@ class Gencontrol(Base):
             'ABINAME': self.abiname_version + self.abiname_part,
             'SOURCEVERSION': self.version.complete,
         })
+        if not self.config.merge('packages').get('tools-unversioned', True):
+            makeflags['DO_TOOLS_UNVERSIONED'] = False
+        if not self.config.merge('packages').get('tools-versioned', True):
+            makeflags['DO_TOOLS_VERSIONED'] = False
 
         # Prepare to generate debian/tests/control
         self.tests_control = None
@@ -107,10 +111,6 @@ class Gencontrol(Base):
         makeflags['ALL_TRIPLETS'] = ' '.join(triplet_enabled)
         if not self.config.merge('packages').get('docs', True):
             makeflags['DO_DOCS'] = False
-        if not self.config.merge('packages').get('tools-unversioned', True):
-            makeflags['DO_TOOLS_UNVERSIONED'] = False
-        if not self.config.merge('packages').get('tools-versioned', True):
-            makeflags['DO_TOOLS_VERSIONED'] = False
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
         # linux-source-$UPSTREAMVERSION will contain all kconfig files
