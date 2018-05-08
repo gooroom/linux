@@ -48,6 +48,7 @@ class Gencontrol(Base):
             'libc-dev': config.SchemaItemBoolean(),
             'tools-unversioned': config.SchemaItemBoolean(),
             'tools-versioned': config.SchemaItemBoolean(),
+            'source': config.SchemaItemBoolean(),
         }
     }
 
@@ -111,6 +112,8 @@ class Gencontrol(Base):
         makeflags['ALL_TRIPLETS'] = ' '.join(triplet_enabled)
         if not self.config.merge('packages').get('docs', True):
             makeflags['DO_DOCS'] = False
+        if not self.config.merge('packages').get('source', True):
+            makeflags['DO_SOURCE'] = False
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
         # linux-source-$UPSTREAMVERSION will contain all kconfig files
