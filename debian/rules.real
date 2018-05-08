@@ -71,7 +71,11 @@ ifneq ($(DO_DOCS),False)
     build-indep: $(STAMPS_DIR)/build-doc
   endif
 endif
-binary-indep: install-source
+ifeq (,$(filter pkg.linux.nosource,$(DEB_BUILD_PROFILES)))
+  ifneq ($(DO_SOURCE),False)
+    binary-indep: install-source
+  endif
+endif
 binary-indep: install-support
 
 ifneq ($(DO_TOOLS_VERSIONED),False)
