@@ -1,13 +1,14 @@
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 4 Apr 2018 11:43:57 +0200
-Subject: [PATCH] kernel/user: Use irqsave variant of atomic_dec_and_lock()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.16/older/patches-4.16.7-rt1.tar.xz
+Subject: [PATCH] userns: Use irqsave variant of refcount_dec_and_lock()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.16/older/patches-4.16.8-rt3.tar.xz
 
-The irqsave variant of atomic_dec_and_lock handles irqsave/restore when
+The irqsave variant of refcount_dec_and_lock handles irqsave/restore when
 taking/releasing the spin lock. With this variant the call of
 local_irq_save/restore is no longer required.
 
 Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+[bigeasy: s@atomic_dec_and_lock@refcount_dec_and_lock@g ]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  kernel/user.c |    5 +----
@@ -20,8 +21,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return;
  
 -	local_irq_save(flags);
--	if (atomic_dec_and_lock(&up->__count, &uidhash_lock))
-+	if (atomic_dec_and_lock_irqsave(&up->__count, &uidhash_lock, flags))
+-	if (refcount_dec_and_lock(&up->__count, &uidhash_lock))
++	if (refcount_dec_and_lock_irqsave(&up->__count, &uidhash_lock, &flags))
  		free_user(up, flags);
 -	else
 -		local_irq_restore(flags);
