@@ -143,7 +143,7 @@ class Main(object):
         self.log("Generate tarball %s\n" % out)
         cmdline = '''(cd '%s' && find '%s' -print0) |
                      LC_ALL=C sort -z |
-                     tar -C '%s' --no-recursion --null -T - --mtime '%s' --owner root --group root -caf '%s'
+                     XZ_OPT=-T0 tar -C '%s' --no-recursion --null -T - --mtime '%s' --owner root --group root -caf '%s'
                   ''' % (self.dir, self.orig, self.dir, orig_date, out)
         try:
             if os.spawnv(os.P_WAIT, '/bin/sh', ['sh', '-c', cmdline]):
