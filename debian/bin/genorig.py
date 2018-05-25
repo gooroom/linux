@@ -141,10 +141,9 @@ class Main(object):
         except OSError:
             pass
         self.log("Generate tarball %s\n" % out)
-        cmdline = '''(cd '%s' && find '%s' -print0) |
-                     LC_ALL=C sort -z |
-                     XZ_OPT=-T0 tar -C '%s' --no-recursion --null -T - --mtime '%s' --owner root --group root -caf '%s'
-                  ''' % (self.dir, self.orig, self.dir, orig_date, out)
+        cmdline = '''LC_ALL=C XZ_OPT=-T0
+                     tar -C '%s' --sort name --mtime '%s' --owner root --group root -caf '%s' '%s'
+                  ''' % (self.dir, orig_date, out, self.orig)
         try:
             if os.spawnv(os.P_WAIT, '/bin/sh', ['sh', '-c', cmdline]):
                 raise RuntimeError("Can't patch source")
