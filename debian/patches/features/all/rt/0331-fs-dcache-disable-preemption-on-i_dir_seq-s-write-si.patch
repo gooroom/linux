@@ -18,6 +18,8 @@ Cc: stable-rt@vger.kernel.org
 Reported-by: Oleg.Karfich@wago.com
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+
+[corsac: ported to 4.9.106]
 ---
  fs/dcache.c        | 12 +++++++-----
  fs/inode.c         |  2 +-
@@ -56,17 +58,17 @@ index 3529cdb2c241..ff77ec32b67b 100644
  
  retry:
  	rcu_read_lock();
--	seq = smp_load_acquire(&parent->d_inode->i_dir_seq) & ~1;
-+	seq = smp_load_acquire(&parent->d_inode->__i_dir_seq) & ~1;
+-	seq = smp_load_acquire(&parent->d_inode->i_dir_seq);
++	seq = smp_load_acquire(&parent->d_inode->__i_dir_seq);
  	r_seq = read_seqbegin(&rename_lock);
  	dentry = __d_lookup_rcu(parent, name, &d_seq);
  	if (unlikely(dentry)) {
 @@ -2489,7 +2491,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
- 		goto retry;
  	}
+ 
  	hlist_bl_lock(b);
--	if (unlikely(parent->d_inode->i_dir_seq != seq)) {
-+	if (unlikely(parent->d_inode->__i_dir_seq != seq)) {
+-	if (unlikely(READ_ONCE(parent->d_inode->i_dir_seq) != seq)) {
++	if (unlikely(READ_ONCE(parent->d_inode->__i_dir_seq) != seq)) {
  		hlist_bl_unlock(b);
  		rcu_read_unlock();
  		goto retry;
