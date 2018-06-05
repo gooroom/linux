@@ -19,18 +19,9 @@ Signed-off-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
 [bwh: Backported to 4.9:
  - Also fix up guest_cpuid_has_spec_ctrl()
  - Adjust context]
+[corsac: Update for 4.9.104 which backports part of that commit as
+43462d908821d0af30ee3f5e74937034fa9453a5]
 ---
---- a/arch/x86/kvm/cpuid.c
-+++ b/arch/x86/kvm/cpuid.c
-@@ -382,7 +382,7 @@ static inline int __do_cpuid_ent(struct
- 
- 	/* cpuid 7.0.edx*/
- 	const u32 kvm_cpuid_7_0_edx_x86_features =
--		F(SPEC_CTRL) | F(SSBD) | F(ARCH_CAPABILITIES);
-+		F(SPEC_CTRL) | F(SPEC_CTRL_SSBD) | F(ARCH_CAPABILITIES);
- 
- 	/* all calls to cpuid_count() should be made on the same cpu */
- 	get_cpu();
 --- a/arch/x86/kvm/cpuid.h
 +++ b/arch/x86/kvm/cpuid.h
 @@ -179,7 +179,7 @@ static inline bool guest_cpuid_has_spec_
