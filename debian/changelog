@@ -13,6 +13,92 @@ linux (4.9.88-2) UNRELEASED; urgency=medium
 
  -- Steve McIntyre <93sam@debian.org>  Wed, 02 May 2018 01:15:41 +0100
 
+linux (4.9.88-1+deb9u2) UNRELEASED; urgency=medium
+
+  [ Romain Perier ]
+  * cdrom: information leak in cdrom_ioctl_media_changed()
+    (CVE-2018-10940)
+
+  [ Salvatore Bonaccorso ]
+  * proc: do not access cmdline nor environ from file-backed areas
+    (CVE-2018-1120)
+  * dccp: check sk for closed state in dccp_sendmsg() (CVE-2018-1130)
+
+  [ Ben Hutchings ]
+  * [x86] amd: don't set X86_BUG_SYSRET_SS_ATTRS when running under Xen
+  * [x86] process: Optimize TIF checks in __switch_to_xtra()
+  * [x86] process: Correct and optimize TIF_BLOCKSTEP switch
+  * [x86] process: Optimize TIF_NOTSC switch
+  * [x86] cpu/AMD: Fix erratum 1076 (CPB bit)
+  * [x86] Add support for disabling Speculative Store Bypass (CVE-2018-3639):
+    - x86/nospec: Simplify alternative_msr_write()
+    - x86/bugs: Concentrate bug detection into a separate function
+    - x86/bugs: Concentrate bug reporting into a separate function
+    - x86/bugs: Read SPEC_CTRL MSR during boot and re-use reserved bits
+    - x86/bugs, KVM: Support the combination of guest and host IBRS
+    - x86/bugs: Expose /sys/../spec_store_bypass
+    - x86/cpufeatures: Add X86_FEATURE_RDS
+    - x86/bugs: Provide boot parameters for the spec_store_bypass_disable
+      mitigation
+    - x86/bugs/intel: Set proper CPU features and setup RDS
+    - x86/bugs: Whitelist allowed SPEC_CTRL MSR values
+    - x86/bugs/AMD: Add support to disable RDS on Fam[15,16,17]h if requested
+    - x86/KVM/VMX: Expose SPEC_CTRL Bit(2) to the guest
+    - x86/speculation: Create spec-ctrl.h to avoid include hell
+    - prctl: Add speculation control prctls
+    - x86/process: Allow runtime control of Speculative Store Bypass
+    - x86/speculation: Add prctl for Speculative Store Bypass mitigation
+    - nospec: Allow getting/setting on non-current task
+    - proc: Provide details on speculation flaw mitigations
+    - seccomp: Enable speculation flaw mitigations
+    - x86/bugs: Make boot modes __ro_after_init
+    - prctl: Add force disable speculation
+    - seccomp: Use PR_SPEC_FORCE_DISABLE
+    - seccomp: Add filter flag to opt-out of SSB mitigation
+    - seccomp: Move speculation migitation control to arch code
+    - x86/speculation: Make "seccomp" the default mode for Speculative Store
+      Bypass
+    - x86/bugs: Rename _RDS to _SSBD
+    - proc: Use underscores for SSBD in 'status'
+    - Documentation/spec_ctrl: Do some minor cleanups
+    - x86/bugs: Fix __ssb_select_mitigation() return type
+    - x86/bugs: Make cpu_show_common() static
+    - x86/bugs: Fix the parameters alignment and missing void
+    - x86/cpu: Make alternative_msr_write work for 32-bit code
+    - KVM: SVM: Move spec control call after restore of GS
+    - x86/speculation: Use synthetic bits for IBRS/IBPB/STIBP
+    - x86/cpufeatures: Disentangle MSR_SPEC_CTRL enumeration from IBRS
+    - x86/cpufeatures: Disentangle SSBD enumeration
+    - x86/cpufeatures: Add FEATURE_ZEN
+    - x86/speculation: Handle HT correctly on AMD
+    - x86/bugs, KVM: Extend speculation control for VIRT_SPEC_CTRL
+    - x86/speculation: Add virtualized speculative store bypass disable support
+    - x86/speculation: Rework speculative_store_bypass_update()
+    - x86/bugs: Unify x86_spec_ctrl_{set_guest,restore_host}
+    - x86/bugs: Expose x86_spec_ctrl_base directly
+    - x86/bugs: Remove x86_spec_ctrl_set()
+    - x86/bugs: Rework spec_ctrl base and mask logic
+    - x86/speculation, KVM: Implement support for VIRT_SPEC_CTRL/LS_CFG
+    - KVM: SVM: Implement VIRT_SPEC_CTRL support for SSBD
+    - x86/bugs: Rename SSBD_NO to SSB_NO
+  * [x86] Revert "x86/speculation: Use synthetic bits for IBRS/IBPB/STIBP"
+    to avoid an ABI change
+  * [x86] KVM: VMX: Expose SSBD properly to guests.
+
+ -- Romain Perier <romain.perier@gmail.com>  Fri, 11 May 2018 21:29:54 +0200
+
+linux (4.9.88-1+deb9u1) stretch-security; urgency=high
+
+  [ Salvatore Bonaccorso ]
+  * [x86] x86/entry/64: Don't use IST entry for #BP stack (CVE-2018-8897)
+  * [x86] kvm: fix icebp instruction handling (CVE-2018-1087)
+
+  [ Ben Hutchings ]
+  * Revert "random: fix crng_ready() test" (Closes: #897599), reopening
+    CVE-2018-1108
+
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 07 May 2018 23:38:25 +0100
+
 linux (4.9.88-1) stretch-security; urgency=high
 
   * New upstream stable update:

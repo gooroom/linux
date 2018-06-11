@@ -1,0 +1,44 @@
+From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+Date: Mon, 21 May 2018 17:54:49 -0400
+Subject: KVM: VMX: Expose SSBD properly to guests.
+Origin: https://www.spinics.net/lists/kvm/msg169259.html
+
+The X86_FEATURE_SSBD is an synthetic CPU feature - that is
+it bit location has no relevance to the real CPUID 0x7.EBX[31]
+bit position. For that we need the new CPU feature name.
+
+Fixes: 52817587e706 ("x86/cpufeatures: Disentangle SSBD enumeration")
+
+CC: Paolo Bonzini <pbonzini@redhat.com>
+Cc: "Radim Krčmář" <rkrcmar@redhat.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@kernel.org>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
+[bwh: Backported to 4.9:
+ - Also fix up guest_cpuid_has_spec_ctrl()
+ - Adjust context]
+---
+--- a/arch/x86/kvm/cpuid.c
++++ b/arch/x86/kvm/cpuid.c
+@@ -382,7 +382,7 @@ static inline int __do_cpuid_ent(struct
+ 
+ 	/* cpuid 7.0.edx*/
+ 	const u32 kvm_cpuid_7_0_edx_x86_features =
+-		F(SPEC_CTRL) | F(SSBD) | F(ARCH_CAPABILITIES);
++		F(SPEC_CTRL) | F(SPEC_CTRL_SSBD) | F(ARCH_CAPABILITIES);
+ 
+ 	/* all calls to cpuid_count() should be made on the same cpu */
+ 	get_cpu();
+--- a/arch/x86/kvm/cpuid.h
++++ b/arch/x86/kvm/cpuid.h
+@@ -179,7 +179,7 @@ static inline bool guest_cpuid_has_spec_
+ 	if (best && (best->ebx & bit(X86_FEATURE_AMD_IBRS)))
+ 		return true;
+ 	best = kvm_find_cpuid_entry(vcpu, 7, 0);
+-	return best && (best->edx & (bit(X86_FEATURE_SPEC_CTRL) | bit(X86_FEATURE_SSBD)));
++	return best && (best->edx & (bit(X86_FEATURE_SPEC_CTRL) | bit(X86_FEATURE_SPEC_CTRL_SSBD)));
+ }
+ 
+ static inline bool guest_cpuid_has_arch_capabilities(struct kvm_vcpu *vcpu)
