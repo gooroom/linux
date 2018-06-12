@@ -1,9 +1,9 @@
-From 4d3eea6ca68f1481ae8b334b306eac864211db5d Mon Sep 17 00:00:00 2001
+From 9ec0cbd4f52b03a6fa6ac64f2de614aef4e84546 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:57 +0100
-Subject: [PATCH 014/351] futex,rt_mutex: Restructure
+Subject: [PATCH 014/350] futex,rt_mutex: Restructure
  rt_mutex_finish_proxy_lock()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.84-rt62.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
 
 Upstream commit 38d589f2fd08f1296aea3ce62bebd185125c6d81
 
@@ -36,9 +36,9 @@ Link: http://lkml.kernel.org/r/20170322104152.001659630@infradead.org
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/futex.c                  |  7 ++++--
- kernel/locking/rtmutex.c        | 52 +++++++++++++++++++++++++++++++++++------
- kernel/locking/rtmutex_common.h |  8 ++++---
+ kernel/futex.c                  |  7 +++--
+ kernel/locking/rtmutex.c        | 52 ++++++++++++++++++++++++++++-----
+ kernel/locking/rtmutex_common.h |  8 +++--
  3 files changed, 55 insertions(+), 12 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
@@ -62,10 +62,10 @@ index ea7feb899973..da387cc33dc1 100644
  		 * Fixup the pi_state owner and possibly acquire the lock if we
  		 * haven't already.
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 92499cbcb2f7..fb86e5fd24e3 100644
+index d7dbce177f2c..e1896ac74c37 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1743,21 +1743,23 @@ struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock)
+@@ -1768,21 +1768,23 @@ struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock)
  }
  
  /**
@@ -93,7 +93,7 @@ index 92499cbcb2f7..fb86e5fd24e3 100644
  			       struct hrtimer_sleeper *to,
  			       struct rt_mutex_waiter *waiter)
  {
-@@ -1770,9 +1772,6 @@ int rt_mutex_finish_proxy_lock(struct rt_mutex *lock,
+@@ -1795,9 +1797,6 @@ int rt_mutex_finish_proxy_lock(struct rt_mutex *lock,
  	/* sleep on the mutex */
  	ret = __rt_mutex_slowlock(lock, TASK_INTERRUPTIBLE, to, waiter);
  
@@ -103,7 +103,7 @@ index 92499cbcb2f7..fb86e5fd24e3 100644
  	/*
  	 * try_to_take_rt_mutex() sets the waiter bit unconditionally. We might
  	 * have to fix that up.
-@@ -1783,3 +1782,42 @@ int rt_mutex_finish_proxy_lock(struct rt_mutex *lock,
+@@ -1808,3 +1807,42 @@ int rt_mutex_finish_proxy_lock(struct rt_mutex *lock,
  
  	return ret;
  }
@@ -147,10 +147,10 @@ index 92499cbcb2f7..fb86e5fd24e3 100644
 +	return cleanup;
 +}
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index d16de23680a9..fedd5abe0b52 100644
+index 74b4cf2f5912..8e81b17c0ee5 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -107,9 +107,11 @@ extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter);
+@@ -108,9 +108,11 @@ extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter);
  extern int rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
@@ -166,5 +166,5 @@ index d16de23680a9..fedd5abe0b52 100644
  extern int rt_mutex_timed_futex_lock(struct rt_mutex *l, struct hrtimer_sleeper *to);
  extern int rt_mutex_futex_trylock(struct rt_mutex *l);
 -- 
-2.16.1
+2.17.0
 
