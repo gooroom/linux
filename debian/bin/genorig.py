@@ -141,12 +141,25 @@ class Main(object):
         except OSError:
             pass
         self.log("Generate tarball %s\n" % out)
-        cmdline = '''LC_ALL=C XZ_OPT=-T0
-                     tar -C '%s' --sort name --mtime '%s' --owner root --group root -caf '%s' '%s'
-                  ''' % (self.dir, orig_date, out, self.orig)
+
+        env = os.environ.copy()
+        env.update({
+            'LC_ALL': 'C',
+        })
+        cmd = [
+            'tar',
+            '-C', self.dir,
+            '--sort=name',
+            '--mtime={}'.format(orig_date),
+            '--owner=root',
+            '--group=root',
+            '--use-compress-program=xz -T0',
+            '-cf',
+            out, self.orig,
+        ]
+
         try:
-            if os.spawnv(os.P_WAIT, '/bin/sh', ['sh', '-c', cmdline]):
-                raise RuntimeError("Can't patch source")
+            subprocess.run(cmd, env=env, check=True)
             os.chmod(out, 0o644)
         except:
             try:
