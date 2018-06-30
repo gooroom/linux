@@ -93,34 +93,30 @@ class Changelog(list):
                 top_match = bottom_match = None
 
 class Version(object):
-    _version_rules = r"""
-^
-(?:
-    (?P<epoch>
-        \d+
-    )
-    :
-)?
-(?P<upstream>
-    .+?
-)   
-(?:
-    -
-    (?P<revision>[^-]+)
-)?
-$
-"""
-    _version_re = re.compile(_version_rules, re.X)
+    _epoch_re = re.compile(r'\d+$')
+    _upstream_re = re.compile(r'[0-9][A-Za-z0-9.+\-:~]*$')
+    _revision_re = re.compile(r'[A-Za-z0-9+.~]+$')
 
     def __init__(self, version):
-        match = self._version_re.match(version)
-        if match is None:
+        try:
+            split = version.index(':')
+        except ValueError:
+            epoch, rest = None, version
+        else:
+            epoch, rest = version[0:split], version[split+1:]
+        try:
+            split = rest.rindex('-')
+        except ValueError:
+            upstream, revision = rest, None
+        else:
+            upstream, revision = rest[0:split], rest[split+1:]
+        if ((epoch is not None and not self._epoch_re.match(epoch)) or
+            not self._upstream_re.match(upstream) or
+            (revision is not None and not self._revision_re.match(revision))):
             raise RuntimeError(u"Invalid debian version")
-        self.epoch = None
-        if match.group("epoch") is not None:
-            self.epoch = int(match.group("epoch"))
-        self.upstream = match.group("upstream")
-        self.revision = match.group("revision")
+        self.epoch = epoch and int(epoch)
+        self.upstream = upstream
+        self.revision = revision
 
     def __str__(self):
         return self.complete
