@@ -1,6 +1,7 @@
 import collections
 import os.path
 import re
+import unittest
 
 from . import utils
 
@@ -141,6 +142,79 @@ $
         from warnings import warn
         warn(u"debian argument was replaced by revision", DeprecationWarning, stacklevel=2)
         return self.revision
+
+
+class _VersionTest(unittest.TestCase):
+    def test_native(self):
+        v = Version('1.2+c~4')
+        self.assertEqual(v.epoch, None)
+        self.assertEqual(v.upstream, '1.2+c~4')
+        self.assertEqual(v.revision, None)
+        self.assertEqual(v.complete, '1.2+c~4')
+        self.assertEqual(v.complete_noepoch, '1.2+c~4')
+
+    def test_nonnative(self):
+        v = Version('1-2+d~3')
+        self.assertEqual(v.epoch, None)
+        self.assertEqual(v.upstream, '1')
+        self.assertEqual(v.revision, '2+d~3')
+        self.assertEqual(v.complete, '1-2+d~3')
+        self.assertEqual(v.complete_noepoch, '1-2+d~3')
+
+    def test_native_epoch(self):
+        v = Version('5:1.2.3')
+        self.assertEqual(v.epoch, 5)
+        self.assertEqual(v.upstream, '1.2.3')
+        self.assertEqual(v.revision, None)
+        self.assertEqual(v.complete, '5:1.2.3')
+        self.assertEqual(v.complete_noepoch, '1.2.3')
+
+    def test_nonnative_epoch(self):
+        v = Version('5:1.2.3-4')
+        self.assertEqual(v.epoch, 5)
+        self.assertEqual(v.upstream, '1.2.3')
+        self.assertEqual(v.revision, '4')
+        self.assertEqual(v.complete, '5:1.2.3-4')
+        self.assertEqual(v.complete_noepoch, '1.2.3-4')
+
+    def test_multi_hyphen(self):
+        v = Version('1-2-3')
+        self.assertEqual(v.epoch, None)
+        self.assertEqual(v.upstream, '1-2')
+        self.assertEqual(v.revision, '3')
+        self.assertEqual(v.complete, '1-2-3')
+
+    def test_multi_colon(self):
+        v = Version('1:2:3')
+        self.assertEqual(v.epoch, 1)
+        self.assertEqual(v.upstream, '2:3')
+        self.assertEqual(v.revision, None)
+
+    def test_invalid_epoch(self):
+        with self.assertRaises(RuntimeError):
+            v = Version('a:1')
+        with self.assertRaises(RuntimeError):
+            v = Version('-1:1')
+        with self.assertRaises(RuntimeError):
+            v = Version('1a:1')
+
+    def test_invalid_upstream(self):
+        with self.assertRaises(RuntimeError):
+            v = Version('1_2')
+        with self.assertRaises(RuntimeError):
+            v = Version('1/2')
+        with self.assertRaises(RuntimeError):
+            v = Version('a1')
+        with self.assertRaises(RuntimeError):
+            v = Version('1 2')
+
+    def test_invalid_revision(self):
+        with self.assertRaises(RuntimeError):
+            v = Version('1-2_3')
+        with self.assertRaises(RuntimeError):
+            v = Version('1-2/3')
+        with self.assertRaises(RuntimeError):
+            v = Version('1-2:3')
 
 
 class VersionLinux(Version):
@@ -501,3 +575,7 @@ class TestsControl(_ControlFileDict):
         ('Tests-Directory', str),
         ('Classes', str),
     ))
+
+
+if __name__ == '__main__':
+    unittest.main()
