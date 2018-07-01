@@ -214,8 +214,7 @@ class _VersionTest(unittest.TestCase):
 
 
 class VersionLinux(Version):
-    _version_linux_rules = r"""
-^
+    _upstream_re = re.compile(r"""
 (?P<version>
     \d+\.\d+
 )
@@ -235,7 +234,9 @@ class VersionLinux(Version):
         \d+
     )
 )?
--
+$
+    """, re.X)
+    _revision_re = re.compile(r"""
 \d+
 (\.\d+)?
 (?:
@@ -251,20 +252,20 @@ class VersionLinux(Version):
     )?
     |
     (?P<revision_other>
-        [^-]+?
+        .+?
     )
 )
 (?:\+b\d+)?
 $
-"""
-    _version_linux_re = re.compile(_version_linux_rules, re.X)
+    """, re.X)
 
     def __init__(self, version):
         super(VersionLinux, self).__init__(version)
-        match = self._version_linux_re.match(version)
-        if match is None:
+        up_match = self._upstream_re.match(self.upstream)
+        rev_match = self._revision_re.match(self.revision)
+        if up_match is None or rev_match is None:
             raise RuntimeError(u"Invalid debian linux version")
-        d = match.groupdict()
+        d = up_match.groupdict()
         self.linux_modifier = d['modifier']
         self.linux_version = d['version']
         if d['modifier'] is not None:
@@ -274,10 +275,11 @@ $
             self.linux_upstream = d['version']
         self.linux_upstream_full = self.linux_upstream + d['update']
         self.linux_dfsg = d['dfsg']
-        self.linux_revision_experimental = match.group('revision_experimental') and True
-        self.linux_revision_security = match.group('revision_security') and True
-        self.linux_revision_backports = match.group('revision_backports') and True
-        self.linux_revision_other = match.group('revision_other') and True
+        d = rev_match.groupdict()
+        self.linux_revision_experimental = d['revision_experimental'] and True
+        self.linux_revision_security = d['revision_security'] and True
+        self.linux_revision_backports = d['revision_backports'] and True
+        self.linux_revision_other = d['revision_other'] and True
 
 
 class _VersionLinuxTest(unittest.TestCase):
