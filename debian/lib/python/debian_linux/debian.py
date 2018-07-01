@@ -251,7 +251,7 @@ class VersionLinux(Version):
     )?
     |
     (?P<revision_other>
-        [^-+]+
+        [^-]+?
     )
 )
 (?:\+b\d+)?
