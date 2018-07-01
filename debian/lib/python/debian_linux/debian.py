@@ -369,6 +369,27 @@ class _VersionLinuxTest(unittest.TestCase):
         self.assertFalse(v.linux_revision_backports)
         self.assertFalse(v.linux_revision_other)
 
+    def test_binnmu(self):
+        v = VersionLinux('1.2.3-4+b1')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_other_revision(self):
+        v = VersionLinux('4.16.5-1+revert+crng+ready') # from #898087
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertTrue(v.linux_revision_other)
+
+    def test_other_revision_binnmu(self):
+        v = VersionLinux('4.16.5-1+revert+crng+ready+b1')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertTrue(v.linux_revision_other)
+
 
 class PackageArchitecture(collections.MutableSet):
     __slots__ = '_data'
