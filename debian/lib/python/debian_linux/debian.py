@@ -280,6 +280,96 @@ $
         self.linux_revision_other = match.group('revision_other') and True
 
 
+class _VersionLinuxTest(unittest.TestCase):
+    def test_stable(self):
+        v = VersionLinux('1.2.3-4')
+        self.assertEqual(v.linux_version, '1.2')
+        self.assertEqual(v.linux_upstream, '1.2')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertEqual(v.linux_modifier, None)
+        self.assertEqual(v.linux_dfsg, None)
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_rc(self):
+        v = VersionLinux('1.2~rc3-4')
+        self.assertEqual(v.linux_version, '1.2')
+        self.assertEqual(v.linux_upstream, '1.2-rc3')
+        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
+        self.assertEqual(v.linux_modifier, 'rc3')
+        self.assertEqual(v.linux_dfsg, None)
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_dfsg(self):
+        v = VersionLinux('1.2~rc3.dfsg.1-4')
+        self.assertEqual(v.linux_version, '1.2')
+        self.assertEqual(v.linux_upstream, '1.2-rc3')
+        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
+        self.assertEqual(v.linux_modifier, 'rc3')
+        self.assertEqual(v.linux_dfsg, '1')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_experimental(self):
+        v = VersionLinux('1.2~rc3-4~exp5')
+        self.assertEqual(v.linux_upstream_full, '1.2-rc3')
+        self.assertTrue(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_security(self):
+        v = VersionLinux('1.2.3-4+deb10u1')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertTrue(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_backports(self):
+        v = VersionLinux('1.2.3-4~bpo9+10')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertFalse(v.linux_revision_security)
+        self.assertTrue(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_security_backports(self):
+        v = VersionLinux('1.2.3-4+deb10u1~bpo9+10')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertTrue(v.linux_revision_security)
+        self.assertTrue(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_lts_backports(self):
+        # Backport during LTS, as an extra package in the -security
+        # suite.  Since this is not part of a -backports suite it
+        # shouldn't get the linux_revision_backports flag.
+        v = VersionLinux('1.2.3-4~deb9u10')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertTrue(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+    def test_lts_backports_2(self):
+        # Same but with two security extensions in the revision.
+        v = VersionLinux('1.2.3-4+deb10u1~deb9u10')
+        self.assertEqual(v.linux_upstream_full, '1.2.3')
+        self.assertFalse(v.linux_revision_experimental)
+        self.assertTrue(v.linux_revision_security)
+        self.assertFalse(v.linux_revision_backports)
+        self.assertFalse(v.linux_revision_other)
+
+
 class PackageArchitecture(collections.MutableSet):
     __slots__ = '_data'
 
