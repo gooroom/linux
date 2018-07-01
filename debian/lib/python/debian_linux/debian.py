@@ -244,7 +244,7 @@ class VersionLinux(Version):
     )
     |
     (?P<revision_security>
-        [~+]deb\d+u\d+
+        (?:[~+]deb\d+u\d+)+
     )?
     (?P<revision_backports>
         ~bpo\d+\+\d+
