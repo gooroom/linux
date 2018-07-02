@@ -7,7 +7,6 @@
 #
 SHELL  := bash -e
 MAINTAINER := $(shell sed -ne 's,^Maintainer: .[^<]*<\([^>]*\)>,\1,p' debian/control)
-SOURCE_PACKAGE_NAME := $(shell dpkg-parsechangelog -SSource)
 DISTRIBUTION := $(shell dpkg-parsechangelog -SDistribution)
 SOURCE_DATE := $(shell dpkg-parsechangelog -SDate)
 SOURCE_DATE_UTC_ISO := $(shell date -u -d '$(SOURCE_DATE)' +%Y-%m-%d)
@@ -112,19 +111,19 @@ mkdir -p '$(1)'
 cp -al $(filter-out debian .pc .svk .svn .git, $(wildcard * .[^.]*)) '$(1)'
 endef
 
-$(BUILD_DIR)/$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION).tar.xz: DIR = $(BUILD_DIR)/$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION)
-$(BUILD_DIR)/$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION).tar.xz: $(STAMPS_DIR)/source
+$(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz: DIR = $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION)
+$(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz: $(STAMPS_DIR)/source
 	rm -rf '$@' '$(DIR)'
 	$(call copy_source,$(DIR))
 	chmod -R u+rw,go=rX '$(DIR)'
 	find '$(DIR)' -depth -newermt '$(SOURCE_DATE)' -print0 | \
 		xargs -0r touch --no-dereference --date='$(SOURCE_DATE)'
 	cd '$(BUILD_DIR)'; \
-	find '$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION)' \
+	find '$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION)' \
 		-name '*.pyc' -prune -o \
 		-print0 | \
 		sort -z | \
-		tar --no-recursion --null -T - -caf '$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION).tar.xz'
+		tar --no-recursion --null -T - -caf '$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz'
 	rm -rf '$(DIR)'
 
 $(BUILD_DIR)/linux-patch-$(UPSTREAMVERSION)-%.patch.xz: $(STAMPS_DIR)/source_none $(STAMPS_DIR)/source_%
@@ -238,7 +237,7 @@ install-dummy:
 	dh_prep
 	+$(MAKE_SELF) install-base
 
-install-doc: PACKAGE_NAME = $(SOURCE_PACKAGE_NAME)-doc-$(VERSION)
+install-doc: PACKAGE_NAME = $(SOURCE_BASENAME)-doc-$(VERSION)
 install-doc: DIR = $(BUILD_DIR)/build-doc
 install-doc: PACKAGE_DIR = debian/$(PACKAGE_NAME)
 install-doc: OUT_DIR = $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE_NAME)
@@ -271,21 +270,6 @@ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 		fi; \
 	done
 endif
-	+$(MAKE_SELF) install-base
-
-install-manual: PACKAGE_NAME = $(SOURCE_PACKAGE_NAME)-manual-$(VERSION)
-install-manual: DIR=$(BUILD_DIR)/build-doc
-install-manual: DH_OPTIONS = -p$(PACKAGE_NAME)
-install-manual: $(STAMPS_DIR)/build-doc
-	dh_prep
-# Some manual pages are generated multiple times with different
-# metadata, and need to be de-duplicated.  This matches what the
-# upstream installmandocs target does, except that we use
-# dh_installman.
-	set -o pipefail; \
-	find $(DIR)/Documentation/DocBook/man/ -name '*.9.gz' -printf '%h %f\n' | \
-		sort -k 2 -k 1 | uniq -f 1 | sed -e 's: :/:' | \
-		xargs dh_installman
 	+$(MAKE_SELF) install-base
 
 install-headers_$(ARCH): PACKAGE_NAMES = linux-headers-$(ABINAME)-all linux-headers-$(ABINAME)-all-$(ARCH)
@@ -400,7 +384,7 @@ install-libc-dev_$(ARCH):
 
 	+$(MAKE_SELF) install-base
 
-install-support: PACKAGE_NAME = $(SOURCE_PACKAGE_NAME)-support-$(ABINAME)
+install-support: PACKAGE_NAME = $(SOURCE_BASENAME)-support-$(ABINAME)
 install-support: DH_OPTIONS = -p$(PACKAGE_NAME)
 install-support: PACKAGE_DIR = debian/$(PACKAGE_NAME)
 install-support: PACKAGE_ROOT = /usr/share/$(PACKAGE_NAME)
@@ -565,9 +549,9 @@ ifeq ($(UDEB_UNSIGNED_TEST_BUILD),False)
 	dh_builddeb
 endif
 
-install-source: PACKAGE_NAME = $(SOURCE_PACKAGE_NAME)-source-$(VERSION)
+install-source: PACKAGE_NAME = $(SOURCE_BASENAME)-source-$(VERSION)
 install-source: DH_OPTIONS = -p$(PACKAGE_NAME)
-install-source: $(BUILD_DIR)/$(SOURCE_PACKAGE_NAME)-source-$(UPSTREAMVERSION).tar.xz $(foreach FEATURESET,$(filter-out none,$(ALL_FEATURESETS)),$(BUILD_DIR)/linux-patch-$(UPSTREAMVERSION)-$(FEATURESET).patch.xz)
+install-source: $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz $(foreach FEATURESET,$(filter-out none,$(ALL_FEATURESETS)),$(BUILD_DIR)/linux-patch-$(UPSTREAMVERSION)-$(FEATURESET).patch.xz)
 	dh_testdir
 	dh_testroot
 	dh_installdirs /usr/src/linux-config-$(UPSTREAMVERSION)

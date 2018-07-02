@@ -110,6 +110,7 @@ class Gencontrol(Base):
         makeflags = makeflags.copy()
         makeflags['ALL_FEATURESETS'] = ' '.join(fs_enabled)
         makeflags['ALL_TRIPLETS'] = ' '.join(triplet_enabled)
+        makeflags['SOURCE_BASENAME'] = self.vars['source_basename']
         if not self.config.merge('packages').get('docs', True):
             makeflags['DO_DOCS'] = False
         if not self.config.merge('packages').get('source', True):
@@ -206,10 +207,6 @@ class Gencontrol(Base):
             packages_headers_arch[0:0] = self.process_packages(libc_dev, {})
         else:
             makeflags['DO_LIBC'] = False
-
-        if not self.config.merge('packages').get('tools', True):
-            makeflags['DO_TOOLS'] = False
-
 
         merge_packages(packages, packages_headers_arch, arch)
 
