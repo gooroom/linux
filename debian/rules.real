@@ -52,6 +52,9 @@ build-indep:
 binary-arch-arch:
 binary-indep:
 
+ifneq ($(DO_CONFIG),False)
+  binary-arch-arch: install-config_$(ARCH)
+endif
 ifneq ($(DO_HEADERS_ALL),False)
   binary-arch-arch: install-headers_$(ARCH)
 endif
@@ -554,18 +557,25 @@ install-source: DH_OPTIONS = -p$(PACKAGE_NAME)
 install-source: $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz $(foreach FEATURESET,$(filter-out none,$(ALL_FEATURESETS)),$(BUILD_DIR)/linux-patch-$(UPSTREAMVERSION)-$(FEATURESET).patch.xz)
 	dh_testdir
 	dh_testroot
-	dh_installdirs /usr/src/linux-config-$(UPSTREAMVERSION)
 	dh_install $^ /usr/src
-# Include our kernel config files, but with the module signing
-# configuration fixed to work for custom kernels.
-	for triplet in $(ALL_TRIPLETS); do \
-	  sed '/CONFIG_\(MODULE_SIG_\(ALL\|KEY\)\|SYSTEM_TRUSTED_KEYS\)[ =]/d' $(BUILD_DIR)/build_$$triplet/.config | xz -c >debian/$(PACKAGE_NAME)/usr/src/linux-config-$(UPSTREAMVERSION)/config.$$triplet.xz; \
-	done
 # We don't want to recompress, but -Znone is not compatible with older
 # tools and is currently rejected by dak.  -Zgzip -z0 (uncompressed
 # data.tar.gz!) makes dpkg and dak happy, but is incomaptible with
 # other things (#725492).  So use the fastest real gzip mode.
 	+$(MAKE_SELF) install-base BUILDDEB_ARGS='-Zgzip -z1'
+
+install-config_$(ARCH): PACKAGE_NAME = $(SOURCE_BASENAME)-config-$(VERSION)
+install-config_$(ARCH): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-config_$(ARCH): TRIPLETS = $(subst $(BUILD_DIR)/build_,,$(wildcard $(BUILD_DIR)/build_$(ARCH)_*_*))
+install-config_$(ARCH):
+	dh_testdir
+	dh_testroot
+	dh_installdirs /usr/src/linux-config-$(UPSTREAMVERSION)
+# Fix the module signing configuration to work for custom kernels
+	for triplet in $(TRIPLETS); do \
+		sed '/CONFIG_\(MODULE_SIG_\(ALL\|KEY\)\|SYSTEM_TRUSTED_KEYS\)[ =]/d' $(BUILD_DIR)/build_$$triplet/.config | xz -c >debian/$(PACKAGE_NAME)/usr/src/linux-config-$(UPSTREAMVERSION)/config.$$triplet.xz; \
+	done
+	+$(MAKE_SELF) install-base
 
 define make-tools
 +mkdir -p $(BUILD_DIR)/build-tools/$(1) && $(MAKE_CLEAN) -C $(BUILD_DIR)/build-tools/$(1) -f $(CURDIR)/debian/rules.d/$(1)/Makefile top_srcdir=$(CURDIR) top_rulesdir=$(CURDIR)/debian/rules.d OUTDIR=$(1) VERSION=$(VERSION)
