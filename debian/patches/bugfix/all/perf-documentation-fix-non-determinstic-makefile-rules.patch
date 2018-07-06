@@ -1,0 +1,33 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Fri, 06 Jul 2018 21:29:17 +0100
+Subject: perf Documentation: Fix non-deterministic Makefile rules
+
+When USE_ASCIIDOCTOR is defined, we define a rule to convert from
+asciidoc source directly to man pages is defined.  However, the rule
+to convert from XML to man pages using xmlto is always defined, and
+make may still choose to use that.  This means that using asciidoctor
+does not remove the dependency on xmlto for building man pages, as
+was intended.
+
+Only define the second rule using xmlto if USE_ASCIIDOCTOR is not
+defined.
+
+Fixes: ffef80ecf89f ("perf Documentation: Support for asciidoctor")
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+--- a/tools/perf/Documentation/Makefile
++++ b/tools/perf/Documentation/Makefile
+@@ -290,11 +290,11 @@ $(OUTPUT)%.1 $(OUTPUT)%.5 $(OUTPUT)%.7 :
+ 	$(ASCIIDOC) -b manpage -d manpage \
+ 		$(ASCIIDOC_EXTRA) -aperf_version=$(PERF_VERSION) -o $@+ $< && \
+ 	mv $@+ $@
+-endif
+-
++else
+ $(OUTPUT)%.1 $(OUTPUT)%.5 $(OUTPUT)%.7 : $(OUTPUT)%.xml
+ 	$(QUIET_XMLTO)$(RM) $@ && \
+ 	$(XMLTO) -o $(OUTPUT). -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
++endif
+ 
+ $(OUTPUT)%.xml : %.txt
+ 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
