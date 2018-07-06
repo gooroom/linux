@@ -212,6 +212,9 @@ $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
 	@$(stamp)
 
 $(STAMPS_DIR)/build-doc: DIR=$(BUILD_DIR)/build-doc
+# sphinx commands in /usr/bin are managed by the alternatives system.
+# Change $PATH to make sure we consistently use the Python 3 version.
+$(STAMPS_DIR)/build-doc: PATH:=/usr/share/sphinx/scripts/python3:$(PATH)
 $(STAMPS_DIR)/build-doc: $(STAMPS_DIR)/source
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	mkdir -p '$(BUILD_DIR)'
