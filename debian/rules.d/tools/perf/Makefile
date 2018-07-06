@@ -54,6 +54,9 @@ MAKE_PERF += LIBBABELTRACE=1
 # Build with asciidoctor, not asciidoc
 MAKE_PERF += USE_ASCIIDOCTOR=1
 
+# Build with Python 3, not Python 2
+MAKE_PERF += PYTHON=/usr/bin/python3
+
 all:
 ifdef KERNEL_ARCH_PERF
 # perf changes some default directories depending on whether DESTDIR is
