@@ -1,0 +1,30 @@
+From: James Clarke <jrtc27@jrtc27.com>
+Subject: powerpc/Makefile: Assemble with -me500 when building for E500
+Date: Thu, 12 Jul 2018 22:41:49 +0100
+Origin: https://people.debian.org/~jrtc27/linux-ppc32/0001-powerpc-Makefile-Assemble-with-me500-when-building-f.patch
+
+Some of the assembly files use instructions specific to BookE or E500,
+which are rejected with the now-default -mcpu=powerpc, so we must pass
+-me500 to the assembler just as we pass -me200 for E200.
+
+Fixes: 4bf4f42a2feb ("powerpc/kbuild: Set default generic machine type for 32-bit compile")
+Signed-off-by: James Clarke <jrtc27@jrtc27.com>
+---
+ arch/powerpc/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/powerpc/Makefile b/arch/powerpc/Makefile
+index 2ea575cb..fb96206d 100644
+--- a/arch/powerpc/Makefile
++++ b/arch/powerpc/Makefile
+@@ -243,6 +243,7 @@ endif
+ cpu-as-$(CONFIG_4xx)		+= -Wa,-m405
+ cpu-as-$(CONFIG_ALTIVEC)	+= $(call as-option,-Wa$(comma)-maltivec)
+ cpu-as-$(CONFIG_E200)		+= -Wa,-me200
++cpu-as-$(CONFIG_E500)		+= -Wa,-me500
+ cpu-as-$(CONFIG_PPC_BOOK3S_64)	+= -Wa,-mpower4
+ cpu-as-$(CONFIG_PPC_E500MC)	+= $(call as-option,-Wa$(comma)-me500mc)
+ 
+-- 
+2.18.0
+
