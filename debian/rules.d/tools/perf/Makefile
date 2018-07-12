@@ -15,7 +15,10 @@ else ifneq ($(filter mips%,$(DEB_HOST_ARCH_CPU)),)
 else ifeq ($(DEB_HOST_ARCH_CPU),hppa)
   KERNEL_ARCH_PERF = parisc
 else ifneq ($(filter powerpc% ppc%,$(DEB_HOST_ARCH_CPU)),)
-  KERNEL_ARCH_PERF = powerpc
+  # But pure 32-bit toolchains currently don't work
+  ifneq ($(shell dpkg-architecture -qDEB_HOST_ARCH),powerpcspe)
+    KERNEL_ARCH_PERF = powerpc
+  endif
 else ifneq ($(filter s390%,$(DEB_HOST_ARCH_CPU)),)
   KERNEL_ARCH_PERF = s390
 else ifeq ($(DEB_HOST_ARCH_CPU),sh4)
