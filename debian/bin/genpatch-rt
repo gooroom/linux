@@ -3,9 +3,8 @@
 import codecs, errno, io, os, os.path, re, shutil, subprocess, sys, tempfile
 
 def main(source, version=None):
-    patch_dir = 'debian/patches'
-    rt_patch_dir = 'features/all/rt'
-    series_name = 'series-rt'
+    patch_dir = 'debian/patches-rt'
+    series_name = 'series'
     old_series = set()
     new_series = set()
 
@@ -19,10 +18,8 @@ def main(source, version=None):
         pass
 
     with open(os.path.join(patch_dir, series_name), 'w') as series_fh:
-        # Add directory prefix to all filenames.
         # Add Origin to all patch headers.
         def add_patch(name, source_patch, origin):
-            name = os.path.join(rt_patch_dir, name)
             path = os.path.join(patch_dir, name)
             try:
                 os.unlink(path)
@@ -37,8 +34,6 @@ def main(source, version=None):
                             patch.write('\n')
                         in_header = False
                     patch.write(line)
-            series_fh.write(name)
-            series_fh.write('\n')
             new_series.add(name)
 
         if os.path.isdir(os.path.join(source, '.git')):
@@ -60,13 +55,12 @@ def main(source, version=None):
 
             args = ['git', 'format-patch', 'v%s..v%s-rebase' % (up_ver, version)]
             format_proc = subprocess.Popen(args,
-                                           cwd=os.path.join(patch_dir, rt_patch_dir),
+                                           cwd=patch_dir,
                                            env=env, stdout=subprocess.PIPE)
             with io.open(format_proc.stdout.fileno(), encoding='utf-8') as pipe:
                 for line in pipe:
                     name = line.strip('\n')
-                    with open(os.path.join(patch_dir, rt_patch_dir, name)) as \
-                            source_patch:
+                    with open(os.path.join(patch_dir, name)) as source_patch:
                         patch_from = source_patch.readline()
                         match = re.match(r'From ([0-9a-f]{40}) ', patch_from)
                         assert match
@@ -115,9 +109,7 @@ def main(source, version=None):
                         if name != '' and name[0] != '#':
                             with open(os.path.join(source_dir, name)) as source_patch:
                                 add_patch(name, source_patch, origin)
-                        else:
-                            # Leave comments and empty lines unchanged
-                            series_fh.write(line)
+                        series_fh.write(line)
             finally:
                 shutil.rmtree(temp_dir)
 
