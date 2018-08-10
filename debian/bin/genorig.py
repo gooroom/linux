@@ -3,12 +3,15 @@
 import sys
 sys.path.append("debian/lib/python")
 
+import deb822
+import glob
 import os
 import os.path
 import re
 import shutil
 import subprocess
 import time
+import warnings
 
 from debian_linux.debian import Changelog, VersionLinux
 from debian_linux.patches import PatchSeries
@@ -60,6 +63,7 @@ class Main(object):
                     .st_mtime))
 
             self.debian_patch()
+            self.exclude_files()
             os.umask(old_umask)
             self.tar(orig_date)
         finally:
@@ -128,6 +132,24 @@ class Main(object):
         fp = open("debian/patches/series-" + name)
         series = PatchSeries(name, "debian/patches", fp)
         series(dir=os.path.join(self.dir, self.orig))
+
+    def exclude_files(self):
+        self.log("Excluding file patterns specified in debian/copyright\n")
+        with open("debian/copyright") as f:
+            header = deb822.Deb822(f)
+        patterns = header.get("Files-Excluded", '').strip().split()
+        for pattern in patterns:
+            matched = False
+            for name in glob.glob(os.path.join(self.dir, self.orig, pattern)):
+                try:
+                    shutil.rmtree(name)
+                except NotADirectoryError:
+                    os.unlink(name)
+                matched = True
+            if not matched:
+                warnings.warn("Exclusion pattern '%s' did not match anything"
+                              % pattern,
+                              RuntimeWarning)
 
     def tar(self, orig_date):
         out = os.path.join("../orig", self.orig_tar)
