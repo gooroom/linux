@@ -1,3 +1,112 @@
+linux (4.9.110-3+deb9u3) UNRELEASED; urgency=medium
+
+  * Add L1 Terminal Fault fixes (CVE-2018-3620, CVE-2018-3646)
+    - [x86] speculation/l1tf: Increase 32bit PAE __PHYSICAL_PAGE_SHIFT
+    - [x86] mm: move _PAGE_SWP_SOFT_DIRTY from bit 7 to bit 1
+    - [x86] speculation/l1tf: Change order of offset/type in swap entry
+    - [x86] speculation/l1tf: Protect swap entries against L1TF
+    - [x86] speculation/l1tf: Protect PROT_NONE PTEs against speculation
+    - [x86] speculation/l1tf: Make sure the first page is always reserved
+    - [x86] speculation/l1tf: Add sysfs reporting for l1tf
+    - [x86] speculation/l1tf: Disallow non privileged high MMIO PROT_NONE
+      mappings
+    - [x86] speculation/l1tf: Limit swap file size to MAX_PA/2
+    - [x86] bugs: Move the l1tf function and define pr_fmt properly
+    - [x86] smp: Provide topology_is_primary_thread()
+    - [x86] topology: Provide topology_smt_supported()
+    - cpu/hotplug: Make bringup/teardown of smp threads symmetric
+    - cpu/hotplug: Split do_cpu_down()
+    - cpu/hotplug: Provide knobs to control SMT
+    - [x86] cpu: Remove the pointless CPU printout
+    - [x86] cpu/AMD: Remove the pointless detect_ht() call
+    - [x86] cpu/common: Provide detect_ht_early()
+    - [x86] cpu/topology: Provide detect_extended_topology_early()
+    - [x86] cpu/intel: Evaluate smp_num_siblings early
+    - [x86] CPU/AMD: Do not check CPUID max ext level before parsing SMP
+      info
+    - [x86] cpu/AMD: Evaluate smp_num_siblings early
+    - [x86] apic: Ignore secondary threads if nosmt=force
+    - [x86] speculation/l1tf: Extend 64bit swap file size limit
+    - [x86] cpufeatures: Add detection of L1D cache flush support.
+    - [x86] CPU/AMD: Move TOPOEXT reenablement before reading
+      smp_num_siblings
+    - [x86] speculation/l1tf: Protect PAE swap entries against L1TF
+    - [x86] speculation/l1tf: Fix up pte->pfn conversion for PAE
+    - Revert "[x86] apic: Ignore secondary threads if nosmt=force"
+    - cpu/hotplug: Boot HT siblings at least once
+    - [x86] KVM: Warn user if KVM is loaded SMT and L1TF CPU bug being
+      present
+    - [x86] KVM/VMX: Add module argument for L1TF mitigation
+    - [x86] KVM/VMX: Add L1D flush algorithm
+    - [x86] KVM/VMX: Add L1D MSR based flush
+    - [x86] KVM/VMX: Add L1D flush logic
+    - kvm: nVMX: Update MSR load counts on a VMCS switch
+    - [x86] KVM/VMX: Split the VMX MSR LOAD structures to have an
+      host/guest numbers
+    - [x86] KVM/VMX: Add find_msr() helper function
+    - [x86] KVM/VMX: Separate the VMX AUTOLOAD guest/host number
+      accounting
+    - [x86] KVM/VMX: Extend add_atomic_switch_msr() to allow VMENTER only
+      MSRs
+    - [x86] KVM/VMX: Use MSR save list for IA32_FLUSH_CMD if required
+    - cpu/hotplug: Online siblings when SMT control is turned on
+    - [x86] litf: Introduce vmx status variable
+    - [x86] kvm: Drop L1TF MSR list approach
+    - [x86] l1tf: Handle EPT disabled state proper
+    - [x86] kvm: Move l1tf setup function
+    - [x86] kvm: Add static key for flush always
+    - [x86] kvm: Serialize L1D flush parameter setter
+    - [x86] kvm: Allow runtime control of L1D flush
+    - cpu/hotplug: Expose SMT control init function
+    - cpu/hotplug: Set CPU_SMT_NOT_SUPPORTED early
+    - [x86] bugs, kvm: Introduce boot-time control of L1TF mitigations
+    - Documentation: Add section about CPU vulnerabilities
+    - [x86] KVM/VMX: Initialize the vmx_l1d_flush_pages' content
+    - Documentation/l1tf: Fix typos
+    - cpu/hotplug: detect SMT disabled by BIOS
+    - [x86] KVM/VMX: Don't set l1tf_flush_l1d to true from vmx_l1d_flush()
+    - [x86] KVM/VMX: Replace 'vmx_l1d_flush_always' with
+      'vmx_l1d_flush_cond'
+    - [x86] KVM/VMX: Move the l1tf_flush_l1d test to vmx_l1d_flush()
+    - [x86] irq: Demote irq_cpustat_t::__softirq_pending to u16
+    - [x86] KVM/VMX: Introduce per-host-cpu analogue of l1tf_flush_l1d
+    - [x86] Don't include linux/irq.h from asm/hardirq.h
+    - [x86] irq: Let interrupt handlers set kvm_cpu_l1tf_flush_l1d
+    - [x86] KVM/VMX: Don't set l1tf_flush_l1d from
+      vmx_handle_external_intr()
+    - Documentation/l1tf: Remove Yonah processors from not vulnerable
+      list
+    - [x86] KVM: x86: Add a framework for supporting MSR-based features
+    - KVM: SVM: Add MSR-based feature support for serializing LFENCE
+    - [x86] KVM: X86: Introduce kvm_get_msr_feature()
+    - [x86] KVM: X86: Allow userspace to define the microcode version
+    - KVM: VMX: support MSR_IA32_ARCH_CAPABILITIES as a feature MSR
+    - [x86] speculation: Simplify sysfs report of VMX L1TF vulnerability
+    - [x86] speculation: Use ARCH_CAPABILITIES to skip L1D flush on
+      vmentry
+    - KVM: VMX: Tell the nested hypervisor to skip L1D flush on vmentry
+    - cpu/hotplug: Fix SMT supported evaluation
+    - [x86] speculation/l1tf: Invert all not present mappings
+    - [x86] speculation/l1tf: Make pmd/pud_mknotpresent() invert
+    - [x86] mm/pat: Make set_memory_np() L1TF safe
+    - [x86] mm/kmmio: Make the tracer robust against L1TF
+    - tools headers: Synchronise x86 cpufeatures.h for L1TF additions
+    - [x86] microcode: Do not upload microcode if CPUs are offline
+    - [x86] microcode: Allow late microcode loading with SMT disabled
+    - [x86] smp: fix non-SMP broken build due to redefinition of
+      apic_id_is_primary_thread
+    - cpu/hotplug: Non-SMP machines do not make use of booted_once
+    - [x86] init: fix build with CONFIG_SWAP=n
+    - [x86] speculation/l1tf: Unbreak !__HAVE_ARCH_PFN_MODIFY_ALLOWED
+      architectures
+    - [x86] cpu/amd: Limit cpu_core_id fixup to families older than F17h
+    - [x86] CPU/AMD: Have smp_num_siblings and cpu_llc_id always be
+      present
+    - [x86] l1tf: Fix build error seen if CONFIG_KVM_INTEL is disabled
+    - [x86] i8259: Add missing include file
+
+ -- Salvatore Bonaccorso <carnil@debian.org>  Wed, 15 Aug 2018 16:20:04 +0200
+
 linux (4.9.110-3+deb9u2) stretch-security; urgency=high
 
   * Revert "net: increase fragment memory usage limits"
