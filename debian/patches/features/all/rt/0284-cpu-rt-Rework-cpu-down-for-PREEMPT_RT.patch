@@ -431,9 +431,9 @@ index cadb6a735361..6cd9c15328a0 100644
  	cpuhp_lock_release();
  }
  
-@@ -933,6 +1084,9 @@ static int takedown_cpu(unsigned int cpu)
+@@ -1022,6 +1022,9 @@ static int takedown_cpu(unsigned int cpu)
+ 	/* Park the smpboot threads */
  	kthread_park(per_cpu_ptr(&cpuhp_state, cpu)->thread);
- 	smpboot_park_threads(cpu);
  
 +	/* Notifiers are done. Don't let any more tasks pin this CPU. */
 +	cpu_unplug_sync(cpu);
