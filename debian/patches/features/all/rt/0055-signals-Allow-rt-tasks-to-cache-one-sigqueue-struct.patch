@@ -1,8 +1,8 @@
-From 3cee307073f56fd050ea55d49e7d8b9d6f236c02 Mon Sep 17 00:00:00 2001
+From afedf792560316774884714e368d76ec3dbf1ea7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 055/350] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
+Subject: [PATCH 055/349] signals: Allow rt tasks to cache one sigqueue struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 69 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4eea6ea2623d..40e62d0257b6 100644
+index eca931aa7ed5..4c8760040d06 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1700,6 +1700,7 @@ struct task_struct {
@@ -29,10 +29,10 @@ index 4eea6ea2623d..40e62d0257b6 100644
  	sigset_t blocked, real_blocked;
  	sigset_t saved_sigmask;	/* restored if set_restore_sigmask() was used */
 diff --git a/include/linux/signal.h b/include/linux/signal.h
-index b63f63eaa39c..295540fdfc72 100644
+index 5308304993be..aa9c1a64fb93 100644
 --- a/include/linux/signal.h
 +++ b/include/linux/signal.h
-@@ -233,6 +233,7 @@ static inline void init_sigpending(struct sigpending *sig)
+@@ -250,6 +250,7 @@ static inline void init_sigpending(struct sigpending *sig)
  }
  
  extern void flush_sigqueue(struct sigpending *queue);
@@ -41,7 +41,7 @@ index b63f63eaa39c..295540fdfc72 100644
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 3076f3089919..fb2ebcf3ca7c 100644
+index 6dd7ff4b337a..832dff86b52a 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -143,7 +143,7 @@ static void __exit_signal(struct task_struct *tsk)
@@ -66,7 +66,7 @@ index 40f4dbff7762..fca238739495 100644
  	p->utime = p->stime = p->gtime = 0;
  	p->utimescaled = p->stimescaled = 0;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index bdb44e325d94..64e8df5e3f39 100644
+index 145b39c800da..5fac80c16495 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -14,6 +14,7 @@
@@ -197,7 +197,7 @@ index bdb44e325d94..64e8df5e3f39 100644
  	/* We only dequeue private signals from ourselves, we don't let
  	 * signalfd steal them
  	 */
-@@ -1495,7 +1555,8 @@ EXPORT_SYMBOL(kill_pid);
+@@ -1499,7 +1559,8 @@ EXPORT_SYMBOL(kill_pid);
   */
  struct sigqueue *sigqueue_alloc(void)
  {
@@ -208,5 +208,5 @@ index bdb44e325d94..64e8df5e3f39 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.17.0
+2.18.0
 

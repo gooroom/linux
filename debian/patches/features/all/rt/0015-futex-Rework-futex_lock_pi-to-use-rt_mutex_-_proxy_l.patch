@@ -1,9 +1,9 @@
-From 429ddf903c5799a770cee9ff9812653f9c092833 Mon Sep 17 00:00:00 2001
+From 1eb7759cf613326d4b3fcb939a3a62fddfffde41 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:58 +0100
-Subject: [PATCH 015/350] futex: Rework futex_lock_pi() to use
+Subject: [PATCH 015/349] futex: Rework futex_lock_pi() to use
  rt_mutex_*_proxy_lock()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
 
 Upstream commit cfafcd117da0216520568c195cb2f6cd1980c4bb
 
@@ -91,10 +91,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 62 insertions(+), 42 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index da387cc33dc1..141ace23179e 100644
+index 539993955712..60f86cc8f239 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2101,20 +2101,7 @@ queue_unlock(struct futex_hash_bucket *hb)
+@@ -2140,20 +2140,7 @@ queue_unlock(struct futex_hash_bucket *hb)
  	hb_waiters_dec(hb);
  }
  
@@ -116,7 +116,7 @@ index da387cc33dc1..141ace23179e 100644
  {
  	int prio;
  
-@@ -2131,6 +2118,24 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
+@@ -2170,6 +2157,24 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
  	plist_node_init(&q->list, prio);
  	plist_add(&q->list, &hb->chain);
  	q->task = current;
@@ -141,7 +141,7 @@ index da387cc33dc1..141ace23179e 100644
  	spin_unlock(&hb->lock);
  }
  
-@@ -2589,6 +2594,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2628,6 +2633,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  {
  	struct hrtimer_sleeper timeout, *to = NULL;
  	struct futex_pi_state *pi_state = NULL;
@@ -149,7 +149,7 @@ index da387cc33dc1..141ace23179e 100644
  	struct futex_hash_bucket *hb;
  	struct futex_q q = futex_q_init;
  	int res, ret;
-@@ -2641,24 +2647,51 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2680,24 +2686,51 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		}
  	}
  
@@ -273,5 +273,5 @@ index 8e81b17c0ee5..b620aafa06e1 100644
  
  extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
 -- 
-2.17.0
+2.18.0
 

@@ -1,9 +1,9 @@
-From 7525c44885c147d84ca8b09572094bd4a614b3c9 Mon Sep 17 00:00:00 2001
+From 29a6b30ae2eab784d845f02f3eff12dce3af244c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 17 Feb 2017 19:44:39 +0100
-Subject: [PATCH 002/350] lockdep: Handle statically initialized PER_CPU locks
+Subject: [PATCH 002/349] lockdep: Handle statically initialized PER_CPU locks
  proper
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
 
 If a PER_CPU struct which contains a spin_lock is statically initialized
 via:
@@ -216,10 +216,10 @@ index 0651f2d25fc9..1ac6c9eb68ae 100644
  
  static inline void __percpu *mod_percpu(struct module *mod)
 diff --git a/mm/percpu.c b/mm/percpu.c
-index f014cebbf405..90349153b49d 100644
+index 3794cfc88689..a42fb6c3edc0 100644
 --- a/mm/percpu.c
 +++ b/mm/percpu.c
-@@ -1283,18 +1283,7 @@ void free_percpu(void __percpu *ptr)
+@@ -1284,18 +1284,7 @@ void free_percpu(void __percpu *ptr)
  }
  EXPORT_SYMBOL_GPL(free_percpu);
  
@@ -239,7 +239,7 @@ index f014cebbf405..90349153b49d 100644
  {
  #ifdef CONFIG_SMP
  	const size_t static_size = __per_cpu_end - __per_cpu_start;
-@@ -1303,15 +1292,35 @@ bool is_kernel_percpu_address(unsigned long addr)
+@@ -1304,15 +1293,35 @@ bool is_kernel_percpu_address(unsigned long addr)
  
  	for_each_possible_cpu(cpu) {
  		void *start = per_cpu_ptr(base, cpu);
@@ -278,5 +278,5 @@ index f014cebbf405..90349153b49d 100644
   * per_cpu_ptr_to_phys - convert translated percpu address to physical address
   * @addr: the address to be converted to physical address
 -- 
-2.17.0
+2.18.0
 

@@ -1,8 +1,8 @@
-From 609d9b66a9ae2e76b5eb7499b920e66a434c3d76 Mon Sep 17 00:00:00 2001
+From 9791bbd9e9401e01d6eb088c42b6d4d9063d599a Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:36:00 +0100
-Subject: [PATCH 017/350] futex: Drop hb->lock before enqueueing on the rtmutex
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
+Subject: [PATCH 017/349] futex: Drop hb->lock before enqueueing on the rtmutex
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
 
 Upstream commit 56222b212e8edb1cf51f5dd73ff645809b082b40
 
@@ -55,10 +55,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 52 insertions(+), 30 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 83d1344b56cf..28dd92600941 100644
+index 928708a76f79..0668d20864a5 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2656,20 +2656,33 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2695,20 +2695,33 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		goto no_block;
  	}
  
@@ -97,7 +97,7 @@ index 83d1344b56cf..28dd92600941 100644
  
  	if (unlikely(to))
  		hrtimer_start_expires(&to->timer, HRTIMER_MODE_ABS);
-@@ -2682,6 +2695,9 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2721,6 +2734,9 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * first acquire the hb->lock before removing the lock from the
  	 * rt_mutex waitqueue, such that we can keep the hb and rt_mutex
  	 * wait lists consistent.
@@ -107,7 +107,7 @@ index 83d1344b56cf..28dd92600941 100644
  	 */
  	if (ret && !rt_mutex_cleanup_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter))
  		ret = 0;
-@@ -2793,10 +2809,6 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2832,10 +2848,6 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  
  		get_pi_state(pi_state);
  		/*
@@ -211,5 +211,5 @@ index b620aafa06e1..f4c34c4195a0 100644
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
 -- 
-2.17.0
+2.18.0
 
