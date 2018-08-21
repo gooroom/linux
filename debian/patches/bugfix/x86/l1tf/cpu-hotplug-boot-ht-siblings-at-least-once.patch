@@ -23,7 +23,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Tested-by: Tony Luck <tony.luck@intel.com>
 Signed-off-by: David Woodhouse <dwmw@amazon.co.uk>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-[carnil: Refresh context to apply on top of 4.9.110]
 ---
  kernel/cpu.c |   72 +++++++++++++++++++++++++++++++++++++++--------------------
  1 file changed, 48 insertions(+), 24 deletions(-)
@@ -136,7 +135,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		cpuhp_invoke_callback(cpu, st->state, true, NULL);
 @@ -2114,5 +2137,6 @@ void __init boot_cpu_init(void)
   */
- void __init boot_cpu_state_init(void)
+ void __init boot_cpu_hotplug_init(void)
  {
 -	per_cpu_ptr(&cpuhp_state, smp_processor_id())->state = CPUHP_ONLINE;
 +	this_cpu_write(cpuhp_state.booted_once, true);
