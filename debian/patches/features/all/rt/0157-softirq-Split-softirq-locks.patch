@@ -25,6 +25,9 @@ softirq elevation in the context of user space tasks or interrupt
 threads.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[carnil: Refresh context after applying upstream commit from 4.9.120,
+ 6bb53ee170c45f44ac80ad8318f72feff9cdee1b, ("init: rename and re-order
+boot_cpu_state_init()").]
 ---
  include/linux/bottom_half.h |  34 +++
  include/linux/interrupt.h   |  15 +-
@@ -208,8 +211,8 @@ index f22957afb37e..8ac3d15ddc1a 100644
  	setup_nr_cpu_ids();
  	setup_per_cpu_areas();
 +	softirq_early_init();
- 	boot_cpu_state_init();
  	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
+ 	boot_cpu_hotplug_init();
  
 diff --git a/kernel/softirq.c b/kernel/softirq.c
 index 8669000c2aa3..ec9b3611f886 100644
