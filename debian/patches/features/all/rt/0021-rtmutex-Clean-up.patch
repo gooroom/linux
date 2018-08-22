@@ -1,7 +1,8 @@
+From b1c8e94b98f0d7509b3d7c97f334d40eac1bf990 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 23 Mar 2017 15:56:10 +0100
-Subject: [PATCH 021/351] rtmutex: Clean up
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=406db12e2231ecb3b7be665531809453759406ce
+Subject: [PATCH 021/350] rtmutex: Clean up
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
 
 Upstream commit aa2bfe55366552cb7e93e8709d66e698d79ccc47
 
@@ -25,7 +26,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 18 insertions(+), 19 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index ee247b6290be..3c5173f520c6 100644
+index 26273b55ac2d..7cc718a2fdcb 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -1393,7 +1393,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
@@ -54,10 +55,10 @@ index ee247b6290be..3c5173f520c6 100644
  	return ret;
  }
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index f0dc1f6cf22b..7ca8407e865a 100644
+index 03a345d508d2..9f55d7a7bc57 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1328,7 +1328,8 @@ static inline int rt_mutex_slowtrylock(struct rt_mutex *lock)
+@@ -1353,7 +1353,8 @@ static inline int rt_mutex_slowtrylock(struct rt_mutex *lock)
  
  /*
   * Slow path to release a rt-mutex.
@@ -67,7 +68,7 @@ index f0dc1f6cf22b..7ca8407e865a 100644
   */
  static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
  					struct wake_q_head *wake_q)
-@@ -1399,8 +1400,7 @@ static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
+@@ -1424,8 +1425,7 @@ static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
  
  	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
  
@@ -77,7 +78,7 @@ index f0dc1f6cf22b..7ca8407e865a 100644
  }
  
  /*
-@@ -1447,15 +1447,14 @@ rt_mutex_fasttrylock(struct rt_mutex *lock,
+@@ -1472,15 +1472,14 @@ rt_mutex_fasttrylock(struct rt_mutex *lock,
  }
  
  /*
@@ -96,7 +97,7 @@ index f0dc1f6cf22b..7ca8407e865a 100644
  }
  
  static inline void
-@@ -1464,14 +1463,12 @@ rt_mutex_fastunlock(struct rt_mutex *lock,
+@@ -1489,14 +1488,12 @@ rt_mutex_fastunlock(struct rt_mutex *lock,
  				   struct wake_q_head *wqh))
  {
  	WAKE_Q(wake_q);
@@ -113,7 +114,7 @@ index f0dc1f6cf22b..7ca8407e865a 100644
  }
  
  /**
-@@ -1591,19 +1588,20 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
+@@ -1616,19 +1613,20 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
  	 */
  	preempt_disable();
  
@@ -139,10 +140,10 @@ index f0dc1f6cf22b..7ca8407e865a 100644
  
  /**
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index 6f073579b00b..d1c07126e890 100644
+index dad9229040dc..722e3cf38acf 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -122,7 +122,7 @@ extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
+@@ -123,7 +123,7 @@ extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
  extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
  				 struct wake_q_head *wqh);
  
@@ -152,5 +153,5 @@ index 6f073579b00b..d1c07126e890 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 -- 
-2.16.1
+2.17.0
 

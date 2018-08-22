@@ -1,7 +1,8 @@
+From 9e073fe502a57bf9c6e797672fefe692d01a2c80 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 20 Mar 2017 12:26:55 +0100
-Subject: [PATCH 004/351] lockdep: Fix per-cpu static objects
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9e7bd782b3f6cd7a65764b135ba9d60b4c76dfb5
+Subject: [PATCH 004/350] lockdep: Fix per-cpu static objects
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
 
 Since commit 383776fa7527 ("locking/lockdep: Handle statically initialized
 PER_CPU locks properly") we try to collapse per-cpu locks into a single
@@ -72,10 +73,10 @@ index 8e0cb7a0f836..68123c1fe549 100644
  
  /*
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 802eb3361a0a..dac06acbae9d 100644
+index 967163fb90a8..991533a7ebc5 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1242,6 +1242,8 @@ core_initcall(cpu_hotplug_pm_sync_init);
+@@ -1255,6 +1255,8 @@ core_initcall(cpu_hotplug_pm_sync_init);
  
  #endif /* CONFIG_PM_SLEEP_SMP */
  
@@ -84,7 +85,7 @@ index 802eb3361a0a..dac06acbae9d 100644
  #endif /* CONFIG_SMP */
  
  /* Boot processor state steps */
-@@ -1926,6 +1928,10 @@ void __init boot_cpu_init(void)
+@@ -1939,6 +1941,10 @@ void __init boot_cpu_init(void)
  	set_cpu_active(cpu, true);
  	set_cpu_present(cpu, true);
  	set_cpu_possible(cpu, true);
@@ -96,7 +97,7 @@ index 802eb3361a0a..dac06acbae9d 100644
  
  /*
 diff --git a/kernel/module.c b/kernel/module.c
-index 3483a3743b44..f27764fbfa24 100644
+index 6a6ed7f3e0fc..3a851cb10916 100644
 --- a/kernel/module.c
 +++ b/kernel/module.c
 @@ -677,8 +677,12 @@ bool __is_module_percpu_address(unsigned long addr, unsigned long *can_addr)
@@ -131,5 +132,5 @@ index 90349153b49d..4e739fcf91bf 100644
  		}
  	}
 -- 
-2.16.1
+2.17.0
 
