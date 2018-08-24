@@ -28,6 +28,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 [carnil: Refresh context after applying upstream commit from 4.9.120,
  6bb53ee170c45f44ac80ad8318f72feff9cdee1b, ("init: rename and re-order
 boot_cpu_state_init()").]
+[carnil: Refresh for context changes in 4.9.120: ("Mark HI and TASKLET
+softirq synchronous").]
 ---
  include/linux/bottom_half.h |  34 +++
  include/linux/interrupt.h   |  15 +-
@@ -39,8 +41,6 @@ boot_cpu_state_init()").]
  net/core/dev.c              |   6 +-
  8 files changed, 480 insertions(+), 95 deletions(-)
 
-diff --git a/include/linux/bottom_half.h b/include/linux/bottom_half.h
-index 8fdcb783197d..d07dbeec7bc1 100644
 --- a/include/linux/bottom_half.h
 +++ b/include/linux/bottom_half.h
 @@ -3,6 +3,39 @@
@@ -90,8 +90,6 @@ index 8fdcb783197d..d07dbeec7bc1 100644
 +#endif
  
  #endif /* _LINUX_BH_H */
-diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index c2bcbd41e0ad..127cfbd8f129 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -469,10 +469,11 @@ struct softirq_action
@@ -108,7 +106,7 @@ index c2bcbd41e0ad..127cfbd8f129 100644
  void do_softirq_own_stack(void);
  #else
  static inline void do_softirq_own_stack(void)
-@@ -480,6 +481,9 @@ static inline void do_softirq_own_stack(void)
+@@ -480,6 +481,9 @@ static inline void do_softirq_own_stack(
  	__do_softirq();
  }
  #endif
@@ -118,7 +116,7 @@ index c2bcbd41e0ad..127cfbd8f129 100644
  
  extern void open_softirq(int nr, void (*action)(struct softirq_action *));
  extern void softirq_init(void);
-@@ -487,6 +491,7 @@ extern void __raise_softirq_irqoff(unsigned int nr);
+@@ -487,6 +491,7 @@ extern void __raise_softirq_irqoff(unsig
  
  extern void raise_softirq_irqoff(unsigned int nr);
  extern void raise_softirq(unsigned int nr);
@@ -126,7 +124,7 @@ index c2bcbd41e0ad..127cfbd8f129 100644
  
  DECLARE_PER_CPU(struct task_struct *, ksoftirqd);
  
-@@ -644,6 +649,12 @@ void tasklet_hrtimer_cancel(struct tasklet_hrtimer *ttimer)
+@@ -644,6 +649,12 @@ void tasklet_hrtimer_cancel(struct taskl
  	tasklet_kill(&ttimer->tasklet);
  }
  
@@ -139,8 +137,6 @@ index c2bcbd41e0ad..127cfbd8f129 100644
  /*
   * Autoprobing for irqs:
   *
-diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 2eed4b5fd08e..0c7346289422 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -50,7 +50,11 @@
@@ -181,8 +177,6 @@ index 2eed4b5fd08e..0c7346289422 100644
  #define in_nmi()		(preempt_count() & NMI_MASK)
  #define in_task()		(!(preempt_count() & \
  				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7d0164741b0e..8c520b4f741f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1981,6 +1981,8 @@ struct task_struct {
@@ -194,7 +188,7 @@ index 7d0164741b0e..8c520b4f741f 100644
  #endif
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  	unsigned long	task_state_change;
-@@ -2301,6 +2303,7 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut,
+@@ -2301,6 +2303,7 @@ extern void thread_group_cputime_adjuste
  /*
   * Per process flags
   */
@@ -202,11 +196,9 @@ index 7d0164741b0e..8c520b4f741f 100644
  #define PF_EXITING	0x00000004	/* getting shut down */
  #define PF_EXITPIDONE	0x00000008	/* pi exit done on shut down */
  #define PF_VCPU		0x00000010	/* I'm a virtual CPU */
-diff --git a/init/main.c b/init/main.c
-index f22957afb37e..8ac3d15ddc1a 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -509,6 +509,7 @@ asmlinkage __visible void __init start_kernel(void)
+@@ -509,6 +509,7 @@ asmlinkage __visible void __init start_k
  	setup_command_line(command_line);
  	setup_nr_cpu_ids();
  	setup_per_cpu_areas();
@@ -214,8 +206,6 @@ index f22957afb37e..8ac3d15ddc1a 100644
  	smp_prepare_boot_cpu();	/* arch-specific boot-cpu hooks */
  	boot_cpu_hotplug_init();
  
-diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 8669000c2aa3..ec9b3611f886 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -26,6 +26,7 @@
@@ -226,7 +216,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  #include <linux/irq.h>
  
  #define CREATE_TRACE_POINTS
-@@ -63,6 +64,98 @@ const char * const softirq_to_name[NR_SOFTIRQS] = {
+@@ -63,6 +64,98 @@ const char * const softirq_to_name[NR_SO
  	"TASKLET", "SCHED", "HRTIMER", "RCU"
  };
  
@@ -351,8 +341,8 @@ index 8669000c2aa3..ec9b3611f886 100644
 +
  /*
   * If ksoftirqd is scheduled, we do not want to process pending softirqs
-  * right now. Let ksoftirqd handle this at its own rate, to get fairness.
-@@ -89,6 +202,48 @@ static bool ksoftirqd_running(void)
+  * right now. Let ksoftirqd handle this at its own rate, to get fairness,
+@@ -93,6 +206,48 @@ static bool ksoftirqd_running(unsigned l
  	return tsk && (tsk->state == TASK_RUNNING);
  }
  
@@ -401,7 +391,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  /*
   * preempt_count and SOFTIRQ_OFFSET usage:
   * - preempt_count is changed by SOFTIRQ_OFFSET on entering or leaving
-@@ -244,10 +399,8 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
+@@ -248,10 +403,8 @@ asmlinkage __visible void __softirq_entr
  	unsigned long end = jiffies + MAX_SOFTIRQ_TIME;
  	unsigned long old_flags = current->flags;
  	int max_restart = MAX_SOFTIRQ_RESTART;
@@ -412,7 +402,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  
  	/*
  	 * Mask out PF_MEMALLOC s current task context is borrowed for the
-@@ -266,36 +419,7 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
+@@ -270,36 +423,7 @@ restart:
  	/* Reset the pending bitmask before enabling irqs */
  	set_softirq_pending(0);
  
@@ -450,11 +440,10 @@ index 8669000c2aa3..ec9b3611f886 100644
  
  	pending = local_softirq_pending();
  	if (pending) {
-@@ -331,6 +455,246 @@ asmlinkage __visible void do_softirq(void)
- 	local_irq_restore(flags);
+@@ -336,6 +460,246 @@ asmlinkage __visible void do_softirq(voi
  }
  
-+/*
+ /*
 + * This function must run with irqs disabled!
 + */
 +void raise_softirq_irqoff(unsigned int nr)
@@ -694,10 +683,11 @@ index 8669000c2aa3..ec9b3611f886 100644
 +}
 +
 +#endif /* PREEMPT_RT_FULL */
- /*
++/*
   * Enter an interrupt context.
   */
-@@ -342,9 +706,9 @@ void irq_enter(void)
+ void irq_enter(void)
+@@ -346,9 +710,9 @@ void irq_enter(void)
  		 * Prevent raise_softirq from needlessly waking up ksoftirqd
  		 * here, as softirq will be serviced on return from interrupt.
  		 */
@@ -709,7 +699,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  	}
  
  	__irq_enter();
-@@ -352,9 +716,13 @@ void irq_enter(void)
+@@ -356,9 +720,13 @@ void irq_enter(void)
  
  static inline void invoke_softirq(void)
  {
@@ -717,14 +707,14 @@ index 8669000c2aa3..ec9b3611f886 100644
 +	unsigned long flags;
 +#endif
 +
- 	if (ksoftirqd_running())
+ 	if (ksoftirqd_running(local_softirq_pending()))
  		return;
 -
 +#ifndef CONFIG_PREEMPT_RT_FULL
  	if (!force_irqthreads) {
  #ifdef CONFIG_HAVE_IRQ_EXIT_ON_IRQ_STACK
  		/*
-@@ -374,6 +742,14 @@ static inline void invoke_softirq(void)
+@@ -378,6 +746,14 @@ static inline void invoke_softirq(void)
  	} else {
  		wakeup_softirqd();
  	}
@@ -739,7 +729,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  }
  
  static inline void tick_irq_exit(void)
-@@ -410,26 +786,6 @@ void irq_exit(void)
+@@ -414,26 +790,6 @@ void irq_exit(void)
  	trace_hardirq_exit(); /* must be last! */
  }
  
@@ -766,7 +756,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  void raise_softirq(unsigned int nr)
  {
  	unsigned long flags;
-@@ -439,12 +795,6 @@ void raise_softirq(unsigned int nr)
+@@ -443,12 +799,6 @@ void raise_softirq(unsigned int nr)
  	local_irq_restore(flags);
  }
  
@@ -779,7 +769,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  void open_softirq(int nr, void (*action)(struct softirq_action *))
  {
  	softirq_vec[nr].action = action;
-@@ -747,23 +1097,7 @@ EXPORT_SYMBOL(tasklet_unlock_wait);
+@@ -751,23 +1101,7 @@ EXPORT_SYMBOL(tasklet_unlock_wait);
  
  static int ksoftirqd_should_run(unsigned int cpu)
  {
@@ -804,7 +794,7 @@ index 8669000c2aa3..ec9b3611f886 100644
  }
  
  #ifdef CONFIG_HOTPLUG_CPU
-@@ -830,6 +1164,8 @@ static int takeover_tasklets(unsigned int cpu)
+@@ -834,6 +1168,8 @@ static int takeover_tasklets(unsigned in
  
  static struct smp_hotplug_thread softirq_threads = {
  	.store			= &ksoftirqd,
@@ -813,11 +803,9 @@ index 8669000c2aa3..ec9b3611f886 100644
  	.thread_should_run	= ksoftirqd_should_run,
  	.thread_fn		= run_ksoftirqd,
  	.thread_comm		= "ksoftirqd/%u",
-diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 89191db4861a..4c185caffcce 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -897,14 +897,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
+@@ -897,14 +897,7 @@ static bool can_stop_idle_tick(int cpu,
  		return false;
  
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {
@@ -833,8 +821,6 @@ index 89191db4861a..4c185caffcce 100644
  		return false;
  	}
  
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 00ff1f2da956..992e80f6442d 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3894,11 +3894,9 @@ int netif_rx_ni(struct sk_buff *skb)
@@ -851,6 +837,3 @@ index 00ff1f2da956..992e80f6442d 100644
  
  	return err;
  }
--- 
-2.18.0
-
