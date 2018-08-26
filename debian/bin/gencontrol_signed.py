@@ -237,7 +237,7 @@ linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
                         assert state == MIDDLE
                         state = BEGIN
                     else:
-                        assert line[0] != '-':
+                        assert line[0] != '-'
                         assert state == MIDDLE
                     certs[-1].append(line)
             assert state == BEGIN
@@ -264,7 +264,7 @@ linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
                             {'sig_type': 'linux-module',
                              'file': '%s/%s' %
                              (root[len(package_dir) + 1 :], name)})
-            package_certs = [get_cert_fingerprint(cert)
+            package_certs = [get_cert_fingerprint(cert, 'sha256')
                              for cert in get_certs(cert_file_name)]
             assert len(package_certs) >= 1
             all_files[image_package_name] = {
