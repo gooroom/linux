@@ -1,7 +1,9 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Date: Fri, 13 Jul 2018 15:30:52 +0200
+Date: Wed, 18 Jul 2018 17:42:04 +0200
 Subject: [PATCH] irqchip/gic-v3-its: Make its_lock a raw_spin_lock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18-rc8-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
+
+[ Upstream commit a8db74564b0c634667e1722264bde303d296f566 ]
 
 The its_lock lock is held while a new device is added to the list and
 during setup while the CPU is booted. Even on -RT the CPU-bootup is
@@ -10,6 +12,7 @@ performed with disabled interrupts.
 Make its_lock a raw_spin_lock_t.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
 ---
  drivers/irqchip/irq-gic-v3-its.c |   18 +++++++++---------
  1 file changed, 9 insertions(+), 9 deletions(-)
