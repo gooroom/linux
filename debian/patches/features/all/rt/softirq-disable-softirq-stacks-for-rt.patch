@@ -1,7 +1,7 @@
 Subject: softirq: Disable softirq stacks for RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18-rc8-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.
@@ -128,7 +128,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  idtentry hypervisor_callback xen_do_hypervisor_callback has_error_code=0
 --- a/arch/x86/kernel/irq_32.c
 +++ b/arch/x86/kernel/irq_32.c
-@@ -129,6 +129,7 @@ void irq_ctx_init(int cpu)
+@@ -130,6 +130,7 @@ void irq_ctx_init(int cpu)
  	       cpu, per_cpu(hardirq_stack, cpu),  per_cpu(softirq_stack, cpu));
  }
  
@@ -136,7 +136,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void do_softirq_own_stack(void)
  {
  	struct irq_stack *irqstk;
-@@ -145,6 +146,7 @@ void do_softirq_own_stack(void)
+@@ -146,6 +147,7 @@ void do_softirq_own_stack(void)
  
  	call_on_stack(__do_softirq, isp);
  }

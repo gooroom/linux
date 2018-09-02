@@ -1,18 +1,18 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
 Subject: powerpc: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18-rc8-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 Implement the powerpc pieces for lazy preempt.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
  arch/powerpc/Kconfig                   |    1 +
- arch/powerpc/include/asm/thread_info.h |    7 ++++++-
+ arch/powerpc/include/asm/thread_info.h |    9 +++++++--
  arch/powerpc/kernel/asm-offsets.c      |    1 +
  arch/powerpc/kernel/entry_32.S         |   17 ++++++++++++-----
- arch/powerpc/kernel/entry_64.S         |   14 +++++++++++---
- 5 files changed, 31 insertions(+), 9 deletions(-)
+ arch/powerpc/kernel/entry_64.S         |   16 ++++++++++++----
+ 5 files changed, 33 insertions(+), 11 deletions(-)
 
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
@@ -35,11 +35,20 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	unsigned long	local_flags;		/* private flags for thread */
  #ifdef CONFIG_LIVEPATCH
  	unsigned long *livepatch_sp;
+@@ -80,7 +82,7 @@ extern int arch_dup_task_struct(struct t
+ #define TIF_SIGPENDING		1	/* signal pending */
+ #define TIF_NEED_RESCHED	2	/* rescheduling necessary */
+ #define TIF_FSCHECK		3	/* Check FS is USER_DS on return */
+-#define TIF_32BIT		4	/* 32 bit binary */
++#define TIF_NEED_RESCHED_LAZY	4       /* lazy rescheduling necessary */
+ #define TIF_RESTORE_TM		5	/* need to restore TM FP/VEC/VSX */
+ #define TIF_PATCH_PENDING	6	/* pending live patching update */
+ #define TIF_SYSCALL_AUDIT	7	/* syscall auditing active */
 @@ -99,6 +101,7 @@ extern int arch_dup_task_struct(struct t
  #define TIF_ELF2ABI		18	/* function descriptors must die! */
  #endif
  #define TIF_POLLING_NRFLAG	19	/* true if poll_idle() is polling TIF_NEED_RESCHED */
-+#define TIF_NEED_RESCHED_LAZY	20       /* lazy rescheduling necessary */
++#define TIF_32BIT		20	/* 32 bit binary */
  
  /* as above, but as bit values */
  #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
@@ -124,6 +133,15 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	beq	restore_user
 --- a/arch/powerpc/kernel/entry_64.S
 +++ b/arch/powerpc/kernel/entry_64.S
+@@ -168,7 +168,7 @@ system_call:			/* label this so stack tr
+  * based on caller's run-mode / personality.
+  */
+ 	ld	r11,SYS_CALL_TABLE@toc(2)
+-	andi.	r10,r10,_TIF_32BIT
++	andis.	r10,r10,_TIF_32BIT@h
+ 	beq	15f
+ 	addi	r11,r11,8	/* use 32-bit syscall entries */
+ 	clrldi	r3,r3,32
 @@ -707,7 +707,7 @@ END_MMU_FTR_SECTION_IFSET(MMU_FTR_1T_SEG
  	bl	restore_math
  	b	restore
