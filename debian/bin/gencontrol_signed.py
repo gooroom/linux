@@ -54,6 +54,37 @@ class Gencontrol(Base):
             '-v%(imagebinaryversion)s -DBuilt-Using="linux (= %(imagesourceversion)s)"' % vars)
         makeflags['PACKAGE_VERSION'] = vars['imagebinaryversion']
 
+        self.installer_packages = {}
+
+        if os.getenv('DEBIAN_KERNEL_DISABLE_INSTALLER'):
+            if self.changelog[0].distribution == 'UNRELEASED':
+                import warnings
+                warnings.warn('Disable installer modules on request (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
+            else:
+                raise RuntimeError('Unable to disable installer modules in release build (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
+        elif self.config.merge('packages').get('installer', True):
+            # Add udebs using kernel-wedge
+            kw_env = os.environ.copy()
+            kw_env['KW_DEFCONFIG_DIR'] = 'debian/installer'
+            kw_env['KW_CONFIG_DIR'] = 'debian/installer'
+            kw_proc = subprocess.Popen(
+                ['kernel-wedge', 'gen-control', vars['abiname']],
+                stdout=subprocess.PIPE,
+                env=kw_env)
+            if not isinstance(kw_proc.stdout, io.IOBase):
+                udeb_packages = read_control(io.open(kw_proc.stdout.fileno(), closefd=False))
+            else:
+                udeb_packages = read_control(io.TextIOWrapper(kw_proc.stdout))
+            kw_proc.wait()
+            if kw_proc.returncode != 0:
+                raise RuntimeError('kernel-wedge exited with code %d' %
+                                   kw_proc.returncode)
+
+            for package in udeb_packages:
+                for arch in package['Architecture']:
+                    if self.config.merge('build', arch).get('signed-code', False):
+                        self.installer_packages.setdefault(arch, []).append(package)
+
     def do_main_packages(self, packages, vars, makeflags, extra):
         # Assume that arch:all packages do not get binNMU'd
         packages['source']['Build-Depends'].append(
@@ -77,46 +108,20 @@ class Gencontrol(Base):
             self.config['version', ]['abiname_base'] + abiname_part
 
     def do_arch_packages(self, packages, makefile, arch, vars, makeflags, extra):
-        if os.getenv('DEBIAN_KERNEL_DISABLE_INSTALLER'):
-            if self.changelog[0].distribution == 'UNRELEASED':
-                import warnings
-                warnings.warn('Disable installer modules on request (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
-            else:
-                raise RuntimeError('Unable to disable installer modules in release build (DEBIAN_KERNEL_DISABLE_INSTALLER set)')
-        elif (self.config.merge('packages').get('installer', True) and
-              self.config.merge('build', arch).get('signed-code', False)):
-            # Add udebs using kernel-wedge
-            installer_def_dir = 'debian/installer'
-            installer_arch_dir = os.path.join(installer_def_dir, arch)
-            if os.path.isdir(installer_arch_dir):
-                kw_env = os.environ.copy()
-                kw_env['KW_DEFCONFIG_DIR'] = installer_def_dir
-                kw_env['KW_CONFIG_DIR'] = installer_arch_dir
-                kw_proc = subprocess.Popen(
-                    ['kernel-wedge', 'gen-control', vars['abiname']],
-                    stdout=subprocess.PIPE,
-                    env=kw_env)
-                if not isinstance(kw_proc.stdout, io.IOBase):
-                    udeb_packages = read_control(io.open(kw_proc.stdout.fileno(), closefd=False))
-                else:
-                    udeb_packages = read_control(io.TextIOWrapper(kw_proc.stdout))
-                kw_proc.wait()
-                if kw_proc.returncode != 0:
-                    raise RuntimeError('kernel-wedge exited with code %d' %
-                                       kw_proc.returncode)
+        udeb_packages = self.installer_packages.get(arch, [])
+        if udeb_packages:
+            merge_packages(packages, udeb_packages, arch)
 
-                merge_packages(packages, udeb_packages, arch)
-
-                # These packages must be built after the per-flavour/
-                # per-featureset packages.  Also, this won't work
-                # correctly with an empty package list.
-                if udeb_packages:
-                    makefile.add(
-                        'binary-arch_%s' % arch,
-                        cmds=["$(MAKE) -f debian/rules.real install-udeb_%s %s "
-                              "PACKAGE_NAMES='%s'" %
-                              (arch, makeflags,
-                               ' '.join(p['Package'] for p in udeb_packages))])
+            # These packages must be built after the per-flavour/
+            # per-featureset packages.  Also, this won't work
+            # correctly with an empty package list.
+            if udeb_packages:
+                makefile.add(
+                    'binary-arch_%s' % arch,
+                    cmds=["$(MAKE) -f debian/rules.real install-udeb_%s %s "
+                          "PACKAGE_NAMES='%s'" %
+                          (arch, makeflags,
+                           ' '.join(p['Package'] for p in udeb_packages))])
 
     def do_flavour_setup(self, vars, makeflags, arch, featureset, flavour, extra):
         super(Gencontrol, self).do_flavour_setup(vars, makeflags, arch, featureset, flavour, extra)
