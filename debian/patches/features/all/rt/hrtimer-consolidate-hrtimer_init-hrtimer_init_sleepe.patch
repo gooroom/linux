@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Date: Mon, 4 Sep 2017 18:31:50 +0200
-Subject: [PATCH] hrtimer: consolidate hrtimer_init() + hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18-rc8-rt1.tar.xz
+Date: Tue,  3 Jul 2018 11:25:41 +0200
+Subject: [PATCH v2] hrtimer: consolidate hrtimer_init() + hrtimer_init_sleeper() calls
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -11,17 +11,19 @@ consistent consider init_on_stack as well.
 Beside adapting the hrtimer_init_sleeper[_on_stack]() functions, call
 sites need to be updated as well.
 
-[anna-maria: Updating the commit message]
-Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Link: http://lkml.kernel.org/r/20180703092541.2870-1-anna-maria@linutronix.de
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[anna-maria: Updating the commit message, add staging/android/vsoc.c]
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
 ---
- block/blk-mq.c          |    3 +--
- include/linux/hrtimer.h |   19 ++++++++++++++++---
- include/linux/wait.h    |    4 ++--
- kernel/futex.c          |   19 ++++++++-----------
- kernel/time/hrtimer.c   |   46 ++++++++++++++++++++++++++++++++++++----------
- net/core/pktgen.c       |    4 ++--
- 6 files changed, 65 insertions(+), 30 deletions(-)
+ block/blk-mq.c                 |    3 --
+ drivers/staging/android/vsoc.c |    6 +----
+ include/linux/hrtimer.h        |   19 ++++++++++++++--
+ include/linux/wait.h           |    4 +--
+ kernel/futex.c                 |   19 +++++++---------
+ kernel/time/hrtimer.c          |   46 ++++++++++++++++++++++++++++++++---------
+ net/core/pktgen.c              |    4 +--
+ 7 files changed, 67 insertions(+), 34 deletions(-)
 
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
@@ -37,6 +39,23 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	do {
  		if (blk_mq_rq_state(rq) == MQ_RQ_COMPLETE)
  			break;
+--- a/drivers/staging/android/vsoc.c
++++ b/drivers/staging/android/vsoc.c
+@@ -438,12 +438,10 @@ static int handle_vsoc_cond_wait(struct
+ 
+ 		if (!timespec_valid(&ts))
+ 			return -EINVAL;
+-		hrtimer_init_on_stack(&to->timer, CLOCK_MONOTONIC,
+-				      HRTIMER_MODE_ABS);
++		hrtimer_init_sleeper_on_stack(to, CLOCK_MONOTONIC,
++					      HRTIMER_MODE_ABS, current);
+ 		hrtimer_set_expires_range_ns(&to->timer, timespec_to_ktime(ts),
+ 					     current->timer_slack_ns);
+-
+-		hrtimer_init_sleeper(to, current);
+ 	}
+ 
+ 	while (1) {
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -364,10 +364,17 @@ DECLARE_PER_CPU(struct tick_device, tick
