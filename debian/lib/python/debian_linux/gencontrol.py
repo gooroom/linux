@@ -91,6 +91,7 @@ class Gencontrol(object):
         self.do_main(packages, makefile)
         self.do_extra(packages, makefile)
 
+        self.merge_build_depends(packages)
         self.write(packages, makefile)
 
     def do_source(self, packages):
@@ -312,6 +313,34 @@ class Gencontrol(object):
             return vars[match.group(1)]
 
         return re.sub(r'@([-_a-z0-9]+)@', subst, str(s))
+
+    def merge_build_depends(self, packages):
+        # Merge Build-Depends pseudo-fields from binary packages into the
+        # source package
+        source = packages["source"]
+        arch_all = PackageArchitecture("all")
+        for name, package in packages.items():
+            if name == "source":
+                continue
+            dep = package.get("Build-Depends")
+            if not dep:
+                continue
+            del package["Build-Depends"]
+            for group in dep:
+                for item in group:
+                    if package["Architecture"] != arch_all and not item.arches:
+                        item.arches = sorted(package["Architecture"])
+                    if package.get("Build-Profiles") and not item.restrictions:
+                        profiles = package["Build-Profiles"]
+                        assert profiles[0] == "<" and profiles[-1] == ">"
+                        item.restrictions = re.split(r"\s+", profiles[1:-1])
+            if package["Architecture"] == arch_all:
+                dep_type = "Build-Depends-Indep"
+            else:
+                dep_type = "Build-Depends-Arch"
+            if dep_type not in source:
+                source[dep_type] = PackageRelation()
+            source[dep_type].extend(dep)
 
     def write(self, packages, makefile):
         self.write_control(packages.values())
