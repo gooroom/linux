@@ -34,7 +34,7 @@ class SchemaItemInteger(object):
 
 
 class SchemaItemList(object):
-    def __init__(self, type="\s+"):
+    def __init__(self, type=r"\s+"):
         self.type = type
 
     def __call__(self, i):
