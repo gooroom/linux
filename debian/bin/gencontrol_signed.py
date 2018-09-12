@@ -38,7 +38,9 @@ class Gencontrol(Base):
             'arch': arch,
         }
 
-        self.template_top_dir = ('debian/%(template)s/usr/share/code-signing/%(template)s' %
+        self.package_dir = 'debian/%(template)s' % self.vars
+        self.template_top_dir = (self.package_dir +
+                                 '/usr/share/code-signing/%(template)s' %
                                  self.vars)
         self.template_debian_dir = self.template_top_dir + '/source-template/debian'
         os.makedirs(self.template_debian_dir, exist_ok=True)
