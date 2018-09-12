@@ -28,6 +28,7 @@ class Gencontrol(Base):
 
         self.abiname = config_entry['abiname']
         self.vars = {
+            'template': 'linux-image-%s-signed-template' % arch,
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
             'source_upstream': self.version.upstream,
@@ -37,7 +38,7 @@ class Gencontrol(Base):
             'arch': arch,
         }
 
-        self.template_top_dir = ('debian/linux-image-%(arch)s-signed-template/usr/share/code-signing/linux-image-%(arch)s-signed-template' %
+        self.template_top_dir = ('debian/%(template)s/usr/share/code-signing/%(template)s' %
                                  self.vars)
         self.template_debian_dir = self.template_top_dir + '/source-template/debian'
         os.makedirs(self.template_debian_dir, exist_ok=True)
