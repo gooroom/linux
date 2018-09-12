@@ -16,7 +16,15 @@ ifeq ($(DISTRIBUTOR),)
 DISTRIBUTOR := Debian
 endif
 
+include /usr/share/dpkg/architecture.mk
+
 include debian/rules.defs
+
+ifdef ARCH
+  ifneq ($(DEB_HOST_ARCH),$(ARCH))
+    $(error Attempting to build a $(ARCH) target but host architecture is $(DEB_HOST_ARCH).  Use dpkg-architecture to override the host architecture)
+  endif
+endif
 
 ifdef OVERRIDE_HOST_TYPE
   CROSS_COMPILE := $(OVERRIDE_HOST_TYPE)-
