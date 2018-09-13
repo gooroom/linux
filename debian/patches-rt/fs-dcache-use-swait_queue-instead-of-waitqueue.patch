@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.7-rt5.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -81,7 +81,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	INIT_HLIST_NODE(&dentry->d_u.d_alias);
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
-@@ -1195,7 +1195,7 @@ static int fuse_direntplus_link(struct f
+@@ -1196,7 +1196,7 @@ static int fuse_direntplus_link(struct f
  	struct inode *dir = d_inode(parent);
  	struct fuse_conn *fc;
  	struct inode *inode;

@@ -2,7 +2,7 @@ From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
 Subject: [PATCH] drivers/zram: Don't disable preemption in
  zcomp_stream_get/put()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.5-rt3.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.7-rt5.tar.xz
 
 In v4.7, the driver switched to percpu compression streams, disabling
 preemption via get/put_cpu_ptr(). Use a per-zcomp_strm lock here. We
@@ -63,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* dynamic per-device compression frontend */
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
-@@ -1009,6 +1009,7 @@ static int __zram_bvec_read(struct zram
+@@ -1014,6 +1014,7 @@ static int __zram_bvec_read(struct zram
  	unsigned long handle;
  	unsigned int size;
  	void *src, *dst;
@@ -71,7 +71,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if (zram_wb_enabled(zram)) {
  		zram_slot_lock(zram, index);
-@@ -1043,6 +1044,7 @@ static int __zram_bvec_read(struct zram
+@@ -1048,6 +1049,7 @@ static int __zram_bvec_read(struct zram
  
  	size = zram_get_obj_size(zram, index);
  
@@ -79,7 +79,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	src = zs_map_object(zram->mem_pool, handle, ZS_MM_RO);
  	if (size == PAGE_SIZE) {
  		dst = kmap_atomic(page);
-@@ -1050,14 +1052,13 @@ static int __zram_bvec_read(struct zram
+@@ -1055,14 +1057,13 @@ static int __zram_bvec_read(struct zram
  		kunmap_atomic(dst);
  		ret = 0;
  	} else {
