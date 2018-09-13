@@ -183,11 +183,21 @@ class Gencontrol(Base):
             cmds_binary_arch += ["$(MAKE) -f debian/rules.real install-signed PACKAGE_NAME='%s' %s" % (i['Package'], makeflags)]
         makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour), cmds = cmds_binary_arch)
 
-        for name in ['postinst', 'postrm', 'preinst', 'prerm']:
-            self._substitute_file('image.%s' % name, vars,
-                                  self.template_debian_dir +
-                                  '/linux-image-%s%s.%s' %
-                                  (vars['abiname'], vars['localversion'], name))
+        os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
+                    exist_ok=True)
+        with open(self.package_dir +
+                  '/usr/share/lintian/overrides/%(template)s' % self.vars,
+                  'a') as lintian_overrides:
+            for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
+                script_name = (self.template_debian_dir +
+                               '/linux-image-%s%s.%s' %
+                               (vars['abiname'], vars['localversion'],
+                                script_base))
+                self._substitute_file('image.%s' % script_base, vars, script_name)
+                lintian_overrides.write('%s: script-not-executable %s\n' %
+                                        (self.vars['template'],
+                                         os.path.relpath(script_name,
+                                                         self.package_dir)))
 
     def write(self, packages, makefile):
         self.write_changelog()
