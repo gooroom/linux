@@ -30,12 +30,11 @@ updated on each tick. Any addition to the lists wakes ktimersoftd
 
 Signed-off-by: Haris Okanovic <haris.okanovic@ni.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[carnil: Refresh for context changes in 4.9.128]
 ---
  kernel/time/timer.c | 96 +++++++++++++++++++++++++++++++--------------
  1 file changed, 67 insertions(+), 29 deletions(-)
 
-diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index acc63da74fed..5cdb37f4e91e 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -207,6 +207,8 @@ struct timer_base {
@@ -47,7 +46,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  } ____cacheline_aligned;
  
  static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
-@@ -1364,7 +1366,8 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
+@@ -1364,7 +1366,8 @@ static void call_timer_fn(struct timer_l
  	}
  }
  
@@ -57,7 +56,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  {
  	while (!hlist_empty(head)) {
  		struct timer_list *timer;
-@@ -1395,21 +1398,38 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
+@@ -1395,21 +1398,38 @@ static void expire_timers(struct timer_b
  	}
  }
  
@@ -101,7 +100,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  		}
  		/* Is it time to look at the next level? */
  		if (clk & LVL_CLK_MASK)
-@@ -1417,7 +1437,6 @@ static int __collect_expired_timers(struct timer_base *base,
+@@ -1417,7 +1437,6 @@ static int __collect_expired_timers(stru
  		/* Shift clock for the next level granularity */
  		clk >>= LVL_CLK_SHIFT;
  	}
@@ -119,7 +118,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  {
  	/*
  	 * NOHZ optimization. After a long idle sleep we need to forward the
-@@ -1634,20 +1652,49 @@ static int collect_expired_timers(struct timer_base *base,
+@@ -1634,20 +1652,49 @@ static int collect_expired_timers(struct
  		if (time_after(next, jiffies)) {
  			/* The call site will increment clock! */
  			base->clk = jiffies - 1;
@@ -174,7 +173,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  /*
   * Called from the timer interrupt handler to charge one tick to the current
   * process.  user_tick is 1 if the tick is user time, 0 for system.
-@@ -1674,22 +1721,11 @@ void update_process_times(int user_tick)
+@@ -1674,12 +1721,6 @@ void update_process_times(int user_tick)
   */
  static inline void __run_timers(struct timer_base *base)
  {
@@ -185,6 +184,11 @@ index acc63da74fed..5cdb37f4e91e 100644
 -		return;
 -
  	raw_spin_lock_irq(&base->lock);
+ 
+ 	/*
+@@ -1698,14 +1739,9 @@ static inline void __run_timers(struct t
+ 	 */
+ 	base->must_forward_clk = false;
  
 -	while (time_after_eq(jiffies, base->clk)) {
 -
@@ -199,7 +203,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  	raw_spin_unlock_irq(&base->lock);
  	wakeup_timer_waiters(base);
  }
-@@ -1728,12 +1764,12 @@ void run_local_timers(void)
+@@ -1731,12 +1767,12 @@ void run_local_timers(void)
  
  	hrtimer_run_queues();
  	/* Raise the softirq only if required. */
@@ -214,7 +218,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  			return;
  	}
  	raise_softirq(TIMER_SOFTIRQ);
-@@ -1924,6 +1960,7 @@ int timers_dead_cpu(unsigned int cpu)
+@@ -1927,6 +1963,7 @@ int timers_dead_cpu(unsigned int cpu)
  		forward_timer_base(new_base);
  
  		BUG_ON(old_base->running_timer);
@@ -222,7 +226,7 @@ index acc63da74fed..5cdb37f4e91e 100644
  
  		for (i = 0; i < WHEEL_SIZE; i++)
  			migrate_timer_list(new_base, old_base->vectors + i);
-@@ -1950,6 +1987,7 @@ static void __init init_timer_cpu(int cpu)
+@@ -1953,6 +1990,7 @@ static void __init init_timer_cpu(int cp
  #ifdef CONFIG_PREEMPT_RT_FULL
  		init_swait_queue_head(&base->wait_for_running_timer);
  #endif
@@ -230,6 +234,3 @@ index acc63da74fed..5cdb37f4e91e 100644
  	}
  }
  
--- 
-2.18.0
-
