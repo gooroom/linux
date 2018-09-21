@@ -24,6 +24,8 @@ and:
 - Define a task_ext() function to find the task_struct_ext at the
   end of a task_struct, using the dynamic structure size.
 - Use task_ext() in the vmacache code to access the larger field.
+- [x86] Adjust the structure layout check in
+  fpu__init_task_struct_size for this.
 
 ---
 --- a/include/linux/mm_types.h
@@ -121,3 +123,17 @@ and:
  		vmacache_flush(curr);
  		return false;
  	}
+--- a/arch/x86/kernel/fpu/init.c
++++ b/arch/x86/kernel/fpu/init.c
+@@ -187,7 +187,10 @@ static void __init fpu__init_task_struct
+ 	 */
+ 	CHECK_MEMBER_AT_END_OF(struct fpu, state);
+ 	CHECK_MEMBER_AT_END_OF(struct thread_struct, fpu);
+-	CHECK_MEMBER_AT_END_OF(struct task_struct, thread);
++	BUILD_BUG_ON(sizeof(struct task_struct) !=
++		     ALIGN(offsetofend(struct task_struct, thread) +
++			   sizeof(struct task_struct_ext),
++			   TYPE_ALIGN(struct task_struct)));
+ 
+ 	arch_task_struct_size = task_size;
+ }
