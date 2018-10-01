@@ -508,7 +508,7 @@ class Gencontrol(Base):
         merge_packages(packages, packages_own + packages_dummy, arch)
 
         tests_control = self.process_package(
-            self.templates['tests-control.main'][0], vars)
+            self.templates['tests-control.image'][0], vars)
         tests_control['Depends'].append(
             PackageRelationGroup(image_main['Package'],
                                  override_arches=(arch,)))
