@@ -21,15 +21,12 @@ class SchemaItemBoolean(object):
             return True
         if i in ("false", "0"):
             return False
-        raise Error
+        raise ValueError
 
 
 class SchemaItemInteger(object):
     def __call__(self, i):
-        try:
-            return int(i.strip(), 0)
-        except ValueError:
-            raise Error
+        return int(i.strip(), 0)
 
 
 class SchemaItemList(object):
