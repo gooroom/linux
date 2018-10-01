@@ -84,7 +84,9 @@ class Gencontrol(Base):
         makeflags['SOURCE_BASENAME'] = self.vars['source_basename']
 
         # Prepare to generate debian/tests/control
-        self.tests_control = None
+        self.tests_control = self.process_packages(
+            self.templates['tests-control.main'], vars)
+        self.tests_control_image = None
 
         self.installer_packages = {}
 
@@ -512,10 +514,12 @@ class Gencontrol(Base):
         tests_control['Depends'].append(
             PackageRelationGroup(image_main['Package'],
                                  override_arches=(arch,)))
-        if self.tests_control:
-            self.tests_control['Depends'].extend(tests_control['Depends'])
+        if self.tests_control_image:
+            self.tests_control_image['Depends'].extend(
+                tests_control['Depends'])
         else:
-            self.tests_control = tests_control
+            self.tests_control_image = tests_control
+            self.tests_control.append(tests_control)
 
         def get_config(*entry_name):
             entry_real = ('image',) + entry_name
@@ -683,7 +687,7 @@ class Gencontrol(Base):
 
     def write_tests_control(self):
         self.write_rfc822(open("debian/tests/control", 'w'),
-                          [self.tests_control])
+                          self.tests_control)
 
 
 if __name__ == '__main__':
