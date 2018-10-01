@@ -45,7 +45,8 @@ class Changelog(list):
     _ignore_re = re.compile(r'^(?:  |\s*\n)')
 
     class Entry(object):
-        __slot__ = 'distribution', 'source', 'version', 'urgency', 'maintainer', 'date'
+        __slot__ = ('distribution', 'source', 'version', 'urgency',
+                    'maintainer', 'date')
 
         def __init__(self, **kwargs):
             for key, value in kwargs.items():
@@ -57,7 +58,8 @@ class Changelog(list):
         if file:
             self._parse(version, file)
         else:
-            with open(os.path.join(dir, "debian/changelog"), encoding="UTF-8") as f:
+            with open(os.path.join(dir, "debian/changelog"),
+                      encoding="UTF-8") as f:
                 self._parse(version, f)
 
     def _parse(self, version, f):
@@ -72,7 +74,8 @@ class Changelog(list):
             elif top_match is None:
                 top_match = self._top_re.match(line)
                 if not top_match:
-                    raise Exception('invalid top line %d in changelog' % line_no)
+                    raise Exception('invalid top line %d in changelog' %
+                                    line_no)
                 try:
                     v = version(top_match.group('version'))
                 except Exception:
@@ -82,15 +85,18 @@ class Changelog(list):
             else:
                 bottom_match = self._bottom_re.match(line)
                 if not bottom_match:
-                    raise Exception('invalid bottom line %d in changelog' % line_no)
+                    raise Exception('invalid bottom line %d in changelog' %
+                                    line_no)
 
-                self.append(self.Entry(distribution=top_match.group('distribution'),
-                                       source=top_match.group('source'),
-                                       version=v,
-                                       urgency=top_match.group('urgency'),
-                                       maintainer=bottom_match.group('maintainer'),
-                                       date=bottom_match.group('date')))
+                self.append(self.Entry(
+                    distribution=top_match.group('distribution'),
+                    source=top_match.group('source'),
+                    version=v,
+                    urgency=top_match.group('urgency'),
+                    maintainer=bottom_match.group('maintainer'),
+                    date=bottom_match.group('date')))
                 top_match = bottom_match = None
+
 
 class Version(object):
     _epoch_re = re.compile(r'\d+$')
@@ -110,9 +116,9 @@ class Version(object):
             upstream, revision = rest, None
         else:
             upstream, revision = rest[0:split], rest[split+1:]
-        if ((epoch is not None and not self._epoch_re.match(epoch)) or
-            not self._upstream_re.match(upstream) or
-            (revision is not None and not self._revision_re.match(revision))):
+        if (epoch is not None and not self._epoch_re.match(epoch)) or \
+           not self._upstream_re.match(upstream) or \
+           (revision is not None and not self._revision_re.match(revision)):
             raise RuntimeError(u"Invalid debian version")
         self.epoch = epoch and int(epoch)
         self.upstream = upstream
@@ -136,7 +142,8 @@ class Version(object):
     @property
     def debian(self):
         from warnings import warn
-        warn(u"debian argument was replaced by revision", DeprecationWarning, stacklevel=2)
+        warn(u"debian argument was replaced by revision", DeprecationWarning,
+             stacklevel=2)
         return self.revision
 
 
@@ -379,7 +386,7 @@ class _VersionLinuxTest(unittest.TestCase):
         self.assertFalse(v.linux_revision_other)
 
     def test_other_revision(self):
-        v = VersionLinux('4.16.5-1+revert+crng+ready') # from #898087
+        v = VersionLinux('4.16.5-1+revert+crng+ready')  # from #898087
         self.assertFalse(v.linux_revision_experimental)
         self.assertFalse(v.linux_revision_security)
         self.assertFalse(v.linux_revision_backports)
@@ -537,7 +544,8 @@ class PackageRelationGroup(list):
 class PackageRelationEntry(object):
     __slots__ = "name", "operator", "version", "arches", "restrictions"
 
-    _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?(?: \[([^]]+)\])?(?: <([^>]+)>)?$')
+    _re = re.compile(r'^(\S+)(?: \((<<|<=|=|!=|>=|>>)\s*([^)]+)\))?'
+                     r'(?: \[([^]]+)\])?(?: <([^>]+)>)?$')
 
     class _operator(object):
         OP_LT = 1
@@ -573,7 +581,8 @@ class PackageRelationEntry(object):
             self._op = self.operators[value]
 
         def __neg__(self):
-            return self.__class__(self.operators_text[self.operators_neg[self._op]])
+            return self.__class__(
+                self.operators_text[self.operators_neg[self._op]])
 
         def __str__(self):
             return self.operators_text[self._op]

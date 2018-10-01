@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 
 import sys
-sys.path.append(sys.path[0] + "/../lib/python")
-
 import optparse
 import os
 import shutil
@@ -11,6 +9,7 @@ import tempfile
 from urllib.request import urlopen
 from urllib.error import HTTPError
 
+sys.path.append(sys.path[0] + "/../lib/python")
 from debian_linux.abi import Symbols
 from debian_linux.config import *
 from debian_linux.debian import *
@@ -35,25 +34,29 @@ class url_debian_pool(object):
         self.base = base
 
     def __call__(self, source, filename, arch):
-        return self.base + "pool/main/" + source[0] + "/" + source + "/" + filename
+        return (self.base + "pool/main/" + source[0] + "/" + source + "/" +
+                filename)
 
 
 class url_debian_ports_pool(url_debian_pool):
     def __call__(self, source, filename, arch):
         if arch == 'all':
             return url_debian_pool.__call__(self, source, filename, arch)
-        return self.base + "pool-" + arch + "/main/" + source[0] + "/" + source + "/" + filename
+        return (self.base + "pool-" + arch + "/main/" + source[0] + "/" +
+                source + "/" + filename)
 
 
 class url_debian_security_pool(url_debian_pool):
     def __call__(self, source, filename, arch):
-        return self.base + "pool/updates/main/" + source[0] + "/" + source + "/" + filename
+        return (self.base + "pool/updates/main/" + source[0] + "/" + source +
+                "/" + filename)
 
 
 class Main(object):
     dir = None
 
-    def __init__(self, url, url_config=None, arch=None, featureset=None, flavour=None):
+    def __init__(self, url, url_config=None, arch=None, featureset=None,
+                 flavour=None):
         self.log = sys.stdout.write
 
         self.url = self.url_config = url
@@ -72,7 +75,8 @@ class Main(object):
         self.version = changelog.version.linux_version
         self.version_source = changelog.version.complete
 
-        self.config = ConfigCoreDump(fp=open("debian/config.defines.dump", "rb"))
+        self.config = ConfigCoreDump(fp=open("debian/config.defines.dump",
+                                             "rb"))
 
         self.version_abi = self.config['version', ]['abiname']
 
@@ -104,14 +108,16 @@ class Main(object):
 
     def get_abi(self, arch, prefix):
         try:
-            version_abi = (self.config['version',]['abiname_base'] + '-' +
+            version_abi = (self.config[('version',)]['abiname_base'] + '-' +
                            self.config['abi', arch]['abiname'])
         except KeyError:
             version_abi = self.version_abi
-        filename = "linux-headers-%s-%s_%s_%s.deb" % (version_abi, prefix, self.version_source, arch)
+        filename = ("linux-headers-%s-%s_%s_%s.deb" %
+                    (version_abi, prefix, self.version_source, arch))
         f = self.retrieve_package(self.url, filename, arch)
         d = self.extract_package(f, "linux-headers-%s_%s" % (prefix, arch))
-        f1 = d + "/usr/src/linux-headers-%s-%s/Module.symvers" % (version_abi, prefix)
+        f1 = d + ("/usr/src/linux-headers-%s-%s/Module.symvers" %
+                  (version_abi, prefix))
         s = Symbols(open(f1))
         shutil.rmtree(d)
         return version_abi, s
@@ -166,7 +172,8 @@ class Main(object):
     def update_flavour(self, config, arch, featureset, flavour):
         config_base = config.merge('base', arch, featureset, flavour)
 
-        self.log("Updating ABI for arch %s, featureset %s, flavour %s: " % (arch, featureset, flavour))
+        self.log("Updating ABI for arch %s, featureset %s, flavour %s: " %
+                 (arch, featureset, flavour))
         try:
             if featureset == 'none':
                 localversion = flavour
@@ -183,17 +190,26 @@ class Main(object):
             import traceback
             traceback.print_exc(None, sys.stdout)
 
+
 if __name__ == '__main__':
     options = optparse.OptionParser()
-    options.add_option("-i", "--incoming", action="store_true", dest="incoming")
-    options.add_option("--incoming-config", action="store_true", dest="incoming_config")
+    options.add_option("-i", "--incoming", action="store_true",
+                       dest="incoming")
+    options.add_option("--incoming-config", action="store_true",
+                       dest="incoming_config")
     options.add_option("--ports", action="store_true", dest="ports")
     options.add_option("--security", action="store_true", dest="security")
-    options.add_option("-u", "--url-base", dest="url_base", default=default_url_base)
-    options.add_option("--url-base-incoming", dest="url_base_incoming", default=default_url_base_incoming)
-    options.add_option("--url-base-ports", dest="url_base_ports", default=default_url_base_ports)
-    options.add_option("--url-base-ports-incoming", dest="url_base_ports_incoming", default=default_url_base_ports_incoming)
-    options.add_option("--url-base-security", dest="url_base_security", default=default_url_base_security)
+    options.add_option("-u", "--url-base", dest="url_base",
+                       default=default_url_base)
+    options.add_option("--url-base-incoming", dest="url_base_incoming",
+                       default=default_url_base_incoming)
+    options.add_option("--url-base-ports", dest="url_base_ports",
+                       default=default_url_base_ports)
+    options.add_option("--url-base-ports-incoming",
+                       dest="url_base_ports_incoming",
+                       default=default_url_base_ports_incoming)
+    options.add_option("--url-base-security", dest="url_base_security",
+                       default=default_url_base_security)
 
     opts, args = options.parse_args()
 

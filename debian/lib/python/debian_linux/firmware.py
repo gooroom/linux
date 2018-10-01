@@ -80,7 +80,8 @@ class FirmwareWhence(list):
                     licence = value
             elif licence is not None:
                 licence = (licence + '\n' +
-                           re.sub(r'^(?:[/ ]\*| \*/)?\s*(.*?)\s*$', r'\1', line))
+                           re.sub(r'^(?:[/ ]\*| \*/)?\s*(.*?)\s*$', r'\1',
+                                  line))
 
         # Finish last section if non-empty
         for b in binary:

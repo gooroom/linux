@@ -50,7 +50,8 @@ class ConfigCore(collections.OrderedDict):
         temp = []
 
         if arch and featureset and flavour:
-            temp.append(self.get((section, arch, featureset, flavour), {}).get(key))
+            temp.append(self.get((section, arch, featureset, flavour), {})
+                        .get(key))
             temp.append(self.get((section, arch, None, flavour), {}).get(key))
         if arch and featureset:
             temp.append(self.get((section, arch, featureset), {}).get(key))
@@ -157,7 +158,8 @@ class ConfigCoreHierarchy(object):
                 base['featuresets'] = featuresets
                 del base['flavours']
                 ret['base', arch] = base
-                ret['base', arch, 'none'] = {'flavours': flavours, 'implicit-flavour': True}
+                ret['base', arch, 'none'] = {'flavours': flavours,
+                                             'implicit-flavour': True}
 
         def read_arch_featureset(self, ret, arch, featureset):
             config = ConfigParser(self.schema)
@@ -241,7 +243,7 @@ class ConfigParser(object):
                 value = schema[key](value)
             ret[key] = value
         return ret
- 
+
     def keys(self):
         return self._convert().keys()
 
@@ -253,7 +255,8 @@ if __name__ == '__main__':
     import sys
     sys.path.append('debian/lib/python')
     config = ConfigCoreDump(open('debian/config.defines.dump', 'rb'))
-    for section, items in sorted(config.items(), key=lambda a:tuple(i or '' for i in a[0])):
+    for section, items in sorted(config.items(),
+                                 key=(lambda a: tuple(i or '' for i in a[0]))):
         print(u"[%s]" % (section,))
         for item, value in sorted(items.items()):
             print(u"%s: %s" % (item, value))
