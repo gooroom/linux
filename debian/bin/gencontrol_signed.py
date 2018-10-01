@@ -9,11 +9,9 @@ import re
 import ssl
 import subprocess
 import sys
-import time
 
 from debian_linux.config import ConfigCoreDump
-from debian_linux.debian import Changelog, PackageDescription, VersionLinux, \
-    Package, PackageRelationGroup
+from debian_linux.debian import VersionLinux
 from debian_linux.gencontrol import Gencontrol as Base, merge_packages
 from debian_linux.utils import Templates, read_control
 

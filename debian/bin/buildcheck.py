@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 
 import sys
-import fnmatch
 import glob
-import stat
+import os
+import re
 
 from debian_linux.abi import Symbols
 from debian_linux.config import ConfigCoreDump
-from debian_linux.debian import *
+from debian_linux.debian import Changelog, VersionLinux
 
 
 class CheckAbi(object):

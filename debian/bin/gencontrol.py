@@ -2,15 +2,15 @@
 
 import sys
 import locale
-import errno
-import glob
 import io
 import os
 import os.path
 import subprocess
+import re
 
 from debian_linux import config
-from debian_linux.debian import *
+from debian_linux.debian import PackageDescription, PackageRelation, \
+    PackageRelationEntry, PackageRelationGroup, VersionLinux
 from debian_linux.gencontrol import Gencontrol as Base, merge_packages
 from debian_linux.utils import Templates, read_control
 

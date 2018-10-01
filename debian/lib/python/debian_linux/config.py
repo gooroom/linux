@@ -4,7 +4,6 @@ import os.path
 import pickle
 import re
 import sys
-import textwrap
 
 from configparser import RawConfigParser
 
@@ -252,7 +251,6 @@ class ConfigParser(object):
 
 
 if __name__ == '__main__':
-    import sys
     sys.path.append('debian/lib/python')
     config = ConfigCoreDump(open('debian/config.defines.dump', 'rb'))
     for section, items in sorted(config.items(),

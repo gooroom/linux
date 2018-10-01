@@ -1,7 +1,9 @@
 import codecs
+import re
 from collections import OrderedDict
 
-from .debian import *
+from .debian import Changelog, PackageArchitecture, PackageDescription, \
+    PackageRelation, Version
 
 
 class PackagesList(OrderedDict):

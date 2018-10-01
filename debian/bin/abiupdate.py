@@ -10,8 +10,8 @@ from urllib.request import urlopen
 from urllib.error import HTTPError
 
 from debian_linux.abi import Symbols
-from debian_linux.config import *
-from debian_linux.debian import *
+from debian_linux.config import ConfigCoreDump
+from debian_linux.debian import Changelog, VersionLinux
 
 default_url_base = "http://deb.debian.org/debian/"
 default_url_base_incoming = "http://incoming.debian.org/debian-buildd/"
