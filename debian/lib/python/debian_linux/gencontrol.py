@@ -65,10 +65,6 @@ class Makefile(object):
 
 
 class MakeFlags(dict):
-    def __repr__(self):
-        repr = super(flags, self).__repr__()
-        return "%s(%s)" % (self.__class__.__name__, repr)
-
     def __str__(self):
         return ' '.join("%s='%s'" % i for i in sorted(self.items()))
 
@@ -371,11 +367,6 @@ class Gencontrol(object):
     def write(self, packages, makefile):
         self.write_control(packages.values())
         self.write_makefile(makefile)
-
-    def write_config(self):
-        f = file("debian/config.dump", 'w')
-        self.config.write(f)
-        f.close()
 
     def write_control(self, list, name='debian/control'):
         self.write_rfc822(codecs.open(name, 'w', 'utf-8'), list)
