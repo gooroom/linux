@@ -2,7 +2,6 @@
 
 import sys
 
-sys.path.append(sys.path[0] + "/../lib/python")
 from debian_linux.config import ConfigCoreDump
 
 section = tuple(s or None for s in sys.argv[1:-1])

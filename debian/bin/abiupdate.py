@@ -9,7 +9,6 @@ import tempfile
 from urllib.request import urlopen
 from urllib.error import HTTPError
 
-sys.path.append(sys.path[0] + "/../lib/python")
 from debian_linux.abi import Symbols
 from debian_linux.config import *
 from debian_linux.debian import *

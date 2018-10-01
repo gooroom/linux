@@ -9,7 +9,6 @@ import os
 import os.path
 import subprocess
 
-sys.path.append("debian/lib/python")
 from debian_linux import config
 from debian_linux.debian import *
 from debian_linux.gencontrol import Gencontrol as Base, merge_packages

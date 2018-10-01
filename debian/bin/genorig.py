@@ -11,7 +11,6 @@ import subprocess
 import time
 import warnings
 
-sys.path.append("debian/lib/python")
 from debian_linux.debian import Changelog, VersionLinux
 
 

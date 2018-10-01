@@ -11,7 +11,6 @@ import subprocess
 import sys
 import time
 
-sys.path.append("debian/lib/python")
 from debian_linux.config import ConfigCoreDump
 from debian_linux.debian import Changelog, PackageDescription, VersionLinux, \
     Package, PackageRelationGroup

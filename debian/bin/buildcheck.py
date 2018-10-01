@@ -5,7 +5,6 @@ import fnmatch
 import glob
 import stat
 
-sys.path.append('debian/lib/python')
 from debian_linux.abi import Symbols
 from debian_linux.config import ConfigCoreDump
 from debian_linux.debian import *
