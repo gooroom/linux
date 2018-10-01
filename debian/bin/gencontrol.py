@@ -326,7 +326,6 @@ class Gencontrol(Base):
                       (arch, makeflags)])
 
     def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
-        config_base = self.config.merge('base', arch, featureset)
         vars['localversion_headers'] = vars['localversion']
         makeflags['LOCALVERSION_HEADERS'] = vars['localversion_headers']
 

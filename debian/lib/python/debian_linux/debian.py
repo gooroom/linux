@@ -195,29 +195,29 @@ class _VersionTest(unittest.TestCase):
 
     def test_invalid_epoch(self):
         with self.assertRaises(RuntimeError):
-            v = Version('a:1')
+            Version('a:1')
         with self.assertRaises(RuntimeError):
-            v = Version('-1:1')
+            Version('-1:1')
         with self.assertRaises(RuntimeError):
-            v = Version('1a:1')
+            Version('1a:1')
 
     def test_invalid_upstream(self):
         with self.assertRaises(RuntimeError):
-            v = Version('1_2')
+            Version('1_2')
         with self.assertRaises(RuntimeError):
-            v = Version('1/2')
+            Version('1/2')
         with self.assertRaises(RuntimeError):
-            v = Version('a1')
+            Version('a1')
         with self.assertRaises(RuntimeError):
-            v = Version('1 2')
+            Version('1 2')
 
     def test_invalid_revision(self):
         with self.assertRaises(RuntimeError):
-            v = Version('1-2_3')
+            Version('1-2_3')
         with self.assertRaises(RuntimeError):
-            v = Version('1-2/3')
+            Version('1-2/3')
         with self.assertRaises(RuntimeError):
-            v = Version('1-2:3')
+            Version('1-2:3')
 
 
 class VersionLinux(Version):

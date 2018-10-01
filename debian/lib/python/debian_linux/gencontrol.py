@@ -103,7 +103,6 @@ class Gencontrol(object):
         packages['source'] = self.process_package(source, self.vars)
 
     def do_main(self, packages, makefile):
-        config_entry = self.config['base', ]
         vars = self.vars.copy()
 
         makeflags = MakeFlags()
@@ -267,8 +266,6 @@ class Gencontrol(object):
 
     def do_flavour(self, packages, makefile, arch, featureset, flavour, vars,
                    makeflags, extra):
-        config_base = self.config.merge('base', arch, featureset, flavour)
-
         vars['localversion'] += '-' + flavour
 
         self.do_flavour_setup(vars, makeflags, arch, featureset, flavour,

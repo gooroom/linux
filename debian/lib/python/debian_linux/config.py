@@ -164,8 +164,6 @@ class ConfigCoreHierarchy(object):
             config = ConfigParser(self.schema)
             config.read(self.get_files(arch, featureset))
 
-            flavours = config['base', ].get('flavours', [])
-
             for section in iter(config):
                 real = (section[-1], arch, featureset) + section[:-1]
                 s = ret.get(real, {})
@@ -208,7 +206,7 @@ class ConfigParser(object):
     def __init__(self, schemas):
         self.schemas = schemas
 
-        self._config = config = RawConfigParser()
+        self._config = RawConfigParser()
 
     def __getitem__(self, key):
         return self._convert()[key]

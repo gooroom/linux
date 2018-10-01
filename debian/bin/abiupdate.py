@@ -169,8 +169,6 @@ class Main(object):
             self.update_flavour(config, arch, featureset, flavour)
 
     def update_flavour(self, config, arch, featureset, flavour):
-        config_base = config.merge('base', arch, featureset, flavour)
-
         self.log("Updating ABI for arch %s, featureset %s, flavour %s: " %
                  (arch, featureset, flavour))
         try:
