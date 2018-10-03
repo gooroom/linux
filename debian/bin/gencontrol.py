@@ -613,13 +613,6 @@ class Gencontrol(Base):
             os.chmod(debug_lintian_over, 0o755)
 
     def process_changelog(self):
-        act_upstream = self.changelog[0].version.upstream
-        versions = []
-        for i in self.changelog:
-            if i.version.upstream != act_upstream:
-                break
-            versions.append(i.version)
-        self.versions = versions
         version = self.version = self.changelog[0].version
         if self.version.linux_modifier is not None:
             self.abiname_part = ''
