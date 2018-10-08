@@ -16,7 +16,7 @@ else ifeq ($(KERNEL_ARCH),x86)
   endif
 endif
 
-MAKE_PERF := $(MAKE) O=$(CURDIR) prefix=/usr V=1 ARCH=$(KERNEL_ARCH) EXTRA_WARNINGS=-Wno-error EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' LDFLAGS='$(LDFLAGS)'
+MAKE_PERF := $(MAKE) O=$(CURDIR) prefix=/usr V=1 VF=1 ARCH=$(KERNEL_ARCH) EXTRA_WARNINGS=-Wno-error EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' LDFLAGS='$(LDFLAGS)'
 
 # Disable Gtk UI until it's more usable
 MAKE_PERF += NO_GTK2=1
