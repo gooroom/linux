@@ -575,6 +575,10 @@ class Gencontrol(Base):
             makeflags['KCONFIG_OPTIONS'] += ' -o DEBUG_INFO=y'
         if build_signed:
             makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
+        # Add "salt" to fix #872263
+        makeflags['KCONFIG_OPTIONS'] += (' -o "BUILD_SALT=\\"%s%s\\""' %
+                                         (vars['abiname'],
+                                          vars['localversion']))
 
         cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-flavour "
                             "%s" %
