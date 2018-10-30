@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.18/older/patches-4.18.7-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19-rt1.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
-@@ -226,6 +226,9 @@ extern int _cond_resched(void);
+@@ -259,6 +259,9 @@ extern int _cond_resched(void);
   */
  # define might_sleep() \
  	do { __might_sleep(__FILE__, __LINE__, 0); might_resched(); } while (0)
@@ -33,7 +33,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  # define sched_annotate_sleep()	(current->task_state_change = 0)
  #else
    static inline void ___might_sleep(const char *file, int line,
-@@ -233,6 +236,7 @@ extern int _cond_resched(void);
+@@ -266,6 +269,7 @@ extern int _cond_resched(void);
    static inline void __might_sleep(const char *file, int line,
  				   int preempt_offset) { }
  # define might_sleep() do { might_resched(); } while (0)
@@ -127,7 +127,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * set_special_state() should be used for those states when the blocking task
   * can not use the regular condition based wait-loop. In that case we must
-@@ -908,6 +915,7 @@ struct task_struct {
+@@ -914,6 +921,7 @@ struct task_struct {
  	raw_spinlock_t			pi_lock;
  
  	struct wake_q_node		wake_q;
@@ -1130,7 +1130,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  # include "rtmutex-debug.h"
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -407,9 +407,15 @@ static bool set_nr_if_polling(struct tas
+@@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct tas
  #endif
  #endif
  
@@ -1148,7 +1148,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * Atomically grab the task, if ->wake_q is !nil already it means
-@@ -431,24 +437,32 @@ void wake_q_add(struct wake_q_head *head
+@@ -425,24 +431,32 @@ void wake_q_add(struct wake_q_head *head
  	head->lastp = &node->next;
  }
  
@@ -1175,8 +1175,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		else
 +			task->wake_q.next = NULL;
  		/*
- 		 * wake_up_process() implies a wmb() to pair with the queueing
- 		 * in wake_q_add() so as not to miss wakeups.
+ 		 * wake_up_process() executes a full barrier, which pairs with
+ 		 * the queueing in wake_q_add() so as not to miss wakeups.
  		 */
 -		wake_up_process(task);
 +		if (sleeper)
