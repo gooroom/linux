@@ -21,10 +21,10 @@ other W+X cases.  So add a condition to the WARN_ON.
  
  #include <asm/pgtable.h>
  
-@@ -222,7 +223,7 @@ static void note_page(struct seq_file *m
- 		int width = sizeof(unsigned long) * 2;
+@@ -220,7 +221,7 @@ static void note_page(struct seq_file *m
+ 		pgprotval_t pr = pgprot_val(st->current_prot);
  
- 		if (st->check_wx && (eff & _PAGE_RW) && !(eff & _PAGE_NX)) {
+ 		if (st->check_wx && (pr & _PAGE_RW) && !(pr & _PAGE_NX)) {
 -			WARN_ONCE(1,
 +			WARN_ONCE(!(IS_ENABLED(CONFIG_X86_64) && xen_pv_domain()),
  				  "x86/mm: Found insecure W+X mapping at address %p/%pS\n",
