@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 14:43:41 +0200
 Subject: [PATCH] srcu: use cpu_online() instead custom check
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.1-rt3.tar.xz
 
 The current check via srcu_online is slightly racy because after looking
 at srcu_online there could be an interrupt that interrupted us long
@@ -11,9 +11,6 @@ change their state) and then check based on cpu_online() if we queue it
 on a specific CPU or not. queue_work_on() itself can handle if something
 is enqueued on an offline CPU but a timer which is enqueued on an offline
 CPU won't fire until the CPU is back online.
-
-I am not sure if the removal in rcu_init() is okay or not. I assume that
-SRCU won't enqueue a work item before SRCU is up and ready.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---

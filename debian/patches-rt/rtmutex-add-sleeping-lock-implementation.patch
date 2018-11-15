@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.1-rt3.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -15,9 +15,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/fork.c                     |    1 
  kernel/futex.c                    |   11 
  kernel/locking/rtmutex.c          |  436 ++++++++++++++++++++++++++++++++++----
- kernel/locking/rtmutex_common.h   |   15 +
+ kernel/locking/rtmutex_common.h   |   14 -
  kernel/sched/core.c               |   28 +-
- 11 files changed, 696 insertions(+), 59 deletions(-)
+ 11 files changed, 695 insertions(+), 59 deletions(-)
  create mode 100644 include/linux/spinlock_rt.h
  create mode 100644 include/linux/spinlock_types_rt.h
 
@@ -1077,15 +1077,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return ret;
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -15,6 +15,7 @@
- 
- #include <linux/rtmutex.h>
- #include <linux/sched/wake_q.h>
-+#include <linux/sched/debug.h>
- 
- /*
-  * This is the control structure for tasks blocked on a rt_mutex,
-@@ -29,6 +30,7 @@ struct rt_mutex_waiter {
+@@ -30,6 +30,7 @@ struct rt_mutex_waiter {
  	struct rb_node          pi_tree_entry;
  	struct task_struct	*task;
  	struct rt_mutex		*lock;
@@ -1093,7 +1085,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  	unsigned long		ip;
  	struct pid		*deadlock_task_pid;
-@@ -138,7 +140,7 @@ extern void rt_mutex_init_proxy_locked(s
+@@ -139,7 +140,7 @@ extern void rt_mutex_init_proxy_locked(s
  				       struct task_struct *proxy_owner);
  extern void rt_mutex_proxy_unlock(struct rt_mutex *lock,
  				  struct task_struct *proxy_owner);
@@ -1102,7 +1094,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  extern int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
-@@ -156,9 +158,12 @@ extern int __rt_mutex_futex_trylock(stru
+@@ -157,9 +158,12 @@ extern int __rt_mutex_futex_trylock(stru
  
  extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
  extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
@@ -1117,7 +1109,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* RW semaphore special interface */
  
  extern int __rt_mutex_lock_state(struct rt_mutex *lock, int state);
-@@ -168,6 +173,10 @@ int __sched rt_mutex_slowlock_locked(str
+@@ -169,6 +173,10 @@ int __sched rt_mutex_slowlock_locked(str
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,
  				     struct rt_mutex_waiter *waiter);

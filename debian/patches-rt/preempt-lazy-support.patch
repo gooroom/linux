@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.1-rt3.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -58,6 +58,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  include/linux/thread_info.h  |   12 +++++-
  include/linux/trace_events.h |    1 
  kernel/Kconfig.preempt       |    6 +++
+ kernel/cpu.c                 |    2 +
  kernel/sched/core.c          |   83 +++++++++++++++++++++++++++++++++++++++++--
  kernel/sched/fair.c          |   16 ++++----
  kernel/sched/features.h      |    3 +
@@ -65,7 +66,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/trace/trace.c         |   36 ++++++++++--------
  kernel/trace/trace.h         |    2 +
  kernel/trace/trace_output.c  |   14 ++++++-
- 12 files changed, 226 insertions(+), 29 deletions(-)
+ 13 files changed, 228 insertions(+), 29 deletions(-)
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
@@ -232,6 +233,22 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  choice
  	prompt "Preemption Model"
  	default PREEMPT_NONE
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -303,11 +303,13 @@ void pin_current_cpu(void)
+ 		return;
+ 	}
+ 	cpu = smp_processor_id();
++	preempt_lazy_enable();
+ 	preempt_enable();
+ 
+ 	__read_rt_lock(cpuhp_pin);
+ 
+ 	preempt_disable();
++	preempt_lazy_disable();
+ 	if (cpu != smp_processor_id()) {
+ 		__read_rt_unlock(cpuhp_pin);
+ 		goto again;
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -492,6 +492,48 @@ void resched_curr(struct rq *rq)
