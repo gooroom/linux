@@ -14,6 +14,8 @@ and add the necessary instances of this at the end of struct
 net_namespace.  Hide those from genksyms.  Change inet_frag APIs to
 take an additional parameter pointing to this structure where needed.
 
+[carnil: Update for context changes in 4.9.139 due to upstream commit
+eb18330f4d7a ("inet: frags: better deal with smp races")]
 ---
 --- a/include/net/inet_frag.h
 +++ b/include/net/inet_frag.h
@@ -165,32 +167,33 @@ take an additional parameter pointing to this structure where needed.
  	f->constructor(q, arg);
  	add_frag_mem_limit(nf, f->qsize);
  
-@@ -180,20 +184,20 @@ static struct inet_frag_queue *inet_frag
+@@ -180,21 +184,21 @@ static struct inet_frag_queue *inet_frag
  }
  
  static struct inet_frag_queue *inet_frag_create(struct netns_frags *nf,
 +						struct netns_frags_ext *nf_ext,
- 						void *arg)
+ 						void *arg,
+ 						struct inet_frag_queue **prev)
  {
 -	struct inet_frags *f = nf->f;
  	struct inet_frag_queue *q;
- 	int err;
  
 -	q = inet_frag_alloc(nf, f, arg);
 +	q = inet_frag_alloc(nf, nf_ext, arg);
- 	if (!q)
+ 	if (!q) {
+ 		*prev = ERR_PTR(-ENOMEM);
  		return NULL;
- 
+ 	}
  	mod_timer(&q->timer, jiffies + nf->timeout);
  
--	err = rhashtable_insert_fast(&nf->rhashtable, &q->node,
--				     f->rhash_params);
-+	err = rhashtable_insert_fast(&nf_ext->rhashtable, &q->node,
-+				     nf_ext->f->rhash_params);
- 	if (err < 0) {
+-	*prev = rhashtable_lookup_get_insert_key(&nf->rhashtable, &q->key,
+-						 &q->node, f->rhash_params);
++	*prev = rhashtable_lookup_get_insert_key(&nf_ext->rhashtable, &q->key,
++						 &q->node, nf_ext->f->rhash_params);
+ 	if (*prev) {
  		q->flags |= INET_FRAG_COMPLETE;
  		inet_frag_kill(q);
-@@ -205,12 +209,15 @@ static struct inet_frag_queue *inet_frag
+@@ -206,14 +210,17 @@ static struct inet_frag_queue *inet_frag
  EXPORT_SYMBOL(inet_frag_create);
  
  /* TODO : call from rcu_read_lock() and no longer use refcount_inc_not_zero() */
@@ -199,23 +202,18 @@ take an additional parameter pointing to this structure where needed.
 +				       struct netns_frags_ext *nf_ext,
 +				       void *key)
  {
- 	struct inet_frag_queue *fq;
+ 	struct inet_frag_queue *fq = NULL, *prev;
  
  	rcu_read_lock();
--	fq = rhashtable_lookup(&nf->rhashtable, key, nf->f->rhash_params);
-+	fq = rhashtable_lookup(&nf_ext->rhashtable, key,
-+			       nf_ext->f->rhash_params);
- 	if (fq) {
+-	prev = rhashtable_lookup(&nf->rhashtable, key, nf->f->rhash_params);
++	prev = rhashtable_lookup(&nf_ext->rhashtable, key,
++			         nf_ext->f->rhash_params);
+ 	if (!prev)
+-		fq = inet_frag_create(nf, key, &prev);
++		fq = inet_frag_create(nf, nf_ext, key, &prev);
+ 	if (prev && !IS_ERR(prev)) {
+ 		fq = prev;
  		if (!atomic_inc_not_zero(&fq->refcnt))
- 			fq = NULL;
-@@ -218,6 +225,6 @@ struct inet_frag_queue *inet_frag_find(s
- 		return fq;
- 	}
- 	rcu_read_unlock();
--	return inet_frag_create(nf, key);
-+	return inet_frag_create(nf, nf_ext, key);
- }
- EXPORT_SYMBOL(inet_frag_find);
 --- a/net/ieee802154/6lowpan/reassembly.c
 +++ b/net/ieee802154/6lowpan/reassembly.c
 @@ -82,7 +82,8 @@ fq_find(struct net *net, const struct lo
@@ -269,7 +267,7 @@ take an additional parameter pointing to this structure where needed.
  	if (!q)
  		return NULL;
  
-@@ -896,21 +896,21 @@ static int __net_init ipv4_frags_init_ne
+@@ -900,21 +900,21 @@ static int __net_init ipv4_frags_init_ne
  	net->ipv4.frags.timeout = IP_FRAG_TIME;
  
  	net->ipv4.frags.max_dist = 64;
@@ -306,7 +304,7 @@ take an additional parameter pointing to this structure where needed.
  	if (!q)
  		return NULL;
  
-@@ -616,21 +616,22 @@ static int nf_ct_net_init(struct net *ne
+@@ -614,21 +614,22 @@ static int nf_ct_net_init(struct net *ne
  	net->nf_frag.frags.high_thresh = IPV6_FRAG_HIGH_THRESH;
  	net->nf_frag.frags.low_thresh = IPV6_FRAG_LOW_THRESH;
  	net->nf_frag.frags.timeout = IPV6_FRAG_TIMEOUT;
