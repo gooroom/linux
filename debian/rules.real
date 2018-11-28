@@ -105,8 +105,8 @@ ifneq ($(DO_TOOLS_VERSIONED),False)
   endif
 endif
 ifneq ($(DO_TOOLS_UNVERSIONED),False)
-  build-arch-arch:build-usbip build-cpupower build-liblockdep
-  binary-arch-arch: install-usbip install-cpupower install-liblockdep
+  build-arch-arch:build-usbip build-cpupower build-liblockdep build-libbpf
+  binary-arch-arch: install-usbip install-cpupower install-liblockdep install-libbpf
   ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
     build-arch-arch: build-hyperv-daemons
     binary-arch-arch: install-hyperv-daemons
@@ -764,6 +764,34 @@ endif
 	dh_strip
 	dh_compress
 	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+build-libbpf:
+	$(call make-tools,tools/lib/bpf)
+
+install-libbpf: DH_OPTIONS = -plibbpf$(VERSION) -plibbpf-dev
+install-libbpf: DIR = $(CURDIR)/debian/libbpf-tmp
+install-libbpf: build-libbpf
+	dh_testdir
+	dh_testroot
+	dh_prep
+	$(call make-tools,tools/lib/bpf) install DESTDIR=$(DIR)
+	env -u DH_OPTIONS dh_install -plibbpf$(VERSION) --sourcedir=$(DIR) \
+		'usr/lib/*/libbpf.so.*'
+	dh_install --sourcedir=$(DIR)
+	dh_installchangelogs
+ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+	dh_installdocs
+endif
+	dh_strip
+	dh_compress
+	dh_fixperms
+	env -u DH_OPTIONS dh_makeshlibs -plibbpf$(VERSION) \
+		libbpf$(VERSION)
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
