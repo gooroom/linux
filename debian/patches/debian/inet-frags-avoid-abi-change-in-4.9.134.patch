@@ -16,6 +16,8 @@ take an additional parameter pointing to this structure where needed.
 
 [carnil: Update for context changes in 4.9.139 due to upstream commit
 eb18330f4d7a ("inet: frags: better deal with smp races")]
+[carnil: Update for context changes in 4.9.142 due to upstream commit
+a49f03472b50 ("net: ieee802154: 6lowpan: fix frag reassembly")]
 ---
 --- a/include/net/inet_frag.h
 +++ b/include/net/inet_frag.h
@@ -217,8 +219,8 @@ eb18330f4d7a ("inet: frags: better deal with smp races")]
 --- a/net/ieee802154/6lowpan/reassembly.c
 +++ b/net/ieee802154/6lowpan/reassembly.c
 @@ -82,7 +82,8 @@ fq_find(struct net *net, const struct lo
- 	};
- 	struct inet_frag_queue *q;
+ 	key.src = *src;
+ 	key.dst = *dst;
  
 -	q = inet_frag_find(&ieee802154_lowpan->frags, &key);
 +	q = inet_frag_find(&ieee802154_lowpan->frags,

@@ -7,9 +7,11 @@ Forwarded: not-needed
 This reverts commit 561ec64ae67ef25cac8d72bb9c4bfc955edfd415
 ('VFS: don't do protected {sym,hard}links by default').
 
+[carnil: Refresh for context changes in 4.9.142 due to 0c41beebcdf9
+("namei: allow restricted O_CREAT of FIFOs and regular files").]
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -847,8 +847,8 @@ static inline void put_link(struct namei
+@@ -890,8 +890,8 @@ static inline void put_link(struct namei
  		path_put(&last->link);
  }
  
@@ -17,6 +19,6 @@ This reverts commit 561ec64ae67ef25cac8d72bb9c4bfc955edfd415
 -int sysctl_protected_hardlinks __read_mostly = 0;
 +int sysctl_protected_symlinks __read_mostly = 1;
 +int sysctl_protected_hardlinks __read_mostly = 1;
+ int sysctl_protected_fifos __read_mostly;
+ int sysctl_protected_regular __read_mostly;
  
- /**
-  * may_follow_link - Check symlink following for unsafe situations
