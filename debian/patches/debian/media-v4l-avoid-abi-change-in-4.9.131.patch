@@ -13,6 +13,7 @@ However, it doesn't appear that event (un)subscription will be done at
 a very high rate, or that it can be done recursively.  Given that,
 replace the per-file-handle mutex with a global mutex.
 
+[carnil: Refresh for context changes in 4.9.141]
 ---
 --- a/include/media/v4l2-fh.h
 +++ b/include/media/v4l2-fh.h
@@ -35,16 +36,23 @@ replace the per-file-handle mutex with a global mutex.
  	unsigned int		navailable;
 --- a/drivers/media/v4l2-core/v4l2-event.c
 +++ b/drivers/media/v4l2-core/v4l2-event.c
-@@ -197,6 +197,8 @@ int v4l2_event_pending(struct v4l2_fh *f
+@@ -197,12 +197,14 @@ int v4l2_event_pending(struct v4l2_fh *f
  }
  EXPORT_SYMBOL_GPL(v4l2_event_pending);
  
 +static DEFINE_MUTEX(v4l2_event_subscribe_lock);
 +
- int v4l2_event_subscribe(struct v4l2_fh *fh,
- 			 const struct v4l2_event_subscription *sub, unsigned elems,
- 			 const struct v4l2_subscribed_event_ops *ops)
-@@ -224,7 +226,7 @@ int v4l2_event_subscribe(struct v4l2_fh
+ static void __v4l2_event_unsubscribe(struct v4l2_subscribed_event *sev)
+ {
+ 	struct v4l2_fh *fh = sev->fh;
+ 	unsigned int i;
+ 
+-	lockdep_assert_held(&fh->subscribe_lock);
++	lockdep_assert_held(&v4l2_event_subscribe_lock);
+ 	assert_spin_locked(&fh->vdev->fh_lock);
+ 
+ 	/* Remove any pending events for this subscription */
+@@ -240,7 +242,7 @@ int v4l2_event_subscribe(struct v4l2_fh
  	sev->ops = ops;
  	sev->elems = elems;
  
@@ -53,16 +61,16 @@ replace the per-file-handle mutex with a global mutex.
  
  	spin_lock_irqsave(&fh->vdev->fh_lock, flags);
  	found_ev = v4l2_event_subscribed(fh, sub->type, sub->id);
-@@ -249,7 +251,7 @@ int v4l2_event_subscribe(struct v4l2_fh
- 	spin_unlock_irqrestore(&fh->vdev->fh_lock, flags);
+@@ -261,7 +263,7 @@ int v4l2_event_subscribe(struct v4l2_fh
+ 		}
+ 	}
  
- out_unlock:
 -	mutex_unlock(&fh->subscribe_lock);
 +	mutex_unlock(&v4l2_event_subscribe_lock);
  
  	return ret;
  }
-@@ -290,7 +292,7 @@ int v4l2_event_unsubscribe(struct v4l2_f
+@@ -301,7 +303,7 @@ int v4l2_event_unsubscribe(struct v4l2_f
  		return 0;
  	}
  
@@ -71,7 +79,7 @@ replace the per-file-handle mutex with a global mutex.
  
  	spin_lock_irqsave(&fh->vdev->fh_lock, flags);
  
-@@ -309,7 +311,7 @@ int v4l2_event_unsubscribe(struct v4l2_f
+@@ -314,7 +316,7 @@ int v4l2_event_unsubscribe(struct v4l2_f
  	if (sev && sev->ops && sev->ops->del)
  		sev->ops->del(sev);
  
