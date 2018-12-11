@@ -1,0 +1,25 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Tue, 11 Dec 2018 23:13:36 +0000
+Subject: sched: Avoid ABI change in 4.9.136
+Forwarded: not-needed
+
+Commit bc1fccc7cd0a "sched/fair: Fix throttle_list starvation with low
+CFS quota" added a new member to struct cfs_bandwidth.  This structure
+is private to the scheduler (the definition is not under include/) but
+it ends up affecting some symbols anyway.  Hide the change from
+genksyms.
+
+---
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -256,8 +256,10 @@ struct cfs_bandwidth {
+ 	int nr_periods, nr_throttled;
+ 	u64 throttled_time;
+ 
++#ifndef __GENKSYMS__
+ 	bool distribute_running;
+ #endif
++#endif
+ };
+ 
+ /* task group related information */
