@@ -1,0 +1,24 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Tue, 11 Dec 2018 18:16:27 +0000
+Subject: Revert "elevator: fix truncation of icq_cache_name" to avoid ABI change
+Forwarded: not-needed
+
+This reverts commit 03a1d0be64ba74b50252e32944b42967d98d155a, which
+was commit 9bd2bbc01d17ddd567cc0f81f77fe1163e497462 upstream.  It
+causes an ABI changes throughout the block, VFS, and other storage
+APIs.  The problem it addresses is theoretical: only 15-character
+scheduler names would result in truncation, and actual scheduler names
+are shorter than that.
+
+---
+--- b/include/linux/elevator.h
++++ a/include/linux/elevator.h
+@@ -102,7 +102,7 @@
+ 	struct module *elevator_owner;
+ 
+ 	/* managed by elevator core */
++	char icq_cache_name[ELV_NAME_MAX + 5];	/* elvname + "_io_cq" */
+-	char icq_cache_name[ELV_NAME_MAX + 6];	/* elvname + "_io_cq" */
+ 	struct list_head list;
+ };
+ 
