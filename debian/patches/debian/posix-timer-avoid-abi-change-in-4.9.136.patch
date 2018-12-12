@@ -9,7 +9,8 @@ the types of k_itimer::it_overrun{,_last} from int to s64.
 The k_itimer structure is always allocated by built-in code and these
 members are only used by built-in code.  So move them to the end and
 put padding in their original place so all other member offsets stay
-the same.  Hide the changes from genksyms.
+the same.  Hide the changes from genksyms.  Also hide them when
+building modules, to make sure they really don't use them.
 
 ---
 --- a/include/linux/posix-timers.h
@@ -34,7 +35,7 @@ the same.  Hide the changes from genksyms.
  		} alarm;
  		struct rcu_head rcu;
  	} it;
-+#ifndef __GENKSYMS__
++#if !defined(__GENKSYMS__) && !defined(MODULE)
 +	s64 it_overrun;			/* overrun on pending signal  */
 +	s64 it_overrun_last;		/* overrun on last delivered signal */
 +#endif
