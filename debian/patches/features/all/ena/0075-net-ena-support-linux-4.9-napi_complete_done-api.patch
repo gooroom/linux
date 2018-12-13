@@ -1,0 +1,49 @@
+From: Noah Meyerhans <noahm@debian.org>
+Date: Fri, 14 Dec 2018 13:38:33 -0800
+Subject: net: ena: Support Linux 4.9 napi_complete_done API
+ Upstream introduced a change with b1669c9f5ac9d50651889e22e4a82f1b34af32d3
+ that makes use of a change in the napi_complete_done() API that was
+ introduced in Linux 4.10. This change reverts a portion of that change in
+ favor of a Linux 4.9 compatible version of the same functionality.
+ .
+ A similar change was implemented in the out-of-tree drivers that supports
+ multiple kernel versions. See the C preprocessor conditionals at
+ https://github.com/amzn/amzn-drivers/blob/46621be3e9ba1749ba64b8efa39b53e2f2773c3a/kernel/linux/ena/ena_netdev.c#L1334
+Forwarded: not-needed
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: linux/drivers/net/ethernet/amazon/ena/ena_netdev.c
+===================================================================
+--- linux.orig/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ linux/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -1260,7 +1260,8 @@ static int ena_io_poll(struct napi_struc
+ 		/* Update numa and unmask the interrupt only when schedule
+ 		 * from the interrupt context (vs from sk_busy_loop)
+ 		 */
+-		if (napi_complete_done(napi, rx_work_done)) {
++		napi_complete_done(napi, rx_work_done);
++		if (atomic_cmpxchg(&ena_napi->unmask_interrupt, 1, 0)) {
+ 			/* Tx and Rx share the same interrupt vector */
+ 			if (ena_com_get_adaptive_moderation_enabled(rx_ring->ena_dev))
+ 				ena_adjust_intr_moderation(rx_ring, tx_ring);
+@@ -1307,6 +1308,8 @@ static irqreturn_t ena_intr_msix_io(int
+ 	ena_napi->tx_ring->first_interrupt = true;
+ 	ena_napi->rx_ring->first_interrupt = true;
+ 
++	smp_mb__before_atomic();
++	atomic_set(&ena_napi->unmask_interrupt, 1);
+ 	napi_schedule_irqoff(&ena_napi->napi);
+ 
+ 	return IRQ_HANDLED;
+Index: linux/drivers/net/ethernet/amazon/ena/ena_netdev.h
+===================================================================
+--- linux.orig/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ linux/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -151,6 +151,7 @@ struct ena_napi {
+ 	struct napi_struct napi ____cacheline_aligned;
+ 	struct ena_ring *tx_ring;
+ 	struct ena_ring *rx_ring;
++	atomic_t unmask_interrupt;
+ 	u32 qid;
+ };
+ 

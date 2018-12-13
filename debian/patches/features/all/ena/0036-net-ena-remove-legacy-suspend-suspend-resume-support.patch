@@ -1,0 +1,144 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Tue, 17 Oct 2017 07:33:57 +0000
+Subject: [36/43] net: ena: remove legacy suspend suspend/resume support
+Origin: https://git.kernel.org/linus/dbeaf1e3c24f0e87c8047fc8dcbd8163ab82c8e7
+
+Remove ena_device_io_suspend/resume() methods
+Those methods were intend to be used by the device to trigger
+suspend/resume but eventually it was dropped.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_ethtool.c |  2 -
+ drivers/net/ethernet/amazon/ena/ena_netdev.c  | 50 -------------------
+ drivers/net/ethernet/amazon/ena/ena_netdev.h  |  4 --
+ 3 files changed, 56 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_ethtool.c b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
+index 967020fb26ee..1cd8eb8e5a15 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_ethtool.c
++++ b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
+@@ -60,8 +60,6 @@ struct ena_stats {
+ 
+ static const struct ena_stats ena_stats_global_strings[] = {
+ 	ENA_STAT_GLOBAL_ENTRY(tx_timeout),
+-	ENA_STAT_GLOBAL_ENTRY(io_suspend),
+-	ENA_STAT_GLOBAL_ENTRY(io_resume),
+ 	ENA_STAT_GLOBAL_ENTRY(wd_expired),
+ 	ENA_STAT_GLOBAL_ENTRY(interface_up),
+ 	ENA_STAT_GLOBAL_ENTRY(interface_down),
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 6dad8bb455b6..c44f568b0783 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2375,38 +2375,6 @@ static const struct net_device_ops ena_netdev_ops = {
+ #endif /* CONFIG_NET_POLL_CONTROLLER */
+ };
+ 
+-static void ena_device_io_suspend(struct work_struct *work)
+-{
+-	struct ena_adapter *adapter =
+-		container_of(work, struct ena_adapter, suspend_io_task);
+-	struct net_device *netdev = adapter->netdev;
+-
+-	/* ena_napi_disable_all disables only the IO handling.
+-	 * We are still subject to AENQ keep alive watchdog.
+-	 */
+-	u64_stats_update_begin(&adapter->syncp);
+-	adapter->dev_stats.io_suspend++;
+-	u64_stats_update_begin(&adapter->syncp);
+-	ena_napi_disable_all(adapter);
+-	netif_tx_lock(netdev);
+-	netif_device_detach(netdev);
+-	netif_tx_unlock(netdev);
+-}
+-
+-static void ena_device_io_resume(struct work_struct *work)
+-{
+-	struct ena_adapter *adapter =
+-		container_of(work, struct ena_adapter, resume_io_task);
+-	struct net_device *netdev = adapter->netdev;
+-
+-	u64_stats_update_begin(&adapter->syncp);
+-	adapter->dev_stats.io_resume++;
+-	u64_stats_update_end(&adapter->syncp);
+-
+-	netif_device_attach(netdev);
+-	ena_napi_enable_all(adapter);
+-}
+-
+ static int ena_device_validate_params(struct ena_adapter *adapter,
+ 				      struct ena_com_dev_get_features_ctx *get_feat_ctx)
+ {
+@@ -3288,8 +3256,6 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 		goto err_rss;
+ 	}
+ 
+-	INIT_WORK(&adapter->suspend_io_task, ena_device_io_suspend);
+-	INIT_WORK(&adapter->resume_io_task, ena_device_io_resume);
+ 	INIT_WORK(&adapter->reset_task, ena_fw_reset_device);
+ 
+ 	adapter->last_keep_alive_jiffies = jiffies;
+@@ -3323,8 +3289,6 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ err_worker_destroy:
+ 	ena_com_destroy_interrupt_moderation(ena_dev);
+ 	del_timer(&adapter->timer_service);
+-	cancel_work_sync(&adapter->suspend_io_task);
+-	cancel_work_sync(&adapter->resume_io_task);
+ err_netdev_destroy:
+ 	free_netdev(netdev);
+ err_device_destroy:
+@@ -3394,10 +3358,6 @@ static void ena_remove(struct pci_dev *pdev)
+ 
+ 	cancel_work_sync(&adapter->reset_task);
+ 
+-	cancel_work_sync(&adapter->suspend_io_task);
+-
+-	cancel_work_sync(&adapter->resume_io_task);
+-
+ 	/* Reset the device only if the device is running. */
+ 	if (test_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags))
+ 		ena_com_dev_reset(ena_dev, adapter->reset_reason);
+@@ -3516,16 +3476,6 @@ static void ena_notification(void *adapter_data,
+ 	     ENA_ADMIN_NOTIFICATION);
+ 
+ 	switch (aenq_e->aenq_common_desc.syndrom) {
+-	case ENA_ADMIN_SUSPEND:
+-		/* Suspend just the IO queues.
+-		 * We deliberately don't suspend admin so the timer and
+-		 * the keep_alive events should remain.
+-		 */
+-		queue_work(ena_wq, &adapter->suspend_io_task);
+-		break;
+-	case ENA_ADMIN_RESUME:
+-		queue_work(ena_wq, &adapter->resume_io_task);
+-		break;
+ 	case ENA_ADMIN_UPDATE_HINTS:
+ 		hints = (struct ena_admin_ena_hw_hints *)
+ 			(&aenq_e->inline_data_w4);
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.h b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+index 3404376c28ca..60ec3b0ff1c8 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -257,8 +257,6 @@ struct ena_ring {
+ 
+ struct ena_stats_dev {
+ 	u64 tx_timeout;
+-	u64 io_suspend;
+-	u64 io_resume;
+ 	u64 wd_expired;
+ 	u64 interface_up;
+ 	u64 interface_down;
+@@ -326,8 +324,6 @@ struct ena_adapter {
+ 
+ 	/* timer service */
+ 	struct work_struct reset_task;
+-	struct work_struct suspend_io_task;
+-	struct work_struct resume_io_task;
+ 	struct timer_list timer_service;
+ 
+ 	bool wd_state;
+-- 
+2.19.2
+

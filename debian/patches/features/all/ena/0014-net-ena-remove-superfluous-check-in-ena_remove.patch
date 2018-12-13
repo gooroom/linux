@@ -1,0 +1,35 @@
+From: Lino Sanfilippo <LinoSanfilippo@gmx.de>
+Date: Sat, 18 Feb 2017 12:19:41 +0100
+Subject: [14/43] net: ena: remove superfluous check in ena_remove()
+Origin: https://git.kernel.org/linus/90a6c997bd8bb836809eda5efb6406d8c58c0924
+
+The check in ena_remove() for the pci driver data not being NULL is not
+needed, since it is always set in the probe() function. Remove the
+superfluous check.
+
+Signed-off-by: Lino Sanfilippo <LinoSanfilippo@gmx.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index c4a51509d20c..942e7adf540a 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -3184,12 +3184,6 @@ static void ena_remove(struct pci_dev *pdev)
+ 	struct ena_com_dev *ena_dev;
+ 	struct net_device *netdev;
+ 
+-	if (!adapter)
+-		/* This device didn't load properly and it's resources
+-		 * already released, nothing to do
+-		 */
+-		return;
+-
+ 	ena_dev = adapter->ena_dev;
+ 	netdev = adapter->netdev;
+ 
+-- 
+2.19.2
+

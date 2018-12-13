@@ -1,0 +1,105 @@
+From: Sinan Kaya <okaya@codeaurora.org>
+Date: Sun, 25 Mar 2018 10:39:21 -0400
+Subject: [03/13] net: ena: Eliminate duplicate barriers on weakly-ordered
+ archs
+Origin: https://git.kernel.org/linus/6d2e1a8d5e25e5f4563f5ea24bcb5da1ae261b26
+
+Code includes barrier() followed by writel(). writel() already has a
+barrier on some architectures like arm64.
+
+This ends up CPU observing two barriers back to back before executing the
+register write.
+
+Create a new wrapper function with relaxed write operator. Use the new
+wrapper when a write is following a barrier().
+
+Since code already has an explicit barrier call, changing writel() to
+writel_relaxed() and adding mmiowb() for ordering protection.
+
+Signed-off-by: Sinan Kaya <okaya@codeaurora.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.c     | 8 ++++++--
+ drivers/net/ethernet/amazon/ena/ena_eth_com.h | 8 ++++++--
+ drivers/net/ethernet/amazon/ena/ena_netdev.c  | 5 +++--
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
+index 2644ed676567..17f12c18d225 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_com.c
+@@ -632,8 +632,10 @@ static u32 ena_com_reg_bar_read32(struct ena_com_dev *ena_dev, u16 offset)
+ 	 */
+ 	wmb();
+ 
+-	writel(mmio_read_reg, ena_dev->reg_bar + ENA_REGS_MMIO_REG_READ_OFF);
++	writel_relaxed(mmio_read_reg,
++		       ena_dev->reg_bar + ENA_REGS_MMIO_REG_READ_OFF);
+ 
++	mmiowb();
+ 	for (i = 0; i < timeout; i++) {
+ 		if (read_resp->req_id == mmio_read->seq_num)
+ 			break;
+@@ -1827,7 +1829,9 @@ void ena_com_aenq_intr_handler(struct ena_com_dev *dev, void *data)
+ 
+ 	/* write the aenq doorbell after all AENQ descriptors were read */
+ 	mb();
+-	writel((u32)aenq->head, dev->reg_bar + ENA_REGS_AENQ_HEAD_DB_OFF);
++	writel_relaxed((u32)aenq->head,
++		       dev->reg_bar + ENA_REGS_AENQ_HEAD_DB_OFF);
++	mmiowb();
+ }
+ 
+ int ena_com_dev_reset(struct ena_com_dev *ena_dev,
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.h b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+index 2f7657227cfe..6fdc753d9483 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.h
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+@@ -107,7 +107,8 @@ static inline int ena_com_sq_empty_space(struct ena_com_io_sq *io_sq)
+ 	return io_sq->q_depth - 1 - cnt;
+ }
+ 
+-static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq)
++static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq,
++					    bool relaxed)
+ {
+ 	u16 tail;
+ 
+@@ -116,7 +117,10 @@ static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq)
+ 	pr_debug("write submission queue doorbell for queue: %d tail: %d\n",
+ 		 io_sq->qid, tail);
+ 
+-	writel(tail, io_sq->db_addr);
++	if (relaxed)
++		writel_relaxed(tail, io_sq->db_addr);
++	else
++		writel(tail, io_sq->db_addr);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index d684198c387c..20cb2f111189 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -563,7 +563,8 @@ static int ena_refill_rx_bufs(struct ena_ring *rx_ring, u32 num)
+ 		 * issue a doorbell
+ 		 */
+ 		wmb();
+-		ena_com_write_sq_doorbell(rx_ring->ena_com_io_sq);
++		ena_com_write_sq_doorbell(rx_ring->ena_com_io_sq, true);
++		mmiowb();
+ 	}
+ 
+ 	rx_ring->next_to_use = next_to_use;
+@@ -2163,7 +2164,7 @@ static netdev_tx_t ena_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 
+ 	if (netif_xmit_stopped(txq) || !skb->xmit_more) {
+ 		/* trigger the dma engine */
+-		ena_com_write_sq_doorbell(tx_ring->ena_com_io_sq);
++		ena_com_write_sq_doorbell(tx_ring->ena_com_io_sq, false);
+ 		u64_stats_update_begin(&tx_ring->syncp);
+ 		tx_ring->tx_stats.doorbells++;
+ 		u64_stats_update_end(&tx_ring->syncp);
+-- 
+2.19.2
+

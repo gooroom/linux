@@ -1,0 +1,89 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Sun, 19 Nov 2017 18:03:40 +0000
+Subject: [41/43] net: ena: fix race condition between device reset and link up
+ setup
+Origin: https://git.kernel.org/linus/d18e4f6834451dbc12407c26acd5fae4da14c489
+
+In rare cases, ena driver would reset and re-start the device,
+for example, in case of misbehaving application that causes
+transmit timeout
+
+The first step in the reset procedure is to stop the Tx traffic by
+calling ena_carrier_off().
+
+After the driver have just started the device reset procedure, device
+happens to send an asynchronous notification (via AENQ) to the driver
+than there was a link change (to link-up state).
+This link change is mapped to a call to netif_carrier_on() which
+re-activates the Tx queues, violating the assumption of no tx traffic
+until device reset is completed, as the reset task might still be in
+the process of queues initialization, leading to an access to
+uninitialized memory.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 11 +++++++++--
+ drivers/net/ethernet/amazon/ena/ena_netdev.h |  3 ++-
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 0da91a4bbfaa..54df4fe66265 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2593,6 +2593,7 @@ static int ena_restore_device(struct ena_adapter *adapter)
+ 	bool wd_state;
+ 	int rc;
+ 
++	set_bit(ENA_FLAG_ONGOING_RESET, &adapter->flags);
+ 	rc = ena_device_init(ena_dev, adapter->pdev, &get_feat_ctx, &wd_state);
+ 	if (rc) {
+ 		dev_err(&pdev->dev, "Can not initialize device\n");
+@@ -2606,6 +2607,11 @@ static int ena_restore_device(struct ena_adapter *adapter)
+ 		goto err_device_destroy;
+ 	}
+ 
++	clear_bit(ENA_FLAG_ONGOING_RESET, &adapter->flags);
++	/* Make sure we don't have a race with AENQ Links state handler */
++	if (test_bit(ENA_FLAG_LINK_UP, &adapter->flags))
++		netif_carrier_on(adapter->netdev);
++
+ 	rc = ena_enable_msix_and_set_admin_interrupts(adapter,
+ 						      adapter->num_queues);
+ 	if (rc) {
+@@ -2632,7 +2638,7 @@ static int ena_restore_device(struct ena_adapter *adapter)
+ 	ena_com_admin_destroy(ena_dev);
+ err:
+ 	clear_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags);
+-
++	clear_bit(ENA_FLAG_ONGOING_RESET, &adapter->flags);
+ 	dev_err(&pdev->dev,
+ 		"Reset attempt failed. Can not reset the device\n");
+ 
+@@ -3507,7 +3513,8 @@ static void ena_update_on_link_change(void *adapter_data,
+ 	if (status) {
+ 		netdev_dbg(adapter->netdev, "%s\n", __func__);
+ 		set_bit(ENA_FLAG_LINK_UP, &adapter->flags);
+-		netif_carrier_on(adapter->netdev);
++		if (!test_bit(ENA_FLAG_ONGOING_RESET, &adapter->flags))
++			netif_carrier_on(adapter->netdev);
+ 	} else {
+ 		clear_bit(ENA_FLAG_LINK_UP, &adapter->flags);
+ 		netif_carrier_off(adapter->netdev);
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.h b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+index ae7afa6c4ec7..1e6f23e2ab67 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -272,7 +272,8 @@ enum ena_flags_t {
+ 	ENA_FLAG_DEV_UP,
+ 	ENA_FLAG_LINK_UP,
+ 	ENA_FLAG_MSIX_ENABLED,
+-	ENA_FLAG_TRIGGER_RESET
++	ENA_FLAG_TRIGGER_RESET,
++	ENA_FLAG_ONGOING_RESET
+ };
+ 
+ /* adapter specific private data structure */
+-- 
+2.19.2
+

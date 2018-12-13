@@ -1,0 +1,180 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Sun, 9 Sep 2018 08:15:26 +0000
+Subject: [09/13] net: ena: fix incorrect usage of memory barriers
+Origin: https://git.kernel.org/linus/37dff155dcf57f6c08bf1641c5ddf9abd45f2b1f
+
+Added memory barriers where they were missing to support multiple
+architectures, and removed redundant ones.
+
+As part of removing the redundant memory barriers and improving
+performance, we moved to more relaxed versions of memory barriers,
+as well as to the more relaxed version of writel - writel_relaxed,
+while maintaining correctness.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.c     | 16 +++++-----
+ drivers/net/ethernet/amazon/ena/ena_eth_com.c |  6 ++++
+ drivers/net/ethernet/amazon/ena/ena_eth_com.h |  8 ++---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c  | 30 +++++++------------
+ 4 files changed, 26 insertions(+), 34 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
+index c37deef3bcf1..7635c38e77dd 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_com.c
+@@ -464,7 +464,7 @@ static void ena_com_handle_admin_completion(struct ena_com_admin_queue *admin_qu
+ 		/* Do not read the rest of the completion entry before the
+ 		 * phase bit was validated
+ 		 */
+-		rmb();
++		dma_rmb();
+ 		ena_com_handle_single_admin_completion(admin_queue, cqe);
+ 
+ 		head_masked++;
+@@ -627,15 +627,8 @@ static u32 ena_com_reg_bar_read32(struct ena_com_dev *ena_dev, u16 offset)
+ 	mmio_read_reg |= mmio_read->seq_num &
+ 			ENA_REGS_MMIO_REG_READ_REQ_ID_MASK;
+ 
+-	/* make sure read_resp->req_id get updated before the hw can write
+-	 * there
+-	 */
+-	wmb();
+-
+-	writel_relaxed(mmio_read_reg,
+-		       ena_dev->reg_bar + ENA_REGS_MMIO_REG_READ_OFF);
++	writel(mmio_read_reg, ena_dev->reg_bar + ENA_REGS_MMIO_REG_READ_OFF);
+ 
+-	mmiowb();
+ 	for (i = 0; i < timeout; i++) {
+ 		if (READ_ONCE(read_resp->req_id) == mmio_read->seq_num)
+ 			break;
+@@ -1798,6 +1791,11 @@ void ena_com_aenq_intr_handler(struct ena_com_dev *dev, void *data)
+ 	/* Go over all the events */
+ 	while ((READ_ONCE(aenq_common->flags) &
+ 		ENA_ADMIN_AENQ_COMMON_DESC_PHASE_MASK) == phase) {
++		/* Make sure the phase bit (ownership) is as expected before
++		 * reading the rest of the descriptor.
++		 */
++		dma_rmb();
++
+ 		pr_debug("AENQ! Group[%x] Syndrom[%x] timestamp: [%llus]\n",
+ 			 aenq_common->group, aenq_common->syndrom,
+ 			 (u64)aenq_common->timestamp_low +
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.c b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+index ea149c134e15..1c682b76190f 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+@@ -51,6 +51,11 @@ static inline struct ena_eth_io_rx_cdesc_base *ena_com_get_next_rx_cdesc(
+ 	if (desc_phase != expected_phase)
+ 		return NULL;
+ 
++	/* Make sure we read the rest of the descriptor after the phase bit
++	 * has been read
++	 */
++	dma_rmb();
++
+ 	return cdesc;
+ }
+ 
+@@ -493,6 +498,7 @@ int ena_com_tx_comp_req_id_get(struct ena_com_io_cq *io_cq, u16 *req_id)
+ 	if (cdesc_phase != expected_phase)
+ 		return -EAGAIN;
+ 
++	dma_rmb();
+ 	if (unlikely(cdesc->req_id >= io_cq->q_depth)) {
+ 		pr_err("Invalid req id %d\n", cdesc->req_id);
+ 		return -EINVAL;
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.h b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+index 6fdc753d9483..2f7657227cfe 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.h
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+@@ -107,8 +107,7 @@ static inline int ena_com_sq_empty_space(struct ena_com_io_sq *io_sq)
+ 	return io_sq->q_depth - 1 - cnt;
+ }
+ 
+-static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq,
+-					    bool relaxed)
++static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq)
+ {
+ 	u16 tail;
+ 
+@@ -117,10 +116,7 @@ static inline int ena_com_write_sq_doorbell(struct ena_com_io_sq *io_sq,
+ 	pr_debug("write submission queue doorbell for queue: %d tail: %d\n",
+ 		 io_sq->qid, tail);
+ 
+-	if (relaxed)
+-		writel_relaxed(tail, io_sq->db_addr);
+-	else
+-		writel(tail, io_sq->db_addr);
++	writel(tail, io_sq->db_addr);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index d7457a8a5877..b08fab07abdc 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -558,14 +558,9 @@ static int ena_refill_rx_bufs(struct ena_ring *rx_ring, u32 num)
+ 			    rx_ring->qid, i, num);
+ 	}
+ 
+-	if (likely(i)) {
+-		/* Add memory barrier to make sure the desc were written before
+-		 * issue a doorbell
+-		 */
+-		wmb();
+-		ena_com_write_sq_doorbell(rx_ring->ena_com_io_sq, true);
+-		mmiowb();
+-	}
++	/* ena_com_write_sq_doorbell issues a wmb() */
++	if (likely(i))
++		ena_com_write_sq_doorbell(rx_ring->ena_com_io_sq);
+ 
+ 	rx_ring->next_to_use = next_to_use;
+ 
+@@ -2124,12 +2119,6 @@ static netdev_tx_t ena_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	tx_ring->next_to_use = ENA_TX_RING_IDX_NEXT(next_to_use,
+ 		tx_ring->ring_size);
+ 
+-	/* This WMB is aimed to:
+-	 * 1 - perform smp barrier before reading next_to_completion
+-	 * 2 - make sure the desc were written before trigger DB
+-	 */
+-	wmb();
+-
+ 	/* stop the queue when no more space available, the packet can have up
+ 	 * to sgl_size + 2. one for the meta descriptor and one for header
+ 	 * (if the header is larger than tx_max_header_size).
+@@ -2148,10 +2137,11 @@ static netdev_tx_t ena_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 		 * stop the queue but meanwhile clean_tx_irq updates
+ 		 * next_to_completion and terminates.
+ 		 * The queue will remain stopped forever.
+-		 * To solve this issue this function perform rmb, check
+-		 * the wakeup condition and wake up the queue if needed.
++		 * To solve this issue add a mb() to make sure that
++		 * netif_tx_stop_queue() write is vissible before checking if
++		 * there is additional space in the queue.
+ 		 */
+-		smp_rmb();
++		smp_mb();
+ 
+ 		if (ena_com_sq_empty_space(tx_ring->ena_com_io_sq)
+ 				> ENA_TX_WAKEUP_THRESH) {
+@@ -2163,8 +2153,10 @@ static netdev_tx_t ena_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	}
+ 
+ 	if (netif_xmit_stopped(txq) || !skb->xmit_more) {
+-		/* trigger the dma engine */
+-		ena_com_write_sq_doorbell(tx_ring->ena_com_io_sq, false);
++		/* trigger the dma engine. ena_com_write_sq_doorbell()
++		 * has a mb
++		 */
++		ena_com_write_sq_doorbell(tx_ring->ena_com_io_sq);
+ 		u64_stats_update_begin(&tx_ring->syncp);
+ 		tx_ring->tx_stats.doorbells++;
+ 		u64_stats_update_end(&tx_ring->syncp);
+-- 
+2.19.2
+

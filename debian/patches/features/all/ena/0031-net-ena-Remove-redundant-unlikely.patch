@@ -1,0 +1,38 @@
+From: Tobias Klauser <tklauser@distanz.ch>
+Date: Tue, 26 Sep 2017 11:04:23 +0200
+Subject: [31/43] net: ena: Remove redundant unlikely()
+Origin: https://git.kernel.org/linus/1f4cf93b133ba6596ae69cfd09b48aa7b47cca41
+
+IS_ERR() already implies unlikely(), so it can be omitted.
+
+Signed-off-by: Tobias Klauser <tklauser@distanz.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
+index e3b7a71fcad9..999cae6f44bf 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_com.c
+@@ -315,7 +315,7 @@ static struct ena_comp_ctx *ena_com_submit_admin_cmd(struct ena_com_admin_queue
+ 					      cmd_size_in_bytes,
+ 					      comp,
+ 					      comp_size_in_bytes);
+-	if (unlikely(IS_ERR(comp_ctx)))
++	if (IS_ERR(comp_ctx))
+ 		admin_queue->running_state = false;
+ 	spin_unlock_irqrestore(&admin_queue->q_lock, flags);
+ 
+@@ -1131,7 +1131,7 @@ int ena_com_execute_admin_command(struct ena_com_admin_queue *admin_queue,
+ 
+ 	comp_ctx = ena_com_submit_admin_cmd(admin_queue, cmd, cmd_size,
+ 					    comp, comp_size);
+-	if (unlikely(IS_ERR(comp_ctx))) {
++	if (IS_ERR(comp_ctx)) {
+ 		if (comp_ctx == ERR_PTR(-ENODEV))
+ 			pr_debug("Failed to submit command [%ld]\n",
+ 				 PTR_ERR(comp_ctx));
+-- 
+2.19.2
+
