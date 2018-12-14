@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.5-rt4.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.8-rt6.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -142,7 +142,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1715,6 +1715,44 @@ static inline int test_tsk_need_resched(
+@@ -1725,6 +1725,44 @@ static inline int test_tsk_need_resched(
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -235,7 +235,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	default PREEMPT_NONE
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -303,11 +303,13 @@ void pin_current_cpu(void)
+@@ -304,11 +304,13 @@ void pin_current_cpu(void)
  		return;
  	}
  	cpu = smp_processor_id();
@@ -380,7 +380,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -7176,6 +7252,7 @@ void migrate_disable(void)
+@@ -7182,6 +7258,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -388,7 +388,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	pin_current_cpu();
  
  	migrate_disable_update_cpus_allowed(p);
-@@ -7243,6 +7320,7 @@ void migrate_enable(void)
+@@ -7249,6 +7326,7 @@ void migrate_enable(void)
  			arg.dest_cpu = dest_cpu;
  
  			unpin_current_cpu();
@@ -396,7 +396,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			preempt_enable();
  			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
  			tlb_migrate_finish(p->mm);
-@@ -7251,6 +7329,7 @@ void migrate_enable(void)
+@@ -7257,6 +7335,7 @@ void migrate_enable(void)
  		}
  	}
  	unpin_current_cpu();
@@ -451,7 +451,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6578,7 +6578,7 @@ static void check_preempt_wakeup(struct
+@@ -6612,7 +6612,7 @@ static void check_preempt_wakeup(struct
  	return;
  
  preempt:
@@ -460,7 +460,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9689,7 +9689,7 @@ static void task_fork_fair(struct task_s
+@@ -9723,7 +9723,7 @@ static void task_fork_fair(struct task_s
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -469,7 +469,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9713,7 +9713,7 @@ prio_changed_fair(struct rq *rq, struct
+@@ -9747,7 +9747,7 @@ prio_changed_fair(struct rq *rq, struct
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -492,7 +492,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1641,6 +1641,15 @@ extern void reweight_task(struct task_st
+@@ -1639,6 +1639,15 @@ extern void reweight_task(struct task_st
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  

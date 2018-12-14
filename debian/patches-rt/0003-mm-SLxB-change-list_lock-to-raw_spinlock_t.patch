@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
 Subject: [PATCH 3/4] mm/SLxB: change list_lock to raw_spinlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.5-rt4.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.8-rt6.tar.xz
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -324,7 +324,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	slabs_destroy(cachep, &list);
  	ac->avail -= batchcount;
  	memmove(ac->entry, &(ac->entry[batchcount]), sizeof(void *)*ac->avail);
-@@ -3887,9 +3887,9 @@ static int __do_tune_cpucache(struct kme
+@@ -3891,9 +3891,9 @@ static int __do_tune_cpucache(struct kme
  
  		node = cpu_to_mem(cpu);
  		n = get_node(cachep, node);
@@ -336,7 +336,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		slabs_destroy(cachep, &list);
  	}
  	free_percpu(prev);
-@@ -4014,9 +4014,9 @@ static void drain_array(struct kmem_cach
+@@ -4018,9 +4018,9 @@ static void drain_array(struct kmem_cach
  		return;
  	}
  
@@ -348,7 +348,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	slabs_destroy(cachep, &list);
  }
-@@ -4100,7 +4100,7 @@ void get_slabinfo(struct kmem_cache *cac
+@@ -4104,7 +4104,7 @@ void get_slabinfo(struct kmem_cache *cac
  
  	for_each_kmem_cache_node(cachep, node, n) {
  		check_irq_on();
@@ -357,7 +357,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		total_slabs += n->total_slabs;
  		free_slabs += n->free_slabs;
-@@ -4109,7 +4109,7 @@ void get_slabinfo(struct kmem_cache *cac
+@@ -4113,7 +4113,7 @@ void get_slabinfo(struct kmem_cache *cac
  		if (n->shared)
  			shared_avail += n->shared->avail;
  
@@ -366,7 +366,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  	num_objs = total_slabs * cachep->num;
  	active_slabs = total_slabs - free_slabs;
-@@ -4324,13 +4324,13 @@ static int leaks_show(struct seq_file *m
+@@ -4328,13 +4328,13 @@ static int leaks_show(struct seq_file *m
  		for_each_kmem_cache_node(cachep, node, n) {
  
  			check_irq_on();

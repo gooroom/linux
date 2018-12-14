@@ -1,7 +1,7 @@
 Subject: rcu: Merge RCU-bh into RCU-preempt
 Date: Wed, 5 Oct 2011 11:59:38 -0700
 From: Thomas Gleixner <tglx@linutronix.de>
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.5-rt4.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.8-rt6.tar.xz
 
 The Linux kernel has long RCU-bh read-side critical sections that
 intolerably increase scheduling latency under mainline's RCU-bh rules,
@@ -244,7 +244,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	case RCU_SCHED_FLAVOR:
  		rsp = &rcu_sched_state;
  		break;
-@@ -3040,6 +3058,7 @@ void call_rcu_sched(struct rcu_head *hea
+@@ -3049,6 +3067,7 @@ void call_rcu_sched(struct rcu_head *hea
  }
  EXPORT_SYMBOL_GPL(call_rcu_sched);
  
@@ -252,7 +252,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * call_rcu_bh() - Queue an RCU for invocation after a quicker grace period.
   * @head: structure to be used for queueing the RCU updates.
-@@ -3067,6 +3086,7 @@ void call_rcu_bh(struct rcu_head *head,
+@@ -3076,6 +3095,7 @@ void call_rcu_bh(struct rcu_head *head,
  	__call_rcu(head, func, &rcu_bh_state, -1, 0);
  }
  EXPORT_SYMBOL_GPL(call_rcu_bh);
@@ -260,7 +260,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /*
   * Queue an RCU callback for lazy invocation after a grace period.
-@@ -3152,6 +3172,7 @@ void synchronize_sched(void)
+@@ -3161,6 +3181,7 @@ void synchronize_sched(void)
  }
  EXPORT_SYMBOL_GPL(synchronize_sched);
  
@@ -268,7 +268,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * synchronize_rcu_bh - wait until an rcu_bh grace period has elapsed.
   *
-@@ -3178,6 +3199,7 @@ void synchronize_rcu_bh(void)
+@@ -3187,6 +3208,7 @@ void synchronize_rcu_bh(void)
  		wait_rcu_gp(call_rcu_bh);
  }
  EXPORT_SYMBOL_GPL(synchronize_rcu_bh);
@@ -276,7 +276,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /**
   * get_state_synchronize_rcu - Snapshot current RCU state
-@@ -3485,6 +3507,7 @@ static void _rcu_barrier(struct rcu_stat
+@@ -3494,6 +3516,7 @@ static void _rcu_barrier(struct rcu_stat
  	mutex_unlock(&rsp->barrier_mutex);
  }
  
@@ -284,7 +284,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * rcu_barrier_bh - Wait until all in-flight call_rcu_bh() callbacks complete.
   */
-@@ -3493,6 +3516,7 @@ void rcu_barrier_bh(void)
+@@ -3502,6 +3525,7 @@ void rcu_barrier_bh(void)
  	_rcu_barrier(&rcu_bh_state);
  }
  EXPORT_SYMBOL_GPL(rcu_barrier_bh);
@@ -292,7 +292,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /**
   * rcu_barrier_sched - Wait for in-flight call_rcu_sched() callbacks.
-@@ -4140,7 +4164,9 @@ void __init rcu_init(void)
+@@ -4149,7 +4173,9 @@ void __init rcu_init(void)
  
  	rcu_bootup_announce();
  	rcu_init_geometry();
