@@ -22,7 +22,7 @@ MAKE_PERF := $(MAKE) O=$(CURDIR) prefix=/usr V=1 VF=1 ARCH=$(KERNEL_ARCH) WERROR
 MAKE_PERF += NO_GTK2=1
 
 # Include version in all directory names
-MAKE_PERF += perfexecdir=lib/perf_$(VERSION)-core plugindir=/usr/lib/traceevent_$(VERSION)/plugins STRACE_GROUPS_DIR=share/perf_$(VERSION)-core/strace/groups tipdir=share/doc/linux-perf-$(VERSION)
+MAKE_PERF += perfexecdir=lib/perf_$(VERSION)-core plugindir=/usr/lib/traceevent_$(VERSION)/plugins STRACE_GROUPS_DIR=share/perf_$(VERSION)-core/strace/groups tipdir=share/doc/linux-perf-$(VERSION) perf_include_dir=include/perf_$(VERSION) perf_examples_dir=share/doc/linux-perf-$(VERSION)/examples
 
 # perf can link against libbfd if available, but the result is
 # undistributable as they are licenced under GPL v2 and v3+
