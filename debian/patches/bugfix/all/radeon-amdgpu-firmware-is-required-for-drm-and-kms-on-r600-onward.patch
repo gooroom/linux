@@ -35,7 +35,7 @@ is missing, except for the pre-R600 case.
  
  /*
   * KMS wrapper.
-@@ -311,6 +313,28 @@ static struct drm_driver kms_driver;
+@@ -316,6 +318,28 @@ static struct drm_driver kms_driver;
  
  bool radeon_device_is_virtual(void);
  
@@ -61,10 +61,10 @@ is missing, except for the pre-R600 case.
 +#endif
 +}
 +
- static int radeon_kick_out_firmware_fb(struct pci_dev *pdev)
+ static int radeon_pci_probe(struct pci_dev *pdev,
+ 			    const struct pci_device_id *ent)
  {
- 	struct apertures_struct *ap;
-@@ -340,6 +364,12 @@ static int radeon_pci_probe(struct pci_d
+@@ -324,6 +348,12 @@ static int radeon_pci_probe(struct pci_d
  	if (vga_switcheroo_client_probe_defer(pdev))
  		return -EPROBE_DEFER;
  
@@ -75,11 +75,11 @@ is missing, except for the pre-R600 case.
 +	}
 +
  	/* Get rid of things like offb */
- 	ret = radeon_kick_out_firmware_fb(pdev);
+ 	ret = drm_fb_helper_remove_conflicting_pci_framebuffers(pdev, 0, "radeondrmfb");
  	if (ret)
 --- a/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
 +++ b/drivers/gpu/drm/amd/amdgpu/amdgpu_drv.c
-@@ -40,6 +40,8 @@
+@@ -33,6 +33,8 @@
  #include <linux/pm_runtime.h>
  #include <linux/vga_switcheroo.h>
  #include <drm/drm_crtc_helper.h>
@@ -88,7 +88,7 @@ is missing, except for the pre-R600 case.
  
  #include "amdgpu.h"
  #include "amdgpu_irq.h"
-@@ -545,6 +547,28 @@ MODULE_DEVICE_TABLE(pci, pciidlist);
+@@ -905,6 +907,28 @@ MODULE_DEVICE_TABLE(pci, pciidlist);
  
  static struct drm_driver kms_driver;
  
@@ -114,10 +114,10 @@ is missing, except for the pre-R600 case.
 +#endif
 +}
 +
- static int amdgpu_kick_out_firmware_fb(struct pci_dev *pdev)
+ static int amdgpu_pci_probe(struct pci_dev *pdev,
+ 			    const struct pci_device_id *ent)
  {
- 	struct apertures_struct *ap;
-@@ -579,6 +603,11 @@ static int amdgpu_pci_probe(struct pci_d
+@@ -923,6 +947,11 @@ static int amdgpu_pci_probe(struct pci_d
  		return -ENODEV;
  	}
  
@@ -126,6 +126,6 @@ is missing, except for the pre-R600 case.
 +		return -ENODEV;
 +	}
 +
- 	/*
- 	 * Initialize amdkfd before starting radeon. If it was not loaded yet,
- 	 * defer radeon probing
+ 	/* Get rid of things like offb */
+ 	ret = drm_fb_helper_remove_conflicting_pci_framebuffers(pdev, 0, "amdgpudrmfb");
+ 	if (ret)

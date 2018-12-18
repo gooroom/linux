@@ -22,7 +22,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
 --- a/scripts/Kbuild.include
 +++ b/scripts/Kbuild.include
-@@ -121,7 +121,7 @@ CC_OPTION_CFLAGS = $(filter-out $(GCC_PL
+@@ -123,7 +123,7 @@ CC_OPTION_CFLAGS = $(filter-out $(CC_OPT
  # Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
  
  cc-option = $(call __cc-option, $(CC),\
@@ -31,7 +31,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  # hostcc-option
  # Usage: cflags-y += $(call hostcc-option,-march=winchip-c6,-march=i586)
-@@ -131,23 +131,24 @@ hostcc-option = $(call __cc-option, $(HO
+@@ -133,15 +133,16 @@ hostcc-option = $(call __cc-option, $(HO
  # cc-option-yn
  # Usage: flag := $(call cc-option-yn,-march=winchip-c6)
  cc-option-yn = $(call try-run,\
@@ -44,23 +44,14 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 -	$(CC) -Werror $(KBUILD_CPPFLAGS) $(CC_OPTION_CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
 +	$(CC) -Werror $(NOSTDINC_FLAGS) $(KBUILD_CPPFLAGS) $(CC_OPTION_CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
  
- # cc-name
- # Expands to either gcc or clang
- cc-name = $(shell $(CC) -v 2>&1 | grep -q "clang version" && echo clang || echo gcc)
- 
  # cc-version
 -cc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-version.sh $(CC))
 +cc-version = $(shell $(CONFIG_SHELL) \
 +	$(srctree)/scripts/gcc-version.sh $(CC) $(NOSTDINC_FLAGS))
  
- # cc-fullversion
- cc-fullversion = $(shell $(CONFIG_SHELL) \
--	$(srctree)/scripts/gcc-version.sh -p $(CC))
-+	$(srctree)/scripts/gcc-version.sh -p $(CC) $(NOSTDINC_FLAGS))
- 
  # cc-ifversion
  # Usage:  EXTRA_CFLAGS += $(call cc-ifversion, -lt, 0402, -O1)
-@@ -160,7 +161,7 @@ cc-if-fullversion = $(shell [ $(cc-fullv
+@@ -150,7 +151,7 @@ cc-ifversion = $(shell [ $(cc-version) $
  # cc-ldoption
  # Usage: ldflags += $(call cc-ldoption, -Wl$(comma)--hash-style=both)
  cc-ldoption = $(call try-run,\
@@ -80,7 +71,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  # Tell gcc to never replace conditional load with a non-conditional one
  KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
  
-@@ -798,7 +800,7 @@ LDFLAGS_vmlinux += --gc-sections
+@@ -795,7 +797,7 @@ LDFLAGS_vmlinux += --gc-sections
  endif
  
  # arch Makefile may override CC so keep this after arch Makefile is included
@@ -88,4 +79,4 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
  
  # warn about C99 declaration after statement
- KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+ KBUILD_CFLAGS += -Wdeclaration-after-statement

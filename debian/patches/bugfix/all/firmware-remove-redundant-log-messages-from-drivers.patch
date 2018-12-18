@@ -25,7 +25,7 @@ upstream submission.
  	if (head->magic != 0x4e657458) {
 --- a/arch/x86/kernel/cpu/microcode/amd.c
 +++ b/arch/x86/kernel/cpu/microcode/amd.c
-@@ -747,10 +747,8 @@ static enum ucode_state request_microcod
+@@ -755,10 +755,8 @@ static enum ucode_state request_microcod
  	if (c->x86 >= 0x15)
  		snprintf(fw_name, sizeof(fw_name), "amd-ucode/microcode_amd_fam%.2xh.bin", c->x86);
  
@@ -53,13 +53,13 @@ upstream submission.
    rec = (const struct ihex_binrec *)fw->data;
 --- a/drivers/atm/fore200e.c
 +++ b/drivers/atm/fore200e.c
-@@ -2505,10 +2505,9 @@ static int fore200e_load_and_start_fw(st
- 	return err;
+@@ -2426,10 +2426,9 @@ static int fore200e_load_and_start_fw(st
+     int err;
  
      sprintf(buf, "%s%s", fore200e->bus->proc_name, FW_EXT);
--    if ((err = request_firmware(&firmware, buf, device)) < 0) {
+-    if ((err = request_firmware(&firmware, buf, fore200e->dev)) < 0) {
 -	printk(FORE200E "problem loading firmware image %s\n", fore200e->bus->model_name);
-+    err = request_firmware(&firmware, buf, device);
++    err = request_firmware(&firmware, buf, fore200e->dev);
 +    if (err)
  	return err;
 -    }
@@ -68,7 +68,7 @@ upstream submission.
      fw_size = firmware->size / sizeof(u32);
 --- a/drivers/bluetooth/ath3k.c
 +++ b/drivers/bluetooth/ath3k.c
-@@ -430,10 +430,8 @@ static int ath3k_load_patch(struct usb_d
+@@ -431,10 +431,8 @@ static int ath3k_load_patch(struct usb_d
  		 le32_to_cpu(fw_version.rom_version));
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
@@ -80,7 +80,7 @@ upstream submission.
  
  	pt_rom_version = get_unaligned_le32(firmware->data +
  					    firmware->size - 8);
-@@ -493,10 +491,8 @@ static int ath3k_load_syscfg(struct usb_
+@@ -494,10 +492,8 @@ static int ath3k_load_syscfg(struct usb_
  		le32_to_cpu(fw_version.rom_version), clk_value, ".dfu");
  
  	ret = request_firmware(&firmware, filename, &udev->dev);
@@ -126,7 +126,7 @@ upstream submission.
  
 --- a/drivers/bluetooth/bt3c_cs.c
 +++ b/drivers/bluetooth/bt3c_cs.c
-@@ -566,10 +566,8 @@ static int bt3c_open(struct bt3c_info *i
+@@ -569,10 +569,8 @@ static int bt3c_open(struct bt3c_info *i
  
  	/* Load firmware */
  	err = request_firmware(&firmware, "BT3CPCC.bin", &info->p_dev->dev);
@@ -175,7 +175,7 @@ upstream submission.
  		       fw->size, fw_name);
 --- a/drivers/dma/imx-sdma.c
 +++ b/drivers/dma/imx-sdma.c
-@@ -1475,11 +1475,8 @@ static void sdma_load_firmware(const str
+@@ -1674,11 +1674,8 @@ static void sdma_load_firmware(const str
  	const struct sdma_script_start_addrs *addr;
  	unsigned short *ram_code;
  
@@ -285,7 +285,7 @@ upstream submission.
  	ret = qib_ibsd_ucode_loaded(dd->pport, fw);
 --- a/drivers/input/touchscreen/atmel_mxt_ts.c
 +++ b/drivers/input/touchscreen/atmel_mxt_ts.c
-@@ -2760,10 +2760,8 @@ static int mxt_load_fw(struct device *de
+@@ -2782,10 +2782,8 @@ static int mxt_load_fw(struct device *de
  	int ret;
  
  	ret = request_firmware(&fw, fn, dev);
@@ -314,7 +314,7 @@ upstream submission.
  			  card->name, firmware->size);
 --- a/drivers/media/tuners/tuner-xc2028.c
 +++ b/drivers/media/tuners/tuner-xc2028.c
-@@ -1368,7 +1368,6 @@ static void load_firmware_cb(const struc
+@@ -1367,7 +1367,6 @@ static void load_firmware_cb(const struc
  
  	tuner_dbg("request_firmware_nowait(): %s\n", fw ? "OK" : "error");
  	if (!fw) {
@@ -324,7 +324,7 @@ upstream submission.
  	}
 --- a/drivers/media/usb/dvb-usb/dib0700_devices.c
 +++ b/drivers/media/usb/dvb-usb/dib0700_devices.c
-@@ -2415,12 +2415,9 @@ static int stk9090m_frontend_attach(stru
+@@ -2416,12 +2416,9 @@ static int stk9090m_frontend_attach(stru
  
  	dib9000_i2c_enumeration(&adap->dev->i2c_adap, 1, 0x10, 0x80);
  
@@ -339,7 +339,7 @@ upstream submission.
  	stk9090m_config.microcode_B_fe_size = state->frontend_firmware->size;
  	stk9090m_config.microcode_B_fe_buffer = state->frontend_firmware->data;
  
-@@ -2481,12 +2478,9 @@ static int nim9090md_frontend_attach(str
+@@ -2482,12 +2479,9 @@ static int nim9090md_frontend_attach(str
  	msleep(20);
  	dib0700_set_gpio(adap->dev, GPIO0, GPIO_OUT, 1);
  
@@ -472,7 +472,7 @@ upstream submission.
  	if (!state->microcode) {
 --- a/drivers/media/dvb-frontends/drxk_hard.c
 +++ b/drivers/media/dvb-frontends/drxk_hard.c
-@@ -6287,10 +6287,6 @@ static void load_firmware_cb(const struc
+@@ -6281,10 +6281,6 @@ static void load_firmware_cb(const struc
  
  	dprintk(1, ": %s\n", fw ? "firmware loaded" : "firmware not loaded");
  	if (!fw) {
@@ -1015,7 +1015,7 @@ upstream submission.
  			__func__, fw->size);
 --- a/drivers/misc/ti-st/st_kim.c
 +++ b/drivers/misc/ti-st/st_kim.c
-@@ -302,11 +302,8 @@ static long download_firmware(struct kim
+@@ -301,11 +301,8 @@ static long download_firmware(struct kim
  	    request_firmware(&kim_gdata->fw_entry, bts_scr_name,
  			     &kim_gdata->kim_pdev->dev);
  	if (unlikely((err != 0) || (kim_gdata->fw_entry->data == NULL) ||
@@ -1088,7 +1088,7 @@ upstream submission.
  		       fw_tx->size, FIRMWARE_TX);
 --- a/drivers/net/ethernet/alteon/acenic.c
 +++ b/drivers/net/ethernet/alteon/acenic.c
-@@ -2892,11 +2892,8 @@ static int ace_load_firmware(struct net_
+@@ -2890,11 +2890,8 @@ static int ace_load_firmware(struct net_
  		fw_name = "acenic/tg1.bin";
  
  	ret = request_firmware(&fw, fw_name, &ap->pdev->dev);
@@ -1125,7 +1125,7 @@ upstream submission.
  	if (bp->mips_firmware->size < sizeof(*mips_fw) ||
 --- a/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
 +++ b/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
-@@ -13524,11 +13524,8 @@ static int bnx2x_init_firmware(struct bn
+@@ -13525,11 +13525,8 @@ static int bnx2x_init_firmware(struct bn
  	BNX2X_DEV_INFO("Loading %s\n", fw_file_name);
  
  	rc = request_firmware(&bp->firmware, fw_file_name, &bp->pdev->dev);
@@ -1140,7 +1140,7 @@ upstream submission.
  	if (rc) {
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -11380,11 +11380,8 @@ static int tg3_request_firmware(struct t
+@@ -11404,11 +11404,8 @@ static int tg3_request_firmware(struct t
  {
  	const struct tg3_firmware_hdr *fw_hdr;
  
@@ -1223,7 +1223,7 @@ upstream submission.
  			netif_info(nic, probe, nic->netdev,
 --- a/drivers/net/ethernet/myricom/myri10ge/myri10ge.c
 +++ b/drivers/net/ethernet/myricom/myri10ge/myri10ge.c
-@@ -581,8 +581,6 @@ static int myri10ge_load_hotplug_firmwar
+@@ -580,8 +580,6 @@ static int myri10ge_load_hotplug_firmwar
  	unsigned i;
  
  	if ((status = request_firmware(&fw, mgp->fw_name, dev)) < 0) {
@@ -1292,7 +1292,7 @@ upstream submission.
  		dev_err(&kaweth->intf->dev, "Firmware too big: %zu\n",
 --- a/drivers/net/wimax/i2400m/fw.c
 +++ b/drivers/net/wimax/i2400m/fw.c
-@@ -1582,11 +1582,8 @@ int i2400m_dev_bootstrap(struct i2400m *
+@@ -1581,11 +1581,8 @@ int i2400m_dev_bootstrap(struct i2400m *
  		}
  		d_printf(1, dev, "trying firmware %s (%d)\n", fw_name, itr);
  		ret = request_firmware(&fw, fw_name, dev);
@@ -1305,7 +1305,7 @@ upstream submission.
  		i2400m->fw_name = fw_name;
  		ret = i2400m_fw_bootstrap(i2400m, fw, flags);
  		release_firmware(fw);
-@@ -1629,8 +1626,6 @@ void i2400m_fw_cache(struct i2400m *i240
+@@ -1628,8 +1625,6 @@ void i2400m_fw_cache(struct i2400m *i240
  	kref_init(&i2400m_fw->kref);
  	result = request_firmware(&i2400m_fw->fw, i2400m->fw_name, dev);
  	if (result < 0) {
@@ -1333,7 +1333,7 @@ upstream submission.
  	fwh = (struct at76_fw_header *)(fwe->fw->data);
 --- a/drivers/net/wireless/ath/ath9k/hif_usb.c
 +++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
-@@ -1163,9 +1163,6 @@ static void ath9k_hif_usb_firmware_cb(co
+@@ -1164,9 +1164,6 @@ static void ath9k_hif_usb_firmware_cb(co
  		if (!ret)
  			return;
  
@@ -1355,7 +1355,7 @@ upstream submission.
  
 --- a/drivers/net/wireless/atmel/atmel.c
 +++ b/drivers/net/wireless/atmel/atmel.c
-@@ -3897,12 +3897,8 @@ static int reset_atmel_card(struct net_d
+@@ -3893,12 +3893,8 @@ static int reset_atmel_card(struct net_d
  					strcpy(priv->firmware_id, "atmel_at76c502.bin");
  				}
  				err = request_firmware(&fw_entry, priv->firmware_id, priv->sys_dev);
@@ -1433,7 +1433,7 @@ upstream submission.
  	}
 --- a/drivers/net/wireless/intel/ipw2x00/ipw2100.c
 +++ b/drivers/net/wireless/intel/ipw2x00/ipw2100.c
-@@ -8417,12 +8417,8 @@ static int ipw2100_get_firmware(struct i
+@@ -8410,12 +8410,8 @@ static int ipw2100_get_firmware(struct i
  
  	rc = request_firmware(&fw->fw_entry, fw_name, &priv->pci_dev->dev);
  
@@ -1463,7 +1463,7 @@ upstream submission.
  		IPW_ERROR("%s is too small (%zd)\n", name, (*raw)->size);
 --- a/drivers/net/wireless/intel/iwlegacy/3945-mac.c
 +++ b/drivers/net/wireless/intel/iwlegacy/3945-mac.c
-@@ -1861,7 +1861,6 @@ il3945_read_ucode(struct il_priv *il)
+@@ -1854,7 +1854,6 @@ il3945_read_ucode(struct il_priv *il)
  		sprintf(buf, "%s%u%s", name_pre, idx, ".ucode");
  		ret = request_firmware(&ucode_raw, buf, &il->pci_dev->dev);
  		if (ret < 0) {
@@ -1473,7 +1473,7 @@ upstream submission.
  			else
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
-@@ -236,8 +236,6 @@ static int iwl_request_firmware(struct i
+@@ -231,8 +231,6 @@ static int iwl_request_firmware(struct i
  	}
  
  	if (drv->fw_index < cfg->ucode_api_min) {
@@ -1484,7 +1484,7 @@ upstream submission.
  				cfg->ucode_api_max);
 --- a/drivers/net/wireless/marvell/libertas_tf/if_usb.c
 +++ b/drivers/net/wireless/marvell/libertas_tf/if_usb.c
-@@ -818,8 +818,6 @@ static int if_usb_prog_firmware(struct i
+@@ -819,8 +819,6 @@ static int if_usb_prog_firmware(struct i
  	kernel_param_lock(THIS_MODULE);
  	ret = request_firmware(&cardp->fw, lbtf_fw_name, &cardp->udev->dev);
  	if (ret < 0) {
@@ -1495,7 +1495,7 @@ upstream submission.
  	}
 --- a/drivers/net/wireless/marvell/mwifiex/main.c
 +++ b/drivers/net/wireless/marvell/mwifiex/main.c
-@@ -525,11 +525,8 @@ static int _mwifiex_fw_dpc(const struct
+@@ -528,11 +528,8 @@ static int _mwifiex_fw_dpc(const struct
  	struct wireless_dev *wdev;
  	struct completion *fw_done = adapter->fw_done;
  
@@ -1589,7 +1589,7 @@ upstream submission.
  
 --- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 +++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
-@@ -1677,7 +1677,6 @@ static int ezusb_probe(struct usb_interf
+@@ -1673,7 +1673,6 @@ static int ezusb_probe(struct usb_interf
  		if (ezusb_firmware_download(upriv, &firmware) < 0)
  			goto error;
  	} else {
@@ -1716,7 +1716,7 @@ upstream submission.
  		wl1251_error("nvs size is not multiple of 32 bits: %zu",
 --- a/drivers/net/wireless/ti/wlcore/main.c
 +++ b/drivers/net/wireless/ti/wlcore/main.c
-@@ -755,10 +755,8 @@ static int wl12xx_fetch_firmware(struct
+@@ -769,10 +769,8 @@ static int wl12xx_fetch_firmware(struct
  
  	ret = request_firmware(&fw, fw_name, wl->dev);
  
@@ -1825,7 +1825,7 @@ upstream submission.
  	if (err) {
 --- a/drivers/scsi/bfa/bfad.c
 +++ b/drivers/scsi/bfa/bfad.c
-@@ -1755,7 +1755,6 @@ bfad_read_firmware(struct pci_dev *pdev,
+@@ -1753,7 +1753,6 @@ bfad_read_firmware(struct pci_dev *pdev,
  	const struct firmware *fw;
  
  	if (request_firmware(&fw, fw_name, &pdev->dev)) {
@@ -1835,7 +1835,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/ipr.c
 +++ b/drivers/scsi/ipr.c
-@@ -4063,10 +4063,8 @@ static ssize_t ipr_store_update_fw(struc
+@@ -4102,10 +4102,8 @@ static ssize_t ipr_store_update_fw(struc
  	if (endline)
  		*endline = '\0';
  
@@ -1873,7 +1873,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -7275,8 +7275,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -7553,8 +7553,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1882,7 +1882,7 @@ upstream submission.
  		ql_log(ql_log_info, vha, 0x0084,
  		    "Firmware images can be retrieved from: "QLA_FW_URL ".\n");
  		return QLA_FUNCTION_FAILED;
-@@ -7378,8 +7376,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -7656,8 +7654,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1908,7 +1908,7 @@ upstream submission.
  	if (qla82xx_validate_firmware_blob(vha,
 --- a/drivers/scsi/qla2xxx/qla_os.c
 +++ b/drivers/scsi/qla2xxx/qla_os.c
-@@ -6517,8 +6517,6 @@ qla2x00_request_firmware(scsi_qla_host_t
+@@ -6639,8 +6639,6 @@ qla2x00_request_firmware(scsi_qla_host_t
  		goto out;
  
  	if (request_firmware(&blob->fw, blob->name, &ha->pdev->dev)) {
@@ -2006,7 +2006,7 @@ upstream submission.
  				RT_TRACE(COMP_ERR, "img file size exceed the container buffer fail!\n");
 --- a/drivers/staging/rtl8712/hal_init.c
 +++ b/drivers/staging/rtl8712/hal_init.c
-@@ -67,8 +67,6 @@ int rtl871x_load_fw(struct _adapter *pad
+@@ -59,8 +59,6 @@ int rtl871x_load_fw(struct _adapter *pad
  	dev_info(dev, "r8712u: Loading firmware from \"%s\"\n", firmware_file);
  	rc = request_firmware_nowait(THIS_MODULE, 1, firmware_file, dev,
  				     GFP_KERNEL, padapter, rtl871x_load_fw_cb);
@@ -2060,7 +2060,7 @@ upstream submission.
  	if (!buffer)
 --- a/drivers/tty/cyclades.c
 +++ b/drivers/tty/cyclades.c
-@@ -3489,10 +3489,8 @@ static int cyz_load_fw(struct pci_dev *p
+@@ -3484,10 +3484,8 @@ static int cyz_load_fw(struct pci_dev *p
  	int retval;
  
  	retval = request_firmware(&fw, "cyzfirm.bin", &pdev->dev);
@@ -2074,7 +2074,7 @@ upstream submission.
  	   positive, skip this board */
 --- a/drivers/tty/moxa.c
 +++ b/drivers/tty/moxa.c
-@@ -862,13 +862,8 @@ static int moxa_init_board(struct moxa_b
+@@ -854,13 +854,8 @@ static int moxa_init_board(struct moxa_b
  	}
  
  	ret = request_firmware(&fw, file, dev);
@@ -2297,7 +2297,7 @@ upstream submission.
  
 --- a/drivers/usb/serial/ti_usb_3410_5052.c
 +++ b/drivers/usb/serial/ti_usb_3410_5052.c
-@@ -1692,10 +1692,8 @@ static int ti_download_firmware(struct t
+@@ -1667,10 +1667,8 @@ static int ti_download_firmware(struct t
  	}
  
  check_firmware:
@@ -2454,7 +2454,7 @@ upstream submission.
  	snd_emu1010_fpga_read(emu, EMU_HANA_ID, &reg);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -1971,10 +1971,8 @@ static void azx_firmware_cb(const struct
+@@ -1964,10 +1964,8 @@ static void azx_firmware_cb(const struct
  	struct azx *chip = card->private_data;
  	struct pci_dev *pci = chip->pci;
  
@@ -2539,7 +2539,7 @@ upstream submission.
  			"too short firmware size %d (expected %d)\n",
 --- a/sound/soc/codecs/wm2000.c
 +++ b/sound/soc/codecs/wm2000.c
-@@ -891,10 +891,8 @@ static int wm2000_i2c_probe(struct i2c_c
+@@ -897,10 +897,8 @@ static int wm2000_i2c_probe(struct i2c_c
  	}
  
  	ret = request_firmware(&fw, filename, &i2c->dev);
@@ -2573,7 +2573,7 @@ upstream submission.
  	}
 --- a/sound/pci/cs46xx/cs46xx_lib.c
 +++ b/sound/pci/cs46xx/cs46xx_lib.c
-@@ -3253,11 +3253,8 @@ int snd_cs46xx_start_dsp(struct snd_cs46
+@@ -3255,11 +3255,8 @@ int snd_cs46xx_start_dsp(struct snd_cs46
  #ifdef CONFIG_SND_CS46XX_NEW_DSP
  	for (i = 0; i < CS46XX_DSP_MODULES; i++) {
  		err = load_firmware(chip, &chip->modules[i], module_names[i]);
