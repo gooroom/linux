@@ -1,8 +1,8 @@
-From 84a3518a6cb6167881ab83a13a361bc093d2f630 Mon Sep 17 00:00:00 2001
+From e996b3ea8f57e06215fd0aed0075b2512b4a4568 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 305/349] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 305/370] sched: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -130,10 +130,10 @@ index 0c7346289422..f97c54265904 100644
  } while (0)
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 60447fa74dcc..b1a821a51f58 100644
+index 10fa2fe7ec10..b69033d37528 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -3385,6 +3385,43 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -3389,6 +3389,43 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -178,10 +178,10 @@ index 60447fa74dcc..b1a821a51f58 100644
  {
  	set_tsk_thread_flag(current, TIF_SIGPENDING);
 diff --git a/include/linux/thread_info.h b/include/linux/thread_info.h
-index 2873baf5372a..eb1a108f17ca 100644
+index 5e6436741f96..4f857aa29174 100644
 --- a/include/linux/thread_info.h
 +++ b/include/linux/thread_info.h
-@@ -107,7 +107,17 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
+@@ -102,7 +102,17 @@ static inline int test_ti_thread_flag(struct thread_info *ti, int flag)
  #define test_thread_flag(flag) \
  	test_ti_thread_flag(current_thread_info(), flag)
  
@@ -230,7 +230,7 @@ index f8a2982bdbde..11dbe26a8279 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 3119ab1da74d..4cbb28092206 100644
+index a463a54d3de0..25026c10da7e 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -522,6 +522,38 @@ void resched_curr(struct rq *rq)
@@ -369,7 +369,7 @@ index 3119ab1da74d..4cbb28092206 100644
  	 * The idle tasks have their own, simple scheduling class:
  	 */
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index f6e8727f7fa3..627d9e4c957b 100644
+index 0c91d72f3e8f..77399de818b0 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -3519,7 +3519,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -408,7 +408,7 @@ index f6e8727f7fa3..627d9e4c957b 100644
  }
  
  static __always_inline
-@@ -4495,7 +4495,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
+@@ -4511,7 +4511,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
  
  		if (delta < 0) {
  			if (rq->curr == p)
@@ -417,7 +417,7 @@ index f6e8727f7fa3..627d9e4c957b 100644
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -5863,7 +5863,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+@@ -5879,7 +5879,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
  	return;
  
  preempt:
@@ -426,7 +426,7 @@ index f6e8727f7fa3..627d9e4c957b 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -8589,7 +8589,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -8605,7 +8605,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -435,7 +435,7 @@ index f6e8727f7fa3..627d9e4c957b 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -8613,7 +8613,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -8629,7 +8629,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -459,10 +459,10 @@ index 852cfc5bb77b..36086f74e011 100644
  
  /*
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 304fdd7df094..dd50789ec065 100644
+index c1fcb5b6dcf5..1278b8b77f87 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1348,6 +1348,15 @@ extern void init_sched_fair_class(void);
+@@ -1351,6 +1351,15 @@ extern void init_sched_fair_class(void);
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  
@@ -479,10 +479,10 @@ index 304fdd7df094..dd50789ec065 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 038f9b758913..d7c01658f877 100644
+index 9356baf3b7ef..beb6d63ffad3 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -1897,6 +1897,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
+@@ -1903,6 +1903,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
  	struct task_struct *tsk = current;
  
  	entry->preempt_count		= pc & 0xff;
@@ -490,7 +490,7 @@ index 038f9b758913..d7c01658f877 100644
  	entry->pid			= (tsk) ? tsk->pid : 0;
  	entry->flags =
  #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
-@@ -1907,7 +1908,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
+@@ -1913,7 +1914,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
  		((pc & NMI_MASK    ) ? TRACE_FLAG_NMI     : 0) |
  		((pc & HARDIRQ_MASK) ? TRACE_FLAG_HARDIRQ : 0) |
  		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
@@ -500,7 +500,7 @@ index 038f9b758913..d7c01658f877 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -2900,15 +2902,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -2911,15 +2913,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -527,7 +527,7 @@ index 038f9b758913..d7c01658f877 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -2934,11 +2938,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -2945,11 +2949,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  	print_event_info(buf, m);
  	seq_puts(m, "#                              _-----=> irqs-off\n"
  		    "#                             / _----=> need-resched\n"
@@ -613,5 +613,5 @@ index badf130635f1..65a6dde71a7d 100644
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
 -- 
-2.18.0
+2.19.1
 

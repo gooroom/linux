@@ -1,9 +1,9 @@
-From f032e1ad3be6996924bc75f4c0ac15f08b960e10 Mon Sep 17 00:00:00 2001
+From 4ec0f793286f55311b06a8d3d0a15339c591af18 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 7 Jun 2013 22:37:06 +0200
-Subject: [PATCH 285/349] kernel/cpu: fix cpu down problem if kthread's cpu is
+Subject: [PATCH 285/370] kernel/cpu: fix cpu down problem if kthread's cpu is
  going down
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 If kthread is pinned to CPUx and CPUx is going down then we get into
 trouble:
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 518cb676ccaf..e971d1ef8a12 100644
+index 4395b644dba8..a95116953bea 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -265,6 +265,7 @@ struct hotplug_pcp {
+@@ -266,6 +266,7 @@ struct hotplug_pcp {
  	int refcount;
  	int grab_lock;
  	struct completion synced;
@@ -39,7 +39,7 @@ index 518cb676ccaf..e971d1ef8a12 100644
  #ifdef CONFIG_PREEMPT_RT_FULL
  	/*
  	 * Note, on PREEMPT_RT, the hotplug lock must save the state of
-@@ -368,6 +369,7 @@ static int sync_unplug_thread(void *data)
+@@ -369,6 +370,7 @@ static int sync_unplug_thread(void *data)
  {
  	struct hotplug_pcp *hp = data;
  
@@ -47,7 +47,7 @@ index 518cb676ccaf..e971d1ef8a12 100644
  	preempt_disable();
  	hp->unplug = current;
  	wait_for_pinned_cpus(hp);
-@@ -433,6 +435,14 @@ static void __cpu_unplug_sync(struct hotplug_pcp *hp)
+@@ -434,6 +436,14 @@ static void __cpu_unplug_sync(struct hotplug_pcp *hp)
  	wait_for_completion(&hp->synced);
  }
  
@@ -62,7 +62,7 @@ index 518cb676ccaf..e971d1ef8a12 100644
  /*
   * Start the sync_unplug_thread on the target cpu and wait for it to
   * complete.
-@@ -456,6 +466,7 @@ static int cpu_unplug_begin(unsigned int cpu)
+@@ -457,6 +467,7 @@ static int cpu_unplug_begin(unsigned int cpu)
  	tell_sched_cpu_down_begin(cpu);
  
  	init_completion(&hp->synced);
@@ -70,7 +70,7 @@ index 518cb676ccaf..e971d1ef8a12 100644
  
  	hp->sync_tsk = kthread_create(sync_unplug_thread, hp, "sync_unplug/%d", cpu);
  	if (IS_ERR(hp->sync_tsk)) {
-@@ -471,8 +482,7 @@ static int cpu_unplug_begin(unsigned int cpu)
+@@ -472,8 +483,7 @@ static int cpu_unplug_begin(unsigned int cpu)
  	 * wait for tasks that are going to enter these sections and
  	 * we must not have them block.
  	 */
@@ -80,7 +80,7 @@ index 518cb676ccaf..e971d1ef8a12 100644
  	return 0;
  }
  
-@@ -1178,6 +1178,7 @@ static int takedown_cpu(unsigned int cpu)
+@@ -1178,6 +1188,7 @@ static int takedown_cpu(unsigned int cpu)
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
@@ -89,5 +89,5 @@ index 518cb676ccaf..e971d1ef8a12 100644
  	kthread_park(per_cpu_ptr(&cpuhp_state, cpu)->thread);
  
 -- 
-2.18.0
+2.19.1
 

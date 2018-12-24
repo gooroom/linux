@@ -1,8 +1,8 @@
-From 379fc56bbd438ebe78a5fe6eb2ec99e4cab99b39 Mon Sep 17 00:00:00 2001
+From 1be67b36838ea480bf73f28dffdb87dcb63f3602 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Fri, 26 May 2017 19:16:07 +0200
-Subject: [PATCH 163/349] Revert "timers: Don't wake ktimersoftd on every tick"
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 163/370] Revert "timers: Don't wake ktimersoftd on every tick"
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 This reverts commit 032f93cae150a ("timers: Don't wake ktimersoftd on
 every tick").
@@ -18,11 +18,12 @@ canceled the removal operation will result in a hlist corruption.
 
 Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[carnil: Refresh for context changes in 4.9.128]
 ---
  kernel/time/timer.c | 96 ++++++++++++++-------------------------------
  1 file changed, 29 insertions(+), 67 deletions(-)
 
+diff --git a/kernel/time/timer.c b/kernel/time/timer.c
+index c1b88e0a72fe..a416cee45801 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -207,8 +207,6 @@ struct timer_base {
@@ -34,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  } ____cacheline_aligned;
  
  static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
-@@ -1366,8 +1364,7 @@ static void call_timer_fn(struct timer_l
+@@ -1366,8 +1364,7 @@ static void call_timer_fn(struct timer_list *timer, void (*fn)(unsigned long),
  	}
  }
  
@@ -44,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	while (!hlist_empty(head)) {
  		struct timer_list *timer;
-@@ -1398,38 +1395,21 @@ static inline void __expire_timers(struc
+@@ -1398,38 +1395,21 @@ static inline void __expire_timers(struct timer_base *base,
  	}
  }
  
@@ -88,7 +89,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		}
  		/* Is it time to look at the next level? */
  		if (clk & LVL_CLK_MASK)
-@@ -1437,6 +1417,7 @@ static void __collect_expired_timers(str
+@@ -1437,6 +1417,7 @@ static void __collect_expired_timers(struct timer_base *base)
  		/* Shift clock for the next level granularity */
  		clk >>= LVL_CLK_SHIFT;
  	}
@@ -106,7 +107,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	/*
  	 * NOHZ optimization. After a long idle sleep we need to forward the
-@@ -1652,49 +1634,20 @@ static void collect_expired_timers(struc
+@@ -1652,49 +1634,20 @@ static void collect_expired_timers(struct timer_base *base)
  		if (time_after(next, jiffies)) {
  			/* The call site will increment clock! */
  			base->clk = jiffies - 1;
@@ -174,7 +175,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	raw_spin_lock_irq(&base->lock);
  
  	/*
-@@ -1739,9 +1698,14 @@ static inline void __run_timers(struct t
+@@ -1739,9 +1698,14 @@ static inline void __run_timers(struct timer_base *base)
  	 */
  	base->must_forward_clk = false;
  
@@ -214,7 +215,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		for (i = 0; i < WHEEL_SIZE; i++)
  			migrate_timer_list(new_base, old_base->vectors + i);
-@@ -1990,7 +1953,6 @@ static void __init init_timer_cpu(int cp
+@@ -1990,7 +1953,6 @@ static void __init init_timer_cpu(int cpu)
  #ifdef CONFIG_PREEMPT_RT_FULL
  		init_swait_queue_head(&base->wait_for_running_timer);
  #endif
@@ -222,3 +223,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  }
  
+-- 
+2.19.1
+

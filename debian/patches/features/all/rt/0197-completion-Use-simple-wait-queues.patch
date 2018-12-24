@@ -1,8 +1,8 @@
-From 4e385752a63b6392026bb27f9f4ee04eb79182f9 Mon Sep 17 00:00:00 2001
+From 35cea1fc237ace0d01fb347ad5caade13829fad6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 197/349] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 197/370] completion: Use simple wait queues
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -38,7 +38,7 @@ index bca6935a94db..d7a35ee34d03 100644
  		}
  		break;
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index af72224f8ba2..3088792b77ce 100644
+index 04eb64381d92..72ce801a2927 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
 @@ -1596,7 +1596,7 @@ static void ffs_data_put(struct ffs_data *ffs)
@@ -307,7 +307,7 @@ index 8d0f35debf35..b62cf6400fe0 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f9e1d45a58fe..3ff6199a0d4e 100644
+index 4cdd48128c3b..fc30849a9ffc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3337,7 +3337,10 @@ void migrate_disable(void)
@@ -335,7 +335,7 @@ index f9e1d45a58fe..3ff6199a0d4e 100644
  	WARN_ON_ONCE(p->migrate_disable <= 0);
  
 diff --git a/kernel/sched/swait.c b/kernel/sched/swait.c
-index 82f0dff90030..e2e224c59c0a 100644
+index 9c2da06a8869..a26906faf07e 100644
 --- a/kernel/sched/swait.c
 +++ b/kernel/sched/swait.c
 @@ -1,5 +1,6 @@
@@ -372,5 +372,5 @@ index 82f0dff90030..e2e224c59c0a 100644
  {
  	unsigned long flags;
 -- 
-2.18.0
+2.19.1
 

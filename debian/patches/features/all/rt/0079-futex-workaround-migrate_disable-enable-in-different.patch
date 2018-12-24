@@ -1,9 +1,9 @@
-From 47d100f6b5b9baf29dab45f14fe5ea0c7ce12370 Mon Sep 17 00:00:00 2001
+From 4f2614b2e17148ea63f1d9a25e6fe0c0c6f14f9b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 8 Mar 2017 14:23:35 +0100
-Subject: [PATCH 079/349] futex: workaround migrate_disable/enable in different
+Subject: [PATCH 079/370] futex: workaround migrate_disable/enable in different
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 migrate_disable()/migrate_enable() takes a different path in atomic() vs
 !atomic() context. These little hacks ensure that we don't underflow / overflow
@@ -17,10 +17,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 20 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index f9addec6de1a..c5d0d70bd45a 100644
+index 239d5ea25229..7431ff37b658 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2712,9 +2712,18 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2720,9 +2720,18 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * lock handoff sequence.
  	 */
  	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -39,7 +39,7 @@ index f9addec6de1a..c5d0d70bd45a 100644
  
  	if (ret) {
  		if (ret == 1)
-@@ -2858,10 +2867,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -2866,10 +2875,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		 * observed.
  		 */
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
@@ -62,5 +62,5 @@ index f9addec6de1a..c5d0d70bd45a 100644
  
  		/*
 -- 
-2.18.0
+2.19.1
 

@@ -1,8 +1,8 @@
-From 9ad97c5617b64d3a5f71cf7574b4dfa3b16c0121 Mon Sep 17 00:00:00 2001
+From f0ada40d7ae8b07930d1876fcc4b6123b559415b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Feb 2012 12:03:30 +0100
-Subject: [PATCH 234/349] seqlock: Prevent rt starvation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 234/370] seqlock: Prevent rt starvation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 If a low prio writer gets preempted while holding the seqlock write
 locked, a high prio reader spins forever on RT.
@@ -173,7 +173,7 @@ index ddcff17615da..a1fc787b1a8c 100644
  	if (dst->pending_confirm) {
  		unsigned long now = jiffies;
 diff --git a/include/net/neighbour.h b/include/net/neighbour.h
-index 8b683841e574..bf656008f6e7 100644
+index f6017ddc4ded..0ba4328bdc41 100644
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
 @@ -446,7 +446,7 @@ static inline int neigh_hh_bridge(struct hh_cache *hh, struct sk_buff *skb)
@@ -183,9 +183,9 @@ index 8b683841e574..bf656008f6e7 100644
 -static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb)
 +static inline int neigh_hh_output(struct hh_cache *hh, struct sk_buff *skb)
  {
+ 	unsigned int hh_alen = 0;
  	unsigned int seq;
- 	int hh_len;
-@@ -501,7 +501,7 @@ struct neighbour_cb {
+@@ -519,7 +519,7 @@ struct neighbour_cb {
  
  #define NEIGH_CB(skb)	((struct neighbour_cb *)(skb)->cb)
  
@@ -195,5 +195,5 @@ index 8b683841e574..bf656008f6e7 100644
  {
  	unsigned int seq;
 -- 
-2.18.0
+2.19.1
 

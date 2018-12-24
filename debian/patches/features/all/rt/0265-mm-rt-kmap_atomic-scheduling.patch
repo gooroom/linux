@@ -1,8 +1,8 @@
-From 9a4c6d661b4524b1b6af2502eda7eeaeb715bf23 Mon Sep 17 00:00:00 2001
+From 92aa1e70d201311cf8aa1e6fbb9c2a52bd138716 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 28 Jul 2011 10:43:51 +0200
-Subject: [PATCH 265/349] mm, rt: kmap_atomic scheduling
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 265/370] mm, rt: kmap_atomic scheduling
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 In fact, with migrate_disable() existing one could play games with
 kmap_atomic. You could save/restore the kmap_atomic slots on context
@@ -230,7 +230,7 @@ index bb3f3297062a..1a8a811ae882 100644
  }
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7abd84ed36bb..82c41e17ccad 100644
+index 900227a6e25a..4f5464ca8c81 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -26,6 +26,7 @@ struct sched_param {
@@ -255,10 +255,10 @@ index 7abd84ed36bb..82c41e17ccad 100644
  	unsigned long	task_state_change;
  #endif
 diff --git a/include/linux/uaccess.h b/include/linux/uaccess.h
-index f30c187ed785..83bf0f798426 100644
+index 9442423979c1..e507ceae4537 100644
 --- a/include/linux/uaccess.h
 +++ b/include/linux/uaccess.h
-@@ -24,6 +24,7 @@ static __always_inline void pagefault_disabled_dec(void)
+@@ -27,6 +27,7 @@ static __always_inline void pagefault_disabled_dec(void)
   */
  static inline void pagefault_disable(void)
  {
@@ -266,7 +266,7 @@ index f30c187ed785..83bf0f798426 100644
  	pagefault_disabled_inc();
  	/*
  	 * make sure to have issued the store before a pagefault
-@@ -40,6 +41,7 @@ static inline void pagefault_enable(void)
+@@ -43,6 +44,7 @@ static inline void pagefault_enable(void)
  	 */
  	barrier();
  	pagefault_disabled_dec();
@@ -303,5 +303,5 @@ index 50b4ca6787f0..77518a3b35a1 100644
  unsigned int nr_free_highpages (void)
  {
 -- 
-2.18.0
+2.19.1
 

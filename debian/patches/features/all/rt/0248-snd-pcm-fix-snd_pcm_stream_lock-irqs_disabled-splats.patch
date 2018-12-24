@@ -1,9 +1,9 @@
-From da1dfea1c31b6e8d55137d980a15f68ad6399fee Mon Sep 17 00:00:00 2001
+From 364680be608c7ae0652a639c60f764d3f6f5a8c0 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 15:09:23 +0100
-Subject: [PATCH 248/349] snd/pcm: fix snd_pcm_stream_lock*() irqs_disabled()
+Subject: [PATCH 248/370] snd/pcm: fix snd_pcm_stream_lock*() irqs_disabled()
  splats
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Locking functions previously using read_lock_irq()/read_lock_irqsave() were
 changed to local_irq_disable/save(), leading to gripes.  Use nort variants.
@@ -33,10 +33,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/sound/core/pcm_native.c b/sound/core/pcm_native.c
-index 79018697b477..8313482add35 100644
+index 3586ab41dec4..7b5a7418ac25 100644
 --- a/sound/core/pcm_native.c
 +++ b/sound/core/pcm_native.c
-@@ -135,7 +135,7 @@ EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock);
+@@ -136,7 +136,7 @@ EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock);
  void snd_pcm_stream_lock_irq(struct snd_pcm_substream *substream)
  {
  	if (!substream->pcm->nonatomic)
@@ -45,7 +45,7 @@ index 79018697b477..8313482add35 100644
  	snd_pcm_stream_lock(substream);
  }
  EXPORT_SYMBOL_GPL(snd_pcm_stream_lock_irq);
-@@ -150,7 +150,7 @@ void snd_pcm_stream_unlock_irq(struct snd_pcm_substream *substream)
+@@ -151,7 +151,7 @@ void snd_pcm_stream_unlock_irq(struct snd_pcm_substream *substream)
  {
  	snd_pcm_stream_unlock(substream);
  	if (!substream->pcm->nonatomic)
@@ -54,7 +54,7 @@ index 79018697b477..8313482add35 100644
  }
  EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock_irq);
  
-@@ -158,7 +158,7 @@ unsigned long _snd_pcm_stream_lock_irqsave(struct snd_pcm_substream *substream)
+@@ -159,7 +159,7 @@ unsigned long _snd_pcm_stream_lock_irqsave(struct snd_pcm_substream *substream)
  {
  	unsigned long flags = 0;
  	if (!substream->pcm->nonatomic)
@@ -63,7 +63,7 @@ index 79018697b477..8313482add35 100644
  	snd_pcm_stream_lock(substream);
  	return flags;
  }
-@@ -176,7 +176,7 @@ void snd_pcm_stream_unlock_irqrestore(struct snd_pcm_substream *substream,
+@@ -177,7 +177,7 @@ void snd_pcm_stream_unlock_irqrestore(struct snd_pcm_substream *substream,
  {
  	snd_pcm_stream_unlock(substream);
  	if (!substream->pcm->nonatomic)
@@ -73,5 +73,5 @@ index 79018697b477..8313482add35 100644
  EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock_irqrestore);
  
 -- 
-2.18.0
+2.19.1
 

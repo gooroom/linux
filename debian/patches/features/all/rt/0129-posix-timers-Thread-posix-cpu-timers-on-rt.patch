@@ -1,8 +1,8 @@
-From 88a3f048c4ef5421b5961eeed501ece824e36e2d Mon Sep 17 00:00:00 2001
+From e2b21f15647781cb8d5533562aee6656fa66eba9 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 129/349] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 129/370] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -44,7 +44,7 @@ index d359b1a71610..a56e263f5005 100644
  		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
  		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 0206aac51132..65ed4e1c1874 100644
+index 98c05c39cc3a..1247bb4eca06 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1675,6 +1675,9 @@ struct task_struct {
@@ -58,10 +58,10 @@ index 0206aac51132..65ed4e1c1874 100644
  /* process credentials */
  	const struct cred __rcu *ptracer_cred; /* Tracer's credentials at attach */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index fca238739495..2572a2547f3e 100644
+index 4f7bf9f6f15b..b7761b649469 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1442,6 +1442,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1447,6 +1447,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {
@@ -72,7 +72,7 @@ index fca238739495..2572a2547f3e 100644
  	tsk->cputime_expires.virt_exp = 0;
  	tsk->cputime_expires.sched_exp = 0;
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index 39008d78927a..633f4eaca9e7 100644
+index 21a27bb73587..6ee4181aaa7b 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
 @@ -3,6 +3,7 @@
@@ -309,5 +309,5 @@ index 39008d78927a..633f4eaca9e7 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.18.0
+2.19.1
 

@@ -1,8 +1,8 @@
-From e9dd539f67beb2e628ab980e359900152379083b Mon Sep 17 00:00:00 2001
+From 2eefa3e34d7624f88e4281f33f97f7e7b7a1c982 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 15 Nov 2015 18:40:17 +0100
-Subject: [PATCH 247/349] irqwork: Move irq safe work to irq context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 247/370] irqwork: Move irq safe work to irq context
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 On architectures where arch_irq_work_has_interrupt() returns false, we
 end up running the irq safe work from the softirq context. That
@@ -16,16 +16,17 @@ the timer softirq.
 Reported-and-tested-by: Yanjiang Jin <yanjiang.jin@windriver.com>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Cc: stable-rt@vger.kernel.org
-[carnil: Refresh for context changes in 4.9.128]
 ---
  include/linux/irq_work.h | 6 ++++++
  kernel/irq_work.c        | 9 +++++++++
  kernel/time/timer.c      | 6 ++----
  3 files changed, 17 insertions(+), 4 deletions(-)
 
+diff --git a/include/linux/irq_work.h b/include/linux/irq_work.h
+index 0e427a9997f3..2543aab05daa 100644
 --- a/include/linux/irq_work.h
 +++ b/include/linux/irq_work.h
-@@ -52,4 +52,10 @@ static inline bool irq_work_needs_cpu(vo
+@@ -52,4 +52,10 @@ static inline bool irq_work_needs_cpu(void) { return false; }
  static inline void irq_work_run(void) { }
  #endif
  
@@ -36,6 +37,8 @@ Cc: stable-rt@vger.kernel.org
 +#endif
 +
  #endif /* _LINUX_IRQ_WORK_H */
+diff --git a/kernel/irq_work.c b/kernel/irq_work.c
+index 0ddaf1e66d8c..2899ba0d23d1 100644
 --- a/kernel/irq_work.c
 +++ b/kernel/irq_work.c
 @@ -200,8 +200,17 @@ void irq_work_tick(void)
@@ -56,6 +59,8 @@ Cc: stable-rt@vger.kernel.org
  
  /*
   * Synchronize against the irq_work @entry, ensures the entry is not
+diff --git a/kernel/time/timer.c b/kernel/time/timer.c
+index e345117292fe..f8b954f9fe7b 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -1661,7 +1661,7 @@ void update_process_times(int user_tick)
@@ -67,7 +72,7 @@ Cc: stable-rt@vger.kernel.org
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1717,9 +1717,7 @@ static __latent_entropy void run_timer_s
+@@ -1717,9 +1717,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  {
  	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
@@ -78,3 +83,6 @@ Cc: stable-rt@vger.kernel.org
  
  	__run_timers(base);
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
+-- 
+2.19.1
+

@@ -1,9 +1,9 @@
-From 389802bfe55c1f4dfdf72885847192a7d5d2bad6 Mon Sep 17 00:00:00 2001
+From deaf676697d38609cecb2ea26c58e0fd6e5805c9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 17:16:44 +0200
-Subject: [PATCH 038/349] iommu/vt-d: don't disable preemption while accessing
+Subject: [PATCH 038/370] iommu/vt-d: don't disable preemption while accessing
  deferred_flush()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 get_cpu() disables preemption and returns the current CPU number. The
 CPU number is later only used once while retrieving the address of the
@@ -27,10 +27,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 1612d3a22d42..890f7db8fda8 100644
+index f8c8537f0587..a14ac39b4454 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
-@@ -479,7 +479,7 @@ struct deferred_flush_data {
+@@ -480,7 +480,7 @@ struct deferred_flush_data {
  	struct deferred_flush_table *tables;
  };
  
@@ -39,7 +39,7 @@ index 1612d3a22d42..890f7db8fda8 100644
  
  /* bitmap for indexing intel_iommus */
  static int g_num_of_iommus;
-@@ -3720,10 +3720,8 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
+@@ -3736,10 +3736,8 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
  	struct intel_iommu *iommu;
  	struct deferred_flush_entry *entry;
  	struct deferred_flush_data *flush_data;
@@ -51,7 +51,7 @@ index 1612d3a22d42..890f7db8fda8 100644
  
  	/* Flush all CPUs' entries to avoid deferring too much.  If
  	 * this becomes a bottleneck, can just flush us, and rely on
-@@ -3756,8 +3754,6 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
+@@ -3772,8 +3770,6 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
  	}
  	flush_data->size++;
  	spin_unlock_irqrestore(&flush_data->lock, flags);
@@ -61,5 +61,5 @@ index 1612d3a22d42..890f7db8fda8 100644
  
  static void intel_unmap(struct device *dev, dma_addr_t dev_addr, size_t size)
 -- 
-2.18.0
+2.19.1
 

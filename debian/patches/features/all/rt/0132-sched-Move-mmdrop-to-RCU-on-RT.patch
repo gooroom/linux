@@ -1,8 +1,8 @@
-From 8b750165d1f840e5bf41b28dbcd8330bae3a48d1 Mon Sep 17 00:00:00 2001
+From 45bcc7eded925a7b71dd05dc63de47ec5670b3f7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 132/349] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 132/370] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 45 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index e8471c2ca83a..08bde1a7a987 100644
+index 8d6decd50220..d161d40ff044 100644
 --- a/include/linux/mm_types.h
 +++ b/include/linux/mm_types.h
 @@ -11,6 +11,7 @@
@@ -38,7 +38,7 @@ index e8471c2ca83a..08bde1a7a987 100644
  	/* address of the bounds directory */
  	void __user *bd_addr;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1ebbca073134..1c8c43e8220f 100644
+index d7339f027c88..9f1829ccadef 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -2936,6 +2936,17 @@ static inline void mmdrop(struct mm_struct *mm)
@@ -60,10 +60,10 @@ index 1ebbca073134..1c8c43e8220f 100644
  {
  	struct mm_struct *mm = container_of(work, struct mm_struct, async_put_work);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 08a834f25b82..613a26994992 100644
+index 30ae0eb23067..49d7b6e784eb 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -880,6 +880,19 @@ void __mmdrop(struct mm_struct *mm)
+@@ -883,6 +883,19 @@ void __mmdrop(struct mm_struct *mm)
  }
  EXPORT_SYMBOL_GPL(__mmdrop);
  
@@ -84,7 +84,7 @@ index 08a834f25b82..613a26994992 100644
  {
  	VM_BUG_ON(atomic_read(&mm->mm_users));
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 552f211c3fc7..d7dc6f260a01 100644
+index fa5a740d3b6b..bf30ba7b654d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2787,8 +2787,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -136,5 +136,5 @@ index 552f211c3fc7..d7dc6f260a01 100644
  }
  #endif
 -- 
-2.18.0
+2.19.1
 

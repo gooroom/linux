@@ -1,9 +1,9 @@
-From 68767d0b38d1ead2f0389c1b06c3a85e8c9e40a1 Mon Sep 17 00:00:00 2001
+From 6ad38c7aa6a770e17bce1f2de6cd4472aa514419 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Tue, 29 Nov 2011 20:18:22 -0500
-Subject: [PATCH 153/349] tasklet: Prevent tasklets from going into infinite
+Subject: [PATCH 153/370] tasklet: Prevent tasklets from going into infinite
  spin in RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 When CONFIG_PREEMPT_RT_FULL is enabled, tasklets run as threads,
 and spinlocks turn are mutexes. But this can cause issues with
@@ -117,7 +117,7 @@ index 59acc26fa74f..5819d557f5fd 100644
  extern void tasklet_kill_immediate(struct tasklet_struct *t, unsigned int cpu);
  extern void tasklet_init(struct tasklet_struct *t,
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 744fa611cae0..8669000c2aa3 100644
+index d257e624be25..02d1106adeea 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -21,6 +21,7 @@
@@ -128,7 +128,7 @@ index 744fa611cae0..8669000c2aa3 100644
  #include <linux/ftrace.h>
  #include <linux/smp.h>
  #include <linux/smpboot.h>
-@@ -460,15 +461,45 @@ struct tasklet_head {
+@@ -464,15 +465,45 @@ struct tasklet_head {
  static DEFINE_PER_CPU(struct tasklet_head, tasklet_vec);
  static DEFINE_PER_CPU(struct tasklet_head, tasklet_hi_vec);
  
@@ -178,7 +178,7 @@ index 744fa611cae0..8669000c2aa3 100644
  	local_irq_restore(flags);
  }
  EXPORT_SYMBOL(__tasklet_schedule);
-@@ -478,10 +509,7 @@ void __tasklet_hi_schedule(struct tasklet_struct *t)
+@@ -482,10 +513,7 @@ void __tasklet_hi_schedule(struct tasklet_struct *t)
  	unsigned long flags;
  
  	local_irq_save(flags);
@@ -190,7 +190,7 @@ index 744fa611cae0..8669000c2aa3 100644
  	local_irq_restore(flags);
  }
  EXPORT_SYMBOL(__tasklet_hi_schedule);
-@@ -490,82 +518,122 @@ void __tasklet_hi_schedule_first(struct tasklet_struct *t)
+@@ -494,82 +522,122 @@ void __tasklet_hi_schedule_first(struct tasklet_struct *t)
  {
  	BUG_ON(!irqs_disabled());
  
@@ -362,7 +362,7 @@ index 744fa611cae0..8669000c2aa3 100644
  }
  
  void tasklet_init(struct tasklet_struct *t,
-@@ -586,7 +654,7 @@ void tasklet_kill(struct tasklet_struct *t)
+@@ -590,7 +658,7 @@ void tasklet_kill(struct tasklet_struct *t)
  
  	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
  		do {
@@ -371,7 +371,7 @@ index 744fa611cae0..8669000c2aa3 100644
  		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
  	}
  	tasklet_unlock_wait(t);
-@@ -660,6 +728,23 @@ void __init softirq_init(void)
+@@ -664,6 +732,23 @@ void __init softirq_init(void)
  	open_softirq(HI_SOFTIRQ, tasklet_hi_action);
  }
  
@@ -396,5 +396,5 @@ index 744fa611cae0..8669000c2aa3 100644
  {
  	return local_softirq_pending();
 -- 
-2.18.0
+2.19.1
 
