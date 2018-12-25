@@ -479,12 +479,12 @@ ifneq ($(filter powerpc powerpcspe ppc64,$(ARCH)),)
 # the executables it calls.  Kbuild will always build these executable
 # as native code, which is wrong for a cross-built package.  Install
 # symlinks to the versions in the linux-bootwrapper package instead.
-	rm -rf '$(DIR)_bootwrapper'
+	rm -rf '$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'
 	+$(MAKE_CLEAN) -C '$(DIR)' bootwrapper_install \
 		WRAPPER_OBJDIR='$(CURDIR)/$(DT_INSTALL_DIR)' \
 		WRAPPER_DTSDIR='$(CURDIR)/$(DT_INSTALL_DIR)/dts' \
-		WRAPPER_BINDIR='$(CURDIR)/$(DIR)_bootwrapper'
-	for prog in '$(DIR)_bootwrapper'/*; do \
+		WRAPPER_BINDIR='$(CURDIR)/$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'
+	for prog in '$(BUILD_DIR)/bootwrapper_$(ARCH)_$(FEATURESET)_$(FLAVOUR)'/*; do \
 		prog="$$(basename $$prog)"; \
 		ln -s ../linux-bootwrapper-$(ABINAME)/$$prog \
 			'$(DT_INSTALL_DIR)'/$$prog; \
