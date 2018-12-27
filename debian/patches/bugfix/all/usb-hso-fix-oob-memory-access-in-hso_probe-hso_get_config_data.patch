@@ -1,11 +1,8 @@
-From 5146f95df782b0ac61abde36567e718692725c89 Mon Sep 17 00:00:00 2001
 From: Hui Peng <benquike@gmail.com>
 Date: Wed, 12 Dec 2018 12:42:24 +0100
 Subject: USB: hso: Fix OOB memory access in hso_probe/hso_get_config_data
-
-From: Hui Peng <benquike@gmail.com>
-
-commit 5146f95df782b0ac61abde36567e718692725c89 upstream.
+Origin: https://git.kernel.org/linus/5146f95df782b0ac61abde36567e718692725c89
+Bug-Debian-Security: https://security-tracker.debian.org/tracker/CVE-2018-19985
 
 The function hso_probe reads if_num from the USB device (as an u8) and uses
 it without a length check to index an array, resulting in an OOB memory read
@@ -23,15 +20,15 @@ Signed-off-by: Mathias Payer <mathias.payer@nebelwelt.net>
 Reviewed-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: David S. Miller <davem@davemloft.net>
-Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-
 ---
- drivers/net/usb/hso.c |   18 ++++++++++++++++--
+ drivers/net/usb/hso.c | 18 ++++++++++++++++--
  1 file changed, 16 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/net/usb/hso.c b/drivers/net/usb/hso.c
+index 184c24baca15..d6916f787fce 100644
 --- a/drivers/net/usb/hso.c
 +++ b/drivers/net/usb/hso.c
-@@ -2807,6 +2807,12 @@ static int hso_get_config_data(struct us
+@@ -2807,6 +2807,12 @@ static int hso_get_config_data(struct usb_interface *interface)
  		return -EIO;
  	}
  
@@ -44,7 +41,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	switch (config_data[if_num]) {
  	case 0x0:
  		result = 0;
-@@ -2877,10 +2883,18 @@ static int hso_probe(struct usb_interfac
+@@ -2877,10 +2883,18 @@ static int hso_probe(struct usb_interface *interface,
  
  	/* Get the interface/port specification from either driver_info or from
  	 * the device itself */
@@ -65,3 +62,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	/* Check if we need to switch to alt interfaces prior to port
  	 * configuration */
+-- 
+2.20.1
+
