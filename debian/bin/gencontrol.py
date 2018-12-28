@@ -361,14 +361,14 @@ class Gencontrol(Base):
         config_image = self.config.merge('image', arch, featureset, flavour)
 
         vars['class'] = config_description['hardware']
-        vars['longclass'] = (config_description.get('hardware-long') or
-                             vars['class'])
+        vars['longclass'] = (config_description.get('hardware-long')
+                             or vars['class'])
 
         vars['localversion-image'] = vars['localversion']
         override_localversion = config_image.get('override-localversion', None)
         if override_localversion is not None:
-            vars['localversion-image'] = (vars['localversion_headers'] + '-' +
-                                          override_localversion)
+            vars['localversion-image'] = (vars['localversion_headers'] + '-'
+                                          + override_localversion)
         vars['image-stem'] = config_image.get('install-stem')
 
         self._setup_makeflags(self.flavour_makeflags_base, makeflags,
@@ -638,8 +638,8 @@ class Gencontrol(Base):
         self.config['version', ] = {'source': self.version.complete,
                                     'upstream': self.version.linux_upstream,
                                     'abiname_base': self.abiname_version,
-                                    'abiname': (self.abiname_version +
-                                                self.abiname_part)}
+                                    'abiname': (self.abiname_version
+                                                + self.abiname_part)}
 
         distribution = self.changelog[0].distribution
         if distribution in ('unstable', ):

@@ -44,11 +44,11 @@ class Gencontrol(Base):
         }
 
         self.package_dir = 'debian/%(template)s' % self.vars
-        self.template_top_dir = (self.package_dir +
-                                 '/usr/share/code-signing/%(template)s' %
-                                 self.vars)
-        self.template_debian_dir = (self.template_top_dir +
-                                    '/source-template/debian')
+        self.template_top_dir = (self.package_dir
+                                 + '/usr/share/code-signing/%(template)s'
+                                 % self.vars)
+        self.template_debian_dir = (self.template_top_dir
+                                    + '/source-template/debian')
         os.makedirs(self.template_debian_dir, exist_ok=True)
 
         self.image_packages = []
@@ -184,8 +184,8 @@ class Gencontrol(Base):
                                     cert_file_name))
 
         packages['source']['Build-Depends'].append(
-            image_package_name +
-            ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
+            image_package_name
+            + ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
 
         packages_signed = self.process_packages(
             self.templates['control.image'], vars)
@@ -209,14 +209,14 @@ class Gencontrol(Base):
 
         os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
                     exist_ok=True)
-        with open(self.package_dir +
-                  '/usr/share/lintian/overrides/%(template)s' % self.vars,
+        with open(self.package_dir
+                  + '/usr/share/lintian/overrides/%(template)s' % self.vars,
                   'a') as lintian_overrides:
             for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
-                script_name = (self.template_debian_dir +
-                               '/linux-image-%s%s.%s' %
-                               (vars['abiname'], vars['localversion'],
-                                script_base))
+                script_name = (self.template_debian_dir
+                               + '/linux-image-%s%s.%s'
+                               % (vars['abiname'], vars['localversion'],
+                                  script_base))
                 self._substitute_file('image.%s' % script_base, vars,
                                       script_name)
                 lintian_overrides.write('%s: script-not-executable %s\n' %
