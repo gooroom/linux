@@ -5,7 +5,7 @@ Cc:     Anna Schumaker <anna.schumaker@netapp.com>,
         linux-nfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         tglx@linutronix.de
 Subject: NFSv4: replace seqcount_t with a seqlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.8-rt6.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.10-rt8.tar.xz
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -47,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		put_nfs_open_context(ctx);
 --- a/fs/nfs/nfs4_fs.h
 +++ b/fs/nfs/nfs4_fs.h
-@@ -112,7 +112,7 @@ struct nfs4_state_owner {
+@@ -114,7 +114,7 @@ struct nfs4_state_owner {
  	unsigned long	     so_flags;
  	struct list_head     so_states;
  	struct nfs_seqid_counter so_seqid;
@@ -87,7 +87,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	mutex_init(&sp->so_delegreturn_mutex);
  	return sp;
  }
-@@ -1563,8 +1563,12 @@ static int nfs4_reclaim_open_state(struc
+@@ -1564,8 +1564,12 @@ static int nfs4_reclaim_open_state(struc
  	 * recovering after a network partition or a reboot from a
  	 * server that doesn't support a grace period.
  	 */
@@ -101,7 +101,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  restart:
  	list_for_each_entry(state, &sp->so_states, open_states) {
  		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
-@@ -1651,14 +1655,20 @@ static int nfs4_reclaim_open_state(struc
+@@ -1652,14 +1656,20 @@ static int nfs4_reclaim_open_state(struc
  		spin_lock(&sp->so_lock);
  		goto restart;
  	}
