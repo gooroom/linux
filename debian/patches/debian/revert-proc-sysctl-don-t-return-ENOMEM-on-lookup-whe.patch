@@ -1,0 +1,70 @@
+From: Salvatore Bonaccorso <carnil@debian.org>
+Date: Sat, 29 Dec 2018 14:54:21 +0100
+Subject: Revert "proc/sysctl: don't return ENOMEM on lookup when a table is
+ unregistering"
+Forwarded: not-needed
+
+The commit fixes ace0c791e6c3 ("proc/sysctl: Don't grab i_lock under
+sysctl_lock.") which originally is backported to 4.9.120 but which we
+revert since 4.9.130-1 to avoid ABI changes.
+---
+ fs/proc/proc_sysctl.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
+index 1999e85840d5..46cd2e1b055b 100644
+--- a/fs/proc/proc_sysctl.c
++++ b/fs/proc/proc_sysctl.c
+@@ -466,7 +466,7 @@ static struct inode *proc_sys_make_inode(struct super_block *sb,
+ 
+ 	inode = new_inode(sb);
+ 	if (!inode)
+-		return ERR_PTR(-ENOMEM);
++		goto out;
+ 
+ 	inode->i_ino = get_next_ino();
+ 
+@@ -476,7 +476,8 @@ static struct inode *proc_sys_make_inode(struct super_block *sb,
+ 	if (unlikely(head->unregistering)) {
+ 		spin_unlock(&sysctl_lock);
+ 		iput(inode);
+-		return ERR_PTR(-ENOENT);
++		inode = NULL;
++		goto out;
+ 	}
+ 	ei->sysctl = head;
+ 	ei->sysctl_entry = table;
+@@ -501,6 +502,7 @@ static struct inode *proc_sys_make_inode(struct super_block *sb,
+ 	if (root->set_ownership)
+ 		root->set_ownership(head, table, &inode->i_uid, &inode->i_gid);
+ 
++out:
+ 	return inode;
+ }
+ 
+@@ -549,11 +551,10 @@ static struct dentry *proc_sys_lookup(struct inode *dir, struct dentry *dentry,
+ 			goto out;
+ 	}
+ 
++	err = ERR_PTR(-ENOMEM);
+ 	inode = proc_sys_make_inode(dir->i_sb, h ? h : head, p);
+-	if (IS_ERR(inode)) {
+-		err = ERR_CAST(inode);
++	if (!inode)
+ 		goto out;
+-	}
+ 
+ 	err = NULL;
+ 	d_set_d_op(dentry, &proc_sys_dentry_operations);
+@@ -686,7 +687,7 @@ static bool proc_sys_fill_cache(struct file *file,
+ 			return false;
+ 		if (d_in_lookup(child)) {
+ 			inode = proc_sys_make_inode(dir->d_sb, head, table);
+-			if (IS_ERR(inode)) {
++			if (!inode) {
+ 				d_lookup_done(child);
+ 				dput(child);
+ 				return false;
+-- 
+2.20.1
+
