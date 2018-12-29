@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 
 import optparse
-import os.path
 import re
-import sys
 
-from debian_linux.kconfig import *
+from debian_linux.kconfig import KconfigFile
 
 
 def merge(output, configs, overrides):
