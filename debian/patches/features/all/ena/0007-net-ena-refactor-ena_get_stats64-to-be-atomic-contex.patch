@@ -1,0 +1,122 @@
+From: Netanel Belgazal <netanel@annapurnalabs.com>
+Date: Thu, 9 Feb 2017 15:21:32 +0200
+Subject: [07/43] net/ena: refactor ena_get_stats64 to be atomic context safe
+Origin: https://git.kernel.org/linus/d81db24056132fe8b83e2fba337e9ea76675e68d
+
+ndo_get_stat64() can be called from atomic context, but the current
+implementation sends an admin command to retrieve the statistics from
+the device. This admin command can sleep.
+
+This patch re-factors the implementation of ena_get_stats64() to use
+the {rx,tx}bytes/count from the driver's inner counters, and to obtain
+the rx drop counter from the asynchronous keep alive (heart bit)
+event.
+
+Signed-off-by: Netanel Belgazal <netanel@annapurnalabs.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ .../net/ethernet/amazon/ena/ena_admin_defs.h  |  8 ++++
+ drivers/net/ethernet/amazon/ena/ena_netdev.c  | 48 +++++++++++++------
+ drivers/net/ethernet/amazon/ena/ena_netdev.h  |  1 +
+ 3 files changed, 42 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_admin_defs.h b/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
+index e1594d6d6789..5b6509d59716 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
++++ b/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
+@@ -873,6 +873,14 @@ struct ena_admin_aenq_link_change_desc {
+ 	u32 flags;
+ };
+ 
++struct ena_admin_aenq_keep_alive_desc {
++	struct ena_admin_aenq_common_desc aenq_common_desc;
++
++	u32 rx_drops_low;
++
++	u32 rx_drops_high;
++};
++
+ struct ena_admin_ena_mmio_req_read_less_resp {
+ 	u16 req_id;
+ 
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 424b6c6d158a..5b5f90fe825b 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2183,28 +2183,46 @@ static struct rtnl_link_stats64 *ena_get_stats64(struct net_device *netdev,
+ 						 struct rtnl_link_stats64 *stats)
+ {
+ 	struct ena_adapter *adapter = netdev_priv(netdev);
+-	struct ena_admin_basic_stats ena_stats;
+-	int rc;
++	struct ena_ring *rx_ring, *tx_ring;
++	unsigned int start;
++	u64 rx_drops;
++	int i;
+ 
+ 	if (!test_bit(ENA_FLAG_DEV_UP, &adapter->flags))
+ 		return NULL;
+ 
+-	rc = ena_com_get_dev_basic_stats(adapter->ena_dev, &ena_stats);
+-	if (rc)
+-		return NULL;
++	for (i = 0; i < adapter->num_queues; i++) {
++		u64 bytes, packets;
++
++		tx_ring = &adapter->tx_ring[i];
+ 
+-	stats->tx_bytes = ((u64)ena_stats.tx_bytes_high << 32) |
+-		ena_stats.tx_bytes_low;
+-	stats->rx_bytes = ((u64)ena_stats.rx_bytes_high << 32) |
+-		ena_stats.rx_bytes_low;
++		do {
++			start = u64_stats_fetch_begin_irq(&tx_ring->syncp);
++			packets = tx_ring->tx_stats.cnt;
++			bytes = tx_ring->tx_stats.bytes;
++		} while (u64_stats_fetch_retry_irq(&tx_ring->syncp, start));
+ 
+-	stats->rx_packets = ((u64)ena_stats.rx_pkts_high << 32) |
+-		ena_stats.rx_pkts_low;
+-	stats->tx_packets = ((u64)ena_stats.tx_pkts_high << 32) |
+-		ena_stats.tx_pkts_low;
++		stats->tx_packets += packets;
++		stats->tx_bytes += bytes;
++
++		rx_ring = &adapter->rx_ring[i];
++
++		do {
++			start = u64_stats_fetch_begin_irq(&rx_ring->syncp);
++			packets = rx_ring->rx_stats.cnt;
++			bytes = rx_ring->rx_stats.bytes;
++		} while (u64_stats_fetch_retry_irq(&rx_ring->syncp, start));
++
++		stats->rx_packets += packets;
++		stats->rx_bytes += bytes;
++	}
++
++	do {
++		start = u64_stats_fetch_begin_irq(&adapter->syncp);
++		rx_drops = adapter->dev_stats.rx_drops;
++	} while (u64_stats_fetch_retry_irq(&adapter->syncp, start));
+ 
+-	stats->rx_dropped = ((u64)ena_stats.rx_drops_high << 32) |
+-		ena_stats.rx_drops_low;
++	stats->rx_dropped = rx_drops;
+ 
+ 	stats->multicast = 0;
+ 	stats->collisions = 0;
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.h b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+index 008f2d594d40..152bd104f135 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -241,6 +241,7 @@ struct ena_stats_dev {
+ 	u64 interface_up;
+ 	u64 interface_down;
+ 	u64 admin_q_pause;
++	u64 rx_drops;
+ };
+ 
+ enum ena_flags_t {
+-- 
+2.19.2
+

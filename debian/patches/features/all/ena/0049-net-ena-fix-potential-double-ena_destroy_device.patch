@@ -1,0 +1,48 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Sun, 9 Sep 2018 08:15:23 +0000
+Subject: [06/13] net: ena: fix potential double ena_destroy_device()
+Origin: https://git.kernel.org/linus/fe870c77efdf8682252545cbd3d29800d8379efc
+
+ena_destroy_device() can potentially be called twice.
+To avoid this, check that the device is running and
+only then proceed destroying it.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 9b0f5be925a0..d1e5a64658c9 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2569,6 +2569,9 @@ static void ena_destroy_device(struct ena_adapter *adapter, bool graceful)
+ 	struct ena_com_dev *ena_dev = adapter->ena_dev;
+ 	bool dev_up;
+ 
++	if (!test_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags))
++		return;
++
+ 	netif_carrier_off(netdev);
+ 
+ 	del_timer_sync(&adapter->timer_service);
+@@ -2605,6 +2608,7 @@ static void ena_destroy_device(struct ena_adapter *adapter, bool graceful)
+ 	adapter->reset_reason = ENA_REGS_RESET_NORMAL;
+ 
+ 	clear_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags);
++	clear_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags);
+ }
+ 
+ static int ena_restore_device(struct ena_adapter *adapter)
+@@ -2649,6 +2653,7 @@ static int ena_restore_device(struct ena_adapter *adapter)
+ 		}
+ 	}
+ 
++	set_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags);
+ 	mod_timer(&adapter->timer_service, round_jiffies(jiffies + HZ));
+ 	dev_err(&pdev->dev, "Device reset completed successfully\n");
+ 
+-- 
+2.19.2
+

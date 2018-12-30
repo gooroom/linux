@@ -1,0 +1,217 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Thu, 28 Dec 2017 21:31:30 +0000
+Subject: [42/43] net: ena: add detection and recovery mechanism for handling
+ missed/misrouted MSI-X
+Origin: https://git.kernel.org/linus/8510e1a3d16c7e4e2b47c9675b18725407c616b7
+
+A mechanism for detection of stuck Rx/Tx rings due to missed or
+misrouted interrupts.
+Check if there are unhandled completion descriptors before the first
+MSI-X interrupt arrived.
+The check is per queue and per interrupt vector.
+Once such condition is detected, driver and device reset is scheduled.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_eth_com.c | 11 +++
+ drivers/net/ethernet/amazon/ena/ena_eth_com.h |  2 +
+ drivers/net/ethernet/amazon/ena/ena_netdev.c  | 68 +++++++++++++++++--
+ drivers/net/ethernet/amazon/ena/ena_netdev.h  |  4 ++
+ .../net/ethernet/amazon/ena/ena_regs_defs.h   |  2 +
+ 5 files changed, 80 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.c b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+index b11e573ad57a..ea149c134e15 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+@@ -504,3 +504,14 @@ int ena_com_tx_comp_req_id_get(struct ena_com_io_cq *io_cq, u16 *req_id)
+ 
+ 	return 0;
+ }
++
++bool ena_com_cq_empty(struct ena_com_io_cq *io_cq)
++{
++	struct ena_eth_io_rx_cdesc_base *cdesc;
++
++	cdesc = ena_com_get_next_rx_cdesc(io_cq);
++	if (cdesc)
++		return false;
++	else
++		return true;
++}
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.h b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+index bb53c3a4f8e9..2f7657227cfe 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.h
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.h
+@@ -88,6 +88,8 @@ int ena_com_add_single_rx_desc(struct ena_com_io_sq *io_sq,
+ 
+ int ena_com_tx_comp_req_id_get(struct ena_com_io_cq *io_cq, u16 *req_id);
+ 
++bool ena_com_cq_empty(struct ena_com_io_cq *io_cq);
++
+ static inline void ena_com_unmask_intr(struct ena_com_io_cq *io_cq,
+ 				       struct ena_eth_io_intr_reg *intr_reg)
+ {
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 54df4fe66265..c268331bbb01 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -165,6 +165,8 @@ static void ena_init_io_rings_common(struct ena_adapter *adapter,
+ 	ring->per_napi_packets = 0;
+ 	ring->per_napi_bytes = 0;
+ 	ring->cpu = 0;
++	ring->first_interrupt = false;
++	ring->no_interrupt_event_cnt = 0;
+ 	u64_stats_init(&ring->syncp);
+ }
+ 
+@@ -1281,6 +1283,9 @@ static irqreturn_t ena_intr_msix_io(int irq, void *data)
+ {
+ 	struct ena_napi *ena_napi = data;
+ 
++	ena_napi->tx_ring->first_interrupt = true;
++	ena_napi->rx_ring->first_interrupt = true;
++
+ 	napi_schedule_irqoff(&ena_napi->napi);
+ 
+ 	return IRQ_HANDLED;
+@@ -2662,8 +2667,32 @@ static void ena_fw_reset_device(struct work_struct *work)
+ 	rtnl_unlock();
+ }
+ 
+-static int check_missing_comp_in_queue(struct ena_adapter *adapter,
+-				       struct ena_ring *tx_ring)
++static int check_for_rx_interrupt_queue(struct ena_adapter *adapter,
++					struct ena_ring *rx_ring)
++{
++	if (likely(rx_ring->first_interrupt))
++		return 0;
++
++	if (ena_com_cq_empty(rx_ring->ena_com_io_cq))
++		return 0;
++
++	rx_ring->no_interrupt_event_cnt++;
++
++	if (rx_ring->no_interrupt_event_cnt == ENA_MAX_NO_INTERRUPT_ITERATIONS) {
++		netif_err(adapter, rx_err, adapter->netdev,
++			  "Potential MSIX issue on Rx side Queue = %d. Reset the device\n",
++			  rx_ring->qid);
++		adapter->reset_reason = ENA_REGS_RESET_MISS_INTERRUPT;
++		smp_mb__before_atomic();
++		set_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
++					  struct ena_ring *tx_ring)
+ {
+ 	struct ena_tx_buffer *tx_buf;
+ 	unsigned long last_jiffies;
+@@ -2673,8 +2702,27 @@ static int check_missing_comp_in_queue(struct ena_adapter *adapter,
+ 	for (i = 0; i < tx_ring->ring_size; i++) {
+ 		tx_buf = &tx_ring->tx_buffer_info[i];
+ 		last_jiffies = tx_buf->last_jiffies;
+-		if (unlikely(last_jiffies &&
+-			     time_is_before_jiffies(last_jiffies + adapter->missing_tx_completion_to))) {
++
++		if (last_jiffies == 0)
++			/* no pending Tx at this location */
++			continue;
++
++		if (unlikely(!tx_ring->first_interrupt && time_is_before_jiffies(last_jiffies +
++			     2 * adapter->missing_tx_completion_to))) {
++			/* If after graceful period interrupt is still not
++			 * received, we schedule a reset
++			 */
++			netif_err(adapter, tx_err, adapter->netdev,
++				  "Potential MSIX issue on Tx side Queue = %d. Reset the device\n",
++				  tx_ring->qid);
++			adapter->reset_reason = ENA_REGS_RESET_MISS_INTERRUPT;
++			smp_mb__before_atomic();
++			set_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags);
++			return -EIO;
++		}
++
++		if (unlikely(time_is_before_jiffies(last_jiffies +
++				adapter->missing_tx_completion_to))) {
+ 			if (!tx_buf->print_once)
+ 				netif_notice(adapter, tx_err, adapter->netdev,
+ 					     "Found a Tx that wasn't completed on time, qid %d, index %d.\n",
+@@ -2703,9 +2751,10 @@ static int check_missing_comp_in_queue(struct ena_adapter *adapter,
+ 	return rc;
+ }
+ 
+-static void check_for_missing_tx_completions(struct ena_adapter *adapter)
++static void check_for_missing_completions(struct ena_adapter *adapter)
+ {
+ 	struct ena_ring *tx_ring;
++	struct ena_ring *rx_ring;
+ 	int i, budget, rc;
+ 
+ 	/* Make sure the driver doesn't turn the device in other process */
+@@ -2724,8 +2773,13 @@ static void check_for_missing_tx_completions(struct ena_adapter *adapter)
+ 
+ 	for (i = adapter->last_monitored_tx_qid; i < adapter->num_queues; i++) {
+ 		tx_ring = &adapter->tx_ring[i];
++		rx_ring = &adapter->rx_ring[i];
++
++		rc = check_missing_comp_in_tx_queue(adapter, tx_ring);
++		if (unlikely(rc))
++			return;
+ 
+-		rc = check_missing_comp_in_queue(adapter, tx_ring);
++		rc = check_for_rx_interrupt_queue(adapter, rx_ring);
+ 		if (unlikely(rc))
+ 			return;
+ 
+@@ -2884,7 +2938,7 @@ static void ena_timer_service(unsigned long data)
+ 
+ 	check_for_admin_com_state(adapter);
+ 
+-	check_for_missing_tx_completions(adapter);
++	check_for_missing_completions(adapter);
+ 
+ 	check_for_empty_rx_ring(adapter);
+ 
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.h b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+index 1e6f23e2ab67..7309b4efa155 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -122,6 +122,7 @@
+  * We wait for 6 sec just to be on the safe side.
+  */
+ #define ENA_DEVICE_KALIVE_TIMEOUT	(6 * HZ)
++#define ENA_MAX_NO_INTERRUPT_ITERATIONS 3
+ 
+ #define ENA_MMIO_DISABLE_REG_READ	BIT(0)
+ 
+@@ -236,6 +237,9 @@ struct ena_ring {
+ 	/* The maximum header length the device can handle */
+ 	u8 tx_max_header_size;
+ 
++	bool first_interrupt;
++	u16 no_interrupt_event_cnt;
++
+ 	/* cpu for TPH */
+ 	int cpu;
+ 	 /* number of tx/rx_buffer_info's entries */
+diff --git a/drivers/net/ethernet/amazon/ena/ena_regs_defs.h b/drivers/net/ethernet/amazon/ena/ena_regs_defs.h
+index 9aec43c5bba8..48ca97fbe7bc 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_regs_defs.h
++++ b/drivers/net/ethernet/amazon/ena/ena_regs_defs.h
+@@ -60,6 +60,8 @@ enum ena_regs_reset_reason_types {
+ 	ENA_REGS_RESET_USER_TRIGGER		= 12,
+ 
+ 	ENA_REGS_RESET_GENERIC			= 13,
++
++	ENA_REGS_RESET_MISS_INTERRUPT		= 14,
+ };
+ 
+ /* ena_registers offsets */
+-- 
+2.19.2
+

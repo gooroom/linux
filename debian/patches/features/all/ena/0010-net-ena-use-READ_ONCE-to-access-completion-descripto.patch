@@ -1,0 +1,68 @@
+From: Netanel Belgazal <netanel@annapurnalabs.com>
+Date: Thu, 9 Feb 2017 15:21:35 +0200
+Subject: [10/43] net/ena: use READ_ONCE to access completion descriptors
+Origin: https://git.kernel.org/linus/a8496eb81342393e4c8280a5ec27e1872a3fb9fd
+
+Completion descriptors are accessed from the driver and from the device.
+To avoid reading the old value, use READ_ONCE macro.
+
+Signed-off-by: Netanel Belgazal <netanel@annapurnalabs.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.h     | 1 +
+ drivers/net/ethernet/amazon/ena/ena_eth_com.c | 8 ++++----
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.h b/drivers/net/ethernet/amazon/ena/ena_com.h
+index 509d7b8e15ab..c9b33ee5f258 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.h
++++ b/drivers/net/ethernet/amazon/ena/ena_com.h
+@@ -33,6 +33,7 @@
+ #ifndef ENA_COM
+ #define ENA_COM
+ 
++#include <linux/compiler.h>
+ #include <linux/delay.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/gfp.h>
+diff --git a/drivers/net/ethernet/amazon/ena/ena_eth_com.c b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+index 539c536464a5..f999305e1363 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_eth_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_eth_com.c
+@@ -45,7 +45,7 @@ static inline struct ena_eth_io_rx_cdesc_base *ena_com_get_next_rx_cdesc(
+ 	cdesc = (struct ena_eth_io_rx_cdesc_base *)(io_cq->cdesc_addr.virt_addr
+ 			+ (head_masked * io_cq->cdesc_entry_size_in_bytes));
+ 
+-	desc_phase = (cdesc->status & ENA_ETH_IO_RX_CDESC_BASE_PHASE_MASK) >>
++	desc_phase = (READ_ONCE(cdesc->status) & ENA_ETH_IO_RX_CDESC_BASE_PHASE_MASK) >>
+ 			ENA_ETH_IO_RX_CDESC_BASE_PHASE_SHIFT;
+ 
+ 	if (desc_phase != expected_phase)
+@@ -141,7 +141,7 @@ static inline u16 ena_com_cdesc_rx_pkt_get(struct ena_com_io_cq *io_cq,
+ 
+ 		ena_com_cq_inc_head(io_cq);
+ 		count++;
+-		last = (cdesc->status & ENA_ETH_IO_RX_CDESC_BASE_LAST_MASK) >>
++		last = (READ_ONCE(cdesc->status) & ENA_ETH_IO_RX_CDESC_BASE_LAST_MASK) >>
+ 			ENA_ETH_IO_RX_CDESC_BASE_LAST_SHIFT;
+ 	} while (!last);
+ 
+@@ -489,13 +489,13 @@ int ena_com_tx_comp_req_id_get(struct ena_com_io_cq *io_cq, u16 *req_id)
+ 	 * expected, it mean that the device still didn't update
+ 	 * this completion.
+ 	 */
+-	cdesc_phase = cdesc->flags & ENA_ETH_IO_TX_CDESC_PHASE_MASK;
++	cdesc_phase = READ_ONCE(cdesc->flags) & ENA_ETH_IO_TX_CDESC_PHASE_MASK;
+ 	if (cdesc_phase != expected_phase)
+ 		return -EAGAIN;
+ 
+ 	ena_com_cq_inc_head(io_cq);
+ 
+-	*req_id = cdesc->req_id;
++	*req_id = READ_ONCE(cdesc->req_id);
+ 
+ 	return 0;
+ }
+-- 
+2.19.2
+

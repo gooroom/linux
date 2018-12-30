@@ -1,0 +1,27 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Fri, 23 Jun 2017 11:21:56 +0300
+Subject: [26/43] net: ena: use napi_schedule_irqoff when possible
+Origin: https://git.kernel.org/linus/e745dafab0340edaa522b43fd36b38e646c2963d
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index c1c98422bfcf..8c48225cf364 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -1271,7 +1271,7 @@ static irqreturn_t ena_intr_msix_io(int irq, void *data)
+ {
+ 	struct ena_napi *ena_napi = data;
+ 
+-	napi_schedule(&ena_napi->napi);
++	napi_schedule_irqoff(&ena_napi->napi);
+ 
+ 	return IRQ_HANDLED;
+ }
+-- 
+2.19.2
+

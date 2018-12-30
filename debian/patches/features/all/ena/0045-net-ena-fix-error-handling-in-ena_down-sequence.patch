@@ -1,0 +1,67 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Wed, 3 Jan 2018 06:17:30 +0000
+Subject: [02/13] net: ena: fix error handling in ena_down() sequence
+Origin: https://git.kernel.org/linus/ee4552aaf3fef5345199b8a82e40be7245b289fb
+
+ENA admin command queue errors are not handled as part of ena_down().
+As a result, in case of error admin queue transitions to non-running
+state and aborts all subsequent commands including those coming from
+ena_up(). Reset scheduled by the driver from the timer service
+context would not proceed due to sharing rtnl with ena_up()/ena_down()
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 1590d573acc7..d684198c387c 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -75,6 +75,9 @@ static struct workqueue_struct *ena_wq;
+ MODULE_DEVICE_TABLE(pci, ena_pci_tbl);
+ 
+ static int ena_rss_init_default(struct ena_adapter *adapter);
++static void check_for_admin_com_state(struct ena_adapter *adapter);
++static void ena_destroy_device(struct ena_adapter *adapter);
++static int ena_restore_device(struct ena_adapter *adapter);
+ 
+ static void ena_tx_timeout(struct net_device *dev)
+ {
+@@ -1901,6 +1904,17 @@ static int ena_close(struct net_device *netdev)
+ 	if (test_bit(ENA_FLAG_DEV_UP, &adapter->flags))
+ 		ena_down(adapter);
+ 
++	/* Check for device status and issue reset if needed*/
++	check_for_admin_com_state(adapter);
++	if (unlikely(test_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags))) {
++		netif_err(adapter, ifdown, adapter->netdev,
++			  "Destroy failure, restarting device\n");
++		ena_dump_stats_to_dmesg(adapter);
++		/* rtnl lock already obtained in dev_ioctl() layer */
++		ena_destroy_device(adapter);
++		ena_restore_device(adapter);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -2563,11 +2577,12 @@ static void ena_destroy_device(struct ena_adapter *adapter)
+ 
+ 	ena_com_set_admin_running_state(ena_dev, false);
+ 
+-	ena_close(netdev);
++	if (test_bit(ENA_FLAG_DEV_UP, &adapter->flags))
++		ena_down(adapter);
+ 
+ 	/* Before releasing the ENA resources, a device reset is required.
+ 	 * (to prevent the device from accessing them).
+-	 * In case the reset flag is set and the device is up, ena_close
++	 * In case the reset flag is set and the device is up, ena_down()
+ 	 * already perform the reset, so it can be skipped.
+ 	 */
+ 	if (!(test_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags) && dev_up))
+-- 
+2.19.2
+
