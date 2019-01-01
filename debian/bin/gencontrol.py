@@ -77,10 +77,6 @@ class Gencontrol(Base):
             'ABINAME': self.abiname_version + self.abiname_part,
             'SOURCEVERSION': self.version.complete,
         })
-        if not self.config.merge('packages').get('tools-unversioned', True):
-            makeflags['DO_TOOLS_UNVERSIONED'] = False
-        if not self.config.merge('packages').get('tools-versioned', True):
-            makeflags['DO_TOOLS_VERSIONED'] = False
         makeflags['SOURCE_BASENAME'] = self.vars['source_basename']
 
         # Prepare to generate debian/tests/control
@@ -167,10 +163,6 @@ class Gencontrol(Base):
 
         makeflags = makeflags.copy()
         makeflags['ALL_FEATURESETS'] = ' '.join(fs_enabled)
-        if not self.config.merge('packages').get('docs', True):
-            makeflags['DO_DOCS'] = False
-        if not self.config.merge('packages').get('source', True):
-            makeflags['DO_SOURCE'] = False
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
     def do_main_packages(self, packages, vars, makeflags, extra):
@@ -264,13 +256,10 @@ class Gencontrol(Base):
                 packages_headers_arch[-1]['Depends'])
         else:
             packages_headers_arch = []
-            makeflags['DO_HEADERS_ALL'] = False
 
         if self.config.merge('packages').get('libc-dev', True):
             libc_dev = self.templates["control.libc-dev"]
             packages_headers_arch[0:0] = self.process_packages(libc_dev, {})
-        else:
-            makeflags['DO_LIBC'] = False
 
         merge_packages(packages, packages_headers_arch, arch)
 
@@ -280,8 +269,6 @@ class Gencontrol(Base):
                            self.process_packages(
                                self.templates["control.config"], vars),
                            arch)
-        else:
-            makeflags['DO_CONFIG'] = False
 
         cmds_build_arch = ["$(MAKE) -f debian/rules.real build-arch-arch %s" %
                            makeflags]
@@ -291,12 +278,6 @@ class Gencontrol(Base):
                             % makeflags]
         makefile.add('binary-arch_%s_real' % arch, cmds=cmds_binary_arch,
                      deps=['setup_%s' % arch])
-
-        # For stage1 build profile
-        makefile.add('binary-libc-dev_%s' % arch,
-                     ['source_none_real'],
-                     ["$(MAKE) -f debian/rules.real install-libc-dev_%s %s" %
-                      (arch, makeflags)])
 
         udeb_packages = self.installer_packages.get(arch, [])
         if udeb_packages:
