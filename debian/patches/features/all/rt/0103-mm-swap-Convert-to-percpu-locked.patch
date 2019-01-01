@@ -1,8 +1,8 @@
-From 332f2884e5efbb4978ffb963d3558f26ca8e06ca Mon Sep 17 00:00:00 2001
+From 3eb1692e69fdbc2407aa61f928d54e7bd6d14fec Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: [PATCH 103/349] mm/swap: Convert to percpu locked
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 103/370] mm/swap: Convert to percpu locked
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -48,10 +48,10 @@ index 70e6bec46dc2..6678ed58b7c6 100644
  				cc->last_migrated_pfn = 0;
  			}
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index c8c9c5eb125f..046b5a2ebce0 100644
+index 2f1cf1423d69..9ab4998e8701 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -6617,7 +6617,9 @@ static int page_alloc_cpu_notify(struct notifier_block *self,
+@@ -6607,7 +6607,9 @@ static int page_alloc_cpu_notify(struct notifier_block *self,
  	int cpu = (unsigned long)hcpu;
  
  	if (action == CPU_DEAD || action == CPU_DEAD_FROZEN) {
@@ -198,5 +198,5 @@ index 4dcf852e1e6d..93840ec3cc62 100644
  
  static void lru_add_drain_per_cpu(struct work_struct *dummy)
 -- 
-2.18.0
+2.19.1
 

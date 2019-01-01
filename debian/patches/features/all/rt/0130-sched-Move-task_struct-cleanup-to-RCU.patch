@@ -1,8 +1,8 @@
-From 0fe9480e601698980af6a9301ada80add7ff1cb7 Mon Sep 17 00:00:00 2001
+From a2ad638110bcea355b4fc479cf6ff3fffbd0a0fc Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 130/349] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 130/370] sched: Move task_struct cleanup to RCU
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 27 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 65ed4e1c1874..1ebbca073134 100644
+index 1247bb4eca06..d7339f027c88 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1979,6 +1979,9 @@ struct task_struct {
@@ -52,10 +52,10 @@ index 65ed4e1c1874..1ebbca073134 100644
  struct task_struct *task_rcu_dereference(struct task_struct **ptask);
  struct task_struct *try_get_task_struct(struct task_struct **ptask);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 2572a2547f3e..08a834f25b82 100644
+index b7761b649469..30ae0eb23067 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -378,7 +378,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
+@@ -381,7 +381,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
  	if (atomic_dec_and_test(&sig->sigcnt))
  		free_signal_struct(sig);
  }
@@ -66,7 +66,7 @@ index 2572a2547f3e..08a834f25b82 100644
  void __put_task_struct(struct task_struct *tsk)
  {
  	WARN_ON(!tsk->exit_state);
-@@ -395,7 +397,18 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -398,7 +400,18 @@ void __put_task_struct(struct task_struct *tsk)
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
  }
@@ -86,5 +86,5 @@ index 2572a2547f3e..08a834f25b82 100644
  void __init __weak arch_task_cache_init(void) { }
  
 -- 
-2.18.0
+2.19.1
 

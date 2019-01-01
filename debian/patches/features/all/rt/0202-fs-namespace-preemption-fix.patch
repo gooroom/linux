@@ -1,8 +1,8 @@
-From 781b2c97246974f92b05ae23fc1a4a479054d003 Mon Sep 17 00:00:00 2001
+From 722db61edd983955db72fc95fef84a0b7d7c7fef Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 19 Jul 2009 08:44:27 -0500
-Subject: [PATCH 202/349] fs: namespace preemption fix
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 202/370] fs: namespace preemption fix
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 On RT we cannot loop with preemption disabled here as
 mnt_make_readonly() might have been preempted. We can safely enable
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 6c873b330a93..b7b2289ada3f 100644
+index 41f906a6f5d9..cbf1fcc648fc 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -357,8 +357,11 @@ int __mnt_want_write(struct vfsmount *m)
@@ -32,5 +32,5 @@ index 6c873b330a93..b7b2289ada3f 100644
  	 * After the slowpath clears MNT_WRITE_HOLD, mnt_is_readonly will
  	 * be set to match its requirements. So we must not load that until
 -- 
-2.18.0
+2.19.1
 

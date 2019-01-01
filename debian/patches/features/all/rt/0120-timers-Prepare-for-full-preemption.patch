@@ -1,8 +1,8 @@
-From ee9dc7d51f112e3e2c9094ba5b000cf661d60377 Mon Sep 17 00:00:00 2001
+From e110cb7fc44661031ddda2162a3ea71ecd821202 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 120/349] timers: Prepare for full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 120/370] timers: Prepare for full preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -30,7 +30,7 @@ index ec86e4e55ea3..8e5b680d1275 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 703c2ebd9cfd..590780c76bcf 100644
+index 3628b2fa02d9..e28e99f34bcd 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -525,11 +525,14 @@ void resched_cpu(int cpu)
@@ -60,7 +60,7 @@ index 703c2ebd9cfd..590780c76bcf 100644
  }
  /*
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index e5d96b426ce7..ef62f7b9b3a4 100644
+index f14e3525d330..a0cb1a296afa 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -195,6 +195,9 @@ EXPORT_SYMBOL(jiffies_64);
@@ -143,7 +143,7 @@ index e5d96b426ce7..ef62f7b9b3a4 100644
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1657,8 +1690,8 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1673,8 +1706,8 @@ static inline void __run_timers(struct timer_base *base)
  		while (levels--)
  			expire_timers(base, heads + levels);
  	}
@@ -153,7 +153,7 @@ index e5d96b426ce7..ef62f7b9b3a4 100644
  }
  
  /*
-@@ -1914,6 +1947,9 @@ static void __init init_timer_cpu(int cpu)
+@@ -1917,6 +1950,9 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;
@@ -164,5 +164,5 @@ index e5d96b426ce7..ef62f7b9b3a4 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

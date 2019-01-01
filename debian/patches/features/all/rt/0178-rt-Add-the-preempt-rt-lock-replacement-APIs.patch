@@ -1,8 +1,8 @@
-From 7b7cc19fb3b2d3040554623f5a3e7ceb9e797524 Mon Sep 17 00:00:00 2001
+From bc0f38f59c0fbbdef0c984a58f2ae55e133730d0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 19:39:56 +0200
-Subject: [PATCH 178/349] rt: Add the preempt-rt lock replacement APIs
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 178/370] rt: Add the preempt-rt lock replacement APIs
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Map spinlocks, rwlocks, rw_semaphores and semaphores to the rt_mutex
 based locking functions for preempt-rt.
@@ -629,7 +629,7 @@ index 000000000000..e26bd95a57c3
 +#endif
 +#endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 8c520b4f741f..2ba77aaa93f9 100644
+index 3291c0c4db91..b2d993d4c765 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -311,6 +311,11 @@ extern char ___assert_task_state[1 - 2*!!(
@@ -958,7 +958,7 @@ index 000000000000..3e3d8c5f7a9a
 +
 +#endif
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 5b6a91b743bc..8ab0ddd4cf8f 100644
+index ee718c38a1a4..12d03af81092 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -1399,6 +1399,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
@@ -986,7 +986,7 @@ index 5b6a91b743bc..8ab0ddd4cf8f 100644
  
  	return ret;
  }
-@@ -2709,7 +2710,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2717,7 +2718,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		goto no_block;
  	}
  
@@ -995,7 +995,7 @@ index 5b6a91b743bc..8ab0ddd4cf8f 100644
  
  	/*
  	 * On PREEMPT_RT_FULL, when hb->lock becomes an rt_mutex, we must not
-@@ -3076,7 +3077,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3084,7 +3085,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  	 * The waiter is allocated on our stack, manipulated by the requeue
  	 * code while we sleep on uaddr.
  	 */
@@ -2356,7 +2356,7 @@ index 9aa0fccd5d43..76d0b40d9193 100644
 +
 +#endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e311f1e73811..438b632591f4 100644
+index 242f9231e28a..a44be3a52095 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -454,7 +454,7 @@ void wake_q_add(struct wake_q_head *head, struct task_struct *task)
@@ -2381,5 +2381,5 @@ index e311f1e73811..438b632591f4 100644
  	}
  }
 -- 
-2.18.0
+2.19.1
 

@@ -1,8 +1,8 @@
-From e0ce1ab9b6d8d580dc90c51f7a50a9cb47b4bb05 Mon Sep 17 00:00:00 2001
+From ea0d4d7532b87d4d3bb304665beda68b75e7b7f5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 225/349] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 225/370] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 29 insertions(+), 25 deletions(-)
 
 diff --git a/fs/cifs/readdir.c b/fs/cifs/readdir.c
-index a27fc8791551..791aecb7c1ac 100644
+index ef24b4527459..3ce6331a1101 100644
 --- a/fs/cifs/readdir.c
 +++ b/fs/cifs/readdir.c
 @@ -80,7 +80,7 @@ cifs_prime_dcache(struct dentry *parent, struct qstr *name,
@@ -36,7 +36,7 @@ index a27fc8791551..791aecb7c1ac 100644
  	cifs_dbg(FYI, "%s: for %s\n", __func__, name->name);
  
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 8eb1812e9f44..7e8afd43b23e 100644
+index a4afece3d9dc..d01316e585a2 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -2458,21 +2458,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
@@ -85,10 +85,10 @@ index 8eb1812e9f44..7e8afd43b23e 100644
  	hlist_bl_unlock(b);
  	INIT_HLIST_NODE(&dentry->d_u.d_alias);
 diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index cca8dd3bda09..42c99562ad2e 100644
+index 60dd2bc10776..779d9a4b32c1 100644
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
-@@ -1191,7 +1191,7 @@ static int fuse_direntplus_link(struct file *file,
+@@ -1192,7 +1192,7 @@ static int fuse_direntplus_link(struct file *file,
  	struct inode *dir = d_inode(parent);
  	struct fuse_conn *fc;
  	struct inode *inode;
@@ -98,10 +98,10 @@ index cca8dd3bda09..42c99562ad2e 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 85ac38b99065..7996c8c2123b 100644
+index eb4626bad88a..0d255f90067a 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -1625,7 +1625,7 @@ static struct dentry *lookup_slow(const struct qstr *name,
+@@ -1666,7 +1666,7 @@ static struct dentry *lookup_slow(const struct qstr *name,
  {
  	struct dentry *dentry = ERR_PTR(-ENOENT), *old;
  	struct inode *inode = dir->d_inode;
@@ -110,7 +110,7 @@ index 85ac38b99065..7996c8c2123b 100644
  
  	inode_lock_shared(inode);
  	/* Don't go there if it's already dead */
-@@ -3091,7 +3091,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3132,7 +3132,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -164,10 +164,10 @@ index 0165a95823c2..58990c8f52e0 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 591bf2b1ab66..eaa989e82123 100644
+index 79702d405ba7..795d7f8fe00b 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -1836,7 +1836,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
+@@ -1850,7 +1850,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
  
  	child = d_hash_and_lookup(dir, &qname);
  	if (!child) {
@@ -177,10 +177,10 @@ index 591bf2b1ab66..eaa989e82123 100644
  		if (IS_ERR(child))
  			goto end_instantiate;
 diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index 847f23420b40..8e9c3f3f90a5 100644
+index 46cd2e1b055b..c8e7d1a6b474 100644
 --- a/fs/proc/proc_sysctl.c
 +++ b/fs/proc/proc_sysctl.c
-@@ -632,7 +632,7 @@ static bool proc_sys_fill_cache(struct file *file,
+@@ -681,7 +681,7 @@ static bool proc_sys_fill_cache(struct file *file,
  
  	child = d_lookup(dir, &qname);
  	if (!child) {
@@ -225,10 +225,10 @@ index 3bf867a0c3b3..71c6bdd14c8a 100644
  	struct nfs_fattr dir_attr;
  	long timeout;
 diff --git a/kernel/sched/swait.c b/kernel/sched/swait.c
-index e2e224c59c0a..ef027ff3250a 100644
+index a26906faf07e..d29069d9417f 100644
 --- a/kernel/sched/swait.c
 +++ b/kernel/sched/swait.c
-@@ -68,6 +68,7 @@
+@@ -68,6 +68,7 @@ void swake_up_all(struct swait_queue_head *q)
  	struct swait_queue *curr;
  	LIST_HEAD(tmp);
  
@@ -237,5 +237,5 @@ index e2e224c59c0a..ef027ff3250a 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.18.0
+2.19.1
 

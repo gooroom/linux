@@ -1,9 +1,9 @@
-From a32dd99b263c07818d402939ffe4e49a06213460 Mon Sep 17 00:00:00 2001
+From f94139a7b88dd96f896abcb157a7c19b32df55e5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
-Subject: [PATCH 293/349] net/core: protect users of napi_alloc_cache against
+Subject: [PATCH 293/370] net/core: protect users of napi_alloc_cache against
  reentrance
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 On -RT the code running in BH can not be moved to another CPU so CPU
 local variable remain local. However the code can be preempted
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index e862180f18dd..8271d7da0dad 100644
+index 09c22f2747a9..2334c9c35e58 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -362,6 +362,7 @@ struct napi_alloc_cache {
@@ -115,5 +115,5 @@ index e862180f18dd..8271d7da0dad 100644
  void __kfree_skb_defer(struct sk_buff *skb)
  {
 -- 
-2.18.0
+2.19.1
 

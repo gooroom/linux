@@ -1,9 +1,9 @@
-From 34fc38fb5a27a5d2772906cc8151a25cd8fb407b Mon Sep 17 00:00:00 2001
+From e3d7c904a65ea6c5df0b8f0ba54ead3cc0b396d0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 134/349] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 134/370] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 33 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1c8c43e8220f..fe3a6e4d60c2 100644
+index 9f1829ccadef..df17eb355d7d 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1492,6 +1492,7 @@ struct task_struct {
@@ -39,7 +39,7 @@ index 1c8c43e8220f..fe3a6e4d60c2 100644
  #ifdef CONFIG_SMP
   extern void kick_process(struct task_struct *tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 82954df9cea0..e74eaf6e6a5e 100644
+index 0f56ee1a86ec..535ce47e0432 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2034,8 +2034,25 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -89,10 +89,10 @@ index 82954df9cea0..e74eaf6e6a5e 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index f564a1d2c9d5..304fdd7df094 100644
+index ec6e838e991a..c1fcb5b6dcf5 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1164,6 +1164,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
+@@ -1167,6 +1167,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
  #define WF_SYNC		0x01		/* waker goes to sleep after wakeup */
  #define WF_FORK		0x02		/* child wakeup after fork */
  #define WF_MIGRATED	0x4		/* internal use, task got migrated */
@@ -101,5 +101,5 @@ index f564a1d2c9d5..304fdd7df094 100644
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
 -- 
-2.18.0
+2.19.1
 

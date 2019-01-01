@@ -1,9 +1,9 @@
-From b28b3d330577136628a7ce449f0c43f36ef9c51d Mon Sep 17 00:00:00 2001
+From 8c5ce85060b9f339dad5643e186e0a468bbaa2e3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
-Subject: [PATCH 133/349] kernel/sched: move stack + kprobe clean up to
+Subject: [PATCH 133/370] kernel/sched: move stack + kprobe clean up to
  __put_task_struct()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 There is no need to free the stack before the task struct. This also
 comes handy on -RT because we can't free memory in preempt disabled
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 10 insertions(+), 9 deletions(-)
 
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 613a26994992..5bcb777b6913 100644
+index 49d7b6e784eb..65c862221921 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -77,6 +77,7 @@
@@ -28,7 +28,7 @@ index 613a26994992..5bcb777b6913 100644
  
  #include <asm/pgtable.h>
  #include <asm/pgalloc.h>
-@@ -387,6 +388,15 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -390,6 +391,15 @@ void __put_task_struct(struct task_struct *tsk)
  	WARN_ON(atomic_read(&tsk->usage));
  	WARN_ON(tsk == current);
  
@@ -45,7 +45,7 @@ index 613a26994992..5bcb777b6913 100644
  	task_numa_free(tsk);
  	security_task_free(tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d7dc6f260a01..82954df9cea0 100644
+index bf30ba7b654d..0f56ee1a86ec 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2797,15 +2797,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -65,5 +65,5 @@ index d7dc6f260a01..82954df9cea0 100644
  	}
  
 -- 
-2.18.0
+2.19.1
 

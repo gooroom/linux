@@ -1,9 +1,9 @@
-From 374dbfd51612f950a0acd69c6980c331fec56708 Mon Sep 17 00:00:00 2001
+From 331f4dfe5d0a7882059262c8b1a534bf876b9f8b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 5 Sep 2017 14:11:41 +0200
-Subject: [PATCH 345/349] iommu/amd: Use raw_cpu_ptr() instead of get_cpu_ptr()
+Subject: [PATCH 345/370] iommu/amd: Use raw_cpu_ptr() instead of get_cpu_ptr()
  for ->flush_queue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 get_cpu_ptr() disabled preemption and returns the ->flush_queue object
 of the current CPU. raw_cpu_ptr() does the same except that it not
@@ -24,10 +24,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index 75ee9538f169..3408e5dd1b93 100644
+index e8801a81b045..7cf12b358c3c 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -2283,7 +2283,7 @@ static void queue_add(struct dma_ops_domain *dma_dom,
+@@ -2289,7 +2289,7 @@ static void queue_add(struct dma_ops_domain *dma_dom,
  	pages     = __roundup_pow_of_two(pages);
  	address >>= PAGE_SHIFT;
  
@@ -36,7 +36,7 @@ index 75ee9538f169..3408e5dd1b93 100644
  	spin_lock_irqsave(&queue->lock, flags);
  
  	if (queue->next == FLUSH_QUEUE_SIZE)
-@@ -2300,8 +2300,6 @@ static void queue_add(struct dma_ops_domain *dma_dom,
+@@ -2306,8 +2306,6 @@ static void queue_add(struct dma_ops_domain *dma_dom,
  
  	if (atomic_cmpxchg(&queue_timer_on, 0, 1) == 0)
  		mod_timer(&queue_timer, jiffies + msecs_to_jiffies(10));
@@ -46,5 +46,5 @@ index 75ee9538f169..3408e5dd1b93 100644
  
  
 -- 
-2.18.0
+2.19.1
 

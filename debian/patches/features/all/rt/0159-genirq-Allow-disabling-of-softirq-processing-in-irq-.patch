@@ -1,9 +1,9 @@
-From d1e87fe35c3ca49f250f656a865840c06caa167e Mon Sep 17 00:00:00 2001
+From e8f7431b76d2115f7596e93df5c2178041493a7e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 Jan 2012 13:01:27 +0100
-Subject: [PATCH 159/349] genirq: Allow disabling of softirq processing in irq
+Subject: [PATCH 159/370] genirq: Allow disabling of softirq processing in irq
  thread context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 The processing of softirqs in irq thread context is a performance gain
 for the non-rt workloads of a system, but it's counterproductive for
@@ -12,7 +12,6 @@ workload. Allow such interrupts to prevent softirq processing in their
 thread context.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-[carnil: Refresh for context changes in 4.9.137]
 ---
  include/linux/interrupt.h |  2 ++
  include/linux/irq.h       |  4 +++-
@@ -21,6 +20,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/softirq.c          |  9 +++++++++
  5 files changed, 38 insertions(+), 2 deletions(-)
 
+diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
+index 127cfbd8f129..f323a5109987 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -61,6 +61,7 @@
@@ -39,6 +40,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #define IRQF_TIMER		(__IRQF_TIMER | IRQF_NO_SUSPEND | IRQF_NO_THREAD)
  
+diff --git a/include/linux/irq.h b/include/linux/irq.h
+index 39e3254e5769..8ebac94fbb9f 100644
 --- a/include/linux/irq.h
 +++ b/include/linux/irq.h
 @@ -72,6 +72,7 @@ enum irqchip_irq_state;
@@ -65,9 +68,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #define IRQ_NO_BALANCING_MASK	(IRQ_PER_CPU | IRQ_NO_BALANCING)
  
+diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
+index a841ad39da14..18c90de72f8c 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -884,7 +884,15 @@ irq_forced_thread_fn(struct irq_desc *de
+@@ -884,7 +884,15 @@ irq_forced_thread_fn(struct irq_desc *desc, struct irqaction *action)
  		atomic_inc(&desc->threads_handled);
  
  	irq_finalize_oneshot(desc, action);
@@ -84,7 +89,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return ret;
  }
  
-@@ -1351,6 +1359,9 @@ __setup_irq(unsigned int irq, struct irq
+@@ -1351,6 +1359,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
  			irqd_set(&desc->irq_data, IRQD_NO_BALANCING);
  		}
  
@@ -94,6 +99,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		/* Set default affinity mask once everything is setup */
  		setup_affinity(desc, mask);
  
+diff --git a/kernel/irq/settings.h b/kernel/irq/settings.h
+index 320579d89091..2df2d4445b1e 100644
 --- a/kernel/irq/settings.h
 +++ b/kernel/irq/settings.h
 @@ -16,6 +16,7 @@ enum {
@@ -112,7 +119,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #undef IRQF_MODIFY_MASK
  #define IRQF_MODIFY_MASK	GOT_YOU_MORON
  
-@@ -40,6 +42,16 @@ irq_settings_clr_and_set(struct irq_desc
+@@ -40,6 +42,16 @@ irq_settings_clr_and_set(struct irq_desc *desc, u32 clr, u32 set)
  	desc->status_use_accessors |= (set & _IRQF_MODIFY_MASK);
  }
  
@@ -129,6 +136,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static inline bool irq_settings_is_per_cpu(struct irq_desc *desc)
  {
  	return desc->status_use_accessors & _IRQ_PER_CPU;
+diff --git a/kernel/softirq.c b/kernel/softirq.c
+index 654cebf7b736..8957a27e45a7 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -593,6 +593,15 @@ void __local_bh_enable(void)
@@ -147,3 +156,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  int in_serving_softirq(void)
  {
  	return current->flags & PF_IN_SOFTIRQ;
+-- 
+2.19.1
+

@@ -1,8 +1,8 @@
-From e40fc7825a79a83e2fd8184a271ab68fdaf19883 Mon Sep 17 00:00:00 2001
+From 1be44fca4402423a0d98f63d45e680d669d1cbe6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 12 May 2017 15:46:17 +0200
-Subject: [PATCH 281/349] random: avoid preempt_disable()ed section
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 281/370] random: avoid preempt_disable()ed section
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 extract_crng() will use sleeping locks while in a preempt_disable()
 section due to get_cpu_var().
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 8 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 556d6b46d730..8f962a751c17 100644
+index 002f6867ceed..aba13eddeab6 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -263,6 +263,7 @@
@@ -26,7 +26,7 @@ index 556d6b46d730..8f962a751c17 100644
  #include <crypto/chacha20.h>
  
  #include <asm/processor.h>
-@@ -2110,6 +2111,7 @@ struct batched_entropy {
+@@ -2118,6 +2119,7 @@ struct batched_entropy {
   * goal of being quite fast and not depleting entropy.
   */
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_long);
@@ -34,7 +34,7 @@ index 556d6b46d730..8f962a751c17 100644
  unsigned long get_random_long(void)
  {
  	unsigned long ret;
-@@ -2118,13 +2120,13 @@ unsigned long get_random_long(void)
+@@ -2126,13 +2128,13 @@ unsigned long get_random_long(void)
  	if (arch_get_random_long(&ret))
  		return ret;
  
@@ -50,7 +50,7 @@ index 556d6b46d730..8f962a751c17 100644
  	return ret;
  }
  EXPORT_SYMBOL(get_random_long);
-@@ -2136,6 +2138,8 @@ unsigned int get_random_int(void)
+@@ -2144,6 +2146,8 @@ unsigned int get_random_int(void)
  }
  #else
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_int);
@@ -59,7 +59,7 @@ index 556d6b46d730..8f962a751c17 100644
  unsigned int get_random_int(void)
  {
  	unsigned int ret;
-@@ -2144,13 +2148,13 @@ unsigned int get_random_int(void)
+@@ -2152,13 +2156,13 @@ unsigned int get_random_int(void)
  	if (arch_get_random_int(&ret))
  		return ret;
  
@@ -76,5 +76,5 @@ index 556d6b46d730..8f962a751c17 100644
  }
  #endif
 -- 
-2.18.0
+2.19.1
 

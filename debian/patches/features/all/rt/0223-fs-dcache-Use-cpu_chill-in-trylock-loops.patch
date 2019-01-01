@@ -1,8 +1,8 @@
-From 624cdd3697846bf557c66f9e73da3ea6a2f663b9 Mon Sep 17 00:00:00 2001
+From e7c52b27f1be371aba245db321e0dfa4a4eb9f0e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 223/349] fs: dcache: Use cpu_chill() in trylock loops
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 223/370] fs: dcache: Use cpu_chill() in trylock loops
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -17,10 +17,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 20 insertions(+), 6 deletions(-)
 
 diff --git a/fs/autofs4/autofs_i.h b/fs/autofs4/autofs_i.h
-index a1fba4285277..3796769b4cd1 100644
+index 42f863346409..e4deae2d9fa1 100644
 --- a/fs/autofs4/autofs_i.h
 +++ b/fs/autofs4/autofs_i.h
-@@ -31,6 +31,7 @@
+@@ -32,6 +32,7 @@
  #include <linux/sched.h>
  #include <linux/mount.h>
  #include <linux/namei.h>
@@ -42,7 +42,7 @@ index d8e6d421c27f..2e689ab1306b 100644
  			}
  			spin_unlock(&p->d_lock);
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 918886b0c17e..8eb1812e9f44 100644
+index 5150b2b23b6e..a4afece3d9dc 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -19,6 +19,7 @@
@@ -53,7 +53,7 @@ index 918886b0c17e..8eb1812e9f44 100644
  #include <linux/slab.h>
  #include <linux/init.h>
  #include <linux/hash.h>
-@@ -789,6 +790,8 @@ static inline bool fast_dput(struct dentry *dentry)
+@@ -787,6 +788,8 @@ static inline bool fast_dput(struct dentry *dentry)
   */
  void dput(struct dentry *dentry)
  {
@@ -62,7 +62,7 @@ index 918886b0c17e..8eb1812e9f44 100644
  	if (unlikely(!dentry))
  		return;
  
-@@ -827,9 +830,18 @@ void dput(struct dentry *dentry)
+@@ -825,9 +828,18 @@ void dput(struct dentry *dentry)
  	return;
  
  kill_it:
@@ -94,7 +94,7 @@ index 918886b0c17e..8eb1812e9f44 100644
  		}
  		dentry->d_flags &= ~DCACHE_CANT_MOUNT;
 diff --git a/fs/namespace.c b/fs/namespace.c
-index b7b2289ada3f..ffa9923ff4f7 100644
+index cbf1fcc648fc..201329f8474b 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -14,6 +14,7 @@
@@ -115,5 +115,5 @@ index b7b2289ada3f..ffa9923ff4f7 100644
  	}
  	/*
 -- 
-2.18.0
+2.19.1
 

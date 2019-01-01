@@ -1,9 +1,9 @@
-From 958e06b7f053c75e30b1324d4f80e7421065de3c Mon Sep 17 00:00:00 2001
+From e9e427f071a75f0647ea59e774892ef2cd1b6941 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 244/349] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 244/370] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index dcad41b4e3b3..85fc72b8a92b 100644
+index 54ca0940e2e2..53bda7b6aab1 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -396,7 +396,19 @@ typedef enum rx_handler_result rx_handler_result_t;
@@ -53,10 +53,10 @@ index dcad41b4e3b3..85fc72b8a92b 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 0745794978e3..94bb5dcfe63c 100644
+index c98f4e755062..457bab774ec7 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4986,6 +4986,7 @@ void __napi_schedule(struct napi_struct *n)
+@@ -5012,6 +5012,7 @@ void __napi_schedule(struct napi_struct *n)
  }
  EXPORT_SYMBOL(__napi_schedule);
  
@@ -64,7 +64,7 @@ index 0745794978e3..94bb5dcfe63c 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -4997,6 +4998,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5023,6 +5024,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -73,5 +73,5 @@ index 0745794978e3..94bb5dcfe63c 100644
  void __napi_complete(struct napi_struct *n)
  {
 -- 
-2.18.0
+2.19.1
 

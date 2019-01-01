@@ -1,8 +1,8 @@
-From 1c8daa40f9ddd10b047864ee08b37a41b0751743 Mon Sep 17 00:00:00 2001
+From f929311c9a15d8e2fb67c0a2cfa9f13aedbf28c7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 14 Jun 2013 17:16:35 +0200
-Subject: [PATCH 286/349] kernel/hotplug: restore original cpu mask oncpu/down
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 286/370] kernel/hotplug: restore original cpu mask oncpu/down
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 If a task which is allowed to run only on CPU X puts CPU Y down then it
 will be allowed on all CPUs but the on CPU Y after it comes back from
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index e971d1ef8a12..12f81a93171c 100644
+index a95116953bea..a79a8371972d 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1192,6 +1192,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1281,6 +1281,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	bool hasdied = false;
  	int mycpu;
  	cpumask_var_t cpumask;
@@ -27,7 +27,7 @@ index e971d1ef8a12..12f81a93171c 100644
  
  	if (num_online_cpus() == 1)
  		return -EBUSY;
-@@ -1202,6 +1203,12 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1291,6 +1292,12 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	/* Move the downtaker off the unplug cpu */
  	if (!alloc_cpumask_var(&cpumask, GFP_KERNEL))
  		return -ENOMEM;
@@ -40,7 +40,7 @@ index e971d1ef8a12..12f81a93171c 100644
  	cpumask_andnot(cpumask, cpu_online_mask, cpumask_of(cpu));
  	set_cpus_allowed_ptr(current, cpumask);
  	free_cpumask_var(cpumask);
-@@ -1210,7 +1217,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1299,7 +1306,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	if (mycpu == cpu) {
  		printk(KERN_ERR "Yuck! Still on unplug CPU\n!");
  		migrate_enable();
@@ -50,7 +50,7 @@ index e971d1ef8a12..12f81a93171c 100644
  	}
  
  	cpu_hotplug_begin();
-@@ -1264,6 +1272,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1353,6 +1361,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
  		cpu_notify_nofail(CPU_POST_DEAD, cpu);
@@ -61,5 +61,5 @@ index e971d1ef8a12..12f81a93171c 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

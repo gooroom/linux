@@ -1,8 +1,8 @@
-From 4498f790767be9fd9d21d0c84732d9b3f3b59a31 Mon Sep 17 00:00:00 2001
+From 0133383d47885cad0435ae48c17e521772f5b18f Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Mon, 16 Jul 2012 08:07:43 +0000
-Subject: [PATCH 283/349] cpu/rt: Rework cpu down for PREEMPT_RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.115-rt93.tar.xz
+Subject: [PATCH 283/370] cpu/rt: Rework cpu down for PREEMPT_RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 Bringing a CPU down is a pain with the PREEMPT_RT kernel because
 tasks can be preempted in many more places than in non-RT. In
@@ -56,7 +56,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 280 insertions(+), 41 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 82c41e17ccad..60447fa74dcc 100644
+index 4f5464ca8c81..10fa2fe7ec10 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -2516,6 +2516,10 @@ extern void do_set_cpus_allowed(struct task_struct *p,
@@ -81,10 +81,10 @@ index 82c41e17ccad..60447fa74dcc 100644
  
  #ifdef CONFIG_NO_HZ_COMMON
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index cadb6a735361..6cd9c15328a0 100644
+index 1ffd0bbc77bd..6169c817e29e 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -216,16 +216,10 @@ static int cpu_hotplug_disabled;
+@@ -217,16 +217,10 @@ static int cpu_hotplug_disabled;
  
  static struct {
  	struct task_struct *active_writer;
@@ -101,7 +101,7 @@ index cadb6a735361..6cd9c15328a0 100644
  	/*
  	 * Also blocks the new readers during
  	 * an ongoing cpu hotplug operation.
-@@ -238,24 +232,12 @@ static struct {
+@@ -239,24 +233,12 @@ static struct {
  } cpu_hotplug = {
  	.active_writer = NULL,
  	.wq = __WAIT_QUEUE_HEAD_INITIALIZER(cpu_hotplug.wq),
@@ -126,7 +126,7 @@ index cadb6a735361..6cd9c15328a0 100644
  /* Lockdep annotations for get/put_online_cpus() and cpu_hotplug_begin/end() */
  #define cpuhp_lock_acquire_read() lock_map_acquire_read(&cpu_hotplug.dep_map)
  #define cpuhp_lock_acquire_tryread() \
-@@ -263,12 +245,42 @@ static struct {
+@@ -264,12 +246,42 @@ static struct {
  #define cpuhp_lock_acquire()      lock_map_acquire(&cpu_hotplug.dep_map)
  #define cpuhp_lock_release()      lock_map_release(&cpu_hotplug.dep_map)
  
@@ -169,7 +169,7 @@ index cadb6a735361..6cd9c15328a0 100644
  static DEFINE_PER_CPU(struct hotplug_pcp, hotplug_pcp);
  
  /**
-@@ -282,18 +294,39 @@ static DEFINE_PER_CPU(struct hotplug_pcp, hotplug_pcp);
+@@ -283,18 +295,39 @@ static DEFINE_PER_CPU(struct hotplug_pcp, hotplug_pcp);
  void pin_current_cpu(void)
  {
  	struct hotplug_pcp *hp;
@@ -213,7 +213,7 @@ index cadb6a735361..6cd9c15328a0 100644
  	preempt_disable();
  	goto retry;
  }
-@@ -314,26 +347,84 @@ void unpin_current_cpu(void)
+@@ -315,26 +348,84 @@ void unpin_current_cpu(void)
  		wake_up_process(hp->unplug);
  }
  
@@ -305,7 +305,7 @@ index cadb6a735361..6cd9c15328a0 100644
  /*
   * Start the sync_unplug_thread on the target cpu and wait for it to
   * complete.
-@@ -341,23 +432,83 @@ static int sync_unplug_thread(void *data)
+@@ -342,23 +433,83 @@ static int sync_unplug_thread(void *data)
  static int cpu_unplug_begin(unsigned int cpu)
  {
  	struct hotplug_pcp *hp = &per_cpu(hotplug_pcp, cpu);
@@ -396,7 +396,7 @@ index cadb6a735361..6cd9c15328a0 100644
  }
  
  void get_online_cpus(void)
-@@ -366,9 +517,9 @@ void get_online_cpus(void)
+@@ -367,9 +518,9 @@ void get_online_cpus(void)
  	if (cpu_hotplug.active_writer == current)
  		return;
  	cpuhp_lock_acquire_read();
@@ -408,7 +408,7 @@ index cadb6a735361..6cd9c15328a0 100644
  }
  EXPORT_SYMBOL_GPL(get_online_cpus);
  
-@@ -421,11 +572,11 @@ void cpu_hotplug_begin(void)
+@@ -422,11 +573,11 @@ void cpu_hotplug_begin(void)
  	cpuhp_lock_acquire();
  
  	for (;;) {
@@ -422,7 +422,7 @@ index cadb6a735361..6cd9c15328a0 100644
  		schedule();
  	}
  	finish_wait(&cpu_hotplug.wq, &wait);
-@@ -434,7 +585,7 @@ void cpu_hotplug_begin(void)
+@@ -435,7 +586,7 @@ void cpu_hotplug_begin(void)
  void cpu_hotplug_done(void)
  {
  	cpu_hotplug.active_writer = NULL;
@@ -431,7 +431,7 @@ index cadb6a735361..6cd9c15328a0 100644
  	cpuhp_lock_release();
  }
  
-@@ -1022,6 +1022,9 @@ static int takedown_cpu(unsigned int cpu)
+@@ -1022,6 +1173,9 @@ static int takedown_cpu(unsigned int cpu)
  	/* Park the smpboot threads */
  	kthread_park(per_cpu_ptr(&cpuhp_state, cpu)->thread);
  
@@ -442,7 +442,7 @@ index cadb6a735361..6cd9c15328a0 100644
  	 * Prevent irq alloc/free while the dying cpu reorganizes the
  	 * interrupt affinities.
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e1e44cde10ab..3119ab1da74d 100644
+index 5f66d62bca5b..a463a54d3de0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1152,6 +1152,84 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
@@ -531,5 +531,5 @@ index e1e44cde10ab..3119ab1da74d 100644
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
 -- 
-2.18.0
+2.19.1
 
