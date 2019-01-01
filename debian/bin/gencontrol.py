@@ -140,7 +140,7 @@ class Gencontrol(Base):
                     package['Build-Profiles'] = (
                         '<pkg.linux.udeb-unsigned-test-build>')
                 else:
-                    package['Build-Profiles'] = '<!stage1>'
+                    package['Build-Profiles'] = '<!stage1 !pkg.linux.nokernel>'
 
                 for arch in package['Architecture']:
                     self.installer_packages.setdefault(arch, []) \
