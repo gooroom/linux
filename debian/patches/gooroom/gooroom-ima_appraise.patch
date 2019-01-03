@@ -1,0 +1,14 @@
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 8bd7a07..0bb7fa3 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -367,7 +367,8 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
+ 		return;
+ 
+ 	inode_lock(file_inode(file));
+-	ima_fix_xattr(dentry, iint);
++	if (ima_appraise & IMA_APPRAISE_FIX)
++		ima_fix_xattr(dentry, iint);
+ 	inode_unlock(file_inode(file));
+ }
+ 

@@ -314,21 +314,21 @@ class Gencontrol(Base):
                       "PACKAGE_NAMES='%s' UDEB_UNSIGNED_TEST_BUILD=%s" %
                       (arch, makeflags,
                        ' '.join(p['Package'] for p in udeb_packages),
-                       build_signed)])
+                       False)])
 
         # This also needs to be built after the per-flavour/per-featureset
         # packages.
-        if build_signed:
-            merge_packages(packages,
-                           self.process_packages(
-                               self.templates['control.signed-template'],
-                               vars),
-                           arch)
-            makefile.add(
-                'binary-arch_%s' % arch,
-                cmds=["$(MAKE) -f debian/rules.real "
-                      "install-signed-template_%s %s" %
-                      (arch, makeflags)])
+        #if build_signed:
+        #    merge_packages(packages,
+        #                   self.process_packages(
+        #                       self.templates['control.signed-template'],
+        #                       vars),
+        #                   arch)
+        #    makefile.add(
+        #        'binary-arch_%s' % arch,
+        #        cmds=["$(MAKE) -f debian/rules.real "
+        #              "install-signed-template_%s %s" %
+        #              (arch, makeflags)])
 
     def do_featureset_setup(self, vars, makeflags, arch, featureset, extra):
         vars['localversion_headers'] = vars['localversion']
@@ -625,8 +625,8 @@ class Gencontrol(Base):
         makeflags['KCONFIG_OPTIONS'] = ''
         if build_debug:
             makeflags['KCONFIG_OPTIONS'] += ' -o DEBUG_INFO=y'
-        if build_signed:
-            makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
+        #if build_signed:
+        #    makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
         # Add "salt" to fix #872263
         makeflags['KCONFIG_OPTIONS'] += \
             ' -o "BUILD_SALT=\\"%(abiname)s%(localversion)s\\""' % vars
