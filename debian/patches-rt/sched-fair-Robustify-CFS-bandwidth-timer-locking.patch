@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 7 Jan 2019 13:52:31 +0100
 Subject: [PATCH] sched/fair: Robustify CFS-bandwidth timer locking
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.13-rt10.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.15-rt12.tar.xz
 
 Traditionally hrtimer callbacks were run with IRQs disabled, but with
 the introduction of HRTIMER_MODE_SOFT it is possible they run from
@@ -30,7 +30,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4554,7 +4554,7 @@ static u64 distribute_cfs_runtime(struct
+@@ -4553,7 +4553,7 @@ static u64 distribute_cfs_runtime(struct
  		struct rq *rq = rq_of(cfs_rq);
  		struct rq_flags rf;
  
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (!cfs_rq_throttled(cfs_rq))
  			goto next;
  
-@@ -4571,7 +4571,7 @@ static u64 distribute_cfs_runtime(struct
+@@ -4570,7 +4570,7 @@ static u64 distribute_cfs_runtime(struct
  			unthrottle_cfs_rq(cfs_rq);
  
  next:
@@ -48,7 +48,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		if (!remaining)
  			break;
-@@ -4587,7 +4587,7 @@ static u64 distribute_cfs_runtime(struct
+@@ -4586,7 +4586,7 @@ static u64 distribute_cfs_runtime(struct
   * period the timer is deactivated until scheduling resumes; cfs_b->idle is
   * used to track this state.
   */
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	u64 runtime, runtime_expires;
  	int throttled;
-@@ -4629,11 +4629,11 @@ static int do_sched_cfs_period_timer(str
+@@ -4628,11 +4628,11 @@ static int do_sched_cfs_period_timer(str
  	while (throttled && cfs_b->runtime > 0 && !cfs_b->distribute_running) {
  		runtime = cfs_b->runtime;
  		cfs_b->distribute_running = 1;
@@ -71,7 +71,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		cfs_b->distribute_running = 0;
  		throttled = !list_empty(&cfs_b->throttled_cfs_rq);
-@@ -4742,17 +4742,18 @@ static __always_inline void return_cfs_r
+@@ -4741,17 +4741,18 @@ static __always_inline void return_cfs_r
  static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  {
  	u64 runtime = 0, slice = sched_cfs_bandwidth_slice();
@@ -93,7 +93,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return;
  	}
  
-@@ -4763,18 +4764,18 @@ static void do_sched_cfs_slack_timer(str
+@@ -4762,18 +4763,18 @@ static void do_sched_cfs_slack_timer(str
  	if (runtime)
  		cfs_b->distribute_running = 1;
  
@@ -115,7 +115,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -4852,20 +4853,21 @@ static enum hrtimer_restart sched_cfs_pe
+@@ -4851,20 +4852,21 @@ static enum hrtimer_restart sched_cfs_pe
  {
  	struct cfs_bandwidth *cfs_b =
  		container_of(timer, struct cfs_bandwidth, period_timer);
