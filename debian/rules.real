@@ -92,8 +92,8 @@ binary-indep: \
 
 binary-arch-flavour: \
 	$(call if_package, $(IMAGE_PACKAGE_NAME),        install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
-	$(call if_package, linux-image-$(REAL_VERSION)-dbg, install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
-	$(call if_package, linux-headers-$(REAL_VERSION), install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR))
+	$(call if_package, linux-image-$(ABINAME)$(LOCALVERSION)-dbg, install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
+	$(call if_package, linux-headers-$(ABINAME)$(LOCALVERSION), install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR))
 
 binary-indep-featureset: \
 	$(call if_package, linux-headers-$(ABINAME)-common$(LOCALVERSION), install-common-headers_$(FEATURESET))
@@ -521,7 +521,7 @@ install-signed-template_$(ARCH): DH_OPTIONS = -p$(PACKAGE_NAME)
 install-signed-template_$(ARCH): PACKAGE_DIR = debian/$(PACKAGE_NAME)
 install-signed-template_$(ARCH): CODE_SIGNING_DIR = $(PACKAGE_DIR)/usr/share/code-signing/$(PACKAGE_NAME)
 install-signed-template_$(ARCH):
-ifneq (,$(filter $(PACKAGE_NAME),$(packages_enabled)))
+ifneq (,$(filter linux-image-$(ARCH)-signed-template,$(packages_enabled)))
 	dh_testdir
 	dh_testroot
 	dh_prep
