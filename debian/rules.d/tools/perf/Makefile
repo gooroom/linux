@@ -21,6 +21,9 @@ MAKE_PERF := $(MAKE) O=$(CURDIR) prefix=/usr V=1 VF=1 ARCH=$(KERNEL_ARCH) WERROR
 # Disable Gtk UI until it's more usable
 MAKE_PERF += NO_GTK2=1
 
+# Do not build the unversioned jvmti library
+MAKE_PERF += feature-jvmti=0
+
 # Include version in all directory names
 MAKE_PERF += perfexecdir=lib/perf_$(VERSION)-core plugindir=/usr/lib/traceevent_$(VERSION)/plugins STRACE_GROUPS_DIR=share/perf_$(VERSION)-core/strace/groups tipdir=share/doc/linux-perf-$(VERSION) perf_include_dir=include/perf_$(VERSION) perf_examples_dir=share/doc/linux-perf-$(VERSION)/examples
 
