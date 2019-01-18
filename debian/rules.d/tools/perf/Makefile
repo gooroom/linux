@@ -1,21 +1,5 @@
 include $(top_rulesdir)/Makefile.inc
 
-ifeq ($(filter nopython,$(DEB_BUILD_PROFILES)),)
-
-ifneq ($(filter alpha arm arm64 mips parisc s390 sh sparc,$(KERNEL_ARCH)),)
-HAVE_PERF := 1
-else ifeq ($(KERNEL_ARCH),powerpc)
-  # Pure 32-bit toolchains currently don't work
-  ifneq ($(shell dpkg-architecture -qDEB_HOST_ARCH),powerpcspe)
-    HAVE_PERF := 1
-  endif
-else ifeq ($(KERNEL_ARCH),x86)
-  # x32 isn't supported yet
-  ifneq ($(shell dpkg-architecture -qDEB_HOST_ARCH),x32)
-    HAVE_PERF := 1
-  endif
-endif
-
 MAKE_PERF := $(MAKE) O=$(CURDIR) prefix=/usr V=1 VF=1 ARCH=$(KERNEL_ARCH) WERROR=0 EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' LDFLAGS='$(LDFLAGS)'
 
 # Disable Gtk UI until it's more usable
@@ -48,7 +32,6 @@ MAKE_PERF += USE_ASCIIDOCTOR=1
 MAKE_PERF += PYTHON=/usr/bin/python3
 
 all:
-ifdef HAVE_PERF
 # perf changes some default directories depending on whether DESTDIR is
 # set.  We must define it even when building to avoid a rebuild when we
 # run 'make install'.
@@ -61,10 +44,8 @@ endif
 	! ldd $(CURDIR)/perf | grep -E '\blib(bfd|crypto)'
 # Check that it includes cplus_demangle from libiberty
 	grep cplus_demangle $(CURDIR)/perf
-endif
 
 install:
-ifdef HAVE_PERF
 	+$(MAKE_PERF) -C $(top_srcdir)/tools/perf -f Makefile.perf install VERSION=$(VERSION)
 # Don't install a 'trace' alias yet:
 # - We need a wrapper for it anyway, so there's little point adding a
@@ -73,12 +54,9 @@ ifdef HAVE_PERF
 #   so it's less widely useful than strace
 # - 'perf trace' doesn't take much more typing
 	rm -f $(DESTDIR)/usr/bin/trace_$(VERSION)
-endif
 	mkdir -p $(DESTDIR)/usr/share/bash-completion/
 	mv $(DESTDIR)/etc/bash_completion.d \
 		$(DESTDIR)/usr/share/bash-completion/completions
 	rmdir --ignore-fail-on-non-empty $(DESTDIR)/etc
 # Check for unversioned files that are likely to result in file conflicts
 	cd $(DESTDIR) && ! find \! -type d \! -path '*[_-]$(VERSION)*' | grep .
-
-endif # !nopython
