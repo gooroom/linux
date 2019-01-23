@@ -11,9 +11,22 @@ need them.
 Export the currently un-exported symbols they depend on.
 
 ---
+ fs/file.c           | 5 +++++
+ kernel/fork.c       | 1 +
+ kernel/sched/core.c | 1 +
+ kernel/signal.c     | 1 +
+ kernel/task_work.c  | 1 +
+ mm/memory.c         | 1 +
+ mm/shmem.c          | 1 +
+ mm/vmalloc.c        | 2 ++
+ security/security.c | 4 ++++
+ 9 files changed, 17 insertions(+)
+
+diff --git a/fs/file.c b/fs/file.c
+index 8d059d8973e9..15e74b355159 100644
 --- a/fs/file.c
 +++ b/fs/file.c
-@@ -409,6 +409,7 @@ struct files_struct *get_files_struct(st
+@@ -409,6 +409,7 @@ struct files_struct *get_files_struct(struct task_struct *task)
  
  	return files;
  }
@@ -21,7 +34,7 @@ Export the currently un-exported symbols they depend on.
  
  void put_files_struct(struct files_struct *files)
  {
-@@ -421,6 +422,7 @@ void put_files_struct(struct files_struc
+@@ -421,6 +422,7 @@ void put_files_struct(struct files_struct *files)
  		kmem_cache_free(files_cachep, files);
  	}
  }
@@ -29,7 +42,7 @@ Export the currently un-exported symbols they depend on.
  
  void reset_files_struct(struct files_struct *files)
  {
-@@ -533,6 +535,7 @@ out:
+@@ -533,6 +535,7 @@ int __alloc_fd(struct files_struct *files,
  	spin_unlock(&files->file_lock);
  	return error;
  }
@@ -37,7 +50,7 @@ Export the currently un-exported symbols they depend on.
  
  static int alloc_fd(unsigned start, unsigned flags)
  {
-@@ -606,6 +609,7 @@ void __fd_install(struct files_struct *f
+@@ -606,6 +609,7 @@ void __fd_install(struct files_struct *files, unsigned int fd,
  	rcu_assign_pointer(fdt->fd[fd], file);
  	rcu_read_unlock_sched();
  }
@@ -45,9 +58,19 @@ Export the currently un-exported symbols they depend on.
  
  void fd_install(unsigned int fd, struct file *file)
  {
+@@ -668,6 +672,7 @@ int __close_fd_get_file(unsigned int fd, struct file **res)
+ 	*res = NULL;
+ 	return -ENOENT;
+ }
++EXPORT_SYMBOL(__close_fd_get_file);
+ 
+ void do_close_on_exec(struct files_struct *files)
+ {
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 906cd0c13d15..05f8d660e1d1 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -999,6 +999,7 @@ void mmput_async(struct mm_struct *mm)
+@@ -1089,6 +1089,7 @@ void mmput_async(struct mm_struct *mm)
  		schedule_work(&mm->async_put_work);
  	}
  }
@@ -55,9 +78,23 @@ Export the currently un-exported symbols they depend on.
  #endif
  
  /**
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 6fedf3a98581..19ff88624638 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -3930,6 +3930,7 @@ int can_nice(const struct task_struct *p, const int nice)
+ 	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
+ 		capable(CAP_SYS_NICE));
+ }
++EXPORT_SYMBOL_GPL(can_nice);
+ 
+ #ifdef __ARCH_WANT_SYS_NICE
+ 
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 9a32bc2088c9..ccb81f0c174e 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1280,6 +1280,7 @@ struct sighand_struct *__lock_task_sigha
+@@ -1312,6 +1312,7 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
  
  	return sighand;
  }
@@ -65,9 +102,23 @@ Export the currently un-exported symbols they depend on.
  
  /*
   * send signal info to all the members of a group
+diff --git a/kernel/task_work.c b/kernel/task_work.c
+index 0fef395662a6..9233b200c098 100644
+--- a/kernel/task_work.c
++++ b/kernel/task_work.c
+@@ -40,6 +40,7 @@ task_work_add(struct task_struct *task, struct callback_head *work, bool notify)
+ 		set_notify_resume(task);
+ 	return 0;
+ }
++EXPORT_SYMBOL(task_work_add);
+ 
+ /**
+  * task_work_cancel - cancel a pending work added by task_work_add()
+diff --git a/mm/memory.c b/mm/memory.c
+index 59c00ae6b928..43c4f2cfc4c6 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1624,6 +1624,7 @@ void zap_page_range(struct vm_area_struc
+@@ -1364,6 +1364,7 @@ void zap_page_range(struct vm_area_struct *vma, unsigned long start,
  	mmu_notifier_invalidate_range_end(mm, start, end);
  	tlb_finish_mmu(&tlb, start, end);
  }
@@ -75,9 +126,11 @@ Export the currently un-exported symbols they depend on.
  
  /**
   * zap_page_range_single - remove user pages in a given range
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 5d07e0b1352f..232aa3d3d461 100644
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -4326,6 +4326,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -3986,6 +3986,7 @@ int shmem_zero_setup(struct vm_area_struct *vma)
  
  	return 0;
  }
@@ -85,9 +138,11 @@ Export the currently un-exported symbols they depend on.
  
  /**
   * shmem_read_mapping_page_gfp - read into page cache, using specified page allocation flags.
+diff --git a/mm/vmalloc.c b/mm/vmalloc.c
+index 97d4b25d0373..d5953177693f 100644
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -1308,6 +1308,7 @@ int map_kernel_range_noflush(unsigned lo
+@@ -1295,6 +1295,7 @@ int map_kernel_range_noflush(unsigned long addr, unsigned long size,
  {
  	return vmap_page_range_noflush(addr, addr + size, prot, pages);
  }
@@ -95,7 +150,7 @@ Export the currently un-exported symbols they depend on.
  
  /**
   * unmap_kernel_range_noflush - unmap kernel VM area
-@@ -1448,6 +1449,7 @@ struct vm_struct *get_vm_area(unsigned l
+@@ -1435,6 +1436,7 @@ struct vm_struct *get_vm_area(unsigned long size, unsigned long flags)
  				  NUMA_NO_NODE, GFP_KERNEL,
  				  __builtin_return_address(0));
  }
@@ -103,9 +158,11 @@ Export the currently un-exported symbols they depend on.
  
  struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
  				const void *caller)
+diff --git a/security/security.c b/security/security.c
+index 04d173eb93f6..0e70868fda12 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -231,24 +231,28 @@ int security_binder_set_context_mgr(stru
+@@ -247,24 +247,28 @@ int security_binder_set_context_mgr(struct task_struct *mgr)
  {
  	return call_int_hook(binder_set_context_mgr, 0, mgr);
  }
@@ -134,13 +191,6 @@ Export the currently un-exported symbols they depend on.
  
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
---- a/kernel/sched/core.c
-+++ b/kernel/sched/core.c
-@@ -3976,6 +3976,7 @@ int can_nice(const struct task_struct *p
- 	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
- 		capable(CAP_SYS_NICE));
- }
-+EXPORT_SYMBOL_GPL(can_nice);
- 
- #ifdef __ARCH_WANT_SYS_NICE
- 
+-- 
+2.20.1
+
