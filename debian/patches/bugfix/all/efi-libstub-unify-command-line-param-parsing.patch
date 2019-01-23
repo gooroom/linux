@@ -1,0 +1,164 @@
+From: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Date: Tue, 4 Apr 2017 17:09:08 +0100
+Subject: efi/libstub: Unify command line param parsing
+Origin: https://git.kernel.org/linus/60f38de7a8d4e816100ceafd1b382df52527bd50
+
+Merge the parsing of the command line carried out in arm-stub.c with
+the handling in efi_parse_options(). Note that this also fixes the
+missing handling of CONFIG_CMDLINE_FORCE=y, in which case the builtin
+command line should supersede the one passed by the firmware.
+
+Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Matt Fleming <matt@codeblueprint.co.uk>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: bhe@redhat.com
+Cc: bhsharma@redhat.com
+Cc: bp@alien8.de
+Cc: eugene@hp.com
+Cc: evgeny.kalugin@intel.com
+Cc: jhugo@codeaurora.org
+Cc: leif.lindholm@linaro.org
+Cc: linux-efi@vger.kernel.org
+Cc: mark.rutland@arm.com
+Cc: roy.franz@cavium.com
+Cc: rruigrok@codeaurora.org
+Link: http://lkml.kernel.org/r/20170404160910.28115-1-ard.biesheuvel@linaro.org
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+[bwh: Backported to 4.9: adjust context]
+---
+ drivers/firmware/efi/libstub/arm-stub.c       | 24 ++++++-------------
+ drivers/firmware/efi/libstub/arm64-stub.c     |  4 +---
+ .../firmware/efi/libstub/efi-stub-helper.c    | 19 ++++++++-------
+ drivers/firmware/efi/libstub/efistub.h        |  2 ++
+ include/linux/efi.h                           |  2 +-
+ 5 files changed, 22 insertions(+), 29 deletions(-)
+
+--- a/drivers/firmware/efi/libstub/arm-stub.c
++++ b/drivers/firmware/efi/libstub/arm-stub.c
+@@ -18,8 +18,6 @@
+ 
+ #include "efistub.h"
+ 
+-bool __nokaslr;
+-
+ static int efi_get_secureboot(efi_system_table_t *sys_table_arg)
+ {
+ 	static efi_char16_t const sb_var_name[] = {
+@@ -268,18 +266,6 @@ unsigned long efi_entry(void *handle, ef
+ 		goto fail;
+ 	}
+ 
+-	/* check whether 'nokaslr' was passed on the command line */
+-	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE)) {
+-		static const u8 default_cmdline[] = CONFIG_CMDLINE;
+-		const u8 *str, *cmdline = cmdline_ptr;
+-
+-		if (IS_ENABLED(CONFIG_CMDLINE_FORCE))
+-			cmdline = default_cmdline;
+-		str = strstr(cmdline, "nokaslr");
+-		if (str == cmdline || (str > cmdline && *(str - 1) == ' '))
+-			__nokaslr = true;
+-	}
+-
+ 	si = setup_graphics(sys_table);
+ 
+ 	status = handle_kernel_image(sys_table, image_addr, &image_size,
+@@ -291,9 +277,13 @@ unsigned long efi_entry(void *handle, ef
+ 		goto fail_free_cmdline;
+ 	}
+ 
+-	status = efi_parse_options(cmdline_ptr);
+-	if (status != EFI_SUCCESS)
+-		pr_efi_err(sys_table, "Failed to parse EFI cmdline options\n");
++	if (IS_ENABLED(CONFIG_CMDLINE_EXTEND) ||
++	    IS_ENABLED(CONFIG_CMDLINE_FORCE) ||
++	    cmdline_size == 0)
++		efi_parse_options(CONFIG_CMDLINE);
++
++	if (!IS_ENABLED(CONFIG_CMDLINE_FORCE) && cmdline_size > 0)
++		efi_parse_options(cmdline_ptr);
+ 
+ 	secure_boot = efi_get_secureboot(sys_table);
+ 	if (secure_boot > 0)
+--- a/drivers/firmware/efi/libstub/arm64-stub.c
++++ b/drivers/firmware/efi/libstub/arm64-stub.c
+@@ -24,8 +24,6 @@
+ 
+ #include "efistub.h"
+ 
+-extern bool __nokaslr;
+-
+ efi_status_t check_platform_features(efi_system_table_t *sys_table_arg)
+ {
+ 	u64 tg;
+@@ -60,7 +58,7 @@ efi_status_t handle_kernel_image(efi_sys
+ 	u64 phys_seed = 0;
+ 
+ 	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE)) {
+-		if (!__nokaslr) {
++		if (!nokaslr()) {
+ 			status = efi_get_random_bytes(sys_table_arg,
+ 						      sizeof(phys_seed),
+ 						      (u8 *)&phys_seed);
+--- a/drivers/firmware/efi/libstub/efi-stub-helper.c
++++ b/drivers/firmware/efi/libstub/efi-stub-helper.c
+@@ -41,6 +41,13 @@ static unsigned long __chunk_size = EFI_
+ #define EFI_ALLOC_ALIGN		EFI_PAGE_SIZE
+ #endif
+ 
++static int __section(.data) __nokaslr;
++
++int __pure nokaslr(void)
++{
++	return __nokaslr;
++}
++
+ #define EFI_MMAP_NR_SLACK_SLOTS	8
+ 
+ struct file_info {
+@@ -351,17 +358,13 @@ void efi_free(efi_system_table_t *sys_ta
+  * environments, first in the early boot environment of the EFI boot
+  * stub, and subsequently during the kernel boot.
+  */
+-efi_status_t efi_parse_options(char *cmdline)
++efi_status_t efi_parse_options(char const *cmdline)
+ {
+ 	char *str;
+ 
+-	/*
+-	 * Currently, the only efi= option we look for is 'nochunk', which
+-	 * is intended to work around known issues on certain x86 UEFI
+-	 * versions. So ignore for now on other architectures.
+-	 */
+-	if (!IS_ENABLED(CONFIG_X86))
+-		return EFI_SUCCESS;
++	str = strstr(cmdline, "nokaslr");
++	if (str == cmdline || (str && str > cmdline && *(str - 1) == ' '))
++		__nokaslr = 1;
+ 
+ 	/*
+ 	 * If no EFI parameters were specified on the cmdline we've got
+--- a/drivers/firmware/efi/libstub/efistub.h
++++ b/drivers/firmware/efi/libstub/efistub.h
+@@ -15,6 +15,8 @@
+  */
+ #undef __init
+ 
++extern int __pure nokaslr(void);
++
+ void efi_char16_printk(efi_system_table_t *, efi_char16_t *);
+ 
+ efi_status_t efi_open_volume(efi_system_table_t *sys_table_arg, void *__image,
+--- a/include/linux/efi.h
++++ b/include/linux/efi.h
+@@ -1427,7 +1427,7 @@ efi_status_t handle_cmdline_files(efi_sy
+ 				  unsigned long *load_addr,
+ 				  unsigned long *load_size);
+ 
+-efi_status_t efi_parse_options(char *cmdline);
++efi_status_t efi_parse_options(char const *cmdline);
+ 
+ efi_status_t efi_setup_gop(efi_system_table_t *sys_table_arg,
+ 			   struct screen_info *si, efi_guid_t *proto,
