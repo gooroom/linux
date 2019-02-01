@@ -1,0 +1,27 @@
+From: Ilya Dryomov <idryomov@gmail.com>
+Date: Wed, 9 Jan 2019 15:17:09 +0100
+Subject: libceph: fix CEPH_FEATURE_CEPHX_V2 check in calc_signature()
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=90b7f94812437be10cc3e81bfa10e6c9b6a2e5e2
+
+Upstream commit cc255c76c70f ("libceph: implement CEPHX_V2 calculation
+mode") was adjusted incorrectly: CEPH_FEATURE_CEPHX_V2 if condition got
+inverted, thus breaking 4.9.144 and later kernels for all setups that
+use cephx.
+
+Cc: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ net/ceph/auth_x.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/ceph/auth_x.c
++++ b/net/ceph/auth_x.c
+@@ -804,7 +804,7 @@ static int calc_signature(struct ceph_x_
+ 	void *enc_buf = au->enc_buf;
+ 	int ret;
+ 
+-	if (msg->con->peer_features & CEPH_FEATURE_CEPHX_V2) {
++	if (!(msg->con->peer_features & CEPH_FEATURE_CEPHX_V2)) {
+ 		struct {
+ 			__le32 len;
+ 			__le32 header_crc;
