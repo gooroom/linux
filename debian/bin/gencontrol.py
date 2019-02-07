@@ -77,10 +77,6 @@ class Gencontrol(Base):
             'ABINAME': self.abiname_version + self.abiname_part,
             'SOURCEVERSION': self.version.complete,
         })
-        if not self.config.merge('packages').get('tools-unversioned', True):
-            makeflags['DO_TOOLS_UNVERSIONED'] = False
-        if not self.config.merge('packages').get('tools-versioned', True):
-            makeflags['DO_TOOLS_VERSIONED'] = False
         makeflags['SOURCE_BASENAME'] = self.vars['source_basename']
 
         # Prepare to generate debian/tests/control
@@ -144,7 +140,7 @@ class Gencontrol(Base):
                     package['Build-Profiles'] = (
                         '<pkg.linux.udeb-unsigned-test-build>')
                 else:
-                    package['Build-Profiles'] = '<!stage1>'
+                    package['Build-Profiles'] = '<!stage1 !pkg.linux.nokernel>'
 
                 for arch in package['Architecture']:
                     self.installer_packages.setdefault(arch, []) \
@@ -167,10 +163,6 @@ class Gencontrol(Base):
 
         makeflags = makeflags.copy()
         makeflags['ALL_FEATURESETS'] = ' '.join(fs_enabled)
-        if not self.config.merge('packages').get('docs', True):
-            makeflags['DO_DOCS'] = False
-        if not self.config.merge('packages').get('source', True):
-            makeflags['DO_SOURCE'] = False
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
     def do_main_packages(self, packages, vars, makeflags, extra):
@@ -185,6 +177,9 @@ class Gencontrol(Base):
         if self.config.merge('packages').get('tools-versioned', True):
             packages.extend(self.process_packages(
                 self.templates["control.tools-versioned"], self.vars))
+        if self.config.merge('packages').get('source', True):
+            packages.extend(self.process_packages(
+                self.templates["control.sourcebin"], self.vars))
 
         self._substitute_file('perf.lintian-overrides', self.vars,
                               'debian/linux-perf-%s.lintian-overrides' %
@@ -264,13 +259,10 @@ class Gencontrol(Base):
                 packages_headers_arch[-1]['Depends'])
         else:
             packages_headers_arch = []
-            makeflags['DO_HEADERS_ALL'] = False
 
         if self.config.merge('packages').get('libc-dev', True):
             libc_dev = self.templates["control.libc-dev"]
             packages_headers_arch[0:0] = self.process_packages(libc_dev, {})
-        else:
-            makeflags['DO_LIBC'] = False
 
         merge_packages(packages, packages_headers_arch, arch)
 
@@ -280,8 +272,6 @@ class Gencontrol(Base):
                            self.process_packages(
                                self.templates["control.config"], vars),
                            arch)
-        else:
-            makeflags['DO_CONFIG'] = False
 
         cmds_build_arch = ["$(MAKE) -f debian/rules.real build-arch-arch %s" %
                            makeflags]
@@ -291,12 +281,6 @@ class Gencontrol(Base):
                             % makeflags]
         makefile.add('binary-arch_%s_real' % arch, cmds=cmds_binary_arch,
                      deps=['setup_%s' % arch])
-
-        # For stage1 build profile
-        makefile.add('binary-libc-dev_%s' % arch,
-                     ['source_none_real'],
-                     ["$(MAKE) -f debian/rules.real install-libc-dev_%s %s" %
-                      (arch, makeflags)])
 
         udeb_packages = self.installer_packages.get(arch, [])
         if udeb_packages:
@@ -361,14 +345,14 @@ class Gencontrol(Base):
         config_image = self.config.merge('image', arch, featureset, flavour)
 
         vars['class'] = config_description['hardware']
-        vars['longclass'] = (config_description.get('hardware-long') or
-                             vars['class'])
+        vars['longclass'] = (config_description.get('hardware-long')
+                             or vars['class'])
 
         vars['localversion-image'] = vars['localversion']
         override_localversion = config_image.get('override-localversion', None)
         if override_localversion is not None:
-            vars['localversion-image'] = (vars['localversion_headers'] + '-' +
-                                          override_localversion)
+            vars['localversion-image'] = (vars['localversion_headers'] + '-'
+                                          + override_localversion)
         vars['image-stem'] = config_image.get('install-stem')
 
         self._setup_makeflags(self.flavour_makeflags_base, makeflags,
@@ -624,7 +608,7 @@ class Gencontrol(Base):
             self.abiname_part = '-%s' % self.config['abi', ]['abiname']
         # We need to keep at least three version components to avoid
         # userland breakage (e.g. #742226, #745984).
-        self.abiname_version = re.sub('^(\d+\.\d+)(?=-|$)', r'\1.0',
+        self.abiname_version = re.sub(r'^(\d+\.\d+)(?=-|$)', r'\1.0',
                                       self.version.linux_upstream)
         self.vars = {
             'upstreamversion': self.version.linux_upstream,
@@ -638,8 +622,8 @@ class Gencontrol(Base):
         self.config['version', ] = {'source': self.version.complete,
                                     'upstream': self.version.linux_upstream,
                                     'abiname_base': self.abiname_version,
-                                    'abiname': (self.abiname_version +
-                                                self.abiname_part)}
+                                    'abiname': (self.abiname_version
+                                                + self.abiname_part)}
 
         distribution = self.changelog[0].distribution
         if distribution in ('unstable', ):

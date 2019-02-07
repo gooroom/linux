@@ -1,4 +1,5 @@
 import collections
+import collections.abc
 import os.path
 import re
 import unittest
@@ -400,7 +401,7 @@ class _VersionLinuxTest(unittest.TestCase):
         self.assertTrue(v.linux_revision_other)
 
 
-class PackageArchitecture(collections.MutableSet):
+class PackageArchitecture(collections.abc.MutableSet):
     __slots__ = '_data'
 
     def __init__(self, value=None):
