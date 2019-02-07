@@ -33,22 +33,22 @@ class url_debian_pool(object):
         self.base = base
 
     def __call__(self, source, filename, arch):
-        return (self.base + "pool/main/" + source[0] + "/" + source + "/" +
-                filename)
+        return (self.base + "pool/main/" + source[0] + "/" + source + "/"
+                + filename)
 
 
 class url_debian_ports_pool(url_debian_pool):
     def __call__(self, source, filename, arch):
         if arch == 'all':
             return url_debian_pool.__call__(self, source, filename, arch)
-        return (self.base + "pool-" + arch + "/main/" + source[0] + "/" +
-                source + "/" + filename)
+        return (self.base + "pool-" + arch + "/main/" + source[0] + "/"
+                + source + "/" + filename)
 
 
 class url_debian_security_pool(url_debian_pool):
     def __call__(self, source, filename, arch):
-        return (self.base + "pool/updates/main/" + source[0] + "/" + source +
-                "/" + filename)
+        return (self.base + "pool/updates/main/" + source[0] + "/" + source
+                + "/" + filename)
 
 
 class Main(object):
@@ -107,8 +107,8 @@ class Main(object):
 
     def get_abi(self, arch, prefix):
         try:
-            version_abi = (self.config[('version',)]['abiname_base'] + '-' +
-                           self.config['abi', arch]['abiname'])
+            version_abi = (self.config[('version',)]['abiname_base'] + '-'
+                           + self.config['abi', arch]['abiname'])
         except KeyError:
             version_abi = self.version_abi
         filename = ("linux-headers-%s-%s_%s_%s.deb" %

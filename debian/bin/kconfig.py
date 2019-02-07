@@ -16,7 +16,7 @@ def merge(output, configs, overrides):
 
 
 def opt_callback_dict(option, opt, value, parser):
-    match = re.match('^\s*(\S+)=(\S+)\s*$', value)
+    match = re.match(r'^\s*(\S+)=(\S+)\s*$', value)
     if not match:
         raise optparse.OptionValueError('not key=value')
     dest = option.dest
