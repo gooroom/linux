@@ -52,7 +52,7 @@ linux (4.20-1~exp1) experimental; urgency=medium
 
  -- Ben Hutchings <ben@decadent.org.uk>  Mon, 24 Dec 2018 04:26:47 +0000
 
-linux (4.19.20-1) UNRELEASED; urgency=medium
+linux (4.19.20-1) unstable; urgency=medium
 
   * New upstream stable update:
     https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.19.17
@@ -62,6 +62,14 @@ linux (4.19.20-1) UNRELEASED; urgency=medium
     - tty: Don't hold ldisc lock in tty_reopen() if ldisc present
     - can: gw: ensure DLC boundaries after CAN frame modification
       (CVE-2019-3701)
+    - netfilter: nf_conncount: don't skip eviction when age is negative
+    - netfilter: nf_conncount: split gc in two phases
+    - netfilter: nf_conncount: restart search when nodes have been erased
+      (Closes: #921616)
+    - netfilter: nf_conncount: merge lookup and add functions
+    - netfilter: nf_conncount: move all list iterations under spinlock
+    - netfilter: nf_conncount: speculative garbage collection on empty lists
+    - netfilter: nf_conncount: fix argument order to find_next_bit
     - [arm64] mmc: sdhci-msm: Disable CDR function on TX
     - Revert "scsi: target: iscsi: cxgbit: fix csk leak"
     - scsi: target: iscsi: cxgbit: fix csk leak
@@ -160,7 +168,8 @@ linux (4.19.20-1) UNRELEASED; urgency=medium
     - [mips] SiByte: Enable swiotlb for SWARM, LittleSur and BigSur
     - [arm64] perf: set suppress_bind_attrs flag to true
     - drm/atomic-helper: Complete fake_commit->flip_done potentially earlier
-    - [arm64] clk: meson: meson8b: fix incorrect divider mapping in cpu_scale_table
+    - [arm64] clk: meson: meson8b: fix incorrect divider mapping in
+      cpu_scale_table
     - samples: bpf: fix: error handling regarding kprobe_events
     - usb: gadget: udc: renesas_usb3: add a safety connection way for
       forced_b_device
@@ -437,15 +446,92 @@ linux (4.19.20-1) UNRELEASED; urgency=medium
   * debian/tests/python: Fix spurious failure due to misuse of stderr
   * Update "Revert "objtool: Fix CONFIG_STACK_VALIDATION=y warning for ..."
     to not duplicate the conditional warning/error
+  * Bump ABI to 3
+  * drivers/firmware: Enable FW_CFG_SYSFS as module (Closes: #882208)
+  * [arm64,armhf,ia64,riscv64,sparc64] udeb: Add usb-serial-modules
+    (Closes: #903824)
+  * [powerpc*,sparc64] udeb: Add nic-usb-modules
+  * [armhf,riscv64,s390x] udeb: Add cdrom-core-modules
+  * 9p: Enable NET_9P_XEN as module
+  * ACPI: Enable ACPI_TAD as module
+  * amd-xgbe: Enable AMD_XGBE_DCB
+  * ath9k: Enable ATH9K_CHANNEL_CONTEXT
+  * block: Enable BLK_DEV_ZONED (except armel/marvell)
+  * bluetooth: Enable BT_HCIUART_RTL; BT_HCIUART_NOKIA, BT_MTKUART as modules
+  * bnxt: Enable BNXT_DCB
+  * ethernet: Enable HINIC, ICE, LAN743X, LIQUIDIO_VF as modules
+  * can: Enable CAN_VXCAN, CAN_MCBA_USB, CAN_UCAN as modules
+  * dm: Enable DM_UNSTRIPED, DM_WRITECACHE, DM_ZONED as modules
+  * [arm64,armhf] drm: Enable DRM_PANEL_RASPBERRYPI_TOUCHSCREEN as module
+  * dvb-usb-v2: Enable DVB_USB_ZD1301 as module
+  * gnss: Enable GNSS, GNSS_SIRF_SERIAL, GNSS_UBX_SERIAL as modules
+  * gpio: Enable GPIO_EXAR, GPIO_PCI_IDIO_16, GPIO_PCIE_IDIO_24 as modules
+  * HID: Enable HID_ACCUTOUCH, HID_COUGAR, HID_ELAN, HID_ITE, HID_JABRA,
+    HID_MAYFLASH, HID_REDRAGON, HID_RETRODE, HID_STEAM, HID_UDRAW_PS3 as
+    modules
+  * [x86] i2c: Enable I2C_DESIGNWARE_BAYTRAIL
+  * IB: Enable CGROUP_RDMA (except armel/marvell)
+  * ieee802154: Enable IEEE802154_HWSIM as module
+  * inet: Enable INET_RAW_DIAG as module
+  * input: Enable INPUT_AXP20X_PEK as module
+  * IPMI: Enable IPMI_SSIF as module
+  * joystick: Enable JOYSTICK_PXRC as module
+  * media/rc: Enable IR_IMON_DECODER, IR_IMON_RAW as modules
+  * [x86] mfd: Enable INTEL_SOC_PMIC_BXTWC, INTEL_SOC_PMIC_CHTDC_TI as modules
+  * mlx5: Enable MLX5_FPGA, MLX5_CORE_IPOIB; MLXFW as module
+  * net: Enable BPF_STREAM_PARSER, XDP_SOCKETS (except armel/marvell)
+    (Closes: #908860); NET_FAILOVER, SMC, SMC_DIAG, VSOCKMON as modules
+  * net/phy: Enable LED_TRIGGER_PHY; CORTINA_PHY, DP83822_PHY, DP83TC811_PHY,
+    MARVELL_10G_PHY, MICROCHIP_T1_PHY, RENESAS_PHY, ROCKCHIP_PHY as modules
+  * net/sched: Enable NET_SCH_CBS, NET_SCH_ETF, NET_SCH_SKBPRIO, NET_EMATCH_IPT
+    as modules
+  * PCMCIA: Enable SCR24X as module
+  * [x86] pinctrl: Enable PINCTRL_CANNONLAKE, PINCTRL_CEDARFORK,
+    PINCTRL_DENVERTON, PINCTRL_GEMINILAKE, PINCTRL_ICELAKE, PINCTRL_LEWISBURG
+  * [x86] rmi4: Re-enable RMI4_CORE, RMI4_SMB as modules (Closes: #875621);
+    RMI4_F03, RMI4_F11, RMI4_F12, RMI4_F30, RMI4_F34, RMI4_F55
+  * xfrm: Enable XFRM_INTERFACE as module
+  * PCI: Enable PCI_PF_STUB as module
+  * ptp: Change PTP_1588_CLOCK_KVM from built-in to module
+  * random: Enable RANDOM_TRUST_CPU. This can be reverted using the kernel
+    parameter: random.trust_cpu=off
+  * SCSI: Enable QEDF, QEDI as modules
+  * serial: Enable SERIAL_8250_EXAR, USB_SERIAL_F8153X, USB_SERIAL_UPD78F0730
+    as modules
+  * sound: Enable SND_FIREWIRE_MOTU, SND_FIREFACE, SND_XEN_FRONTEND as modules
+  * [x86] sound: Enable SND_SOC_AMD_CZ_DA7219MX98357_MACH,
+    SND_SOC_AMD_CZ_RT5645_MACH, SND_SOC_INTEL_CHT_BSW_NAU8824_MACH,
+    SND_SOC_INTEL_BYT_CHT_DA7213_MACH, SND_SOC_INTEL_KBL_RT5663_MAX98927_MACH,
+    SND_SOC_INTEL_KBL_RT5663_RT5514_MAX98927_MACH,
+    SND_SOC_INTEL_KBL_DA7219_MAX98357A_MACH,
+    SND_SOC_INTEL_GLK_RT5682_MAX98357A_MACH as modules
+  * thermal: Enable DEVFREQ_THERMAL, THERMAL_STATISTICS
+  * tpm: Enable TCG_TIS_SPI, TCG_VTPM_PROXY as modules
+  * usbtouchscreen: Enable TOUCHSCREEN_USB_EASYTOUCH
+  * watchdog: Enable WATCHDOG_PRETIMEOUT_GOV, WATCHDOG_PRETIMEOUT_GOV_NOOP,
+    WATCHDOG_PRETIMEOUT_DEFAULT_GOV_NOOP; WATCHDOG_PRETIMEOUT_GOV_PANIC,
+    WDAT_WDT as modules
+  * [x86] watchdog: Enable INTEL_MEI_WDT, NI903X_WDT, NIC7018_WDT as modules
+  * wireless: Enable MT76x0U, MT76x2E, MT76x2U, QTNFMAC_PEARL_PCIE as modules
+    (Closes: #918331)
+  * zram: Enable ZRAM_WRITEBACK, ZRAM_MEMORY_TRACKING
+  * udeb: Add scsi-nic-modules containing Chelsio and Qlogic iSCSI/FC drivers
 
   [ Marcin Juszkiewicz ]
   * [arm64] enable ARM_CCI_PMU so ARM_CCI400_PMU and ARM_CCI5xx_PMU options
     get really enabled.
   * [arm64] enable PCI_PRI, PCI_PASID as PCI can be behind IOMMU in servers.
   * udeb: Add virtio-gpu into d-i to get graphical output in VM instances.
+  * [arm64] Enable ARM64_ERRATUM_843419 (Closes: #920866)
 
   [ Salvatore Bonaccorso ]
   * [x86] kvmclock: set offset for kvm unstable clock (Closes: #918036)
+  * kvm: fix kvm_ioctl_create_device() reference counting (CVE-2019-6974)
+  * [x86] KVM: work around leak of uninitialized stack contents
+    (CVE-2019-7222)
+  * [x86] KVM: nVMX: unconditionally cancel preemption timer in free_nested
+    (CVE-2019-7221)
+  * HID: debug: fix the ring buffer implementation (CVE-2019-3819)
 
   [ Hideki Yamane ]
   * [x86] Enable Touchpad support on Gemini Lake via CONFIG_PINCTRL_GEMINILAKE
@@ -457,6 +543,8 @@ linux (4.19.20-1) UNRELEASED; urgency=medium
   * net: can: Enable CONFIG_CAN_PEAK_PCIEFD for a PCI express CAN Bus adapter
     (Closes: #920809)
   * [armhf] Enable CONFIG_SENSORS_LM75 for armhf (Closes: #918114)
+  * [armhf] Enable CONFIG_IMX_THERMAL for armhf (Closes: #883023)
+  * [arm64] Enable CONFIG_ARM_ARMADA_37XX_CPUFREQ for arm64 (Closes: #917939)
 
   [ Vagrant Cascadian ]
   * [armhf] Enable CONFIG_MMC_SDHCI_OMAP=m, used on DRA7 and related SoCs.
@@ -465,7 +553,7 @@ linux (4.19.20-1) UNRELEASED; urgency=medium
   * [armel] add spi-orion to mtd.udeb to be able to access spi flash on e.g.
     qnap ts-21x. (Closes: #920607)
 
- -- Luca Boccassi <bluca@debian.org>  Fri, 18 Jan 2019 19:09:06 +0000
+ -- Ben Hutchings <ben@decadent.org.uk>  Mon, 11 Feb 2019 16:55:59 +0000
 
 linux (4.19.16-1) unstable; urgency=medium
 
