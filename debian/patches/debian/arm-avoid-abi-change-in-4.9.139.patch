@@ -14,8 +14,10 @@ building modules, to make sure they really don't use it.
 
 ---
 
---- a/arch/arm/include/asm/proc-fns.h
-+++ b/arch/arm/include/asm/proc-fns.h
+Index: linux/arch/arm/include/asm/proc-fns.h
+===================================================================
+--- linux.orig/arch/arm/include/asm/proc-fns.h
++++ linux/arch/arm/include/asm/proc-fns.h
 @@ -37,10 +37,6 @@ extern struct processor {
  	 */
  	void (*_proc_init)(void);
@@ -40,3 +42,24 @@ building modules, to make sure they really don't use it.
  } processor;
  
  #ifndef MULTI_CPU
+Index: linux/arch/arm/mm/proc-macros.S
+===================================================================
+--- linux.orig/arch/arm/mm/proc-macros.S
++++ linux/arch/arm/mm/proc-macros.S
+@@ -281,7 +281,6 @@ ENTRY(\name\()_processor_functions)
+ 	.word	\dabort
+ 	.word	\pabort
+ 	.word	cpu_\name\()_proc_init
+-	.word	\bugs
+ 	.word	cpu_\name\()_proc_fin
+ 	.word	cpu_\name\()_reset
+ 	.word	cpu_\name\()_do_idle
+@@ -309,6 +308,8 @@ ENTRY(\name\()_processor_functions)
+ 	.word	0
+ 	.endif
+ 
++	.word	\bugs
++
+ 	.size	\name\()_processor_functions, . - \name\()_processor_functions
+ .endm
+ 
