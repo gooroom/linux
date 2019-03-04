@@ -580,6 +580,12 @@ class Gencontrol(Base):
         makefile.add('setup_%s_%s_%s_real' % (arch, featureset, flavour),
                      cmds=cmds_setup)
 
+        merged_config = ('debian/build/config.%s_%s_%s' %
+                         (arch, featureset, flavour))
+        makefile.add(merged_config,
+                     cmds=["$(MAKE) -f debian/rules.real %s %s" %
+                           (merged_config, makeflags)])
+
         # Substitute kernel version etc. into maintainer scripts,
         # translations and lintian overrides
         self._substitute_file('headers.postinst', vars,
