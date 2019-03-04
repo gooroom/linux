@@ -11,7 +11,8 @@ import re
 from debian_linux import config
 from debian_linux.debian import PackageDescription, PackageRelation, \
     PackageRelationEntry, PackageRelationGroup, VersionLinux
-from debian_linux.gencontrol import Gencontrol as Base, merge_packages
+from debian_linux.gencontrol import Gencontrol as Base, merge_packages, \
+    iter_featuresets
 from debian_linux.utils import Templates, read_control
 
 locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
@@ -147,11 +148,7 @@ class Gencontrol(Base):
                                            .append(package)
 
     def do_main_makefile(self, makefile, makeflags, extra):
-        fs_enabled = [featureset
-                      for featureset in self.config['base', ]['featuresets']
-                      if (self.config.merge('base', None, featureset)
-                          .get('enabled', True))]
-        for featureset in fs_enabled:
+        for featureset in iter_featuresets(self.config):
             makeflags_featureset = makeflags.copy()
             makeflags_featureset['FEATURESET'] = featureset
             cmds_source = ["$(MAKE) -f debian/rules.real source-featureset %s"
@@ -162,7 +159,7 @@ class Gencontrol(Base):
             makefile.add('source', ['source_%s' % featureset])
 
         makeflags = makeflags.copy()
-        makeflags['ALL_FEATURESETS'] = ' '.join(fs_enabled)
+        makeflags['ALL_FEATURESETS'] = ' '.join(iter_featuresets(self.config))
         super(Gencontrol, self).do_main_makefile(makefile, makeflags, extra)
 
     def do_main_packages(self, packages, vars, makeflags, extra):
