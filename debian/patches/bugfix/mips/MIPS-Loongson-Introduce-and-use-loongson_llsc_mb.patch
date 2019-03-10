@@ -1,7 +1,7 @@
-From e02e07e3127d8aec1f4bcdfb2fc52a2d99b4859e Mon Sep 17 00:00:00 2001
 From: Huacai Chen <chenhc@lemote.com>
 Date: Tue, 15 Jan 2019 16:04:54 +0800
 Subject: MIPS: Loongson: Introduce and use loongson_llsc_mb()
+Origin: https://git.kernel.org/linus/e02e07e3127d8aec1f4bcdfb2fc52a2d99b4859e
 
 On the Loongson-2G/2H/3A/3B there is a hardware flaw that ll/sc and
 lld/scd is very weak ordering. We should add sync instructions "before
@@ -85,11 +85,9 @@ Cc: Xu Chenghua <xuchenghua@loongson.cn>
  arch/mips/mm/tlbex.c            | 10 ++++++++++
  8 files changed, 100 insertions(+)
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 0d14f51..a84c24d 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1403,6 +1403,21 @@ config LOONGSON3_ENHANCEMENT
+@@ -1397,6 +1397,21 @@ config LOONGSON3_ENHANCEMENT
  	  please say 'N' here. If you want a high-performance kernel to run on
  	  new Loongson 3 machines only, please say 'Y' here.
  
@@ -111,60 +109,56 @@ index 0d14f51..a84c24d 100644
  config CPU_LOONGSON2E
  	bool "Loongson 2E"
  	depends on SYS_HAS_CPU_LOONGSON2E
-diff --git a/arch/mips/include/asm/atomic.h b/arch/mips/include/asm/atomic.h
-index 43fcd35..9409629 100644
 --- a/arch/mips/include/asm/atomic.h
 +++ b/arch/mips/include/asm/atomic.h
-@@ -58,6 +58,7 @@ static __inline__ void atomic_##op(int i, atomic_t * v)			      \
+@@ -58,6 +58,7 @@ static __inline__ void atomic_##op(int i
  	if (kernel_uses_llsc) {						      \
  		int temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-@@ -85,6 +86,7 @@ static __inline__ int atomic_##op##_return_relaxed(int i, atomic_t * v)	      \
+ 		"1:	ll	%0, %1		# atomic_" #op "	\n"   \
+@@ -84,6 +85,7 @@ static __inline__ int atomic_##op##_retu
  	if (kernel_uses_llsc) {						      \
  		int temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-@@ -118,6 +120,7 @@ static __inline__ int atomic_fetch_##op##_relaxed(int i, atomic_t * v)	      \
+ 		"1:	ll	%1, %2		# atomic_" #op "_return	\n"   \
+@@ -116,6 +118,7 @@ static __inline__ int atomic_fetch_##op#
  	if (kernel_uses_llsc) {						      \
  		int temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-@@ -256,6 +259,7 @@ static __inline__ void atomic64_##op(long i, atomic64_t * v)		      \
+ 		"1:	ll	%1, %2		# atomic_fetch_" #op "	\n"   \
+@@ -251,6 +254,7 @@ static __inline__ void atomic64_##op(lon
  	if (kernel_uses_llsc) {						      \
  		long temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-@@ -283,6 +287,7 @@ static __inline__ long atomic64_##op##_return_relaxed(long i, atomic64_t * v) \
+ 		"1:	lld	%0, %1		# atomic64_" #op "	\n"   \
+@@ -277,6 +281,7 @@ static __inline__ long atomic64_##op##_r
  	if (kernel_uses_llsc) {						      \
  		long temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-@@ -316,6 +321,7 @@ static __inline__ long atomic64_fetch_##op##_relaxed(long i, atomic64_t * v)  \
+ 		"1:	lld	%1, %2		# atomic64_" #op "_return\n"  \
+@@ -309,6 +314,7 @@ static __inline__ long atomic64_fetch_##
  	if (kernel_uses_llsc) {						      \
  		long temp;						      \
  									      \
 +		loongson_llsc_mb();					      \
  		__asm__ __volatile__(					      \
- 		"	.set	push					\n"   \
  		"	.set	"MIPS_ISA_LEVEL"			\n"   \
-diff --git a/arch/mips/include/asm/barrier.h b/arch/mips/include/asm/barrier.h
-index a5eb1bb..b7f6ac5 100644
+ 		"1:	lld	%1, %2		# atomic64_fetch_" #op "\n"   \
 --- a/arch/mips/include/asm/barrier.h
 +++ b/arch/mips/include/asm/barrier.h
 @@ -222,6 +222,42 @@
@@ -210,11 +204,9 @@ index a5eb1bb..b7f6ac5 100644
  #include <asm-generic/barrier.h>
  
  #endif /* __ASM_BARRIER_H */
-diff --git a/arch/mips/include/asm/bitops.h b/arch/mips/include/asm/bitops.h
-index c467595..830c93a 100644
 --- a/arch/mips/include/asm/bitops.h
 +++ b/arch/mips/include/asm/bitops.h
-@@ -69,6 +69,7 @@ static inline void set_bit(unsigned long nr, volatile unsigned long *addr)
+@@ -68,6 +68,7 @@ static inline void set_bit(unsigned long
  		: "ir" (1UL << bit), GCC_OFF_SMALL_ASM() (*m));
  #if defined(CONFIG_CPU_MIPSR2) || defined(CONFIG_CPU_MIPSR6)
  	} else if (kernel_uses_llsc && __builtin_constant_p(bit)) {
@@ -222,15 +214,15 @@ index c467595..830c93a 100644
  		do {
  			__asm__ __volatile__(
  			"	" __LL "%0, %1		# set_bit	\n"
-@@ -79,6 +80,7 @@ static inline void set_bit(unsigned long nr, volatile unsigned long *addr)
+@@ -78,6 +79,7 @@ static inline void set_bit(unsigned long
  		} while (unlikely(!temp));
  #endif /* CONFIG_CPU_MIPSR2 || CONFIG_CPU_MIPSR6 */
  	} else if (kernel_uses_llsc) {
 +		loongson_llsc_mb();
  		do {
  			__asm__ __volatile__(
- 			"	.set	push				\n"
-@@ -123,6 +125,7 @@ static inline void clear_bit(unsigned long nr, volatile unsigned long *addr)
+ 			"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
+@@ -120,6 +122,7 @@ static inline void clear_bit(unsigned lo
  		: "ir" (~(1UL << bit)));
  #if defined(CONFIG_CPU_MIPSR2) || defined(CONFIG_CPU_MIPSR6)
  	} else if (kernel_uses_llsc && __builtin_constant_p(bit)) {
@@ -238,24 +230,22 @@ index c467595..830c93a 100644
  		do {
  			__asm__ __volatile__(
  			"	" __LL "%0, %1		# clear_bit	\n"
-@@ -133,6 +136,7 @@ static inline void clear_bit(unsigned long nr, volatile unsigned long *addr)
+@@ -130,6 +133,7 @@ static inline void clear_bit(unsigned lo
  		} while (unlikely(!temp));
  #endif /* CONFIG_CPU_MIPSR2 || CONFIG_CPU_MIPSR6 */
  	} else if (kernel_uses_llsc) {
 +		loongson_llsc_mb();
  		do {
  			__asm__ __volatile__(
- 			"	.set	push				\n"
-@@ -193,6 +197,7 @@ static inline void change_bit(unsigned long nr, volatile unsigned long *addr)
+ 			"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
+@@ -188,6 +192,7 @@ static inline void change_bit(unsigned l
  		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
  		unsigned long temp;
  
 +		loongson_llsc_mb();
  		do {
  			__asm__ __volatile__(
- 			"	.set	push				\n"
-diff --git a/arch/mips/include/asm/futex.h b/arch/mips/include/asm/futex.h
-index c14d798..b83b039 100644
+ 			"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
 --- a/arch/mips/include/asm/futex.h
 +++ b/arch/mips/include/asm/futex.h
 @@ -50,6 +50,7 @@
@@ -266,7 +256,7 @@ index c14d798..b83b039 100644
  		__asm__ __volatile__(					\
  		"	.set	push				\n"	\
  		"	.set	noat				\n"	\
-@@ -163,6 +164,7 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *uaddr,
+@@ -162,6 +163,7 @@ futex_atomic_cmpxchg_inatomic(u32 *uval,
  		  "i" (-EFAULT)
  		: "memory");
  	} else if (cpu_has_llsc) {
@@ -274,7 +264,7 @@ index c14d798..b83b039 100644
  		__asm__ __volatile__(
  		"# futex_atomic_cmpxchg_inatomic			\n"
  		"	.set	push					\n"
-@@ -192,6 +194,7 @@ futex_atomic_cmpxchg_inatomic(u32 *uval, u32 __user *uaddr,
+@@ -190,6 +192,7 @@ futex_atomic_cmpxchg_inatomic(u32 *uval,
  		: GCC_OFF_SMALL_ASM() (*uaddr), "Jr" (oldval), "Jr" (newval),
  		  "i" (-EFAULT)
  		: "memory");
@@ -282,28 +272,24 @@ index c14d798..b83b039 100644
  	} else
  		return -ENOSYS;
  
-diff --git a/arch/mips/include/asm/pgtable.h b/arch/mips/include/asm/pgtable.h
-index 57933fc..910851c 100644
 --- a/arch/mips/include/asm/pgtable.h
 +++ b/arch/mips/include/asm/pgtable.h
-@@ -228,6 +228,7 @@ static inline void set_pte(pte_t *ptep, pte_t pteval)
+@@ -229,6 +229,7 @@ static inline void set_pte(pte_t *ptep,
  			: [buddy] "+m" (buddy->pte), [tmp] "=&r" (tmp)
  			: [global] "r" (page_global));
  		} else if (kernel_uses_llsc) {
 +			loongson_llsc_mb();
  			__asm__ __volatile__ (
- 			"	.set	push				\n"
  			"	.set	"MIPS_ISA_ARCH_LEVEL"		\n"
-@@ -242,6 +243,7 @@ static inline void set_pte(pte_t *ptep, pte_t pteval)
- 			"	.set	pop				\n"
+ 			"	.set	push				\n"
+@@ -244,6 +245,7 @@ static inline void set_pte(pte_t *ptep,
+ 			"	.set	mips0				\n"
  			: [buddy] "+m" (buddy->pte), [tmp] "=&r" (tmp)
  			: [global] "r" (page_global));
 +			loongson_llsc_mb();
  		}
  #else /* !CONFIG_SMP */
  		if (pte_none(*buddy))
-diff --git a/arch/mips/loongson64/Platform b/arch/mips/loongson64/Platform
-index 0fce460..c1a4d4d 100644
 --- a/arch/mips/loongson64/Platform
 +++ b/arch/mips/loongson64/Platform
 @@ -23,6 +23,29 @@ ifdef CONFIG_CPU_LOONGSON2F_WORKAROUNDS
@@ -336,11 +322,9 @@ index 0fce460..c1a4d4d 100644
  #
  # binutils from v2.25 on and gcc starting from v4.9.0 treat -march=loongson3a
  # as MIPS64 R2; older versions as just R1.  This leaves the possibility open
-diff --git a/arch/mips/mm/tlbex.c b/arch/mips/mm/tlbex.c
-index 37b1cb2..65b6e85 100644
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -932,6 +932,8 @@ build_get_pgd_vmalloc64(u32 **p, struct uasm_label **l, struct uasm_reloc **r,
+@@ -931,6 +931,8 @@ build_get_pgd_vmalloc64(u32 **p, struct
  		 * to mimic that here by taking a load/istream page
  		 * fault.
  		 */
@@ -349,7 +333,7 @@ index 37b1cb2..65b6e85 100644
  		UASM_i_LA(p, ptr, (unsigned long)tlb_do_page_fault_0);
  		uasm_i_jr(p, ptr);
  
-@@ -1646,6 +1648,8 @@ static void
+@@ -1645,6 +1647,8 @@ static void
  iPTE_LW(u32 **p, unsigned int pte, unsigned int ptr)
  {
  #ifdef CONFIG_SMP
@@ -358,7 +342,7 @@ index 37b1cb2..65b6e85 100644
  # ifdef CONFIG_PHYS_ADDR_T_64BIT
  	if (cpu_has_64bits)
  		uasm_i_lld(p, pte, 0, ptr);
-@@ -2259,6 +2263,8 @@ static void build_r4000_tlb_load_handler(void)
+@@ -2258,6 +2262,8 @@ static void build_r4000_tlb_load_handler
  #endif
  
  	uasm_l_nopage_tlbl(&l, p);
@@ -367,7 +351,7 @@ index 37b1cb2..65b6e85 100644
  	build_restore_work_registers(&p);
  #ifdef CONFIG_CPU_MICROMIPS
  	if ((unsigned long)tlb_do_page_fault_0 & 1) {
-@@ -2313,6 +2319,8 @@ static void build_r4000_tlb_store_handler(void)
+@@ -2312,6 +2318,8 @@ static void build_r4000_tlb_store_handle
  #endif
  
  	uasm_l_nopage_tlbs(&l, p);
@@ -376,7 +360,7 @@ index 37b1cb2..65b6e85 100644
  	build_restore_work_registers(&p);
  #ifdef CONFIG_CPU_MICROMIPS
  	if ((unsigned long)tlb_do_page_fault_1 & 1) {
-@@ -2368,6 +2376,8 @@ static void build_r4000_tlb_modify_handler(void)
+@@ -2367,6 +2375,8 @@ static void build_r4000_tlb_modify_handl
  #endif
  
  	uasm_l_nopage_tlbm(&l, p);
@@ -385,6 +369,3 @@ index 37b1cb2..65b6e85 100644
  	build_restore_work_registers(&p);
  #ifdef CONFIG_CPU_MICROMIPS
  	if ((unsigned long)tlb_do_page_fault_1 & 1) {
--- 
-cgit v1.1
-
