@@ -189,15 +189,7 @@ class Gencontrol(Base):
 
         packages_signed = self.process_packages(
             self.templates['control.image'], vars)
-
-        for package in packages_signed:
-            name = package['Package']
-            if name in packages:
-                package = packages.get(name)
-                package['Architecture'].add(arch)
-            else:
-                package['Architecture'] = arch
-                packages.append(package)
+        merge_packages(packages, packages_signed, arch)
 
         cmds_binary_arch = []
         for i in packages_signed:
