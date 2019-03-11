@@ -363,6 +363,7 @@ class Gencontrol(Base):
     def do_flavour_packages(self, packages, makefile, arch, featureset,
                             flavour, vars, makeflags, extra):
         headers = self.templates["control.headers"]
+        assert len(headers) == 1
 
         config_entry_base = self.config.merge('base', arch, featureset,
                                               flavour)
@@ -451,6 +452,7 @@ class Gencontrol(Base):
 
         image = self.templates[build_signed and "control.image-unsigned"
                                or "control.image"]
+        assert len(image) == 1
 
         vars.setdefault('desc', None)
 
