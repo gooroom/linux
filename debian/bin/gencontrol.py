@@ -445,7 +445,6 @@ class Gencontrol(Base):
                 desc.append_short(config_entry_description
                                   .get('part-short-' + part, ''))
 
-        packages_dummy = []
         packages_own = []
 
         build_signed = config_entry_build.get('signed-code')
@@ -458,7 +457,6 @@ class Gencontrol(Base):
         image_main = self.process_real_image(image[0], image_fields, vars)
         packages_own.append(image_main)
         makeflags['IMAGE_PACKAGE_NAME'] = image_main['Package']
-        packages_own.extend(self.process_packages(image[1:], vars))
 
         package_headers = self.process_package(headers[0], vars)
         package_headers['Depends'].extend(relations_compiler_headers)
@@ -488,7 +486,7 @@ class Gencontrol(Base):
             packages_own.extend(self.process_packages(
                 self.templates['control.image-dbg'], vars))
 
-        merge_packages(packages, packages_own + packages_dummy, arch)
+        merge_packages(packages, packages_own, arch)
 
         tests_control = self.process_package(
             self.templates['tests-control.image'][0], vars)
@@ -564,11 +562,6 @@ class Gencontrol(Base):
         cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-flavour "
                             "%s" %
                             makeflags]
-        if packages_dummy:
-            cmds_binary_arch.append(
-                "$(MAKE) -f debian/rules.real install-dummy DH_OPTIONS='%s' %s"
-                % (' '.join("-p%s" % i['Package'] for i in packages_dummy),
-                   makeflags))
         cmds_build = ["$(MAKE) -f debian/rules.real build-arch-flavour %s" %
                       makeflags]
         cmds_setup = ["$(MAKE) -f debian/rules.real setup-arch-flavour %s" %
