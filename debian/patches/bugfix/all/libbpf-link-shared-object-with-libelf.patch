@@ -5,18 +5,16 @@ Subject: libbpf: link shared object with libelf
 libbpf.so needs to be linked against libelf to avoid missing symbols.
 
 Signed-off-by: Hilko Bengen <bengen@debian.org>
-
+[bwh: Forward-ported to 5.0]
 ---
-Index: linux/tools/lib/bpf/Makefile
-===================================================================
---- linux.orig/tools/lib/bpf/Makefile
-+++ linux/tools/lib/bpf/Makefile
-@@ -161,7 +161,7 @@ $(BPF_IN): force elfdep bpfdep
- 	$(Q)$(MAKE) $(build)=libbpf
+--- a/tools/lib/bpf/Makefile
++++ b/tools/lib/bpf/Makefile
+@@ -175,7 +175,7 @@ $(BPF_IN): force elfdep bpfdep
  
  $(OUTPUT)libbpf.so.$(LIBBPF_VERSION): $(BPF_IN)
--	$(QUIET_LINK)$(CC) --shared $^ -Wl,-soname,$(@F) -o $@
-+	$(QUIET_LINK)$(CC) --shared $^ -lelf -Wl,-soname,$(@F) -o $@
+ 	$(QUIET_LINK)$(CC) --shared -Wl,--version-script=$(VERSION_SCRIPT) \
+-		$^ -Wl,-soname,$(@F) -o $@
++		$^ -lelf -Wl,-soname,$(@F) -o $@
  
  $(OUTPUT)libbpf.a: $(BPF_IN)
  	$(QUIET_LINK)$(RM) $@; $(AR) rcs $@ $^

@@ -9,7 +9,7 @@ are set.
 
 --- a/Makefile
 +++ b/Makefile
-@@ -1096,7 +1096,8 @@ endif
+@@ -1082,7 +1082,8 @@ endif
  # that need to depend on updated CONFIG_* values can be checked here.
  prepare2: prepare3 outputmakefile asm-generic
  
@@ -18,9 +18,9 @@ are set.
 +                   include/generated/package.h
  	$(cmd_crmodverdir)
  
- archprepare: archheaders archscripts prepare1 scripts_basic
-@@ -1148,6 +1149,16 @@ define filechk_version.h
- 	echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))';)
+ archprepare: archheaders archscripts prepare1 scripts
+@@ -1135,6 +1136,16 @@ define filechk_version.h
+ 	echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))'
  endef
  
 +ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
@@ -36,7 +36,7 @@ are set.
  $(version_h): FORCE
  	$(call filechk,version.h)
  	$(Q)rm -f $(old_version_h)
-@@ -1155,6 +1166,9 @@ $(version_h): FORCE
+@@ -1142,6 +1153,9 @@ $(version_h): FORCE
  include/generated/utsrelease.h: include/config/kernel.release FORCE
  	$(call filechk,utsrelease.h)
  
@@ -122,7 +122,7 @@ are set.
  
  /*
   * The number of tasks checked:
-@@ -124,10 +125,11 @@ static void check_hung_task(struct task_
+@@ -127,10 +128,11 @@ static void check_hung_task(struct task_
  			sysctl_hung_task_warnings--;
  		pr_err("INFO: task %s:%d blocked for more than %ld seconds.\n",
  			t->comm, t->pid, timeout);

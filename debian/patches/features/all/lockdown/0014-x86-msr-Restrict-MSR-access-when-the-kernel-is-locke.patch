@@ -1,7 +1,7 @@
-From: Matthew Garrett <matthew.garrett@nebula.com>
-Date: Wed, 8 Nov 2017 15:11:34 +0000
-Subject: [13/29] x86/msr: Restrict MSR access when the kernel is locked down
-Origin: https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git/commit?id=696dcddb285558b4febf318fe620a344d2b2fa47
+From: Matthew Garrett <mjg59@srcf.ucam.org>
+Date: Mon, 18 Feb 2019 12:44:59 +0000
+Subject: [14/30] x86/msr: Restrict MSR access when the kernel is locked down
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git/commit?id=faae9fe61458531c3143ebc68d9e804944ca560b
 
 Writing to MSRs should not be allowed if the kernel is locked down, since
 it could lead to execution of arbitrary code in kernel mode.  Based on a
@@ -10,7 +10,7 @@ patch by Kees Cook.
 MSR accesses are logged for the purposes of building up a whitelist as per
 Alan Cox's suggestion.
 
-Signed-off-by: Matthew Garrett <matthew.garrett@nebula.com>
+Signed-off-by: Matthew Garrett <mjg59@srcf.ucam.org>
 Signed-off-by: David Howells <dhowells@redhat.com>
 Acked-by: Kees Cook <keescook@chromium.org>
 Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
@@ -21,7 +21,7 @@ cc: x86@kernel.org
  1 file changed, 10 insertions(+)
 
 diff --git a/arch/x86/kernel/msr.c b/arch/x86/kernel/msr.c
-index ef688804f80d..dfb61d358196 100644
+index 4588414e2561..f5a2cf07972f 100644
 --- a/arch/x86/kernel/msr.c
 +++ b/arch/x86/kernel/msr.c
 @@ -84,6 +84,11 @@ static ssize_t msr_write(struct file *file, const char __user *buf,

@@ -1,7 +1,7 @@
 From: David Howells <dhowells@redhat.com>
-Date: Wed, 8 Nov 2017 15:11:37 +0000
-Subject: [28/29] efi: Add an EFI_SECURE_BOOT flag to indicate secure boot mode
-Origin: https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git/commit?id=eb4a8603eb727afaeb9c6123eda2eda4b2757bf3
+Date: Mon, 18 Feb 2019 12:45:03 +0000
+Subject: [28/30] efi: Add an EFI_SECURE_BOOT flag to indicate secure boot mode
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/linux-fs.git/commit?id=a5d70c55c603233c192b375f72116a395909da28
 
 UEFI machines can be booted in Secure Boot mode.  Add an EFI_SECURE_BOOT
 flag that can be passed to efi_enabled() to find out whether secure boot is
@@ -18,15 +18,15 @@ cc: linux-efi@vger.kernel.org
  arch/x86/kernel/setup.c           | 14 +-----------
  drivers/firmware/efi/Makefile     |  1 +
  drivers/firmware/efi/secureboot.c | 38 +++++++++++++++++++++++++++++++
- include/linux/efi.h               | 17 +++++++++-----
- 4 files changed, 51 insertions(+), 19 deletions(-)
+ include/linux/efi.h               | 16 ++++++++-----
+ 4 files changed, 50 insertions(+), 19 deletions(-)
  create mode 100644 drivers/firmware/efi/secureboot.c
 
 diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index d494b9bfe618..35dbd2e66608 100644
+index 3d872a527cd9..adeee6329f55 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -1158,19 +1158,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -1159,19 +1159,7 @@ void __init setup_arch(char **cmdline_p)
  	/* Allocate bigger log buffer */
  	setup_log_buf(1);
  
@@ -104,15 +104,14 @@ index 000000000000..9070055de0a1
 +	}
 +}
 diff --git a/include/linux/efi.h b/include/linux/efi.h
-index 845174e113ce..204ff46ca8d6 100644
+index 28604a8d0aa9..6e45fbc03446 100644
 --- a/include/linux/efi.h
 +++ b/include/linux/efi.h
-@@ -1155,6 +1155,15 @@ extern int __init efi_setup_pcdp_console(char *);
+@@ -1186,6 +1186,14 @@ extern int __init efi_setup_pcdp_console(char *);
  #define EFI_DBG			8	/* Print additional debug info at runtime */
  #define EFI_NX_PE_DATA		9	/* Can runtime data regions be mapped non-executable? */
  #define EFI_MEM_ATTR		10	/* Did firmware publish an EFI_MEMORY_ATTRIBUTES table? */
 +#define EFI_SECURE_BOOT		11	/* Are we in Secure Boot mode? */
-+
 +
 +enum efi_secureboot_mode {
 +	efi_secureboot_mode_unset,
@@ -123,7 +122,7 @@ index 845174e113ce..204ff46ca8d6 100644
  
  #ifdef CONFIG_EFI
  /*
-@@ -1167,6 +1176,7 @@ static inline bool efi_enabled(int feature)
+@@ -1198,6 +1206,7 @@ static inline bool efi_enabled(int feature)
  extern void efi_reboot(enum reboot_mode reboot_mode, const char *__unused);
  
  extern bool efi_is_table_address(unsigned long phys_addr);
@@ -131,7 +130,7 @@ index 845174e113ce..204ff46ca8d6 100644
  #else
  static inline bool efi_enabled(int feature)
  {
-@@ -1185,6 +1195,7 @@ static inline bool efi_is_table_address(unsigned long phys_addr)
+@@ -1216,6 +1225,7 @@ static inline bool efi_is_table_address(unsigned long phys_addr)
  {
  	return false;
  }
@@ -139,7 +138,7 @@ index 845174e113ce..204ff46ca8d6 100644
  #endif
  
  extern int efi_status_to_err(efi_status_t status);
-@@ -1570,12 +1581,6 @@ efi_status_t efi_setup_gop(efi_system_table_t *sys_table_arg,
+@@ -1601,12 +1611,6 @@ efi_status_t efi_setup_gop(efi_system_table_t *sys_table_arg,
  bool efi_runtime_disabled(void);
  extern void efi_call_virt_check_flags(unsigned long flags, const char *call);
  

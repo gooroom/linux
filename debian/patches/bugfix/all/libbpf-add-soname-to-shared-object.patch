@@ -11,7 +11,7 @@ This is similar to the change made to tools/lib/lockdep/Makefile in
 be227b45fb228adff4371b8de9e3989904209ff4.
 
 Signed-off-by: Hilko Bengen <bengen@debian.org>
-
+[bwh: Forward-ported to 5.0]
 ---
 --- a/tools/lib/bpf/Makefile
 +++ b/tools/lib/bpf/Makefile
@@ -46,18 +46,19 @@ Signed-off-by: Hilko Bengen <bengen@debian.org>
  # Set compile option CFLAGS
  ifdef EXTRA_CFLAGS
    CFLAGS := $(EXTRA_CFLAGS)
-@@ -169,8 +161,8 @@ $(BPF_IN): force elfdep bpfdep
+@@ -181,9 +173,9 @@ $(BPF_IN): force elfdep bpfdep
  	echo "Warning: Kernel ABI header at 'tools/include/uapi/linux/if_link.h' differs from latest version at 'include/uapi/linux/if_link.h'" >&2 )) || true
  	$(Q)$(MAKE) $(build)=libbpf
  
 -$(OUTPUT)libbpf.so: $(BPF_IN)
--	$(QUIET_LINK)$(CC) --shared $^ -o $@
 +$(OUTPUT)libbpf.so.$(LIBBPF_VERSION): $(BPF_IN)
-+	$(QUIET_LINK)$(CC) --shared $^ -Wl,-soname,$(@F) -o $@
+ 	$(QUIET_LINK)$(CC) --shared -Wl,--version-script=$(VERSION_SCRIPT) \
+-		$^ -o $@
++		$^ -Wl,-soname,$(@F) -o $@
  
  $(OUTPUT)libbpf.a: $(BPF_IN)
  	$(QUIET_LINK)$(RM) $@; $(AR) rcs $@ $^
-@@ -185,6 +177,7 @@ endef
+@@ -213,6 +205,7 @@ endef
  install_lib: all_cmd
  	$(call QUIET_INSTALL, $(LIB_FILE)) \
  		$(call do_install,$(LIB_FILE),$(libdir_SQ))

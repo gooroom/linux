@@ -25,7 +25,7 @@ upstream submission.
  	if (head->magic != 0x4e657458) {
 --- a/arch/x86/kernel/cpu/microcode/amd.c
 +++ b/arch/x86/kernel/cpu/microcode/amd.c
-@@ -755,10 +755,8 @@ static enum ucode_state request_microcod
+@@ -903,10 +903,8 @@ static enum ucode_state request_microcod
  	if (c->x86 >= 0x15)
  		snprintf(fw_name, sizeof(fw_name), "amd-ucode/microcode_amd_fam%.2xh.bin", c->x86);
  
@@ -36,7 +36,7 @@ upstream submission.
 -	}
  
  	ret = UCODE_ERROR;
- 	if (*(u32 *)fw->data != UCODE_MAGIC) {
+ 	if (!verify_container(fw->data, fw->size, false))
 --- a/drivers/atm/ambassador.c
 +++ b/drivers/atm/ambassador.c
 @@ -1929,10 +1929,8 @@ static int ucode_init(loader_block *lb,
@@ -175,7 +175,7 @@ upstream submission.
  		       fw->size, fw_name);
 --- a/drivers/dma/imx-sdma.c
 +++ b/drivers/dma/imx-sdma.c
-@@ -1674,11 +1674,8 @@ static void sdma_load_firmware(const str
+@@ -1694,11 +1694,8 @@ static void sdma_load_firmware(const str
  	const struct sdma_script_start_addrs *addr;
  	unsigned short *ram_code;
  
@@ -472,7 +472,7 @@ upstream submission.
  	if (!state->microcode) {
 --- a/drivers/media/dvb-frontends/drxk_hard.c
 +++ b/drivers/media/dvb-frontends/drxk_hard.c
-@@ -6281,10 +6281,6 @@ static void load_firmware_cb(const struc
+@@ -6283,10 +6283,6 @@ static void load_firmware_cb(const struc
  
  	dprintk(1, ": %s\n", fw ? "firmware loaded" : "firmware not loaded");
  	if (!fw) {
@@ -1125,7 +1125,7 @@ upstream submission.
  	if (bp->mips_firmware->size < sizeof(*mips_fw) ||
 --- a/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
 +++ b/drivers/net/ethernet/broadcom/bnx2x/bnx2x_main.c
-@@ -13525,11 +13525,8 @@ static int bnx2x_init_firmware(struct bn
+@@ -13566,11 +13566,8 @@ static int bnx2x_init_firmware(struct bn
  	BNX2X_DEV_INFO("Loading %s\n", fw_file_name);
  
  	rc = request_firmware(&bp->firmware, fw_file_name, &bp->pdev->dev);
@@ -1140,7 +1140,7 @@ upstream submission.
  	if (rc) {
 --- a/drivers/net/ethernet/broadcom/tg3.c
 +++ b/drivers/net/ethernet/broadcom/tg3.c
-@@ -11404,11 +11404,8 @@ static int tg3_request_firmware(struct t
+@@ -11416,11 +11416,8 @@ static int tg3_request_firmware(struct t
  {
  	const struct tg3_firmware_hdr *fw_hdr;
  
@@ -1248,7 +1248,7 @@ upstream submission.
  	for (i = 0; i < fw->size; i++) {
 --- a/drivers/net/ethernet/sun/cassini.c
 +++ b/drivers/net/ethernet/sun/cassini.c
-@@ -818,11 +818,8 @@ static void cas_saturn_firmware_init(str
+@@ -805,11 +805,8 @@ static void cas_saturn_firmware_init(str
  		return;
  
  	err = request_firmware(&fw, fw_name, &cp->pdev->dev);
@@ -1433,7 +1433,7 @@ upstream submission.
  	}
 --- a/drivers/net/wireless/intel/ipw2x00/ipw2100.c
 +++ b/drivers/net/wireless/intel/ipw2x00/ipw2100.c
-@@ -8410,12 +8410,8 @@ static int ipw2100_get_firmware(struct i
+@@ -8406,12 +8406,8 @@ static int ipw2100_get_firmware(struct i
  
  	rc = request_firmware(&fw->fw_entry, fw_name, &priv->pci_dev->dev);
  
@@ -1473,7 +1473,7 @@ upstream submission.
  			else
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-drv.c
-@@ -231,8 +231,6 @@ static int iwl_request_firmware(struct i
+@@ -232,8 +232,6 @@ static int iwl_request_firmware(struct i
  	}
  
  	if (drv->fw_index < cfg->ucode_api_min) {
@@ -1589,7 +1589,7 @@ upstream submission.
  
 --- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 +++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
-@@ -1673,7 +1673,6 @@ static int ezusb_probe(struct usb_interf
+@@ -1674,7 +1674,6 @@ static int ezusb_probe(struct usb_interf
  		if (ezusb_firmware_download(upriv, &firmware) < 0)
  			goto error;
  	} else {
@@ -1799,7 +1799,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/aic94xx/aic94xx_init.c
 +++ b/drivers/scsi/aic94xx/aic94xx_init.c
-@@ -384,8 +384,6 @@ static ssize_t asd_store_update_bios(str
+@@ -383,8 +383,6 @@ static ssize_t asd_store_update_bios(str
  				   filename_ptr,
  				   &asd_ha->pcidev->dev);
  	if (err) {
@@ -1825,7 +1825,7 @@ upstream submission.
  	if (err) {
 --- a/drivers/scsi/bfa/bfad.c
 +++ b/drivers/scsi/bfa/bfad.c
-@@ -1753,7 +1753,6 @@ bfad_read_firmware(struct pci_dev *pdev,
+@@ -1757,7 +1757,6 @@ bfad_read_firmware(struct pci_dev *pdev,
  	const struct firmware *fw;
  
  	if (request_firmware(&fw, fw_name, &pdev->dev)) {
@@ -1862,7 +1862,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla1280.c
 +++ b/drivers/scsi/qla1280.c
-@@ -1552,8 +1552,6 @@ qla1280_request_firmware(struct scsi_qla
+@@ -1542,8 +1542,6 @@ qla1280_request_firmware(struct scsi_qla
  	err = request_firmware(&fw, fwname, &ha->pdev->dev);
  
  	if (err) {
@@ -1873,7 +1873,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -7553,8 +7553,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -7551,8 +7551,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1882,7 +1882,7 @@ upstream submission.
  		ql_log(ql_log_info, vha, 0x0084,
  		    "Firmware images can be retrieved from: "QLA_FW_URL ".\n");
  		return QLA_FUNCTION_FAILED;
-@@ -7656,8 +7654,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -7654,8 +7652,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1908,7 +1908,7 @@ upstream submission.
  	if (qla82xx_validate_firmware_blob(vha,
 --- a/drivers/scsi/qla2xxx/qla_os.c
 +++ b/drivers/scsi/qla2xxx/qla_os.c
-@@ -6639,8 +6639,6 @@ qla2x00_request_firmware(scsi_qla_host_t
+@@ -6621,8 +6621,6 @@ qla2x00_request_firmware(scsi_qla_host_t
  		goto out;
  
  	if (request_firmware(&blob->fw, blob->name, &ha->pdev->dev)) {
@@ -2454,7 +2454,7 @@ upstream submission.
  	snd_emu1010_fpga_read(emu, EMU_HANA_ID, &reg);
 --- a/sound/pci/hda/hda_intel.c
 +++ b/sound/pci/hda/hda_intel.c
-@@ -1964,10 +1964,8 @@ static void azx_firmware_cb(const struct
+@@ -1922,10 +1922,8 @@ static void azx_firmware_cb(const struct
  	struct azx *chip = card->private_data;
  	struct pci_dev *pci = chip->pci;
  
@@ -2524,7 +2524,7 @@ upstream submission.
  	if (err) {
 --- a/sound/pci/rme9652/hdsp.c
 +++ b/sound/pci/rme9652/hdsp.c
-@@ -5132,11 +5132,8 @@ static int hdsp_request_fw_loader(struct
+@@ -5134,11 +5134,8 @@ static int hdsp_request_fw_loader(struct
  		return -EINVAL;
  	}
  
