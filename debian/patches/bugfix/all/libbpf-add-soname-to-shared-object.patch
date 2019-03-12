@@ -46,6 +46,15 @@ Signed-off-by: Hilko Bengen <bengen@debian.org>
  # Set compile option CFLAGS
  ifdef EXTRA_CFLAGS
    CFLAGS := $(EXTRA_CFLAGS)
+@@ -149,7 +141,7 @@ VERSION_SCRIPT := libbpf.map
+ 
+ GLOBAL_SYM_COUNT = $(shell readelf -s $(BPF_IN) | \
+ 			   awk '/GLOBAL/ && /DEFAULT/ && !/UND/ {s++} END{print s}')
+-VERSIONED_SYM_COUNT = $(shell readelf -s $(OUTPUT)libbpf.so | \
++VERSIONED_SYM_COUNT = $(shell readelf -s $(OUTPUT)libbpf.so.$(LIBBPF_VERSION) | \
+ 			      grep -Eo '[^ ]+@LIBBPF_' | cut -d@ -f1 | sort -u | wc -l)
+ 
+ CMD_TARGETS = $(LIB_FILE)
 @@ -181,9 +173,9 @@ $(BPF_IN): force elfdep bpfdep
  	echo "Warning: Kernel ABI header at 'tools/include/uapi/linux/if_link.h' differs from latest version at 'include/uapi/linux/if_link.h'" >&2 )) || true
  	$(Q)$(MAKE) $(build)=libbpf
@@ -58,6 +67,15 @@ Signed-off-by: Hilko Bengen <bengen@debian.org>
  
  $(OUTPUT)libbpf.a: $(BPF_IN)
  	$(QUIET_LINK)$(RM) $@; $(AR) rcs $@ $^
+@@ -193,7 +185,7 @@ $(OUTPUT)test_libbpf: test_libbpf.cpp $(
+ 
+ check: check_abi
+ 
+-check_abi: $(OUTPUT)libbpf.so
++check_abi: $(OUTPUT)libbpf.so.$(LIBBPF_VERSION)
+ 	@if [ "$(GLOBAL_SYM_COUNT)" != "$(VERSIONED_SYM_COUNT)" ]; then	 \
+ 		echo "Warning: Num of global symbols in $(BPF_IN)"	 \
+ 		     "($(GLOBAL_SYM_COUNT)) does NOT match with num of"	 \
 @@ -213,6 +205,7 @@ endef
  install_lib: all_cmd
  	$(call QUIET_INSTALL, $(LIB_FILE)) \
