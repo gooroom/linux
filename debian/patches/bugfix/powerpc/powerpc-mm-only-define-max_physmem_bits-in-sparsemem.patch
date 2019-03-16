@@ -1,0 +1,40 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sat, 16 Mar 2019 00:23:08 +0000
+Subject: powerpc/mm: Only define MAX_PHYSMEM_BITS in SPARSEMEM configurations
+
+MAX_PHYSMEM_BITS only needs to be defined if CONFIG_SPARSEMEM is
+enabled, and that was the case before commit 4ffe713b7587
+("powerpc/mm: Increase the max addressable memory to 2PB").
+
+On 32-bit systems, where CONFIG_SPARSEMEM is not enabled, we now
+define it as 46.  That is larger than the real number of physical
+address bits, and breaks calculations in zsmalloc:
+
+    mm/zsmalloc.c:130:49: warning: right shift count is negative [-Wshift-count-negative]
+      MAX(32, (ZS_MAX_PAGES_PER_ZSPAGE << PAGE_SHIFT >> OBJ_INDEX_BITS))
+                                                     ^~
+    ...
+    mm/zsmalloc.c:253:21: error: variably modified 'size_class' at file scope
+      struct size_class *size_class[ZS_SIZE_CLASSES];
+                         ^~~~~~~~~~
+
+Fixes: 4ffe713b7587 ("powerpc/mm: Increase the max addressable memory to 2PB")
+Cc: stable@vger.kernel.org
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/powerpc/include/asm/mmu.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/include/asm/mmu.h b/arch/powerpc/include/asm/mmu.h
+index 25607604a7a5..2bc8c3f04f8a 100644
+--- a/arch/powerpc/include/asm/mmu.h
++++ b/arch/powerpc/include/asm/mmu.h
+@@ -341,7 +341,7 @@ static inline u16 get_mm_addr_key(struct mm_struct *mm, unsigned long address)
+ #if defined(CONFIG_SPARSEMEM_VMEMMAP) && defined(CONFIG_SPARSEMEM_EXTREME) &&	\
+ 	defined (CONFIG_PPC_64K_PAGES)
+ #define MAX_PHYSMEM_BITS        51
+-#else
++#elif defined(CONFIG_SPARSEMEM)
+ #define MAX_PHYSMEM_BITS        46
+ #endif
+ 
