@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
 Subject: [PATCH] rtmutex: annotate sleeping lock context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -211,6 +211,15 @@ extern void migrate_enable(void);
+@@ -208,6 +208,15 @@ extern void migrate_enable(void);
  
  int __migrate_disabled(struct task_struct *p);
  
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define migrate_enable()		barrier()
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -673,6 +673,15 @@ struct task_struct {
+@@ -672,6 +672,15 @@ struct task_struct {
  # ifdef CONFIG_SCHED_DEBUG
  	int				migrate_disable_atomic;
  # endif
@@ -68,7 +68,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  
  #ifdef CONFIG_PREEMPT_RCU
-@@ -1802,6 +1811,23 @@ static __always_inline bool need_resched
+@@ -1813,6 +1822,23 @@ static __always_inline bool need_resched
  	return unlikely(tif_need_resched());
  }
  
@@ -223,12 +223,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -337,9 +337,13 @@ static void rcu_preempt_note_context_swi
+@@ -330,11 +330,15 @@ void rcu_note_context_switch(bool preemp
  	struct task_struct *t = current;
- 	struct rcu_data *rdp;
+ 	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
  	struct rcu_node *rnp;
 +	int sleeping_l = 0;
  
+ 	barrier(); /* Avoid RCU read-side critical sections leaking down. */
+ 	trace_rcu_utilization(TPS("Start context switch"));
  	lockdep_assert_irqs_disabled();
 -	WARN_ON_ONCE(!preempt && t->rcu_read_lock_nesting > 0);
 +#if defined(CONFIG_PREEMPT_RT_FULL)
@@ -240,7 +242,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7307,4 +7307,49 @@ void migrate_enable(void)
+@@ -7320,4 +7320,49 @@ void migrate_enable(void)
  	preempt_enable();
  }
  EXPORT_SYMBOL(migrate_enable);

@@ -1,7 +1,7 @@
 Subject: x86: Support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 01 Nov 2012 11:03:47 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Implement the x86 pieces for lazy preempt.
 
@@ -18,8 +18,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -180,6 +180,7 @@ config X86
- 	select HAVE_HARDLOCKUP_DETECTOR_PERF	if PERF_EVENTS && HAVE_PERF_EVENTS_NMI
+@@ -183,6 +183,7 @@ config X86
+ 	select HAVE_PCI
  	select HAVE_PERF_REGS
  	select HAVE_PERF_USER_STACK_DUMP
 +	select HAVE_PREEMPT_LAZY
@@ -28,7 +28,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	select HAVE_REGS_AND_STACK_ACCESS_API
 --- a/arch/x86/entry/common.c
 +++ b/arch/x86/entry/common.c
-@@ -133,7 +133,7 @@ static long syscall_trace_enter(struct p
+@@ -134,7 +134,7 @@ static long syscall_trace_enter(struct p
  
  #define EXIT_TO_USERMODE_LOOP_FLAGS				\
  	(_TIF_SIGPENDING | _TIF_NOTIFY_RESUME | _TIF_UPROBE |	\
@@ -37,7 +37,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
  {
-@@ -148,7 +148,7 @@ static void exit_to_usermode_loop(struct
+@@ -149,7 +149,7 @@ static void exit_to_usermode_loop(struct
  		/* We have work to do. */
  		local_irq_enable();
  
@@ -48,7 +48,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
 --- a/arch/x86/entry/entry_32.S
 +++ b/arch/x86/entry/entry_32.S
-@@ -764,8 +764,25 @@ END(ret_from_exception)
+@@ -767,8 +767,25 @@ END(ret_from_exception)
  ENTRY(resume_kernel)
  	DISABLE_INTERRUPTS(CLBR_ANY)
  .Lneed_resched:
@@ -61,22 +61,22 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +
 +	# atleast preempt count == 0 ?
 +	cmpl $_PREEMPT_ENABLED,PER_CPU_VAR(__preempt_count)
-+	jne restore_all
++	jne	restore_all_kernel
 +
 +	movl	PER_CPU_VAR(current_task), %ebp
 +	cmpl	$0,TASK_TI_preempt_lazy_count(%ebp)	# non-zero preempt_lazy_count ?
-+	jnz	restore_all
++	jnz	restore_all_kernel
 +
 +	testl	$_TIF_NEED_RESCHED_LAZY, TASK_TI_flags(%ebp)
-+	jz	restore_all
-+	test_int_off:
++	jz	restore_all_kernel
++test_int_off:
 +#endif
  	testl	$X86_EFLAGS_IF, PT_EFLAGS(%esp)	# interrupts off (exception path) ?
  	jz	restore_all_kernel
  	call	preempt_schedule_irq
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -705,7 +705,23 @@ GLOBAL(swapgs_restore_regs_and_return_to
+@@ -646,7 +646,23 @@ GLOBAL(swapgs_restore_regs_and_return_to
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
@@ -102,14 +102,14 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1:
 --- a/arch/x86/include/asm/preempt.h
 +++ b/arch/x86/include/asm/preempt.h
-@@ -86,17 +86,46 @@ static __always_inline void __preempt_co
+@@ -89,17 +89,46 @@ static __always_inline void __preempt_co
   * a decrement which hits zero means we have no preempt_count and should
   * reschedule.
   */
 -static __always_inline bool __preempt_count_dec_and_test(void)
 +static __always_inline bool ____preempt_count_dec_and_test(void)
  {
- 	GEN_UNARY_RMWcc("decl", __preempt_count, __percpu_arg(0), e);
+ 	return GEN_UNARY_RMWcc("decl", __preempt_count, e, __percpu_arg([var]));
  }
  
 +static __always_inline bool __preempt_count_dec_and_test(void)
@@ -139,7 +139,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +
 +	/* preempt count == 0 ? */
 +	tmp &= ~PREEMPT_NEED_RESCHED;
-+	if (tmp)
++	if (tmp != preempt_offset)
 +		return false;
 +	if (current_thread_info()->preempt_lazy_count)
 +		return false;
@@ -177,7 +177,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
  
  /*
-@@ -91,6 +98,7 @@ struct thread_info {
+@@ -92,6 +99,7 @@ struct thread_info {
  #define TIF_NOCPUID		15	/* CPUID is not accessible in userland */
  #define TIF_NOTSC		16	/* TSC is not accessible in userland */
  #define TIF_IA32		17	/* IA32 compatibility process */
@@ -185,7 +185,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define TIF_NOHZ		19	/* in adaptive nohz mode */
  #define TIF_MEMDIE		20	/* is terminating due to OOM killer */
  #define TIF_POLLING_NRFLAG	21	/* idle is polling for TIF_NEED_RESCHED */
-@@ -120,6 +128,7 @@ struct thread_info {
+@@ -122,6 +130,7 @@ struct thread_info {
  #define _TIF_NOCPUID		(1 << TIF_NOCPUID)
  #define _TIF_NOTSC		(1 << TIF_NOTSC)
  #define _TIF_IA32		(1 << TIF_IA32)
@@ -193,7 +193,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define _TIF_NOHZ		(1 << TIF_NOHZ)
  #define _TIF_POLLING_NRFLAG	(1 << TIF_POLLING_NRFLAG)
  #define _TIF_IO_BITMAP		(1 << TIF_IO_BITMAP)
-@@ -165,6 +174,8 @@ struct thread_info {
+@@ -159,6 +168,8 @@ struct thread_info {
  #define _TIF_WORK_CTXSW_PREV (_TIF_WORK_CTXSW|_TIF_USER_RETURN_NOTIFY)
  #define _TIF_WORK_CTXSW_NEXT (_TIF_WORK_CTXSW)
  
@@ -204,7 +204,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
 --- a/arch/x86/kernel/asm-offsets.c
 +++ b/arch/x86/kernel/asm-offsets.c
-@@ -38,6 +38,7 @@ void common(void) {
+@@ -39,6 +39,7 @@ static void __used common(void)
  
  	BLANK();
  	OFFSET(TASK_TI_flags, task_struct, thread_info.flags);
@@ -212,7 +212,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	OFFSET(TASK_addr_limit, task_struct, thread.addr_limit);
  
  	BLANK();
-@@ -94,6 +95,7 @@ void common(void) {
+@@ -92,6 +93,7 @@ static void __used common(void)
  
  	BLANK();
  	DEFINE(PTREGS_SIZE, sizeof(struct pt_regs));

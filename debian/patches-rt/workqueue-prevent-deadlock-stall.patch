@@ -1,7 +1,7 @@
 Subject: workqueue: Prevent deadlock/stall on RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 27 Jun 2014 16:24:52 +0200 (CEST)
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Austin reported a XFS deadlock/stall on RT where scheduled work gets
 never exececuted and tasks are waiting for each other for ever.
@@ -44,7 +44,7 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
 
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3567,9 +3567,8 @@ void __noreturn do_task_dead(void)
+@@ -3580,9 +3580,8 @@ void __noreturn do_task_dead(void)
  
  static inline void sched_submit_work(struct task_struct *tsk)
  {
@@ -55,7 +55,7 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
  	/*
  	 * If a worker went to sleep, notify and ask workqueue whether
  	 * it wants to wake up a task to maintain concurrency.
-@@ -3583,6 +3582,9 @@ static inline void sched_submit_work(str
+@@ -3596,6 +3595,9 @@ static inline void sched_submit_work(str
  		preempt_enable_no_resched();
  	}
  
@@ -168,7 +168,7 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
  }
  
  /**
-@@ -1675,7 +1703,9 @@ static void worker_enter_idle(struct wor
+@@ -1695,7 +1723,9 @@ static void worker_enter_idle(struct wor
  	worker->last_active = jiffies;
  
  	/* idle_list is LIFO */
@@ -178,7 +178,7 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
  
  	if (too_many_workers(pool) && !timer_pending(&pool->idle_timer))
  		mod_timer(&pool->idle_timer, jiffies + IDLE_WORKER_TIMEOUT);
-@@ -1708,7 +1738,9 @@ static void worker_leave_idle(struct wor
+@@ -1728,7 +1758,9 @@ static void worker_leave_idle(struct wor
  		return;
  	worker_clr_flags(worker, WORKER_IDLE);
  	pool->nr_idle--;
@@ -188,7 +188,7 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
  }
  
  static struct worker *alloc_worker(int node)
-@@ -1876,7 +1908,9 @@ static void destroy_worker(struct worker
+@@ -1896,7 +1928,9 @@ static void destroy_worker(struct worker
  	pool->nr_workers--;
  	pool->nr_idle--;
  

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 16 Feb 2015 18:49:10 +0100
 Subject: fs/aio: simple simple work
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:768
 |in_atomic(): 1, irqs_disabled(): 0, pid: 26, name: rcuos/2
@@ -25,48 +25,32 @@ Reported-By: Mike Galbraith <umgwanakikbuti@gmail.com>
 Suggested-by: Benjamin LaHaise <bcrl@kvack.org>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- fs/aio.c |   15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+ fs/aio.c |   13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
 
 --- a/fs/aio.c
 +++ b/fs/aio.c
-@@ -42,6 +42,7 @@
- #include <linux/ramfs.h>
- #include <linux/percpu-refcount.h>
- #include <linux/mount.h>
-+#include <linux/swork.h>
- 
- #include <asm/kmap_types.h>
- #include <linux/uaccess.h>
-@@ -121,6 +122,7 @@ struct kioctx {
+@@ -127,6 +127,7 @@ struct kioctx {
  	long			nr_pages;
  
  	struct rcu_work		free_rwork;	/* see free_ioctx() */
-+	struct swork_event	free_swork;	/* see free_ioctx() */
++	struct kthread_work	free_kwork;	/* see free_ioctx() */
  
  	/*
  	 * signals when all in-flight requests are done
-@@ -255,6 +257,7 @@ static int __init aio_setup(void)
- 		.mount		= aio_mount,
- 		.kill_sb	= kill_anon_super,
- 	};
-+	BUG_ON(swork_get());
- 	aio_mnt = kern_mount(&aio_fs);
- 	if (IS_ERR(aio_mnt))
- 		panic("Failed to create aio fs mount.");
-@@ -596,9 +599,9 @@ static void free_ioctx_reqs(struct percp
+@@ -602,9 +603,9 @@ static void free_ioctx_reqs(struct percp
   * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
   * now it's safe to cancel any that need to be.
   */
 -static void free_ioctx_users(struct percpu_ref *ref)
-+static void free_ioctx_users_work(struct swork_event *sev)
++static void free_ioctx_users_work(struct kthread_work *work)
  {
 -	struct kioctx *ctx = container_of(ref, struct kioctx, users);
-+	struct kioctx *ctx = container_of(sev, struct kioctx, free_swork);
++	struct kioctx *ctx = container_of(work, struct kioctx, free_kwork);
  	struct aio_kiocb *req;
  
  	spin_lock_irq(&ctx->ctx_lock);
-@@ -616,6 +619,14 @@ static void free_ioctx_users(struct perc
+@@ -622,6 +623,14 @@ static void free_ioctx_users(struct perc
  	percpu_ref_put(&ctx->reqs);
  }
  
@@ -74,8 +58,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +{
 +	struct kioctx *ctx = container_of(ref, struct kioctx, users);
 +
-+	INIT_SWORK(&ctx->free_swork, free_ioctx_users_work);
-+	swork_queue(&ctx->free_swork);
++	kthread_init_work(&ctx->free_kwork, free_ioctx_users_work);
++	kthread_schedule_work(&ctx->free_kwork);
 +}
 +
  static int ioctx_add_table(struct kioctx *ctx, struct mm_struct *mm)

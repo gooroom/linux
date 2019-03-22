@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 15:52:24 +0100
 Subject: cgroups: use simple wait in css_release()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 To avoid:
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -29,59 +29,43 @@ To avoid:
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/cgroup-defs.h |    2 ++
- kernel/cgroup/cgroup.c      |    9 +++++----
- 2 files changed, 7 insertions(+), 4 deletions(-)
+ include/linux/cgroup-defs.h |    1 +
+ kernel/cgroup/cgroup.c      |    8 ++++----
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
 --- a/include/linux/cgroup-defs.h
 +++ b/include/linux/cgroup-defs.h
-@@ -20,6 +20,7 @@
- #include <linux/u64_stats_sync.h>
- #include <linux/workqueue.h>
- #include <linux/bpf-cgroup.h>
-+#include <linux/swork.h>
- 
- #ifdef CONFIG_CGROUPS
- 
-@@ -157,6 +158,7 @@ struct cgroup_subsys_state {
+@@ -159,6 +159,7 @@ struct cgroup_subsys_state {
  
  	/* percpu_ref killing and RCU release */
  	struct work_struct destroy_work;
-+	struct swork_event destroy_swork;
++	struct kthread_work destroy_kwork;
  	struct rcu_work destroy_rwork;
  
  	/*
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -4625,10 +4625,10 @@ static void css_free_rwork_fn(struct wor
+@@ -4694,10 +4694,10 @@ static void css_free_rwork_fn(struct wor
  	}
  }
  
 -static void css_release_work_fn(struct work_struct *work)
-+static void css_release_work_fn(struct swork_event *sev)
++static void css_release_work_fn(struct kthread_work *work)
  {
  	struct cgroup_subsys_state *css =
 -		container_of(work, struct cgroup_subsys_state, destroy_work);
-+		container_of(sev, struct cgroup_subsys_state, destroy_swork);
++		container_of(work, struct cgroup_subsys_state, destroy_kwork);
  	struct cgroup_subsys *ss = css->ss;
  	struct cgroup *cgrp = css->cgroup;
  
-@@ -4688,8 +4688,8 @@ static void css_release(struct percpu_re
+@@ -4757,8 +4757,8 @@ static void css_release(struct percpu_re
  	struct cgroup_subsys_state *css =
  		container_of(ref, struct cgroup_subsys_state, refcnt);
  
 -	INIT_WORK(&css->destroy_work, css_release_work_fn);
 -	queue_work(cgroup_destroy_wq, &css->destroy_work);
-+	INIT_SWORK(&css->destroy_swork, css_release_work_fn);
-+	swork_queue(&css->destroy_swork);
++	kthread_init_work(&css->destroy_kwork, css_release_work_fn);
++	kthread_schedule_work(&css->destroy_kwork);
  }
  
  static void init_and_link_css(struct cgroup_subsys_state *css,
-@@ -5411,6 +5411,7 @@ static int __init cgroup_wq_init(void)
- 	 */
- 	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
- 	BUG_ON(!cgroup_destroy_wq);
-+	BUG_ON(swork_get());
- 	return 0;
- }
- core_initcall(cgroup_wq_init);

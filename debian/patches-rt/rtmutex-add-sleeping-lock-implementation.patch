@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -99,7 +99,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * @lock: the mutex to be queried
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -134,6 +134,9 @@ struct task_group;
+@@ -135,6 +135,9 @@ struct task_group;
  		smp_store_mb(current->state, (state_value));	\
  	} while (0)
  
@@ -109,7 +109,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define set_special_state(state_value)					\
  	do {								\
  		unsigned long flags; /* may shadow */			\
-@@ -143,6 +146,7 @@ struct task_group;
+@@ -144,6 +147,7 @@ struct task_group;
  		current->state = (state_value);				\
  		raw_spin_unlock_irqrestore(&current->pi_lock, flags);	\
  	} while (0)
@@ -117,7 +117,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  /*
   * set_current_state() includes a barrier so that the write of current->state
-@@ -187,6 +191,9 @@ struct task_group;
+@@ -188,6 +192,9 @@ struct task_group;
  #define set_current_state(state_value)					\
  	smp_store_mb(current->state, (state_value))
  
@@ -137,7 +137,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* PI waiters blocked on a rt_mutex held by this task: */
 --- a/include/linux/sched/wake_q.h
 +++ b/include/linux/sched/wake_q.h
-@@ -47,8 +47,29 @@ static inline void wake_q_init(struct wa
+@@ -51,8 +51,29 @@ static inline void wake_q_init(struct wa
  	head->lastp = &head->first;
  }
  
@@ -382,7 +382,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#endif
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -895,6 +895,7 @@ static struct task_struct *dup_task_stru
+@@ -941,6 +941,7 @@ static struct task_struct *dup_task_stru
  	tsk->splice_pipe = NULL;
  	tsk->task_frag.page = NULL;
  	tsk->wake_q.next = NULL;
@@ -392,7 +392,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -1471,6 +1471,7 @@ static int wake_futex_pi(u32 __user *uad
+@@ -1482,6 +1482,7 @@ static int wake_futex_pi(u32 __user *uad
  	struct task_struct *new_owner;
  	bool postunlock = false;
  	DEFINE_WAKE_Q(wake_q);
@@ -400,7 +400,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	int ret = 0;
  
  	new_owner = rt_mutex_next_owner(&pi_state->pi_mutex);
-@@ -1532,13 +1533,13 @@ static int wake_futex_pi(u32 __user *uad
+@@ -1543,13 +1544,13 @@ static int wake_futex_pi(u32 __user *uad
  	pi_state->owner = new_owner;
  	raw_spin_unlock(&new_owner->pi_lock);
  
@@ -417,7 +417,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return ret;
  }
-@@ -2850,7 +2851,7 @@ static int futex_lock_pi(u32 __user *uad
+@@ -2861,7 +2862,7 @@ static int futex_lock_pi(u32 __user *uad
  		goto no_block;
  	}
  
@@ -426,14 +426,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * On PREEMPT_RT_FULL, when hb->lock becomes an rt_mutex, we must not
-@@ -3230,7 +3231,7 @@ static int futex_wait_requeue_pi(u32 __u
+@@ -3240,7 +3241,7 @@ static int futex_wait_requeue_pi(u32 __u
  	 * The waiter is allocated on our stack, manipulated by the requeue
  	 * code while we sleep on uaddr.
  	 */
 -	rt_mutex_init_waiter(&rt_waiter);
 +	rt_mutex_init_waiter(&rt_waiter, false);
  
- 	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, VERIFY_WRITE);
+ 	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, FUTEX_WRITE);
  	if (unlikely(ret != 0))
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
@@ -1122,10 +1122,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  # include "rtmutex-debug.h"
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -400,9 +400,15 @@ static bool set_nr_if_polling(struct tas
- #endif
- #endif
- 
+@@ -412,9 +412,15 @@ static bool set_nr_if_polling(struct tas
+  * This function must be used as-if it were wake_up_process(); IOW the task
+  * must be ready to be woken at this location.
+  */
 -void wake_q_add(struct wake_q_head *head, struct task_struct *task)
 +void __wake_q_add(struct wake_q_head *head, struct task_struct *task,
 +		  bool sleeper)
@@ -1140,7 +1140,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * Atomically grab the task, if ->wake_q is !nil already it means
-@@ -424,24 +430,32 @@ void wake_q_add(struct wake_q_head *head
+@@ -437,24 +443,32 @@ void wake_q_add(struct wake_q_head *head
  	head->lastp = &node->next;
  }
  

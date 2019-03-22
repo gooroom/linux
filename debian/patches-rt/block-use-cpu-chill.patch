@@ -1,7 +1,7 @@
 Subject: block: Use cpu_chill() for retry loops
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 20 Dec 2012 18:28:26 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Steven also observed a live lock when there was a
@@ -13,8 +13,8 @@ make progress.
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- block/blk-ioc.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ block/blk-ioc.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 --- a/block/blk-ioc.c
 +++ b/block/blk-ioc.c
@@ -26,8 +26,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #include "blk.h"
  
-@@ -118,7 +119,7 @@ static void ioc_release_fn(struct work_s
- 			spin_unlock(q->queue_lock);
+@@ -115,7 +116,7 @@ static void ioc_release_fn(struct work_s
+ 			spin_unlock(&q->queue_lock);
  		} else {
  			spin_unlock_irqrestore(&ioc->lock, flags);
 -			cpu_relax();
@@ -35,12 +35,3 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			spin_lock_irqsave_nested(&ioc->lock, flags, 1);
  		}
  	}
-@@ -202,7 +203,7 @@ void put_io_context_active(struct io_con
- 				spin_unlock(icq->q->queue_lock);
- 			} else {
- 				spin_unlock_irqrestore(&ioc->lock, flags);
--				cpu_relax();
-+				cpu_chill();
- 				goto retry;
- 			}
- 		}

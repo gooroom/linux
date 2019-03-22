@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 12 May 2017 15:46:17 +0200
 Subject: [PATCH] random: avoid preempt_disable()ed section
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 extract_crng() will use sleeping locks while in a preempt_disable()
 section due to get_cpu_var().
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/completion.h>
  #include <linux/uuid.h>
 +#include <linux/locallock.h>
- #include <crypto/chacha20.h>
+ #include <crypto/chacha.h>
  
  #include <asm/processor.h>
-@@ -2223,6 +2224,7 @@ static rwlock_t batched_entropy_reset_lo
+@@ -2222,6 +2223,7 @@ static rwlock_t batched_entropy_reset_lo
   * at any point prior.
   */
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_u64);
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  u64 get_random_u64(void)
  {
  	u64 ret;
-@@ -2243,7 +2245,7 @@ u64 get_random_u64(void)
+@@ -2242,7 +2244,7 @@ u64 get_random_u64(void)
  	warn_unseeded_randomness(&previous);
  
  	use_lock = READ_ONCE(crng_init) < 2;
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (use_lock)
  		read_lock_irqsave(&batched_entropy_reset_lock, flags);
  	if (batch->position % ARRAY_SIZE(batch->entropy_u64) == 0) {
-@@ -2253,12 +2255,13 @@ u64 get_random_u64(void)
+@@ -2252,12 +2254,13 @@ u64 get_random_u64(void)
  	ret = batch->entropy_u64[batch->position++];
  	if (use_lock)
  		read_unlock_irqrestore(&batched_entropy_reset_lock, flags);
@@ -55,7 +55,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  u32 get_random_u32(void)
  {
  	u32 ret;
-@@ -2273,7 +2276,7 @@ u32 get_random_u32(void)
+@@ -2272,7 +2275,7 @@ u32 get_random_u32(void)
  	warn_unseeded_randomness(&previous);
  
  	use_lock = READ_ONCE(crng_init) < 2;
@@ -64,7 +64,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (use_lock)
  		read_lock_irqsave(&batched_entropy_reset_lock, flags);
  	if (batch->position % ARRAY_SIZE(batch->entropy_u32) == 0) {
-@@ -2283,7 +2286,7 @@ u32 get_random_u32(void)
+@@ -2282,7 +2285,7 @@ u32 get_random_u32(void)
  	ret = batch->entropy_u32[batch->position++];
  	if (use_lock)
  		read_unlock_irqrestore(&batched_entropy_reset_lock, flags);

@@ -2,7 +2,7 @@ From: Mike Galbraith <efault@gmx.de>
 Date: Wed, 11 Jul 2018 17:14:47 +0200
 Subject: [PATCH] crypto: scompress - serialize RT percpu scratch buffer
  access with a local lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:974
 | in_atomic(): 1, irqs_disabled(): 0, pid: 1401, name: cryptomgr_test
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #ifdef CONFIG_NET
  static int crypto_scomp_report(struct sk_buff *skb, struct crypto_alg *alg)
-@@ -146,7 +148,7 @@ static int scomp_acomp_comp_decomp(struc
+@@ -143,7 +145,7 @@ static int scomp_acomp_comp_decomp(struc
  	void **tfm_ctx = acomp_tfm_ctx(tfm);
  	struct crypto_scomp *scomp = *tfm_ctx;
  	void **ctx = acomp_request_ctx(req);
@@ -66,7 +66,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u8 *scratch_src = *per_cpu_ptr(scomp_src_scratches, cpu);
  	u8 *scratch_dst = *per_cpu_ptr(scomp_dst_scratches, cpu);
  	int ret;
-@@ -181,7 +183,7 @@ static int scomp_acomp_comp_decomp(struc
+@@ -178,7 +180,7 @@ static int scomp_acomp_comp_decomp(struc
  					 1);
  	}
  out:

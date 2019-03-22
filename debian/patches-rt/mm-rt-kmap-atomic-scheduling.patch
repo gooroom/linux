@@ -1,7 +1,7 @@
 Subject: mm, rt: kmap_atomic scheduling
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 28 Jul 2011 10:43:51 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 In fact, with migrate_disable() existing one could play games with
 kmap_atomic. You could save/restore the kmap_atomic slots on context
@@ -26,8 +26,8 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  include/linux/highmem.h      |   31 +++++++++++++++++++++++++------
  include/linux/sched.h        |    7 +++++++
  include/linux/uaccess.h      |    2 ++
- mm/highmem.c                 |    6 ++++--
- 7 files changed, 88 insertions(+), 12 deletions(-)
+ mm/highmem.c                 |    6 +++---
+ 7 files changed, 87 insertions(+), 13 deletions(-)
 
 --- a/arch/x86/kernel/process_32.c
 +++ b/arch/x86/kernel/process_32.c
@@ -39,7 +39,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  #include <asm/pgtable.h>
  #include <asm/ldt.h>
-@@ -198,6 +199,35 @@ start_thread(struct pt_regs *regs, unsig
+@@ -195,6 +196,35 @@ start_thread(struct pt_regs *regs, unsig
  }
  EXPORT_SYMBOL_GPL(start_thread);
  
@@ -75,7 +75,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  /*
   *	switch_to(x,y) should switch tasks from x to y.
-@@ -267,6 +297,8 @@ EXPORT_SYMBOL_GPL(start_thread);
+@@ -265,6 +295,8 @@ EXPORT_SYMBOL_GPL(start_thread);
  
  	switch_to_extra(prev_p, next_p);
  
@@ -164,7 +164,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	}
 --- a/include/linux/highmem.h
 +++ b/include/linux/highmem.h
-@@ -66,7 +66,7 @@ static inline void kunmap(struct page *p
+@@ -90,7 +90,7 @@ static inline void kunmap(struct page *p
  
  static inline void *kmap_atomic(struct page *page)
  {
@@ -173,7 +173,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	pagefault_disable();
  	return page_address(page);
  }
-@@ -75,7 +75,7 @@ static inline void *kmap_atomic(struct p
+@@ -99,7 +99,7 @@ static inline void *kmap_atomic(struct p
  static inline void __kunmap_atomic(void *addr)
  {
  	pagefault_enable();
@@ -182,7 +182,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  }
  
  #define kmap_atomic_pfn(pfn)	kmap_atomic(pfn_to_page(pfn))
-@@ -87,32 +87,51 @@ static inline void __kunmap_atomic(void
+@@ -111,32 +111,51 @@ static inline void __kunmap_atomic(void
  
  #if defined(CONFIG_HIGHMEM) || defined(CONFIG_X86_32)
  
@@ -240,7 +240,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -28,6 +28,7 @@
+@@ -29,6 +29,7 @@
  #include <linux/mm_types_task.h>
  #include <linux/task_io_accounting.h>
  #include <linux/rseq.h>
@@ -248,7 +248,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  /* task_struct member predeclarations (sorted alphabetically): */
  struct audit_context;
-@@ -1206,6 +1207,12 @@ struct task_struct {
+@@ -1210,6 +1211,12 @@ struct task_struct {
  	int				softirq_nestcnt;
  	unsigned int			softirqs_raised;
  #endif
@@ -263,7 +263,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  #endif
 --- a/include/linux/uaccess.h
 +++ b/include/linux/uaccess.h
-@@ -185,6 +185,7 @@ static __always_inline void pagefault_di
+@@ -182,6 +182,7 @@ static __always_inline void pagefault_di
   */
  static inline void pagefault_disable(void)
  {
@@ -271,7 +271,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	pagefault_disabled_inc();
  	/*
  	 * make sure to have issued the store before a pagefault
-@@ -201,6 +202,7 @@ static inline void pagefault_enable(void
+@@ -198,6 +199,7 @@ static inline void pagefault_enable(void
  	 */
  	barrier();
  	pagefault_disabled_dec();
@@ -281,7 +281,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  /*
 --- a/mm/highmem.c
 +++ b/mm/highmem.c
-@@ -30,10 +30,11 @@
+@@ -30,9 +30,11 @@
  #include <linux/kgdb.h>
  #include <asm/tlbflush.h>
  
@@ -289,19 +289,17 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
 +#ifndef CONFIG_PREEMPT_RT_FULL
  #if defined(CONFIG_HIGHMEM) || defined(CONFIG_X86_32)
  DEFINE_PER_CPU(int, __kmap_atomic_idx);
- #endif
++EXPORT_PER_CPU_SYMBOL(__kmap_atomic_idx);
 +#endif
+ #endif
  
  /*
-  * Virtual_count is not a pure "count".
-@@ -108,8 +109,9 @@ static inline wait_queue_head_t *get_pkm
- unsigned long totalhigh_pages __read_mostly;
- EXPORT_SYMBOL(totalhigh_pages);
+@@ -108,8 +110,6 @@ static inline wait_queue_head_t *get_pkm
+ atomic_long_t _totalhigh_pages __read_mostly;
+ EXPORT_SYMBOL(_totalhigh_pages);
  
+-EXPORT_PER_CPU_SYMBOL(__kmap_atomic_idx);
 -
-+#ifndef CONFIG_PREEMPT_RT_FULL
- EXPORT_PER_CPU_SYMBOL(__kmap_atomic_idx);
-+#endif
- 
  unsigned int nr_free_highpages (void)
  {
+ 	struct zone *zone;

@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
 Subject: [PATCH] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -46,20 +46,20 @@ The wq_has_sleeper() check has been suggested by Peter Zijlstra.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- block/blk-core.c       |   14 +++++++++++++-
+ block/blk-core.c       |   12 +++++++++++-
  include/linux/blkdev.h |    2 ++
- 2 files changed, 15 insertions(+), 1 deletion(-)
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -968,12 +968,21 @@ void blk_queue_exit(struct request_queue
+@@ -447,12 +447,21 @@ void blk_queue_exit(struct request_queue
  	percpu_ref_put(&q->q_usage_counter);
  }
  
-+static void blk_queue_usage_counter_release_swork(struct swork_event *sev)
++static void blk_queue_usage_counter_release_wrk(struct kthread_work *work)
 +{
 +	struct request_queue *q =
-+		container_of(sev, struct request_queue, mq_pcpu_wake);
++		container_of(work, struct request_queue, mq_pcpu_wake);
 +
 +	wake_up_all(&q->mq_freeze_wq);
 +}
@@ -71,42 +71,33 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 -	wake_up_all(&q->mq_freeze_wq);
 +	if (wq_has_sleeper(&q->mq_freeze_wq))
-+		swork_queue(&q->mq_pcpu_wake);
++		kthread_schedule_work(&q->mq_pcpu_wake);
  }
  
  static void blk_rq_timed_out_timer(struct timer_list *t)
-@@ -1066,6 +1075,7 @@ struct request_queue *blk_alloc_queue_no
- 	queue_flag_set_unlocked(QUEUE_FLAG_BYPASS, q);
+@@ -524,6 +533,7 @@ struct request_queue *blk_alloc_queue_no
+ 	spin_lock_init(&q->queue_lock);
  
  	init_waitqueue_head(&q->mq_freeze_wq);
-+	INIT_SWORK(&q->mq_pcpu_wake, blk_queue_usage_counter_release_swork);
++	kthread_init_work(&q->mq_pcpu_wake, blk_queue_usage_counter_release_wrk);
  
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
-@@ -3956,6 +3966,8 @@ int __init blk_dev_init(void)
- 	if (!kblockd_workqueue)
- 		panic("Failed to create kblockd\n");
- 
-+	BUG_ON(swork_get());
-+
- 	request_cachep = kmem_cache_create("blkdev_requests",
- 			sizeof(struct request), 0, SLAB_PANIC, NULL);
- 
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -27,6 +27,7 @@
- #include <linux/percpu-refcount.h>
- #include <linux/scatterlist.h>
- #include <linux/blkzoned.h>
-+#include <linux/swork.h>
- 
- struct module;
- struct scsi_ioctl_command;
-@@ -649,6 +650,7 @@ struct request_queue {
+@@ -13,6 +13,7 @@
+ #include <linux/llist.h>
+ #include <linux/timer.h>
+ #include <linux/workqueue.h>
++#include <linux/kthread.h>
+ #include <linux/pagemap.h>
+ #include <linux/backing-dev-defs.h>
+ #include <linux/wait.h>
+@@ -549,6 +550,7 @@ struct request_queue {
  #endif
  	struct rcu_head		rcu_head;
  	wait_queue_head_t	mq_freeze_wq;
-+	struct swork_event	mq_pcpu_wake;
++	struct kthread_work	mq_pcpu_wake;
  	struct percpu_ref	q_usage_counter;
  	struct list_head	all_q_node;
  

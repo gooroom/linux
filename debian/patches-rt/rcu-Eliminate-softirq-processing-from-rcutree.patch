@@ -1,7 +1,7 @@
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Mon, 4 Nov 2013 13:21:10 -0800
 Subject: rcu: Eliminate softirq processing from rcutree
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Running RCU out of softirq is a problem for some workloads that would
 like to manage RCU core processing independently of other softirq work,
@@ -17,18 +17,30 @@ Tested-by: Mike Galbraith <bitbucket@online.de>
 Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/rcu/tree.c        |  112 +++++++++++++++++++++++++++++++++----
+ include/linux/rcupdate.h |    3 -
+ kernel/rcu/tree.c        |  110 ++++++++++++++++++++++++++++++++++--
  kernel/rcu/tree.h        |    4 -
- kernel/rcu/tree_plugin.h |  142 +++--------------------------------------------
- 3 files changed, 114 insertions(+), 144 deletions(-)
+ kernel/rcu/tree_plugin.h |  140 ++++-------------------------------------------
+ 4 files changed, 117 insertions(+), 140 deletions(-)
 
+--- a/include/linux/rcupdate.h
++++ b/include/linux/rcupdate.h
+@@ -295,7 +295,8 @@ static inline void rcu_preempt_sleep_che
+ #define rcu_sleep_check()						\
+ 	do {								\
+ 		rcu_preempt_sleep_check();				\
+-		RCU_LOCKDEP_WARN(lock_is_held(&rcu_bh_lock_map),	\
++		if (!IS_ENABLED(CONFIG_PREEMPT_RT_FULL))		\
++			RCU_LOCKDEP_WARN(lock_is_held(&rcu_bh_lock_map),\
+ 				 "Illegal context switch in RCU-bh read-side critical section"); \
+ 		RCU_LOCKDEP_WARN(lock_is_held(&rcu_sched_lock_map),	\
+ 				 "Illegal context switch in RCU-sched read-side critical section"); \
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
-@@ -61,6 +61,13 @@
- #include <linux/trace_events.h>
+@@ -62,6 +62,12 @@
  #include <linux/suspend.h>
  #include <linux/ftrace.h>
-+#include <linux/delay.h>
+ #include <linux/tick.h>
 +#include <linux/gfp.h>
 +#include <linux/oom.h>
 +#include <linux/smpboot.h>
@@ -38,34 +50,31 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #include "tree.h"
  #include "rcu.h"
-@@ -2888,18 +2895,17 @@ static void
- /*
-  * Do RCU core processing for the current CPU.
+@@ -2716,7 +2722,7 @@ EXPORT_SYMBOL_GPL(rcu_fwd_progress_check
+  * structures.  This may be called only from the CPU to whom the rdp
+  * belongs.
   */
 -static __latent_entropy void rcu_process_callbacks(struct softirq_action *unused)
 +static __latent_entropy void rcu_process_callbacks(void)
  {
- 	struct rcu_state *rsp;
- 
- 	if (cpu_is_offline(smp_processor_id()))
- 		return;
--	trace_rcu_utilization(TPS("Start RCU core"));
- 	for_each_rcu_flavor(rsp)
- 		__rcu_process_callbacks(rsp);
--	trace_rcu_utilization(TPS("End RCU core"));
+ 	unsigned long flags;
+ 	struct rcu_data *rdp = raw_cpu_ptr(&rcu_data);
+@@ -2758,6 +2764,8 @@ static __latent_entropy void rcu_process
+ 	trace_rcu_utilization(TPS("End RCU core"));
  }
  
 +static DEFINE_PER_CPU(struct task_struct *, rcu_cpu_kthread_task);
++
  /*
-  * Schedule RCU callback invocation.  If the specified type of RCU
-  * does not support RCU priority boosting, just do a direct call,
-@@ -2911,18 +2917,105 @@ static void invoke_rcu_callbacks(struct
+  * Schedule RCU callback invocation.  If the running implementation of RCU
+  * does not support RCU priority boosting, just do a direct call, otherwise
+@@ -2769,18 +2777,105 @@ static void invoke_rcu_callbacks(struct
  {
  	if (unlikely(!READ_ONCE(rcu_scheduler_fully_active)))
  		return;
--	if (likely(!rsp->boost)) {
--		rcu_do_batch(rsp, rdp);
-+	rcu_do_batch(rsp, rdp);
+-	if (likely(!rcu_state.boost)) {
+-		rcu_do_batch(rdp);
++	rcu_do_batch(rdp);
 +}
 +
 +static void rcu_wake_cond(struct task_struct *t, int status)
@@ -107,9 +116,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +}
 +
 +/*
-+ * Per-CPU kernel thread that invokes RCU callbacks.  This replaces the
-+ * RCU softirq used in flavors and configurations of RCU that do not
-+ * support RCU priority boosting.
++ * Per-CPU kernel thread that invokes RCU callbacks.  This replaces
++ * the RCU softirq used in configurations of RCU that do not support RCU
++ * priority boosting.
 + */
 +static void rcu_cpu_kthread(unsigned int cpu)
 +{
@@ -164,26 +173,26 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +	for_each_possible_cpu(cpu)
 +		per_cpu(rcu_cpu_has_work, cpu) = 0;
-+	BUG_ON(smpboot_register_percpu_thread(&rcu_cpu_thread_spec));
++	WARN_ONCE(smpboot_register_percpu_thread(&rcu_cpu_thread_spec), "%s: Could not start rcub kthread, OOM is now expected behavior\n", __func__);
 +	return 0;
  }
 +early_initcall(rcu_spawn_core_kthreads);
  
  /*
   * Handle any core-RCU processing required by a call_rcu() invocation.
-@@ -4188,7 +4281,6 @@ void __init rcu_init(void)
+@@ -3777,7 +3872,6 @@ void __init rcu_init(void)
+ 	rcu_init_one();
  	if (dump_tree)
- 		rcu_dump_rcu_node_tree(&rcu_sched_state);
- 	__rcu_init_preempt();
+ 		rcu_dump_rcu_node_tree();
 -	open_softirq(RCU_SOFTIRQ, rcu_process_callbacks);
  
  	/*
  	 * We don't need protection against CPU-hotplug here because
 --- a/kernel/rcu/tree.h
 +++ b/kernel/rcu/tree.h
-@@ -423,12 +423,10 @@ extern struct rcu_state rcu_preempt_stat
+@@ -402,12 +402,10 @@ static const char *tp_rcu_varname __used
  
- int rcu_dynticks_snap(struct rcu_dynticks *rdtp);
+ int rcu_dynticks_snap(struct rcu_data *rdp);
  
 -#ifdef CONFIG_RCU_BOOST
  DECLARE_PER_CPU(unsigned int, rcu_cpu_kthread_status);
@@ -192,21 +201,21 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  DECLARE_PER_CPU(char, rcu_cpu_has_work);
 -#endif /* #ifdef CONFIG_RCU_BOOST */
  
- #ifndef RCU_TREE_NONCORE
- 
-@@ -451,8 +449,8 @@ static void dump_blkd_tasks(struct rcu_s
- 			    int ncheck);
+ /* Forward declarations for rcutree_plugin.h */
+ static void rcu_bootup_announce(void);
+@@ -425,8 +423,8 @@ void call_rcu(struct rcu_head *head, rcu
+ static void dump_blkd_tasks(struct rcu_node *rnp, int ncheck);
  static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags);
  static void rcu_preempt_boost_start_gp(struct rcu_node *rnp);
 -static void invoke_rcu_callbacks_kthread(void);
  static bool rcu_is_callbacks_kthread(void);
 +static void rcu_cpu_kthread_setup(unsigned int cpu);
- #ifdef CONFIG_RCU_BOOST
- static int rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
- 						 struct rcu_node *rnp);
+ static void __init rcu_spawn_boost_kthreads(void);
+ static void rcu_prepare_kthreads(int cpu);
+ static void rcu_cleanup_after_idle(void);
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -24,42 +24,16 @@
+@@ -24,17 +24,6 @@
   *	   Paul E. McKenney <paulmck@linux.vnet.ibm.com>
   */
  
@@ -215,7 +224,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -#include <linux/oom.h>
 -#include <linux/sched/debug.h>
 -#include <linux/smpboot.h>
--#include <linux/jiffies.h>
 -#include <linux/sched/isolation.h>
 -#include <uapi/linux/sched/types.h>
 -#include "../time/tick-internal.h"
@@ -225,11 +233,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include "../locking/rtmutex_common.h"
  
  /*
-  * Control variables for per-CPU and per-rcu_node kthreads.  These
-  * handle all flavors of RCU.
-  */
--static DEFINE_PER_CPU(struct task_struct *, rcu_cpu_kthread_task);
- DEFINE_PER_CPU(unsigned int, rcu_cpu_kthread_status);
+@@ -45,19 +34,6 @@ DEFINE_PER_CPU(unsigned int, rcu_cpu_kth
  DEFINE_PER_CPU(unsigned int, rcu_cpu_kthread_loops);
  DEFINE_PER_CPU(char, rcu_cpu_has_work);
  
@@ -249,7 +253,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_RCU_NOCB_CPU
  static cpumask_var_t rcu_nocb_mask; /* CPUs to have callbacks offloaded. */
  static bool __read_mostly rcu_nocb_poll;    /* Offload kthread are to poll. */
-@@ -1027,18 +1001,21 @@ dump_blkd_tasks(struct rcu_state *rsp, s
+@@ -656,7 +632,7 @@ static void rcu_read_unlock_special(stru
+ 		/* Need to defer quiescent state until everything is enabled. */
+ 		if (irqs_were_disabled) {
+ 			/* Enabling irqs does not reschedule, so... */
+-			raise_softirq_irqoff(RCU_SOFTIRQ);
++			invoke_rcu_core();
+ 		} else {
+ 			/* Enabling BH or preempt does reschedule, so... */
+ 			set_tsk_need_resched(current);
+@@ -1154,18 +1130,21 @@ dump_blkd_tasks(struct rcu_node *rnp, in
  
  #endif /* #else #ifdef CONFIG_PREEMPT_RCU */
  
@@ -279,7 +292,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Carry out RCU priority boosting on the task indicated by ->exp_tasks
   * or ->boost_tasks, advancing the pointer to the next task in the
-@@ -1177,23 +1154,6 @@ static void rcu_initiate_boost(struct rc
+@@ -1304,23 +1283,6 @@ static void rcu_initiate_boost(struct rc
  }
  
  /*
@@ -303,15 +316,13 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * Is the current CPU running the RCU-callbacks kthread?
   * Caller must have preemption disabled.
   */
-@@ -1247,67 +1207,6 @@ static int rcu_spawn_one_boost_kthread(s
+@@ -1373,65 +1335,6 @@ static int rcu_spawn_one_boost_kthread(s
  	return 0;
  }
  
 -static void rcu_kthread_do_work(void)
 -{
--	rcu_do_batch(&rcu_sched_state, this_cpu_ptr(&rcu_sched_data));
--	rcu_do_batch(&rcu_bh_state, this_cpu_ptr(&rcu_bh_data));
--	rcu_do_batch(&rcu_preempt_state, this_cpu_ptr(&rcu_preempt_data));
+-	rcu_do_batch(this_cpu_ptr(&rcu_data));
 -}
 -
 -static void rcu_cpu_kthread_setup(unsigned int cpu)
@@ -333,9 +344,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 -
 -/*
-- * Per-CPU kernel thread that invokes RCU callbacks.  This replaces the
-- * RCU softirq used in flavors and configurations of RCU that do not
-- * support RCU priority boosting.
+- * Per-CPU kernel thread that invokes RCU callbacks.  This replaces
+- * the RCU softirq used in configurations of RCU that do not support RCU
+- * priority boosting.
 - */
 -static void rcu_cpu_kthread(unsigned int cpu)
 -{
@@ -371,7 +382,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Set the per-rcu_node kthread's affinity to cover all CPUs that are
   * served by the rcu_node in question.  The CPU hotplug lock is still
-@@ -1338,26 +1237,12 @@ static void rcu_boost_kthread_setaffinit
+@@ -1462,27 +1365,13 @@ static void rcu_boost_kthread_setaffinit
  	free_cpumask_var(cm);
  }
  
@@ -391,14 +402,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct rcu_node *rnp;
 -	int cpu;
--
+ 
 -	for_each_possible_cpu(cpu)
 -		per_cpu(rcu_cpu_has_work, cpu) = 0;
--	BUG_ON(smpboot_register_percpu_thread(&rcu_cpu_thread_spec));
- 	rcu_for_each_leaf_node(rcu_state_p, rnp)
- 		(void)rcu_spawn_one_boost_kthread(rcu_state_p, rnp);
+-	if (WARN_ONCE(smpboot_register_percpu_thread(&rcu_cpu_thread_spec), "%s: Could not start rcub kthread, OOM is now expected behavior\n", __func__))
+-		return;
+ 	rcu_for_each_leaf_node(rnp)
+ 		(void)rcu_spawn_one_boost_kthread(rnp);
  }
-@@ -1380,11 +1265,6 @@ static void rcu_initiate_boost(struct rc
+@@ -1505,11 +1394,6 @@ static void rcu_initiate_boost(struct rc
  	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
  }
  

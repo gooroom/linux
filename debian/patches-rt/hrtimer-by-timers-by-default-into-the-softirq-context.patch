@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: hrtimer: by timers by default into the softirq context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2250,7 +2250,7 @@ int kvm_create_lapic(struct kvm_vcpu *vc
+@@ -2274,7 +2274,7 @@ int kvm_create_lapic(struct kvm_vcpu *vc
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
-@@ -42,6 +42,7 @@ enum hrtimer_mode {
+@@ -39,6 +39,7 @@ enum hrtimer_mode {
  	HRTIMER_MODE_REL	= 0x01,
  	HRTIMER_MODE_PINNED	= 0x02,
  	HRTIMER_MODE_SOFT	= 0x04,
@@ -47,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
  	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
-@@ -52,6 +53,11 @@ enum hrtimer_mode {
+@@ -49,6 +50,11 @@ enum hrtimer_mode {
  	HRTIMER_MODE_ABS_PINNED_SOFT = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_SOFT,
  	HRTIMER_MODE_REL_PINNED_SOFT = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_SOFT,
  
@@ -70,7 +70,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -9181,7 +9181,7 @@ static void perf_swevent_init_hrtimer(st
+@@ -9210,7 +9210,7 @@ static void perf_swevent_init_hrtimer(st
  	if (!is_sampling_event(event))
  		return;
  
@@ -103,7 +103,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4879,9 +4879,9 @@ void init_cfs_bandwidth(struct cfs_bandw
+@@ -4891,9 +4891,9 @@ void init_cfs_bandwidth(struct cfs_bandw
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);
@@ -130,7 +130,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1135,7 +1135,9 @@ void hrtimer_start_range_ns(struct hrtim
+@@ -1126,7 +1126,9 @@ void hrtimer_start_range_ns(struct hrtim
  	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
  	 * match.
  	 */
@@ -140,7 +140,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	base = lock_hrtimer_base(timer, &flags);
  
-@@ -1295,10 +1297,17 @@ static inline int hrtimer_clockid_to_bas
+@@ -1286,10 +1288,17 @@ static inline int hrtimer_clockid_to_bas
  static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  			   enum hrtimer_mode mode)
  {
@@ -160,7 +160,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	memset(timer, 0, sizeof(struct hrtimer));
  
  	cpu_base = raw_cpu_ptr(&hrtimer_bases);
-@@ -1681,6 +1690,14 @@ static void __hrtimer_init_sleeper(struc
+@@ -1672,6 +1681,14 @@ static void __hrtimer_init_sleeper(struc
  				   enum hrtimer_mode mode,
  				   struct task_struct *task)
  {
@@ -177,7 +177,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	sl->task = task;
 --- a/kernel/time/tick-broadcast-hrtimer.c
 +++ b/kernel/time/tick-broadcast-hrtimer.c
-@@ -106,7 +106,7 @@ static enum hrtimer_restart bc_handler(s
+@@ -104,7 +104,7 @@ static enum hrtimer_restart bc_handler(s
  
  void tick_setup_hrtimer_broadcast(void)
  {
@@ -188,7 +188,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -1310,7 +1310,7 @@ void tick_setup_sched_timer(void)
+@@ -1307,7 +1307,7 @@ void tick_setup_sched_timer(void)
  	/*
  	 * Emulate tick processing via per-CPU hrtimers:
  	 */

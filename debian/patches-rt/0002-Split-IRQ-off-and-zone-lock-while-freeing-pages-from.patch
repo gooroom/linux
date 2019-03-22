@@ -2,7 +2,7 @@ From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 28 May 2018 15:24:21 +0200
 Subject: [PATCH 2/4] Split IRQ-off and zone->lock while freeing pages from PCP
  list #2
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Split the IRQ-off section while accessing the PCP list from zone->lock
 while freeing pages.
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -1105,8 +1105,8 @@ static inline void prefetch_buddy(struct
+@@ -1122,8 +1122,8 @@ static inline void prefetch_buddy(struct
   * And clear the zone's pages_scanned counter, to hold off the "all pages are
   * pinned" detection logic.
   */
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	bool isolated_pageblocks;
  	struct page *page, *tmp;
-@@ -1121,12 +1121,27 @@ static void free_pcppages_bulk(struct zo
+@@ -1138,12 +1138,27 @@ static void free_pcppages_bulk(struct zo
  	 */
  	list_for_each_entry_safe(page, tmp, head, lru) {
  		int mt = get_pcppage_migratetype(page);
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		__free_one_page(page, page_to_pfn(page), zone, 0, mt);
  		trace_mm_page_pcpu_drain(page, 0, mt);
  	}
-@@ -2554,7 +2569,7 @@ void drain_zone_pages(struct zone *zone,
+@@ -2626,7 +2641,7 @@ void drain_zone_pages(struct zone *zone,
  	local_irq_restore(flags);
  
  	if (to_drain > 0)
@@ -66,7 +66,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  #endif
  
-@@ -2584,7 +2599,7 @@ static void drain_pages_zone(unsigned in
+@@ -2656,7 +2671,7 @@ static void drain_pages_zone(unsigned in
  	local_irq_restore(flags);
  
  	if (count)
@@ -75,7 +75,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -2777,7 +2792,8 @@ static bool free_unref_page_prepare(stru
+@@ -2855,7 +2870,8 @@ static bool free_unref_page_prepare(stru
  	return true;
  }
  
@@ -85,7 +85,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct zone *zone = page_zone(page);
  	struct per_cpu_pages *pcp;
-@@ -2806,10 +2822,8 @@ static void free_unref_page_commit(struc
+@@ -2884,10 +2900,8 @@ static void free_unref_page_commit(struc
  	pcp->count++;
  	if (pcp->count >= pcp->high) {
  		unsigned long batch = READ_ONCE(pcp->batch);
@@ -97,7 +97,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  }
  
-@@ -2820,13 +2834,17 @@ void free_unref_page(struct page *page)
+@@ -2898,13 +2912,17 @@ void free_unref_page(struct page *page)
  {
  	unsigned long flags;
  	unsigned long pfn = page_to_pfn(page);
@@ -116,7 +116,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -2837,6 +2855,11 @@ void free_unref_page_list(struct list_he
+@@ -2915,6 +2933,11 @@ void free_unref_page_list(struct list_he
  	struct page *page, *next;
  	unsigned long flags, pfn;
  	int batch_count = 0;
@@ -128,7 +128,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Prepare pages for freeing */
  	list_for_each_entry_safe(page, next, list, lru) {
-@@ -2849,10 +2872,12 @@ void free_unref_page_list(struct list_he
+@@ -2927,10 +2950,12 @@ void free_unref_page_list(struct list_he
  	local_irq_save(flags);
  	list_for_each_entry_safe(page, next, list, lru) {
  		unsigned long pfn = page_private(page);
@@ -142,7 +142,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		/*
  		 * Guard against excessive IRQ disabled times when we get
-@@ -2865,6 +2890,21 @@ void free_unref_page_list(struct list_he
+@@ -2943,6 +2968,21 @@ void free_unref_page_list(struct list_he
  		}
  	}
  	local_irq_restore(flags);

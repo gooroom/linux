@@ -1,7 +1,7 @@
 From: Yang Shi <yang.shi@windriver.com>
 Date: Mon, 16 Sep 2013 14:09:19 -0700
 Subject: hrtimer: Move schedule_work call to helper thread
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 When run ltp leapsec_timer test, the following call trace is caught:
 
@@ -44,45 +44,38 @@ from git://git.kernel.org/pub/scm/linux/kernel/git/rt/linux-stable-rt.git, which
 makes a similar change.
 
 Signed-off-by: Yang Shi <yang.shi@windriver.com>
-[bigeasy: use swork_queue() instead a helper thread]
+[bigeasy: use kthread_schedule_work() instead a helper thread]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/time/hrtimer.c |   24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ kernel/time/hrtimer.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -730,6 +730,29 @@ static void hrtimer_switch_to_hres(void)
+@@ -721,6 +721,22 @@ static void hrtimer_switch_to_hres(void)
  	retrigger_next_event(NULL);
  }
  
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +
-+static struct swork_event clock_set_delay_work;
-+
-+static void run_clock_set_delay(struct swork_event *event)
++static void run_clock_set_delay(struct kthread_work *work)
 +{
 +	clock_was_set();
 +}
 +
++static DEFINE_KTHREAD_WORK(clock_set_delay_work, run_clock_set_delay);
++
 +void clock_was_set_delayed(void)
 +{
-+	swork_queue(&clock_set_delay_work);
++	kthread_schedule_work(&clock_set_delay_work);
 +}
 +
-+static __init int create_clock_set_delay_thread(void)
-+{
-+	WARN_ON(swork_get());
-+	INIT_SWORK(&clock_set_delay_work, run_clock_set_delay);
-+	return 0;
-+}
-+early_initcall(create_clock_set_delay_thread);
 +#else /* PREEMPT_RT_FULL */
 +
  static void clock_was_set_work(struct work_struct *work)
  {
  	clock_was_set();
-@@ -745,6 +768,7 @@ void clock_was_set_delayed(void)
+@@ -736,6 +752,7 @@ void clock_was_set_delayed(void)
  {
  	schedule_work(&hrtimer_work);
  }

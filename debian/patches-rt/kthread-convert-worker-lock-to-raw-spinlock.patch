@@ -1,7 +1,7 @@
 From: Julia Cartwright <julia@ni.com>
 Date: Fri, 28 Sep 2018 21:03:51 +0000
 Subject: [PATCH] kthread: convert worker lock to raw spinlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 In order to enable the queuing of kthread work items from hardirq
 context even when PREEMPT_RT_FULL is enabled, convert the worker
@@ -17,9 +17,9 @@ Reported-by: Tim Sander <tim@krieglstein.org>
 Signed-off-by: Julia Cartwright <julia@ni.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/kthread.h |    2 +-
+ include/linux/kthread.h |    4 ++--
  kernel/kthread.c        |   42 +++++++++++++++++++++---------------------
- 2 files changed, 22 insertions(+), 22 deletions(-)
+ 2 files changed, 23 insertions(+), 23 deletions(-)
 
 --- a/include/linux/kthread.h
 +++ b/include/linux/kthread.h
@@ -32,6 +32,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct list_head	work_list;
  	struct list_head	delayed_work_list;
  	struct task_struct	*task;
+@@ -106,7 +106,7 @@ struct kthread_delayed_work {
+ };
+ 
+ #define KTHREAD_WORKER_INIT(worker)	{				\
+-	.lock = __SPIN_LOCK_UNLOCKED((worker).lock),			\
++	.lock = __RAW_SPIN_LOCK_UNLOCKED((worker).lock),		\
+ 	.work_list = LIST_HEAD_INIT((worker).work_list),		\
+ 	.delayed_work_list = LIST_HEAD_INIT((worker).delayed_work_list),\
+ 	}
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
 @@ -599,7 +599,7 @@ void __kthread_init_worker(struct kthrea

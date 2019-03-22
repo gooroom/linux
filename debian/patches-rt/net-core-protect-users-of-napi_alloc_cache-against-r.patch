@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
 Subject: net/core: protect users of napi_alloc_cache against
  reentrance
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 On -RT the code running in BH can not be moved to another CPU so CPU
 local variable remain local. However the code can be preempted
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -332,6 +332,7 @@ struct napi_alloc_cache {
+@@ -335,6 +335,7 @@ struct napi_alloc_cache {
  static DEFINE_PER_CPU(struct page_frag_cache, netdev_alloc_cache);
  static DEFINE_PER_CPU(struct napi_alloc_cache, napi_alloc_cache);
  static DEFINE_LOCAL_IRQ_LOCK(netdev_alloc_lock);
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static void *__netdev_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
  {
-@@ -363,9 +364,13 @@ EXPORT_SYMBOL(netdev_alloc_frag);
+@@ -366,9 +367,13 @@ EXPORT_SYMBOL(netdev_alloc_frag);
  
  static void *__napi_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
  {
@@ -42,7 +42,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  void *napi_alloc_frag(unsigned int fragsz)
-@@ -461,9 +466,10 @@ EXPORT_SYMBOL(__netdev_alloc_skb);
+@@ -464,9 +469,10 @@ EXPORT_SYMBOL(__netdev_alloc_skb);
  struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
  				 gfp_t gfp_mask)
  {
@@ -54,7 +54,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	len += NET_SKB_PAD + NET_IP_ALIGN;
  
-@@ -481,7 +487,10 @@ struct sk_buff *__napi_alloc_skb(struct
+@@ -484,7 +490,10 @@ struct sk_buff *__napi_alloc_skb(struct
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -65,7 +65,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(!data))
  		return NULL;
  
-@@ -492,7 +501,7 @@ struct sk_buff *__napi_alloc_skb(struct
+@@ -495,7 +504,7 @@ struct sk_buff *__napi_alloc_skb(struct
  	}
  
  	/* use OR instead of assignment to avoid clearing of bits in mask */

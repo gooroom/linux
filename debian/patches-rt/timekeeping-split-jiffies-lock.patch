@@ -1,7 +1,7 @@
 Subject: timekeeping: Split jiffies seqlock
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/kernel/time/jiffies.c
 +++ b/kernel/time/jiffies.c
-@@ -74,7 +74,8 @@ static struct clocksource clocksource_ji
+@@ -58,7 +58,8 @@ static struct clocksource clocksource_ji
  	.max_cycles	= 10,
  };
  
@@ -27,7 +27,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #if (BITS_PER_LONG < 64)
  u64 get_jiffies_64(void)
-@@ -83,9 +84,9 @@ u64 get_jiffies_64(void)
+@@ -67,9 +68,9 @@ u64 get_jiffies_64(void)
  	u64 ret;
  
  	do {
@@ -41,7 +41,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  EXPORT_SYMBOL(get_jiffies_64);
 --- a/kernel/time/tick-common.c
 +++ b/kernel/time/tick-common.c
-@@ -79,13 +79,15 @@ int tick_is_oneshot_available(void)
+@@ -75,13 +75,15 @@ int tick_is_oneshot_available(void)
  static void tick_periodic(int cpu)
  {
  	if (tick_do_timer_cpu == cpu) {
@@ -59,7 +59,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		update_wall_time();
  	}
  
-@@ -157,9 +159,9 @@ void tick_setup_periodic(struct clock_ev
+@@ -153,9 +155,9 @@ void tick_setup_periodic(struct clock_ev
  		ktime_t next;
  
  		do {
@@ -73,7 +73,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -67,7 +67,8 @@ static void tick_do_update_jiffies64(kti
+@@ -64,7 +64,8 @@ static void tick_do_update_jiffies64(kti
  		return;
  
  	/* Reevaluate with jiffies_lock held */
@@ -83,7 +83,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	delta = ktime_sub(now, last_jiffies_update);
  	if (delta >= tick_period) {
-@@ -90,10 +91,12 @@ static void tick_do_update_jiffies64(kti
+@@ -87,10 +88,12 @@ static void tick_do_update_jiffies64(kti
  		/* Keep the tick_next_period variable up to date */
  		tick_next_period = ktime_add(last_jiffies_update, tick_period);
  	} else {
@@ -98,7 +98,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	update_wall_time();
  }
  
-@@ -104,12 +107,14 @@ static ktime_t tick_init_jiffy_update(vo
+@@ -101,12 +104,14 @@ static ktime_t tick_init_jiffy_update(vo
  {
  	ktime_t period;
  
@@ -115,7 +115,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return period;
  }
  
-@@ -652,10 +657,10 @@ static ktime_t tick_nohz_next_event(stru
+@@ -649,10 +654,10 @@ static ktime_t tick_nohz_next_event(stru
  
  	/* Read jiffies and the time when jiffies were updated last */
  	do {
@@ -130,7 +130,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/time/timekeeping.c
 +++ b/kernel/time/timekeeping.c
-@@ -2417,8 +2417,10 @@ EXPORT_SYMBOL(hardpps);
+@@ -2380,8 +2380,10 @@ EXPORT_SYMBOL(hardpps);
   */
  void xtime_update(unsigned long ticks)
  {

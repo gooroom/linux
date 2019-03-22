@@ -1,7 +1,7 @@
 Subject: arm: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
@@ -22,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	select HAVE_PERF_REGS
  	select HAVE_PERF_USER_STACK_DUMP
 +	select HAVE_PREEMPT_LAZY
- 	select HAVE_RCU_TABLE_FREE if (SMP && ARM_LPAE)
+ 	select HAVE_RCU_TABLE_FREE if SMP && ARM_LPAE
  	select HAVE_REGS_AND_STACK_ACCESS_API
  	select HAVE_RSEQ
 --- a/arch/arm/include/asm/thread_info.h
@@ -35,7 +35,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	mm_segment_t		addr_limit;	/* address limit */
  	struct task_struct	*task;		/* main task structure */
  	__u32			cpu;		/* cpu */
-@@ -139,7 +140,8 @@ extern int vfp_restore_user_hwstate(stru
+@@ -142,7 +143,8 @@ extern int vfp_restore_user_hwstate(stru
  #define TIF_SYSCALL_TRACE	4	/* syscall trace active */
  #define TIF_SYSCALL_AUDIT	5	/* syscall auditing active */
  #define TIF_SYSCALL_TRACEPOINT	6	/* syscall tracepoint instrumentation */
@@ -45,7 +45,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #define TIF_NOHZ		12	/* in adaptive nohz mode */
  #define TIF_USING_IWMMXT	17
-@@ -149,6 +151,7 @@ extern int vfp_restore_user_hwstate(stru
+@@ -152,6 +154,7 @@ extern int vfp_restore_user_hwstate(stru
  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
  #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
@@ -53,7 +53,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define _TIF_UPROBE		(1 << TIF_UPROBE)
  #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
  #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
-@@ -164,7 +167,8 @@ extern int vfp_restore_user_hwstate(stru
+@@ -167,7 +170,8 @@ extern int vfp_restore_user_hwstate(stru
   * Change these and you break ASM code in entry-common.S
   */
  #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \

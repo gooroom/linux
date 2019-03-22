@@ -1,0 +1,73 @@
+From: Rik van Riel <riel@surriel.com>
+Date: Sun, 9 Sep 2018 18:30:47 +0200
+Subject: [PATCH 14/22] x86/fpu: Eager switch PKRU state
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+
+While most of a task's FPU state is only needed in user space, the
+protection keys need to be in place immediately after a context switch.
+
+The reason is that any access to userspace memory while running in
+kernel mode also need to abide by the memory permissions specified in
+the protection keys.
+
+The "eager switch" is a preparation for loading the FPU state on return
+to userland. Instead of decoupling PKRU state from xstate I update PKRU
+within xstate on write operations by the kernel.
+
+The read/write_pkru() is moved to another header file so it can easily
+accessed from pgtable.h and fpu/internal.h.
+
+For user tasks we should always get the PKRU from the xsave area and it
+should not change anything because the PKRU value was loaded as part of
+FPU restore.
+For kernel kernel threads we now will have the default "allow
+everything" written.  Before this commit the kernel thread would end up
+with a random value which it inherited from the previous user task.
+
+Signed-off-by: Rik van Riel <riel@surriel.com>
+[bigeasy: save pkru to xstate, no cache, don't use __raw_xsave_addr()]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/include/asm/fpu/internal.h |   20 ++++++++++++++++++--
+ arch/x86/include/asm/fpu/xstate.h   |    1 +
+ 2 files changed, 19 insertions(+), 2 deletions(-)
+
+--- a/arch/x86/include/asm/fpu/internal.h
++++ b/arch/x86/include/asm/fpu/internal.h
+@@ -562,8 +562,24 @@ switch_fpu_prepare(struct fpu *old_fpu,
+  */
+ static inline void switch_fpu_finish(struct fpu *new_fpu, int cpu)
+ {
+-	if (static_cpu_has(X86_FEATURE_FPU))
+-		__fpregs_load_activate(new_fpu, cpu);
++	struct pkru_state *pk;
++	u32 pkru_val = 0;
++
++	if (!static_cpu_has(X86_FEATURE_FPU))
++		return;
++
++	__fpregs_load_activate(new_fpu, cpu);
++
++	if (!cpu_feature_enabled(X86_FEATURE_OSPKE))
++		return;
++
++	if (current->mm) {
++		pk = get_xsave_addr(&new_fpu->state.xsave, XFEATURE_PKRU);
++		WARN_ON_ONCE(!pk);
++		if (pk)
++			pkru_val = pk->pkru;
++	}
++	__write_pkru(pkru_val);
+ }
+ 
+ /*
+--- a/arch/x86/include/asm/fpu/xstate.h
++++ b/arch/x86/include/asm/fpu/xstate.h
+@@ -5,6 +5,7 @@
+ #include <linux/types.h>
+ #include <asm/processor.h>
+ #include <linux/uaccess.h>
++#include <asm/user.h>
+ 
+ /* Bit 63 of XCR0 is reserved for future expansion */
+ #define XFEATURE_MASK_EXTEND	(~(XFEATURE_MASK_FPSSE | (1ULL << 63)))

@@ -1,7 +1,7 @@
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 16:05:28 +0100
 Subject: sunrpc: Make svc_xprt_do_enqueue() use get_cpu_light()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.25-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
 |in_atomic(): 1, irqs_disabled(): 0, pid: 3194, name: rpc.nfsd
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/net/sunrpc/svc_xprt.c
 +++ b/net/sunrpc/svc_xprt.c
-@@ -393,7 +393,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
+@@ -392,7 +392,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
  	if (test_and_set_bit(XPT_BUSY, &xprt->xpt_flags))
  		return;
  
@@ -43,7 +43,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	pool = svc_pool_for_cpu(xprt->xpt_server, cpu);
  
  	atomic_long_inc(&pool->sp_stats.packets);
-@@ -417,7 +417,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
+@@ -416,7 +416,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
  	rqstp = NULL;
  out_unlock:
  	rcu_read_unlock();
