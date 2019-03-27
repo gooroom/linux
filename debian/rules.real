@@ -596,7 +596,14 @@ define make-tools
 +mkdir -p $(BUILD_DIR)/build-tools/$(1) && $(MAKE_CLEAN) -C $(BUILD_DIR)/build-tools/$(1) -f $(CURDIR)/debian/rules.d/$(1)/Makefile top_srcdir=$(CURDIR) top_rulesdir=$(CURDIR)/debian/rules.d OUTDIR=$(1) VERSION=$(VERSION) KERNEL_ARCH=$(KERNEL_ARCH)
 endef
 
-build-kbuild:
+$(STAMPS_DIR)/build-tools-headers:
+	mkdir -p $(BUILD_DIR)/build-tools/headers-tools
+	$(MAKE) ARCH=$(KERNEL_ARCH) O=$(BUILD_DIR)/build-tools/headers-tools \
+		INSTALL_HDR_PATH=$(CURDIR)/$(BUILD_DIR)/build-tools \
+		headers_install
+	@$(stamp)
+
+build-kbuild: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,scripts)
 	$(call make-tools,tools/objtool)
 
@@ -624,7 +631,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-cpupower:
+build-cpupower: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/power/cpupower)
 ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
 	$(call make-tools,tools/power/x86)
@@ -664,7 +671,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-perf:
+build-perf: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/perf)
 
 install-perf: PACKAGE_NAME = linux-perf-$(VERSION)
@@ -693,7 +700,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-usbip:
+build-usbip: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/usb/usbip)
 
 install-usbip: DH_OPTIONS = -pusbip
@@ -721,7 +728,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-hyperv-daemons:
+build-hyperv-daemons: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/hv)
 
 install-hyperv-daemons: PACKAGE_NAME = hyperv-daemons
@@ -759,7 +766,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-libbpf:
+build-libbpf: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/lib/bpf)
 
 install-libbpf: DH_OPTIONS = -plibbpf$(VERSION) -plibbpf-dev
@@ -787,7 +794,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-liblockdep:
+build-liblockdep: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,tools/lib/lockdep)
 
 install-liblockdep: DH_OPTIONS = -pliblockdep$(VERSION) -pliblockdep-dev
@@ -838,7 +845,7 @@ endif
 	dh_md5sums
 	dh_builddeb
 
-build-bootwrapper:
+build-bootwrapper: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,arch/powerpc/boot)
 
 install-bootwrapper: PACKAGE_NAME = linux-bootwrapper-$(ABINAME)
