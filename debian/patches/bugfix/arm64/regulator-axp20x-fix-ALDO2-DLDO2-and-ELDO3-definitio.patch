@@ -1,0 +1,52 @@
+From 16c8a595740035c4a7ede608a60b4a59f67b76e6 Mon Sep 17 00:00:00 2001
+From: Vasily Khoruzhick <anarsoul@gmail.com>
+Date: Fri, 25 Jan 2019 22:18:09 -0800
+Subject: [PATCH] regulator: axp20x: fix ALDO2, DLDO2 and ELDO3 definitions for
+ AXP803
+
+Looks like refactoring didn't go well and left ALDO2, DLDO2 and ELDO3
+definitions broken for AXP803 - now they are using register address
+instead of mask. Fix it by using mask where necessary.
+
+Fixes: db4a555f7c4cf ("regulator: axp20x: use defines for masks")
+Signed-off-by: Vasily Khoruzhick <anarsoul@gmail.com>
+Reviewed-by: Chen-Yu Tsai <wens@csie.org>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/regulator/axp20x-regulator.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/regulator/axp20x-regulator.c b/drivers/regulator/axp20x-regulator.c
+index dd0193d77960..1b51d557ab55 100644
+--- a/drivers/regulator/axp20x-regulator.c
++++ b/drivers/regulator/axp20x-regulator.c
+@@ -719,7 +719,7 @@ static const struct regulator_desc axp803_regulators[] = {
+ 		 AXP22X_ALDO1_V_OUT, AXP22X_ALDO1_V_OUT_MASK,
+ 		 AXP22X_PWR_OUT_CTRL3, AXP806_PWR_OUT_ALDO1_MASK),
+ 	AXP_DESC(AXP803, ALDO2, "aldo2", "aldoin", 700, 3300, 100,
+-		 AXP22X_ALDO2_V_OUT, AXP22X_ALDO2_V_OUT,
++		 AXP22X_ALDO2_V_OUT, AXP22X_ALDO2_V_OUT_MASK,
+ 		 AXP22X_PWR_OUT_CTRL3, AXP806_PWR_OUT_ALDO2_MASK),
+ 	AXP_DESC(AXP803, ALDO3, "aldo3", "aldoin", 700, 3300, 100,
+ 		 AXP22X_ALDO3_V_OUT, AXP22X_ALDO3_V_OUT_MASK,
+@@ -729,7 +729,7 @@ static const struct regulator_desc axp803_regulators[] = {
+ 		 AXP22X_PWR_OUT_CTRL2, AXP22X_PWR_OUT_DLDO1_MASK),
+ 	AXP_DESC_RANGES(AXP803, DLDO2, "dldo2", "dldoin",
+ 			axp803_dldo2_ranges, AXP803_DLDO2_NUM_VOLTAGES,
+-			AXP22X_DLDO2_V_OUT, AXP22X_DLDO2_V_OUT,
++			AXP22X_DLDO2_V_OUT, AXP22X_DLDO2_V_OUT_MASK,
+ 			AXP22X_PWR_OUT_CTRL2, AXP22X_PWR_OUT_DLDO2_MASK),
+ 	AXP_DESC(AXP803, DLDO3, "dldo3", "dldoin", 700, 3300, 100,
+ 		 AXP22X_DLDO3_V_OUT, AXP22X_DLDO3_V_OUT_MASK,
+@@ -744,7 +744,7 @@ static const struct regulator_desc axp803_regulators[] = {
+ 		 AXP22X_ELDO2_V_OUT, AXP22X_ELDO2_V_OUT_MASK,
+ 		 AXP22X_PWR_OUT_CTRL2, AXP22X_PWR_OUT_ELDO2_MASK),
+ 	AXP_DESC(AXP803, ELDO3, "eldo3", "eldoin", 700, 1900, 50,
+-		 AXP22X_ELDO3_V_OUT, AXP22X_ELDO3_V_OUT,
++		 AXP22X_ELDO3_V_OUT, AXP22X_ELDO3_V_OUT_MASK,
+ 		 AXP22X_PWR_OUT_CTRL2, AXP22X_PWR_OUT_ELDO3_MASK),
+ 	AXP_DESC(AXP803, FLDO1, "fldo1", "fldoin", 700, 1450, 50,
+ 		 AXP803_FLDO1_V_OUT, AXP803_FLDO1_V_OUT_MASK,
+-- 
+2.11.0
+
