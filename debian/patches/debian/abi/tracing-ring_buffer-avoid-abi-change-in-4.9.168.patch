@@ -1,0 +1,59 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 8 Apr 2019 19:37:59 +0100
+Subject: tracing: ring_buffer: Avoid ABI change in 4.9.168
+Forwarded: not-needed
+
+Commit 3085d41e89f0 "tracing: kdb: Fix ftdump to not sleep" added an
+extra parameter to ring_buffer_read_prepare().  Rename this function
+with a suffix "_3" (for 3 parameters) and add back the old function as
+a wrapper around it.  Use a macro to ensure the new function is used
+by newly built code.
+---
+ include/linux/ring_buffer.h |  5 ++++-
+ kernel/trace/ring_buffer.c  | 10 +++++++++-
+ 2 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/ring_buffer.h b/include/linux/ring_buffer.h
+index 121c8f99ecdd..64c1a26a6f0d 100644
+--- a/include/linux/ring_buffer.h
++++ b/include/linux/ring_buffer.h
+@@ -125,7 +125,10 @@ ring_buffer_consume(struct ring_buffer *buffer, int cpu, u64 *ts,
+ 		    unsigned long *lost_events);
+ 
+ struct ring_buffer_iter *
+-ring_buffer_read_prepare(struct ring_buffer *buffer, int cpu, gfp_t flags);
++ring_buffer_read_prepare(struct ring_buffer *buffer, int cpu);
++struct ring_buffer_iter *
++ring_buffer_read_prepare_3(struct ring_buffer *buffer, int cpu, gfp_t flags);
++#define ring_buffer_read_prepare ring_buffer_read_prepare_3
+ void ring_buffer_read_prepare_sync(void);
+ void ring_buffer_read_start(struct ring_buffer_iter *iter);
+ void ring_buffer_read_finish(struct ring_buffer_iter *iter);
+diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
+index 5473dcaaca8d..b2cb0343e359 100644
+--- a/kernel/trace/ring_buffer.c
++++ b/kernel/trace/ring_buffer.c
+@@ -4055,7 +4055,7 @@ EXPORT_SYMBOL_GPL(ring_buffer_consume);
+  * This overall must be paired with ring_buffer_read_finish.
+  */
+ struct ring_buffer_iter *
+-ring_buffer_read_prepare(struct ring_buffer *buffer, int cpu, gfp_t flags)
++ring_buffer_read_prepare_3(struct ring_buffer *buffer, int cpu, gfp_t flags)
+ {
+ 	struct ring_buffer_per_cpu *cpu_buffer;
+ 	struct ring_buffer_iter *iter;
+@@ -4076,6 +4076,14 @@ ring_buffer_read_prepare(struct ring_buffer *buffer, int cpu, gfp_t flags)
+ 
+ 	return iter;
+ }
++EXPORT_SYMBOL_GPL(ring_buffer_read_prepare_3);
++
++#undef ring_buffer_read_prepare
++struct ring_buffer_iter *
++ring_buffer_read_prepare(struct ring_buffer *buffer, int cpu)
++{
++	return ring_buffer_read_prepare_3(buffer, cpu, GFP_KERNEL);
++}
+ EXPORT_SYMBOL_GPL(ring_buffer_read_prepare);
+ 
+ /**

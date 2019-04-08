@@ -1,0 +1,45 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 8 Apr 2019 19:42:14 +0100
+Subject: net: icmp: Avoid ABI change in 4.9.163
+Forwarded: not-needed
+
+Commit 55ea53a854c0 "net: Add __icmp_send helper." changed icmp_send()
+from an exported extern function to a static inline function.  Change
+it back.
+---
+ include/net/icmp.h | 5 +----
+ net/ipv4/icmp.c    | 5 +++++
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/include/net/icmp.h b/include/net/icmp.h
+index 8665bf24e3b7..87bc9a2737d5 100644
+--- a/include/net/icmp.h
++++ b/include/net/icmp.h
+@@ -42,10 +42,7 @@ struct net;
+ 
+ void __icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info,
+ 		 const struct ip_options *opt);
+-static inline void icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info)
+-{
+-	__icmp_send(skb_in, type, code, info, &IPCB(skb_in)->opt);
+-}
++void icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info);
+ 
+ int icmp_rcv(struct sk_buff *skb);
+ void icmp_err(struct sk_buff *skb, u32 info);
+diff --git a/net/ipv4/icmp.c b/net/ipv4/icmp.c
+index 172d3dfed0c4..b941a2cebda4 100644
+--- a/net/ipv4/icmp.c
++++ b/net/ipv4/icmp.c
+@@ -734,6 +734,11 @@ out:;
+ }
+ EXPORT_SYMBOL(__icmp_send);
+ 
++void icmp_send(struct sk_buff *skb_in, int type, int code, __be32 info)
++{
++	__icmp_send(skb_in, type, code, info, &IPCB(skb_in)->opt);
++}
++EXPORT_SYMBOL(icmp_send);
+ 
+ static void icmp_socket_deliver(struct sk_buff *skb, u32 info)
+ {
