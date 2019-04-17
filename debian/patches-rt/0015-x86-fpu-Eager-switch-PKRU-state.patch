@@ -1,7 +1,7 @@
 From: Rik van Riel <riel@surriel.com>
 Date: Sun, 9 Sep 2018 18:30:47 +0200
-Subject: [PATCH 14/22] x86/fpu: Eager switch PKRU state
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Subject: [PATCH 15/27] x86/fpu: Eager switch PKRU state
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 While most of a task's FPU state is only needed in user space, the
 protection keys need to be in place immediately after a context switch.
@@ -20,28 +20,38 @@ accessed from pgtable.h and fpu/internal.h.
 For user tasks we should always get the PKRU from the xsave area and it
 should not change anything because the PKRU value was loaded as part of
 FPU restore.
-For kernel kernel threads we now will have the default "allow
-everything" written.  Before this commit the kernel thread would end up
-with a random value which it inherited from the previous user task.
+For kernel threads we now will have the default "init_pkru_value"
+written. Before this commit the kernel thread would end up with a
+random value which it inherited from the previous user task.
 
 Signed-off-by: Rik van Riel <riel@surriel.com>
 [bigeasy: save pkru to xstate, no cache, don't use __raw_xsave_addr()]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- arch/x86/include/asm/fpu/internal.h |   20 ++++++++++++++++++--
+ arch/x86/include/asm/fpu/internal.h |   24 ++++++++++++++++++++++--
  arch/x86/include/asm/fpu/xstate.h   |    1 +
- 2 files changed, 19 insertions(+), 2 deletions(-)
+ arch/x86/include/asm/pgtable.h      |    6 ++++++
+ arch/x86/mm/pkeys.c                 |    1 -
+ 4 files changed, 29 insertions(+), 3 deletions(-)
 
 --- a/arch/x86/include/asm/fpu/internal.h
 +++ b/arch/x86/include/asm/fpu/internal.h
-@@ -562,8 +562,24 @@ switch_fpu_prepare(struct fpu *old_fpu,
+@@ -14,6 +14,7 @@
+ #include <linux/compat.h>
+ #include <linux/sched.h>
+ #include <linux/slab.h>
++#include <linux/mm.h>
+ 
+ #include <asm/user.h>
+ #include <asm/fpu/api.h>
+@@ -562,8 +563,27 @@ switch_fpu_prepare(struct fpu *old_fpu,
   */
  static inline void switch_fpu_finish(struct fpu *new_fpu, int cpu)
  {
 -	if (static_cpu_has(X86_FEATURE_FPU))
 -		__fpregs_load_activate(new_fpu, cpu);
 +	struct pkru_state *pk;
-+	u32 pkru_val = 0;
++	u32 pkru_val = init_pkru_value;
 +
 +	if (!static_cpu_has(X86_FEATURE_FPU))
 +		return;
@@ -51,9 +61,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	if (!cpu_feature_enabled(X86_FEATURE_OSPKE))
 +		return;
 +
++	/*
++	 * PKRU state is switched eagerly because it needs to be valid before we
++	 * return to userland e.g. for a copy_to_user() operation.
++	 */
 +	if (current->mm) {
 +		pk = get_xsave_addr(&new_fpu->state.xsave, XFEATURE_PKRU);
-+		WARN_ON_ONCE(!pk);
 +		if (pk)
 +			pkru_val = pk->pkru;
 +	}
@@ -71,3 +84,28 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /* Bit 63 of XCR0 is reserved for future expansion */
  #define XFEATURE_MASK_EXTEND	(~(XFEATURE_MASK_FPSSE | (1ULL << 63)))
+--- a/arch/x86/include/asm/pgtable.h
++++ b/arch/x86/include/asm/pgtable.h
+@@ -1355,6 +1355,12 @@ static inline pmd_t pmd_swp_clear_soft_d
+ #define PKRU_WD_BIT 0x2
+ #define PKRU_BITS_PER_PKEY 2
+ 
++#ifdef CONFIG_X86_INTEL_MEMORY_PROTECTION_KEYS
++extern u32 init_pkru_value;
++#else
++#define init_pkru_value	0
++#endif
++
+ static inline bool __pkru_allows_read(u32 pkru, u16 pkey)
+ {
+ 	int pkru_pkey_bits = pkey * PKRU_BITS_PER_PKEY;
+--- a/arch/x86/mm/pkeys.c
++++ b/arch/x86/mm/pkeys.c
+@@ -126,7 +126,6 @@ int __arch_override_mprotect_pkey(struct
+  * in the process's lifetime will not accidentally get access
+  * to data which is pkey-protected later on.
+  */
+-static
+ u32 init_pkru_value = PKRU_AD_KEY( 1) | PKRU_AD_KEY( 2) | PKRU_AD_KEY( 3) |
+ 		      PKRU_AD_KEY( 4) | PKRU_AD_KEY( 5) | PKRU_AD_KEY( 6) |
+ 		      PKRU_AD_KEY( 7) | PKRU_AD_KEY( 8) | PKRU_AD_KEY( 9) |

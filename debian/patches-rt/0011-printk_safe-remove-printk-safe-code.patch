@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:49 +0100
 Subject: [PATCH 11/25] printk_safe: remove printk safe code
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 vprintk variants are now NMI-safe so there is no longer a need for
 the "safe" calls.
@@ -11,38 +11,64 @@ NOTE: This also removes printk flushing functionality.
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/hardirq.h     |    2 
- include/linux/printk.h      |   27 --
- init/main.c                 |    1 
- kernel/kexec_core.c         |    1 
- kernel/panic.c              |    3 
- kernel/printk/Makefile      |    1 
- kernel/printk/internal.h    |   30 ---
- kernel/printk/printk.c      |   13 -
- kernel/printk/printk_safe.c |  427 --------------------------------------------
- kernel/trace/trace.c        |    2 
- lib/nmi_backtrace.c         |    6 
- 11 files changed, 7 insertions(+), 506 deletions(-)
+ arch/powerpc/kernel/traps.c    |    1 
+ arch/powerpc/kernel/watchdog.c |    5 
+ include/linux/hardirq.h        |    2 
+ include/linux/printk.h         |   27 --
+ init/main.c                    |    1 
+ kernel/kexec_core.c            |    1 
+ kernel/panic.c                 |    3 
+ kernel/printk/Makefile         |    1 
+ kernel/printk/internal.h       |   30 --
+ kernel/printk/printk.c         |   13 -
+ kernel/printk/printk_safe.c    |  427 -----------------------------------------
+ kernel/trace/trace.c           |    2 
+ lib/nmi_backtrace.c            |    6 
+ 13 files changed, 7 insertions(+), 512 deletions(-)
  delete mode 100644 kernel/printk/printk_safe.c
 
+--- a/arch/powerpc/kernel/traps.c
++++ b/arch/powerpc/kernel/traps.c
+@@ -174,7 +174,6 @@ extern void panic_flush_kmsg_start(void)
+ 
+ extern void panic_flush_kmsg_end(void)
+ {
+-	printk_safe_flush_on_panic();
+ 	kmsg_dump(KMSG_DUMP_PANIC);
+ 	bust_spinlocks(0);
+ 	debug_locks_off();
+--- a/arch/powerpc/kernel/watchdog.c
++++ b/arch/powerpc/kernel/watchdog.c
+@@ -181,11 +181,6 @@ static void watchdog_smp_panic(int cpu,
+ 
+ 	wd_smp_unlock(&flags);
+ 
+-	printk_safe_flush();
+-	/*
+-	 * printk_safe_flush() seems to require another print
+-	 * before anything actually goes out to console.
+-	 */
+ 	if (sysctl_hardlockup_all_cpu_backtrace)
+ 		trigger_allbutself_cpu_backtrace();
+ 
 --- a/include/linux/hardirq.h
 +++ b/include/linux/hardirq.h
-@@ -62,7 +62,6 @@ extern void irq_exit(void);
- 
+@@ -68,7 +68,6 @@ extern void irq_exit(void);
  #define nmi_enter()						\
  	do {							\
+ 		arch_nmi_enter();				\
 -		printk_nmi_enter();				\
  		lockdep_off();					\
  		ftrace_nmi_enter();				\
  		BUG_ON(in_nmi());				\
-@@ -79,7 +78,6 @@ extern void irq_exit(void);
+@@ -85,7 +84,6 @@ extern void irq_exit(void);
  		preempt_count_sub(NMI_OFFSET + HARDIRQ_OFFSET);	\
  		ftrace_nmi_exit();				\
  		lockdep_on();					\
 -		printk_nmi_exit();				\
+ 		arch_nmi_exit();				\
  	} while (0)
  
- #endif /* LINUX_HARDIRQ_H */
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
 @@ -145,18 +145,6 @@ static inline __printf(1, 2) __cold
@@ -652,7 +678,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -8365,7 +8365,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -8366,7 +8366,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -660,7 +686,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -8446,7 +8445,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -8447,7 +8446,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  		atomic_dec(&per_cpu_ptr(iter.trace_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);

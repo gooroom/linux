@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 18 Oct 2018 12:58:06 +0200
-Subject: [PATCH 11/22] x86/fpu: Make get_xsave_field_ptr() and
+Subject: [PATCH 11/27] x86/fpu: Make get_xsave_field_ptr() and
  get_xsave_addr() use feature number instead of mask
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 After changing the argument of __raw_xsave_addr() from a mask to number
 Dave suggested to check if it makes sense to do the same for
@@ -128,7 +128,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -3662,15 +3662,15 @@ static void fill_xsave(u8 *dest, struct
+@@ -3673,15 +3673,15 @@ static void fill_xsave(u8 *dest, struct
  	 */
  	valid = xstate_bv & ~XFEATURE_MASK_FPSSE;
  	while (valid) {
@@ -149,7 +149,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				memcpy(dest + offset, &vcpu->arch.pkru,
  				       sizeof(vcpu->arch.pkru));
  			else
-@@ -3678,7 +3678,7 @@ static void fill_xsave(u8 *dest, struct
+@@ -3689,7 +3689,7 @@ static void fill_xsave(u8 *dest, struct
  
  		}
  
@@ -158,7 +158,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  }
  
-@@ -3705,22 +3705,22 @@ static void load_xsave(struct kvm_vcpu *
+@@ -3716,22 +3716,22 @@ static void load_xsave(struct kvm_vcpu *
  	 */
  	valid = xstate_bv & ~XFEATURE_MASK_FPSSE;
  	while (valid) {
@@ -187,7 +187,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  }
  
-@@ -8813,11 +8813,11 @@ void kvm_vcpu_reset(struct kvm_vcpu *vcp
+@@ -8841,11 +8841,11 @@ void kvm_vcpu_reset(struct kvm_vcpu *vcp
  		if (init_event)
  			kvm_put_guest_fpu(vcpu);
  		mpx_state_buffer = get_xsave_addr(&vcpu->arch.guest_fpu->state.xsave,

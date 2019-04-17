@@ -1,7 +1,7 @@
 From: Rik van Riel <riel@surriel.com>
 Date: Sun, 9 Sep 2018 18:30:53 +0200
-Subject: [PATCH 22/22] x86/fpu: Defer FPU state load until return to userspace
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Subject: [PATCH 23/27] x86/fpu: Defer FPU state load until return to userspace
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 Defer loading of FPU state until return to userspace. This gives
 the kernel the potential to skip loading FPU state for tasks that
@@ -33,12 +33,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  arch/x86/include/asm/fpu/internal.h |   27 +++++----
  arch/x86/include/asm/trace/fpu.h    |    5 +
  arch/x86/kernel/fpu/core.c          |  105 +++++++++++++++++++++++++++---------
- arch/x86/kernel/fpu/signal.c        |   46 +++++++++------
+ arch/x86/kernel/fpu/signal.c        |   48 +++++++++-------
  arch/x86/kernel/process.c           |    2 
  arch/x86/kernel/process_32.c        |    5 +
  arch/x86/kernel/process_64.c        |    5 +
  arch/x86/kvm/x86.c                  |   20 +++++-
- 10 files changed, 180 insertions(+), 65 deletions(-)
+ 10 files changed, 181 insertions(+), 66 deletions(-)
 
 --- a/arch/x86/entry/common.c
 +++ b/arch/x86/entry/common.c
@@ -115,7 +115,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
 --- a/arch/x86/include/asm/fpu/internal.h
 +++ b/arch/x86/include/asm/fpu/internal.h
-@@ -29,7 +29,7 @@ extern void fpu__prepare_write(struct fp
+@@ -30,7 +30,7 @@ extern void fpu__prepare_write(struct fp
  extern void fpu__save(struct fpu *fpu);
  extern int  fpu__restore_sig(void __user *buf, int ia32_frame);
  extern void fpu__drop(struct fpu *fpu);
@@ -124,7 +124,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  extern void fpu__clear(struct fpu *fpu);
  extern int  fpu__exception_code(struct fpu *fpu, int trap_nr);
  extern int  dump_fpu(struct pt_regs *ptregs, struct user_i387_struct *fpstate);
-@@ -483,13 +483,20 @@ static inline void fpregs_activate(struc
+@@ -559,13 +559,20 @@ static inline void fpregs_activate(struc
  	trace_x86_fpu_regs_activated(fpu);
  }
  
@@ -148,7 +148,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -500,8 +507,8 @@ static inline void __fpregs_load_activat
+@@ -576,8 +583,8 @@ static inline void __fpregs_load_activat
   *  - switch_fpu_prepare() saves the old state.
   *    This is done within the context of the old process.
   *
@@ -159,7 +159,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * The FPU context is only stored/restore for user task and ->mm is used to
   * distinguish between kernel and user threads.
-@@ -531,10 +538,10 @@ switch_fpu_prepare(struct fpu *old_fpu,
+@@ -607,10 +614,10 @@ switch_fpu_prepare(struct fpu *old_fpu,
   */
  
  /*
@@ -172,8 +172,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +static inline void switch_fpu_finish(struct fpu *new_fpu)
  {
  	struct pkru_state *pk;
- 	u32 pkru_val = 0;
-@@ -542,7 +549,7 @@ static inline void switch_fpu_finish(str
+ 	u32 pkru_val = init_pkru_value;
+@@ -618,7 +625,7 @@ static inline void switch_fpu_finish(str
  	if (!static_cpu_has(X86_FEATURE_FPU))
  		return;
  
@@ -388,7 +388,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/arch/x86/kernel/fpu/signal.c
 +++ b/arch/x86/kernel/fpu/signal.c
-@@ -229,11 +229,9 @@ static int __fpu__restore_sig(void __use
+@@ -269,11 +269,9 @@ static int __fpu__restore_sig(void __use
  	struct fpu *fpu = &tsk->thread.fpu;
  	int state_size = fpu_kernel_xstate_size;
  	struct user_i387_ia32_struct env;
@@ -400,7 +400,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	ia32_fxstate &= (IS_ENABLED(CONFIG_X86_32) ||
  			 IS_ENABLED(CONFIG_IA32_EMULATION));
-@@ -268,14 +266,18 @@ static int __fpu__restore_sig(void __use
+@@ -308,14 +306,18 @@ static int __fpu__restore_sig(void __use
  		}
  	}
  
@@ -424,7 +424,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
  	 * For 32-bit frames with fxstate, copy the fxstate so it can be
  	 * reconstructed later.
-@@ -290,43 +292,51 @@ static int __fpu__restore_sig(void __use
+@@ -330,43 +332,51 @@ static int __fpu__restore_sig(void __use
  		u64 init_bv = xfeatures_mask & ~xfeatures;
  
  		if (using_compacted_format()) {
@@ -447,8 +447,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		fpregs_lock();
  		if (unlikely(init_bv))
  			copy_kernel_to_xregs(&init_fpstate.xsave, init_bv);
--		ret = copy_users_to_xregs(&state->xsave, xfeatures);
-+		ret = copy_users_to_xregs(&fpu->state.xsave, xfeatures);
+-		ret = copy_kernel_to_xregs_err(&state->xsave, xfeatures);
++		ret = copy_kernel_to_xregs_err(&fpu->state.xsave, xfeatures);
  
  	} else if (use_fxsr()) {
 -		ret = __copy_from_user(&state->fxsave, buf_fx, state_size);
@@ -468,15 +468,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			copy_kernel_to_xregs(&init_fpstate.xsave, init_bv);
  		}
  
--		ret = copy_users_to_fxregs(&state->fxsave);
-+		ret = copy_users_to_fxregs(&fpu->state.fxsave);
+-		ret = copy_kernel_to_fxregs_err(&state->fxsave);
++		ret = copy_kernel_to_fxregs_err(&fpu->state.fxsave);
  	} else {
 -		ret = __copy_from_user(&state->fsave, buf_fx, state_size);
 +		ret = __copy_from_user(&fpu->state.fsave, buf_fx, state_size);
  		if (ret)
  			goto err_out;
+-		ret = copy_kernel_to_fregs_err(&state->fsave);
 +		fpregs_lock();
- 		ret = copy_users_to_fregs(buf_fx);
++		ret = copy_kernel_to_fregs_err(&fpu->state.fsave);
  	}
 +	if (!ret)
 +		fpregs_mark_activate();
@@ -542,7 +543,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	update_task_stack(next_p);
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -7841,6 +7841,10 @@ static int vcpu_enter_guest(struct kvm_v
+@@ -7868,6 +7868,10 @@ static int vcpu_enter_guest(struct kvm_v
  		wait_lapic_expire(vcpu);
  	guest_enter_irqoff();
  
@@ -553,7 +554,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(vcpu->arch.switch_db_regs)) {
  		set_debugreg(0, 7);
  		set_debugreg(vcpu->arch.eff_db[0], 0);
-@@ -8101,22 +8105,30 @@ static int complete_emulated_mmio(struct
+@@ -8128,22 +8132,30 @@ static int complete_emulated_mmio(struct
  /* Swap (qemu) user FPU context for the guest FPU context. */
  static void kvm_load_guest_fpu(struct kvm_vcpu *vcpu)
  {

@@ -5,20 +5,26 @@
 ############################################################
 # UPSTREAM merged
 ############################################################
+tty-sysrq-Convert-show_lock-to-raw_spinlock_t.patch
 
 ############################################################
 # POSTED by others
 ############################################################
 # AT91
-# Alexandre Belloni | [PATCH v7 0/7] clocksource: rework Atmel TCB timer driver
-# Date: Thu, 13 Sep 2018 13:30:18 +0200
-0001-ARM-at91-add-TCB-registers-definitions.patch
-0002-clocksource-drivers-Add-a-new-driver-for-the-Atmel-A.patch
-0003-clocksource-drivers-timer-atmel-tcb-add-clockevent-d.patch
-0004-clocksource-drivers-atmel-pit-make-option-silent.patch
-0005-ARM-at91-Implement-clocksource-selection.patch
-0006-ARM-configs-at91-use-new-TCB-timer-driver.patch
-0007-ARM-configs-at91-unselect-PIT.patch
+# Alexandre Belloni | [PATCH 00/12] clocksource: improve Atmel TCB timer driver
+# Date: Wed,  3 Apr 2019 16:11:08 +0200
+0001-ARM-at91-move-SoC-specific-definitions-to-SoC-folder.patch
+0002-misc-atmel_tclib-drop-AVR32-support.patch
+0003-misc-atmel_tclib-move-definitions-to-header-file.patch
+0004-clocksource-drivers-tcb_clksrc-stop-depending-on-atm.patch
+0005-clocksource-drivers-tcb_clksrc-Use-tcb-as-sched_cloc.patch
+0006-ARM-at91-Implement-clocksource-selection.patch
+0007-clocksource-drivers-tcb_clksrc-move-Kconfig-option.patch
+0008-clocksource-drivers-timer-atmel-pit-rework-Kconfig-o.patch
+0009-clocksource-drivers-tcb_clksrc-Rename-the-file-for-c.patch
+0010-ARM-configs-at91-unselect-PIT.patch
+0011-misc-atmel_tclib-do-not-probe-already-used-TCBs.patch
+0012-clocksource-drivers-timer-atmel-tcb-Use-ARRAY_SIZE-i.patch
 
 kthread-convert-worker-lock-to-raw-spinlock.patch
 sched-fair-Robustify-CFS-bandwidth-timer-locking.patch
@@ -26,6 +32,7 @@ sched-fair-Robustify-CFS-bandwidth-timer-locking.patch
 # John's printk series
 # [RFC PATCH v1 00/25] printk: new implementation
 # Date: Tue, 12 Feb 2019 15:29:38 +0100
+# Plus build fixes merged
 0001-printk-rb-add-printk-ring-buffer-documentation.patch
 0002-printk-rb-add-prb-locking-functions.patch
 0003-printk-rb-define-ring-buffer-struct-and-initializer.patch
@@ -64,7 +71,6 @@ printk-print-rate-limitted-message-as-info.patch
 ############################################################
 x86-ioapic-Don-t-let-setaffinity-unmask-threaded-EOI.patch
 arm-kprobe-replace-patch_lock-to-raw-lock.patch
-arm-unwind-use_raw_lock.patch
 cgroup-use-irqsave-in-cgroup_rstat_flush_locked.patch
 fscache-initialize-cookie-hash-table-raw-spinlocks.patch
 Drivers-hv-vmbus-include-header-for-get_irq_regs.patch
@@ -73,9 +79,10 @@ mm-workingset-replace-IRQ-off-check-with-a-lockdep-a.patch
 crypto-chtls-remove-cdev_list_lock.patch
 crypto-user-remove-crypto_cfg_mutex.patch
 tpm-remove-tpm_dev_wq_lock.patch
+drm-i915-Don-t-disable-interrupts-independently-of-t.patch
 
-# [PATCH v7] x86: load FPU registers on return to userland
-# Date: Thu, 21 Feb 2019 12:49:58 +0100
+# [PATCH v9] x86: load FPU registers on return to userland
+# Date: Wed,  3 Apr 2019 18:41:29 +0200
 0001-x86-fpu-Remove-fpu-initialized-usage-in-__fpu__resto.patch
 0002-x86-fpu-Remove-fpu__restore.patch
 0003-x86-fpu-Remove-preempt_disable-in-fpu__clear.patch
@@ -87,17 +94,22 @@ tpm-remove-tpm_dev_wq_lock.patch
 0009-x86-fpu-Add-__-make_fpregs_active-helpers.patch
 0010-x86-fpu-Make-__raw_xsave_addr-use-feature-number-ins.patch
 0011-x86-fpu-Make-get_xsave_field_ptr-and-get_xsave_addr-.patch
-0012-x86-fpu-Only-write-PKRU-if-it-is-different-from-curr.patch
-0013-x86-pkeys-Don-t-check-if-PKRU-is-zero-before-writtin.patch
-0014-x86-fpu-Eager-switch-PKRU-state.patch
-0015-x86-entry-Add-TIF_NEED_FPU_LOAD.patch
-0016-x86-fpu-Always-store-the-registers-in-copy_fpstate_t.patch
-0017-x86-fpu-Prepare-copy_fpstate_to_sigframe-for-TIF_NEE.patch
-0018-x86-fpu-Update-xstate-s-PKRU-value-on-write_pkru.patch
-0019-x86-fpu-Inline-copy_user_to_fpregs_zeroing.patch
-0020-x86-fpu-Let-__fpu__restore_sig-restore-the-32bit-fxs.patch
-0021-x86-fpu-Merge-the-two-code-paths-in-__fpu__restore_s.patch
-0022-x86-fpu-Defer-FPU-state-load-until-return-to-userspa.patch
+0012-x86-pkru-Provide-.-_pkru_ins-functions.patch
+0013-x86-fpu-Only-write-PKRU-if-it-is-different-from-curr.patch
+0014-x86-pkeys-Don-t-check-if-PKRU-is-zero-before-writtin.patch
+0015-x86-fpu-Eager-switch-PKRU-state.patch
+0016-x86-entry-Add-TIF_NEED_FPU_LOAD.patch
+0017-x86-fpu-Always-store-the-registers-in-copy_fpstate_t.patch
+0018-x86-fpu-Prepare-copy_fpstate_to_sigframe-for-TIF_NEE.patch
+0019-x86-fpu-Update-xstate-s-PKRU-value-on-write_pkru.patch
+0020-x86-fpu-Inline-copy_user_to_fpregs_zeroing.patch
+0021-x86-fpu-Let-__fpu__restore_sig-restore-the-32bit-fxs.patch
+0022-x86-fpu-Merge-the-two-code-paths-in-__fpu__restore_s.patch
+0023-x86-fpu-Defer-FPU-state-load-until-return-to-userspa.patch
+0024-x86-fpu-Add-a-fastpath-to-__fpu__restore_sig.patch
+0025-x86-fpu-Add-a-fastpath-to-copy_fpstate_to_sigframe.patch
+0026-x86-fpu-Restore-FPU-register-in-copy_fpstate_to_sigf.patch
+0027-x86-pkeys-add-PKRU-value-to-init_fpstate.patch
 
 ############################################################
 # Ready for posting
@@ -334,6 +346,9 @@ squashfs-make-use-of-local-lock-in-multi_cpu-decompr.patch
 # X86
 thermal-Defer-thermal-wakups-to-threads.patch
 
+# POWER
+powerpc-pseries-iommu-Use-a-locallock-instead-local_ir.patch
+
 # CPU get light
 epoll-use-get-cpu-light.patch
 mm-vmalloc-use-get-cpu-light.patch
@@ -410,6 +425,7 @@ crypto-cryptd-add-a-lock-instead-preempt_disable-loc.patch
 # RANDOM
 panic-disable-random-on-rt.patch
 x86-stackprot-no-random-on-rt.patch
+powerpc-stackprotector-work-around-stack-guard-init-.patch
 random-make-it-work-on-rt.patch
 random-avoid-preempt_disable-ed-section.patch
 

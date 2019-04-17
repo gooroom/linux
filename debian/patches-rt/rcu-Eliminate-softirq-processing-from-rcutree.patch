@@ -1,7 +1,7 @@
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Mon, 4 Nov 2013 13:21:10 -0800
 Subject: rcu: Eliminate softirq processing from rcutree
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 Running RCU out of softirq is a problem for some workloads that would
 like to manage RCU core processing independently of other softirq work,
@@ -50,7 +50,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #include "tree.h"
  #include "rcu.h"
-@@ -2716,7 +2722,7 @@ EXPORT_SYMBOL_GPL(rcu_fwd_progress_check
+@@ -2725,7 +2731,7 @@ EXPORT_SYMBOL_GPL(rcu_fwd_progress_check
   * structures.  This may be called only from the CPU to whom the rdp
   * belongs.
   */
@@ -59,7 +59,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	unsigned long flags;
  	struct rcu_data *rdp = raw_cpu_ptr(&rcu_data);
-@@ -2758,6 +2764,8 @@ static __latent_entropy void rcu_process
+@@ -2767,6 +2773,8 @@ static __latent_entropy void rcu_process
  	trace_rcu_utilization(TPS("End RCU core"));
  }
  
@@ -68,7 +68,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Schedule RCU callback invocation.  If the running implementation of RCU
   * does not support RCU priority boosting, just do a direct call, otherwise
-@@ -2769,18 +2777,105 @@ static void invoke_rcu_callbacks(struct
+@@ -2778,18 +2786,105 @@ static void invoke_rcu_callbacks(struct
  {
  	if (unlikely(!READ_ONCE(rcu_scheduler_fully_active)))
  		return;
@@ -180,7 +180,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * Handle any core-RCU processing required by a call_rcu() invocation.
-@@ -3777,7 +3872,6 @@ void __init rcu_init(void)
+@@ -3786,7 +3881,6 @@ void __init rcu_init(void)
  	rcu_init_one();
  	if (dump_tree)
  		rcu_dump_rcu_node_tree();

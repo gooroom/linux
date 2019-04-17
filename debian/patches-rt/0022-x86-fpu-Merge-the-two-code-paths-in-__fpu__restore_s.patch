@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 27 Nov 2018 21:08:01 +0100
-Subject: [PATCH 21/22] x86/fpu: Merge the two code paths in
+Subject: [PATCH 22/27] x86/fpu: Merge the two code paths in
  __fpu__restore_sig()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 The ia32_fxstate case (32bit with fxsr) and the other (64bit, 32bit
 without fxsr) restore both from kernel memory and sanitize the content.
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/x86/kernel/fpu/signal.c
 +++ b/arch/x86/kernel/fpu/signal.c
-@@ -223,12 +223,17 @@ sanitize_restored_xstate(union fpregs_st
+@@ -263,12 +263,17 @@ static inline int copy_user_to_fpregs_ze
  
  static int __fpu__restore_sig(void __user *buf, void __user *buf_fx, int size)
  {
@@ -37,7 +37,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	ia32_fxstate &= (IS_ENABLED(CONFIG_X86_32) ||
  			 IS_ENABLED(CONFIG_IA32_EMULATION));
-@@ -263,105 +268,68 @@ static int __fpu__restore_sig(void __use
+@@ -303,105 +308,68 @@ static int __fpu__restore_sig(void __use
  		}
  	}
  
@@ -136,7 +136,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -
 -			if (unlikely(init_bv))
 -				copy_kernel_to_xregs(&init_fpstate.xsave, init_bv);
--			ret = copy_users_to_xregs(&state->xsave, xfeatures);
+-			ret = copy_kernel_to_xregs_err(&state->xsave, xfeatures);
 -
 -		} else if (use_fxsr()) {
 -			ret = __copy_from_user(&state->fxsave, buf_fx, state_size);
@@ -149,15 +149,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -			}
 -			state->fxsave.mxcsr &= mxcsr_feature_mask;
 -
--			ret = copy_users_to_fxregs(&state->fxsave);
+-			ret = copy_kernel_to_fxregs_err(&state->fxsave);
 -		} else {
 -			ret = __copy_from_user(&state->fsave, buf_fx, state_size);
 -			if (ret)
 -				goto err_out;
--			ret = copy_users_to_fregs(buf_fx);
+-			ret = copy_kernel_to_fregs_err(&state->fsave);
 +		if (unlikely(init_bv))
 +			copy_kernel_to_xregs(&init_fpstate.xsave, init_bv);
-+		ret = copy_users_to_xregs(&state->xsave, xfeatures);
++		ret = copy_kernel_to_xregs_err(&state->xsave, xfeatures);
 +
 +	} else if (use_fxsr()) {
 +		ret = __copy_from_user(&state->fxsave, buf_fx, state_size);
@@ -176,12 +176,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -			fpu__clear(fpu);
 -			return -1;
 -		}
-+		ret = copy_users_to_fxregs(&state->fxsave);
++		ret = copy_kernel_to_fxregs_err(&state->fxsave);
 +	} else {
 +		ret = __copy_from_user(&state->fsave, buf_fx, state_size);
 +		if (ret)
 +			goto err_out;
-+		ret = copy_users_to_fregs(buf_fx);
++		ret = copy_kernel_to_fregs_err(&state->fsave);
  	}
  
 -	return 0;

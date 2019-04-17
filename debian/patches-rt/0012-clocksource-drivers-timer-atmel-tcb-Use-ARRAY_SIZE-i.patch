@@ -1,0 +1,26 @@
+From: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Date: Wed, 3 Apr 2019 16:11:20 +0200
+Subject: [PATCH 12/12] clocksource/drivers/timer-atmel-tcb: Use ARRAY_SIZE
+ instead of hardcoded size
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
+
+Use ARRAY_SIZE to replace the hardcoded size so we will never have a
+mismatch.
+
+Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/clocksource/timer-atmel-tcb.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clocksource/timer-atmel-tcb.c
++++ b/drivers/clocksource/timer-atmel-tcb.c
+@@ -396,7 +396,7 @@ static int __init tcb_clksrc_init(struct
+ 
+ 	/* How fast will we be counting?  Pick something over 5 MHz.  */
+ 	rate = (u32) clk_get_rate(t0_clk);
+-	for (i = 0; i < 5; i++) {
++	for (i = 0; i < ARRAY_SIZE(atmel_tc_divisors); i++) {
+ 		unsigned divisor = atmel_tc_divisors[i];
+ 		unsigned tmp;
+ 

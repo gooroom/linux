@@ -1,11 +1,11 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 27 Nov 2018 17:48:32 +0100
-Subject: [PATCH 20/22] x86/fpu: Let __fpu__restore_sig() restore the
+Subject: [PATCH 21/27] x86/fpu: Let __fpu__restore_sig() restore the
  !32bit+fxsr frame from kernel memory
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 The !32bit+fxsr case loads the new state from user memory. In case we
 restore the FPU state on return to userland we can't do this. It would
@@ -24,19 +24,22 @@ it and then load it. The copy_users_…() helper are basically the old
 helper except that they operate on kernel memory and the fault handler
 just sets the error value and the caller handles it.
 
+copy_user_to_fpregs_zeroing() and its helpers remain and will be used
+later for a fastpath optimisation.
+
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- arch/x86/include/asm/fpu/internal.h |   35 +++++++++++++-------
+ arch/x86/include/asm/fpu/internal.h |   43 ++++++++++++++++++++++++
  arch/x86/kernel/fpu/signal.c        |   62 ++++++++++++++++++++++++++++--------
- 2 files changed, 73 insertions(+), 24 deletions(-)
+ 2 files changed, 92 insertions(+), 13 deletions(-)
 
 --- a/arch/x86/include/asm/fpu/internal.h
 +++ b/arch/x86/include/asm/fpu/internal.h
-@@ -120,6 +120,21 @@ extern void fpstate_sanitize_xstate(stru
+@@ -121,6 +121,21 @@ extern void fpstate_sanitize_xstate(stru
  	err;								\
  })
  
-+#define kernel_insn_norestore(insn, output, input...)			\
++#define kernel_insn_err(insn, output, input...)				\
 +({									\
 +	int err;							\
 +	asm volatile("1:" #insn "\n\t"					\
@@ -54,63 +57,58 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define kernel_insn(insn, output, input...)				\
  	asm volatile("1:" #insn "\n\t"					\
  		     "2:\n"						\
-@@ -140,15 +155,15 @@ static inline void copy_kernel_to_fxregs
+@@ -157,6 +172,14 @@ static inline void copy_kernel_to_fxregs
  	}
  }
  
--static inline int copy_user_to_fxregs(struct fxregs_state __user *fx)
-+static inline int copy_users_to_fxregs(struct fxregs_state *fx)
++static inline int copy_kernel_to_fxregs_err(struct fxregs_state *fx)
++{
++	if (IS_ENABLED(CONFIG_X86_32))
++		return kernel_insn_err(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
++	else
++		return kernel_insn_err(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
++}
++
+ static inline int copy_user_to_fxregs(struct fxregs_state __user *fx)
  {
  	if (IS_ENABLED(CONFIG_X86_32))
--		return user_insn(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
-+		return kernel_insn_norestore(fxrstor %[fx], "=m" (*fx), [fx] "m" (*fx));
- 	else if (IS_ENABLED(CONFIG_AS_FXSAVEQ))
--		return user_insn(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
-+		return kernel_insn_norestore(fxrstorq %[fx], "=m" (*fx), [fx] "m" (*fx));
- 
- 	/* See comment in copy_fxregs_to_kernel() below. */
--	return user_insn(rex64/fxrstor (%[fx]), "=m" (*fx), [fx] "R" (fx),
-+	return kernel_insn_norestore(rex64/fxrstor (%[fx]), "=m" (*fx), [fx] "R" (fx),
- 			  "m" (*fx));
- }
- 
-@@ -157,9 +172,9 @@ static inline void copy_kernel_to_fregs(
+@@ -174,6 +197,11 @@ static inline void copy_kernel_to_fregs(
  	kernel_insn(frstor %[fx], "=m" (*fx), [fx] "m" (*fx));
  }
  
--static inline int copy_user_to_fregs(struct fregs_state __user *fx)
-+static inline int copy_users_to_fregs(struct fregs_state *fx)
++static inline int copy_kernel_to_fregs_err(struct fregs_state *fx)
++{
++	return kernel_insn_err(frstor %[fx], "=m" (*fx), [fx] "m" (*fx));
++}
++
+ static inline int copy_user_to_fregs(struct fregs_state __user *fx)
  {
--	return user_insn(frstor %[fx], "=m" (*fx), [fx] "m" (*fx));
-+	return kernel_insn_norestore(frstor %[fx], "=m" (*fx), [fx] "m" (*fx));
- }
- 
- static inline void copy_fxregs_to_kernel(struct fpu *fpu)
-@@ -337,18 +352,16 @@ static inline void copy_kernel_to_xregs(
- }
- 
- /*
-- * Restore xstate from user space xsave area.
-+ * Restore xstate from kernel space xsave area, return an error code instead an
-+ * exception.
-  */
--static inline int copy_user_to_xregs(struct xregs_state __user *buf, u64 mask)
-+static inline int copy_users_to_xregs(struct xregs_state *xstate, u64 mask)
- {
--	struct xregs_state *xstate = ((__force struct xregs_state *)buf);
- 	u32 lmask = mask;
- 	u32 hmask = mask >> 32;
- 	int err;
- 
--	stac();
- 	XSTATE_OP(XRSTOR, xstate, lmask, hmask, err);
--	clac();
+ 	return user_insn(frstor %[fx], "=m" (*fx), [fx] "m" (*fx));
+@@ -398,6 +426,21 @@ static inline int copy_user_to_xregs(str
  
  	return err;
  }
++
++/*
++ * Restore xstate from kernel space xsave area, return an error code instead an
++ * exception.
++ */
++static inline int copy_kernel_to_xregs_err(struct xregs_state *xstate, u64 mask)
++{
++	u32 lmask = mask;
++	u32 hmask = mask >> 32;
++	int err;
++
++	XSTATE_OP(XRSTOR, xstate, lmask, hmask, err);
++
++	return err;
++}
+ 
+ /*
+  * These must be called with preempt disabled. Returns
 --- a/arch/x86/kernel/fpu/signal.c
 +++ b/arch/x86/kernel/fpu/signal.c
-@@ -216,7 +216,8 @@ sanitize_restored_xstate(union fpregs_st
+@@ -234,7 +234,8 @@ sanitize_restored_xstate(union fpregs_st
  		 */
  		xsave->i387.mxcsr &= mxcsr_feature_mask;
  
@@ -120,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  }
  
-@@ -297,28 +298,63 @@ static int __fpu__restore_sig(void __use
+@@ -337,28 +338,63 @@ static int __fpu__restore_sig(void __use
  		kfree(tmp);
  		return err;
  	} else {
@@ -167,7 +165,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +			if (unlikely(init_bv))
 +				copy_kernel_to_xregs(&init_fpstate.xsave, init_bv);
-+			ret = copy_users_to_xregs(&state->xsave, xfeatures);
++			ret = copy_kernel_to_xregs_err(&state->xsave, xfeatures);
 +
  		} else if (use_fxsr()) {
 -			ret = copy_user_to_fxregs(buf_fx);
@@ -183,12 +181,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +			}
 +			state->fxsave.mxcsr &= mxcsr_feature_mask;
 +
-+			ret = copy_users_to_fxregs(&state->fxsave);
++			ret = copy_kernel_to_fxregs_err(&state->fxsave);
 +		} else {
 +			ret = __copy_from_user(&state->fsave, buf_fx, state_size);
 +			if (ret)
 +				goto err_out;
-+			ret = copy_users_to_fregs(buf_fx);
++			ret = copy_kernel_to_fregs_err(&state->fsave);
 +		}
  
 +err_out:

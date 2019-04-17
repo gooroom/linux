@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:44 +0100
 Subject: [PATCH 06/25] printk-rb: add blocking reader support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 Add a blocking read function for readers. An irq_work function is
 used to signal the wait queue so that write notification can
@@ -10,9 +10,9 @@ be triggered from any context.
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/printk_ringbuffer.h |   20 +++++++++++++++
- lib/printk_ringbuffer.c           |   49 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 69 insertions(+)
+ include/linux/printk_ringbuffer.h |   20 +++++++++++++
+ lib/printk_ringbuffer.c           |   55 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 75 insertions(+)
 
 --- a/include/linux/printk_ringbuffer.h
 +++ b/include/linux/printk_ringbuffer.h
@@ -97,20 +97,26 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		}
  		atomic_long_set_release(&rb->head, res);
  		atomic_dec(&rb->ctx);
-@@ -185,6 +188,12 @@ void prb_commit(struct prb_handle *h)
+@@ -185,6 +188,18 @@ void prb_commit(struct prb_handle *h)
  	}
  
  	prb_unlock(rb->cpulock, h->cpu);
 +
 +	if (changed) {
 +		atomic_long_inc(&rb->wq_counter);
-+		if (wq_has_sleeper(rb->wq))
++		if (wq_has_sleeper(rb->wq)) {
++#ifdef CONFIG_IRQ_WORK
 +			irq_work_queue(rb->wq_work);
++#else
++			if (!in_nmi())
++				wake_up_interruptible_all(rb->wq);
++#endif
++		}
 +	}
  }
  
  /*
-@@ -437,3 +446,43 @@ int prb_iter_next(struct prb_iterator *i
+@@ -437,3 +452,43 @@ int prb_iter_next(struct prb_iterator *i
  
  	return 1;
  }

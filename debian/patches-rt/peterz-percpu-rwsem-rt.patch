@@ -1,7 +1,7 @@
 Subject: locking/percpu-rwsem: Remove preempt_disable variants
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed Nov 23 16:29:32 CET 2016
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.3-rt1.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
 
 Effective revert commit:
 
@@ -46,7 +46,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	spin_lock(&ctx->flc_lock);
  	/*
  	 * New lock request. Walk all POSIX locks and look for conflicts. If
-@@ -1312,7 +1312,7 @@ static int posix_lock_inode(struct inode
+@@ -1317,7 +1317,7 @@ static int posix_lock_inode(struct inode
  	}
   out:
  	spin_unlock(&ctx->flc_lock);
@@ -55,7 +55,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	/*
  	 * Free any unused locks.
  	 */
-@@ -1584,7 +1584,7 @@ int __break_lease(struct inode *inode, u
+@@ -1589,7 +1589,7 @@ int __break_lease(struct inode *inode, u
  		return error;
  	}
  
@@ -64,7 +64,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	spin_lock(&ctx->flc_lock);
  
  	time_out_leases(inode, &dispose);
-@@ -1636,13 +1636,13 @@ int __break_lease(struct inode *inode, u
+@@ -1641,13 +1641,13 @@ int __break_lease(struct inode *inode, u
  	locks_insert_block(fl, new_fl, leases_conflict);
  	trace_break_lease_block(inode, new_fl);
  	spin_unlock(&ctx->flc_lock);
@@ -80,7 +80,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	spin_lock(&ctx->flc_lock);
  	trace_break_lease_unblock(inode, new_fl);
  	locks_delete_block(new_fl);
-@@ -1659,7 +1659,7 @@ int __break_lease(struct inode *inode, u
+@@ -1664,7 +1664,7 @@ int __break_lease(struct inode *inode, u
  	}
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -89,7 +89,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	locks_dispose_list(&dispose);
  	locks_free_lock(new_fl);
  	return error;
-@@ -1729,7 +1729,7 @@ int fcntl_getlease(struct file *filp)
+@@ -1734,7 +1734,7 @@ int fcntl_getlease(struct file *filp)
  
  	ctx = smp_load_acquire(&inode->i_flctx);
  	if (ctx && !list_empty_careful(&ctx->flc_lease)) {
@@ -98,7 +98,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  		spin_lock(&ctx->flc_lock);
  		time_out_leases(inode, &dispose);
  		list_for_each_entry(fl, &ctx->flc_lease, fl_list) {
-@@ -1739,7 +1739,7 @@ int fcntl_getlease(struct file *filp)
+@@ -1744,7 +1744,7 @@ int fcntl_getlease(struct file *filp)
  			break;
  		}
  		spin_unlock(&ctx->flc_lock);
@@ -107,7 +107,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  
  		locks_dispose_list(&dispose);
  	}
-@@ -1813,7 +1813,7 @@ generic_add_lease(struct file *filp, lon
+@@ -1818,7 +1818,7 @@ generic_add_lease(struct file *filp, lon
  		return -EINVAL;
  	}
  
@@ -116,7 +116,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	spin_lock(&ctx->flc_lock);
  	time_out_leases(inode, &dispose);
  	error = check_conflicting_open(dentry, arg, lease->fl_flags);
-@@ -1884,7 +1884,7 @@ generic_add_lease(struct file *filp, lon
+@@ -1889,7 +1889,7 @@ generic_add_lease(struct file *filp, lon
  		lease->fl_lmops->lm_setup(lease, priv);
  out:
  	spin_unlock(&ctx->flc_lock);
@@ -125,7 +125,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	locks_dispose_list(&dispose);
  	if (is_deleg)
  		inode_unlock(inode);
-@@ -1907,7 +1907,7 @@ static int generic_delete_lease(struct f
+@@ -1912,7 +1912,7 @@ static int generic_delete_lease(struct f
  		return error;
  	}
  
@@ -134,7 +134,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	spin_lock(&ctx->flc_lock);
  	list_for_each_entry(fl, &ctx->flc_lease, fl_list) {
  		if (fl->fl_file == filp &&
-@@ -1920,7 +1920,7 @@ static int generic_delete_lease(struct f
+@@ -1925,7 +1925,7 @@ static int generic_delete_lease(struct f
  	if (victim)
  		error = fl->fl_lmops->lm_change(victim, F_UNLCK, &dispose);
  	spin_unlock(&ctx->flc_lock);
@@ -143,7 +143,7 @@ Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  	locks_dispose_list(&dispose);
  	return error;
  }
-@@ -2643,13 +2643,13 @@ locks_remove_lease(struct file *filp, st
+@@ -2648,13 +2648,13 @@ locks_remove_lease(struct file *filp, st
  	if (list_empty(&ctx->flc_lease))
  		return;
  
