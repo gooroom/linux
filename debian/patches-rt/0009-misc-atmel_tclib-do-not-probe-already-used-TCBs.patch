@@ -1,11 +1,12 @@
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
-Date: Wed, 3 Apr 2019 16:11:19 +0200
-Subject: [PATCH 11/12] misc: atmel_tclib: do not probe already used TCBs
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
+Date: Fri, 26 Apr 2019 23:47:18 +0200
+Subject: [PATCH 09/10] misc: atmel_tclib: do not probe already used TCBs
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
 
-The TCBs that have children are using the new (proper) DT bindings and
-don't need to be handled by tclib.
+The TCBs that have children are using the proper DT bindings and don't need
+to be handled by tclib.
 
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -14,12 +15,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/misc/atmel_tclib.c
 +++ b/drivers/misc/atmel_tclib.c
-@@ -79,6 +79,9 @@ static int __init tc_probe(struct platfo
+@@ -111,6 +111,9 @@ static int __init tc_probe(struct platfo
  	struct resource	*r;
  	unsigned int	i;
  
 +	if (of_get_child_count(pdev->dev.of_node))
-+		return 0;
++		return -EBUSY;
 +
  	irq = platform_get_irq(pdev, 0);
  	if (irq < 0)

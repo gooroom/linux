@@ -1,7 +1,7 @@
 From: Rik van Riel <riel@surriel.com>
 Date: Sun, 9 Sep 2018 18:30:53 +0200
 Subject: [PATCH 23/27] x86/fpu: Defer FPU state load until return to userspace
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
 
 Defer loading of FPU state until return to userspace. This gives
 the kernel the potential to skip loading FPU state for tasks that
@@ -554,7 +554,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(vcpu->arch.switch_db_regs)) {
  		set_debugreg(0, 7);
  		set_debugreg(vcpu->arch.eff_db[0], 0);
-@@ -8128,22 +8132,30 @@ static int complete_emulated_mmio(struct
+@@ -8126,22 +8130,30 @@ static int complete_emulated_mmio(struct
  /* Swap (qemu) user FPU context for the guest FPU context. */
  static void kvm_load_guest_fpu(struct kvm_vcpu *vcpu)
  {

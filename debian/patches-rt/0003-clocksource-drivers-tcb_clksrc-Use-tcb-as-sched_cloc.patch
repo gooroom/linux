@@ -1,7 +1,7 @@
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
-Date: Wed, 3 Apr 2019 16:11:13 +0200
-Subject: [PATCH 05/12] clocksource/drivers/tcb_clksrc: Use tcb as sched_clock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
+Date: Fri, 26 Apr 2019 23:47:12 +0200
+Subject: [PATCH 03/10] clocksource/drivers/tcb_clksrc: Use tcb as sched_clock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
 
 Now that the driver is registered early enough, use the TCB as the
 sched_clock which is much more accurate than the jiffies implementation.
@@ -39,15 +39,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_GENERIC_CLOCKEVENTS
  
  struct tc_clkevt_device {
-@@ -327,6 +338,7 @@ static int __init tcb_clksrc_init(struct
+@@ -335,6 +346,7 @@ static int __init tcb_clksrc_init(struct
  	struct atmel_tc tc;
  	struct clk *t0_clk;
  	const struct of_device_id *match;
 +	u64 (*tc_sched_clock)(void);
- 	int irq;
  	u32 rate, divided_rate = 0;
  	int best_divisor_idx = -1;
-@@ -416,6 +428,7 @@ static int __init tcb_clksrc_init(struct
+ 	int clk32k_divisor_idx = -1;
+@@ -419,6 +431,7 @@ static int __init tcb_clksrc_init(struct
  		clksrc.read = tc_get_cycles32;
  		/* setup ony channel 0 */
  		tcb_setup_single_chan(&tc, best_divisor_idx);
@@ -55,7 +55,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	} else {
  		/* we have three clocks no matter what the
  		 * underlying platform supports.
-@@ -427,6 +440,7 @@ static int __init tcb_clksrc_init(struct
+@@ -430,6 +443,7 @@ static int __init tcb_clksrc_init(struct
  		}
  		/* setup both channel 0 & 1 */
  		tcb_setup_dual_chan(&tc, best_divisor_idx);
@@ -63,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
  	/* and away we go! */
-@@ -439,6 +453,8 @@ static int __init tcb_clksrc_init(struct
+@@ -442,6 +456,8 @@ static int __init tcb_clksrc_init(struct
  	if (ret)
  		goto err_unregister_clksrc;
  

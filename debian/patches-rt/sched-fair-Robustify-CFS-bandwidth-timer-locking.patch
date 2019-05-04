@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 7 Jan 2019 13:52:31 +0100
 Subject: [PATCH] sched/fair: Robustify CFS-bandwidth timer locking
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.7-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
 
 Traditionally hrtimer callbacks were run with IRQs disabled, but with
 the introduction of HRTIMER_MODE_SOFT it is possible they run from
@@ -115,20 +115,23 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -4863,20 +4864,21 @@ static enum hrtimer_restart sched_cfs_pe
+@@ -4865,11 +4866,12 @@ static enum hrtimer_restart sched_cfs_pe
  {
  	struct cfs_bandwidth *cfs_b =
  		container_of(timer, struct cfs_bandwidth, period_timer);
 +	unsigned long flags;
  	int overrun;
  	int idle = 0;
+ 	int count = 0;
  
 -	raw_spin_lock(&cfs_b->lock);
 +	raw_spin_lock_irqsave(&cfs_b->lock, flags);
  	for (;;) {
  		overrun = hrtimer_forward_now(timer, cfs_b->period);
  		if (!overrun)
- 			break;
+@@ -4897,11 +4899,11 @@ static enum hrtimer_restart sched_cfs_pe
+ 			count = 0;
+ 		}
  
 -		idle = do_sched_cfs_period_timer(cfs_b, overrun);
 +		idle = do_sched_cfs_period_timer(cfs_b, overrun, flags);
