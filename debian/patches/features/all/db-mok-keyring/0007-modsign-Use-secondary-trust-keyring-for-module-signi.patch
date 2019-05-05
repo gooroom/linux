@@ -1,0 +1,30 @@
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/jforbes/linux.git
+From 013d7c3f79a2f4df248f69daca9cbf2175788814 Mon Sep 17 00:00:00 2001
+From: David Howells <dhowells@redhat.com>
+Date: Thu, 3 Aug 2017 16:56:22 +0100
+Subject: [PATCH 7/7] modsign: Use secondary trust keyring for module signing
+
+Use secondary trust keyring for module signing as that's where the UEFI
+keys get stashed.
+
+Signed-off-by: David Howells <dhowells@redhat.com>
+---
+ kernel/module_signing.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/module_signing.c b/kernel/module_signing.c
+index f2075ce8e4b3..6b9a926fd86b 100644
+--- a/kernel/module_signing.c
++++ b/kernel/module_signing.c
+@@ -83,6 +83,7 @@ int mod_verify_sig(const void *mod, struct load_info *info)
+ 	}
+ 
+ 	return verify_pkcs7_signature(mod, modlen, mod + modlen, sig_len,
+-				      NULL, VERIFYING_MODULE_SIGNATURE,
++				      VERIFY_USE_SECONDARY_KEYRING,
++				      VERIFYING_MODULE_SIGNATURE,
+ 				      NULL, NULL);
+ }
+-- 
+2.20.1
+
