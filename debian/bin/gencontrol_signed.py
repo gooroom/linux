@@ -300,12 +300,12 @@ linux-signed-@arch@ (@signedsourceversion@) @distribution@; urgency=@urgency@
                     if name.endswith('.ko'):
                         package_modules.append(
                             '%s/%s' % 
-                             (root[(len(package_dir) + 1):], name))
+                            (root[(len(package_dir) + 1):], name))
             package_modules.sort()
             for module in package_modules:
                 package_files.append(
                     {'sig_type': 'linux-module',
-                     'file': module })
+                     'file': module})
             package_certs = [get_cert_fingerprint(cert, 'sha256')
                              for cert in get_certs(cert_file_name)]
             assert len(package_certs) >= 1

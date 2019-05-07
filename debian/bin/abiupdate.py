@@ -136,7 +136,7 @@ class Main(object):
 
             try:
                 f_in = urlopen(u)
-            except HTTPError as e:
+            except HTTPError:
                 if i == len(self.urls) - 1:
                     # No more URLs to try
                     raise
