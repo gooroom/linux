@@ -1,0 +1,39 @@
+From: Diana Craciun <diana.craciun@nxp.com>
+Date: Thu, 11 Apr 2019 21:46:10 +1000
+Subject: [14/26] powerpc/64: Make meltdown reporting Book3S 64 specific
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=a96e47d164fc386cafbc2344d2833980ca9fa04e
+
+commit 406d2b6ae3420f5bb2b3db6986dc6f0b6dbb637b upstream.
+
+In a subsequent patch we will enable building security.c for Book3E.
+However the NXP platforms are not vulnerable to Meltdown, so make the
+Meltdown vulnerability reporting PPC_BOOK3S_64 specific.
+
+Signed-off-by: Diana Craciun <diana.craciun@nxp.com>
+[mpe: Split out of larger patch]
+Signed-off-by: Michael Ellerman <mpe@ellerman.id.au>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/powerpc/kernel/security.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/powerpc/kernel/security.c b/arch/powerpc/kernel/security.c
+index 926ed3c38741..2f30fc8ed0a8 100644
+--- a/arch/powerpc/kernel/security.c
++++ b/arch/powerpc/kernel/security.c
+@@ -93,6 +93,7 @@ static __init int barrier_nospec_debugfs_init(void)
+ device_initcall(barrier_nospec_debugfs_init);
+ #endif /* CONFIG_DEBUG_FS */
+ 
++#ifdef CONFIG_PPC_BOOK3S_64
+ ssize_t cpu_show_meltdown(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	bool thread_priv;
+@@ -125,6 +126,7 @@ ssize_t cpu_show_meltdown(struct device *dev, struct device_attribute *attr, cha
+ 
+ 	return sprintf(buf, "Vulnerable\n");
+ }
++#endif
+ 
+ ssize_t cpu_show_spectre_v1(struct device *dev, struct device_attribute *attr, char *buf)
+ {

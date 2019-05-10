@@ -1,0 +1,31 @@
+From: Michal Suchanek <msuchanek@suse.de>
+Date: Thu, 11 Apr 2019 21:46:04 +1000
+Subject: [08/26] powerpc/64s: Enhance the information in cpu_show_spectre_v1()
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=f7493c9818df017a945621ea9b57ae54801fb9b7
+
+commit a377514519b9a20fa1ea9adddbb4129573129cef upstream.
+
+We now have barrier_nospec as mitigation so print it in
+cpu_show_spectre_v1() when enabled.
+
+Signed-off-by: Michal Suchanek <msuchanek@suse.de>
+Signed-off-by: Michael Ellerman <mpe@ellerman.id.au>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/powerpc/kernel/security.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/powerpc/kernel/security.c b/arch/powerpc/kernel/security.c
+index d0e974da4918..f189f946d935 100644
+--- a/arch/powerpc/kernel/security.c
++++ b/arch/powerpc/kernel/security.c
+@@ -121,6 +121,9 @@ ssize_t cpu_show_spectre_v1(struct device *dev, struct device_attribute *attr, c
+ 	if (!security_ftr_enabled(SEC_FTR_BNDS_CHK_SPEC_BAR))
+ 		return sprintf(buf, "Not affected\n");
+ 
++	if (barrier_nospec_enabled)
++		return sprintf(buf, "Mitigation: __user pointer sanitization\n");
++
+ 	return sprintf(buf, "Vulnerable\n");
+ }
+ 
