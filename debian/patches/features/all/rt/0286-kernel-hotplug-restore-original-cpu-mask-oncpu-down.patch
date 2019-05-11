@@ -11,15 +11,14 @@ the CPU the task is running is going down.
 
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[bwh: Adjust context to apply after "x86/speculation: Rework SMT state change"]
 ---
  kernel/cpu.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/kernel/cpu.c b/kernel/cpu.c
-index a95116953bea..a79a8371972d 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1281,6 +1281,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1304,6 +1304,7 @@ static int __ref _cpu_down(unsigned int
  	bool hasdied = false;
  	int mycpu;
  	cpumask_var_t cpumask;
@@ -27,7 +26,7 @@ index a95116953bea..a79a8371972d 100644
  
  	if (num_online_cpus() == 1)
  		return -EBUSY;
-@@ -1291,6 +1292,12 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1314,6 +1315,12 @@ static int __ref _cpu_down(unsigned int
  	/* Move the downtaker off the unplug cpu */
  	if (!alloc_cpumask_var(&cpumask, GFP_KERNEL))
  		return -ENOMEM;
@@ -40,7 +39,7 @@ index a95116953bea..a79a8371972d 100644
  	cpumask_andnot(cpumask, cpu_online_mask, cpumask_of(cpu));
  	set_cpus_allowed_ptr(current, cpumask);
  	free_cpumask_var(cpumask);
-@@ -1299,7 +1306,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1322,7 +1329,8 @@ static int __ref _cpu_down(unsigned int
  	if (mycpu == cpu) {
  		printk(KERN_ERR "Yuck! Still on unplug CPU\n!");
  		migrate_enable();
@@ -50,16 +49,13 @@ index a95116953bea..a79a8371972d 100644
  	}
  
  	cpu_hotplug_begin();
-@@ -1353,6 +1361,9 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
- 	/* This post dead nonsense must die */
+@@ -1377,6 +1385,9 @@ out_cancel:
  	if (!ret && hasdied)
  		cpu_notify_nofail(CPU_POST_DEAD, cpu);
+ 	arch_smt_update();
 +restore_cpus:
 +	set_cpus_allowed_ptr(current, cpumask_org);
 +	free_cpumask_var(cpumask_org);
  	return ret;
  }
  
--- 
-2.19.1
-
