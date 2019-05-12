@@ -20,9 +20,37 @@ References: https://bugs.debian.org/717557
 References: https://bugs.debian.org/726861
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
+ Makefile               | 4 +++-
+ scripts/Kbuild.include | 8 ++++----
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index b449dacf2b52..b5865d9d8c85 100644
+--- a/Makefile
++++ b/Makefile
+@@ -690,6 +690,8 @@ ifdef CONFIG_CC_DISABLE_WARN_MAYBE_UNINITIALIZED
+ KBUILD_CFLAGS   += -Wno-maybe-uninitialized
+ endif
+ 
++NOSTDINC_FLAGS += -nostdinc
++
+ # Tell gcc to never replace conditional load with a non-conditional one
+ KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
+ 
+@@ -812,7 +814,7 @@ LDFLAGS_vmlinux += --gc-sections
+ endif
+ 
+ # arch Makefile may override CC so keep this after arch Makefile is included
+-NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
++NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
+ 
+ # warn about C99 declaration after statement
+ KBUILD_CFLAGS += -Wdeclaration-after-statement
+diff --git a/scripts/Kbuild.include b/scripts/Kbuild.include
+index 7484b9d8272f..38c455c46b3f 100644
 --- a/scripts/Kbuild.include
 +++ b/scripts/Kbuild.include
-@@ -123,7 +123,7 @@ CC_OPTION_CFLAGS = $(filter-out $(CC_OPT
+@@ -117,7 +117,7 @@ CC_OPTION_CFLAGS = $(filter-out $(GCC_PLUGINS_CFLAGS),$(KBUILD_CFLAGS))
  # Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
  
  cc-option = $(call __cc-option, $(CC),\
@@ -31,7 +59,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  # hostcc-option
  # Usage: cflags-y += $(call hostcc-option,-march=winchip-c6,-march=i586)
-@@ -133,15 +133,16 @@ hostcc-option = $(call __cc-option, $(HO
+@@ -127,12 +127,12 @@ hostcc-option = $(call __cc-option, $(HOSTCC),\
  # cc-option-yn
  # Usage: flag := $(call cc-option-yn,-march=winchip-c6)
  cc-option-yn = $(call try-run,\
@@ -44,14 +72,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 -	$(CC) -Werror $(KBUILD_CPPFLAGS) $(CC_OPTION_CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
 +	$(CC) -Werror $(NOSTDINC_FLAGS) $(KBUILD_CPPFLAGS) $(CC_OPTION_CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
  
- # cc-version
--cc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-version.sh $(CC))
-+cc-version = $(shell $(CONFIG_SHELL) \
-+	$(srctree)/scripts/gcc-version.sh $(CC) $(NOSTDINC_FLAGS))
- 
  # cc-ifversion
  # Usage:  EXTRA_CFLAGS += $(call cc-ifversion, -lt, 0402, -O1)
-@@ -150,7 +151,7 @@ cc-ifversion = $(shell [ $(cc-version) $
+@@ -141,7 +141,7 @@ cc-ifversion = $(shell [ $(CONFIG_GCC_VERSION)0 $(1) $(2)000 ] && echo $(3) || e
  # cc-ldoption
  # Usage: ldflags += $(call cc-ldoption, -Wl$(comma)--hash-style=both)
  cc-ldoption = $(call try-run,\
@@ -60,23 +83,6 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  # ld-option
  # Usage: KBUILD_LDFLAGS += $(call ld-option, -X, -Y)
---- a/Makefile
-+++ b/Makefile
-@@ -675,6 +675,8 @@ endif
- KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \
- 			$(call cc-disable-warning,maybe-uninitialized,))
- 
-+NOSTDINC_FLAGS += -nostdinc
-+
- # Tell gcc to never replace conditional load with a non-conditional one
- KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
- 
-@@ -795,7 +797,7 @@ LDFLAGS_vmlinux += --gc-sections
- endif
- 
- # arch Makefile may override CC so keep this after arch Makefile is included
--NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
-+NOSTDINC_FLAGS += -isystem $(shell $(CC) -print-file-name=include)
- 
- # warn about C99 declaration after statement
- KBUILD_CFLAGS += -Wdeclaration-after-statement
+-- 
+2.20.1
+
