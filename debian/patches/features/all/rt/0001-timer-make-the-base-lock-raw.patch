@@ -1,8 +1,8 @@
-From d7a4aea5ed3aefd280336f6ce144bc2512cae0fc Mon Sep 17 00:00:00 2001
+From 098d493cf3398f7c3b83086957c2b113588bd077 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jul 2016 18:22:23 +0200
-Subject: [PATCH 001/350] timer: make the base lock raw
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.98-rt76.tar.xz
+Subject: [PATCH 001/370] timer: make the base lock raw
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
 
 The part where the base lock is held got more predictable / shorter after the
 timer rework. One reason is the lack of re-cascading.
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 7c477912f36d..e5d96b426ce7 100644
+index b625cc7fcc1c..f14e3525d330 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -193,7 +193,7 @@ EXPORT_SYMBOL(jiffies_64);
@@ -142,9 +142,9 @@ index 7c477912f36d..e5d96b426ce7 100644
 -	spin_lock_irq(&base->lock);
 +	raw_spin_lock_irq(&base->lock);
  
- 	while (time_after_eq(jiffies, base->clk)) {
- 
-@@ -1658,7 +1658,7 @@ static inline void __run_timers(struct timer_base *base)
+ 	/*
+ 	 * timer_base::must_forward_clk must be cleared before running
+@@ -1674,7 +1674,7 @@ static inline void __run_timers(struct timer_base *base)
  			expire_timers(base, heads + levels);
  	}
  	base->running_timer = NULL;
@@ -153,7 +153,7 @@ index 7c477912f36d..e5d96b426ce7 100644
  }
  
  /*
-@@ -1881,8 +1881,8 @@ int timers_dead_cpu(unsigned int cpu)
+@@ -1884,8 +1884,8 @@ int timers_dead_cpu(unsigned int cpu)
  		 * The caller is globally serialized and nobody else
  		 * takes two locks at once, deadlock is not possible.
  		 */
@@ -164,7 +164,7 @@ index 7c477912f36d..e5d96b426ce7 100644
  
  		/*
  		 * The current CPUs base clock might be stale. Update it
-@@ -1895,8 +1895,8 @@ int timers_dead_cpu(unsigned int cpu)
+@@ -1898,8 +1898,8 @@ int timers_dead_cpu(unsigned int cpu)
  		for (i = 0; i < WHEEL_SIZE; i++)
  			migrate_timer_list(new_base, old_base->vectors + i);
  
@@ -175,7 +175,7 @@ index 7c477912f36d..e5d96b426ce7 100644
  		put_cpu_ptr(&timer_bases);
  	}
  	return 0;
-@@ -1912,7 +1912,7 @@ static void __init init_timer_cpu(int cpu)
+@@ -1915,7 +1915,7 @@ static void __init init_timer_cpu(int cpu)
  	for (i = 0; i < NR_BASES; i++) {
  		base = per_cpu_ptr(&timer_bases[i], cpu);
  		base->cpu = cpu;
@@ -185,5 +185,5 @@ index 7c477912f36d..e5d96b426ce7 100644
  	}
  }
 -- 
-2.17.0
+2.19.1
 

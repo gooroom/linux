@@ -15,11 +15,11 @@ from debian_linux.abi import Symbols
 from debian_linux.config import *
 from debian_linux.debian import *
 
-default_url_base = "http://deb.debian.org/debian/"
-default_url_base_incoming = "http://incoming.debian.org/debian-buildd/"
-default_url_base_ports = "http://ftp.ports.debian.org/debian-ports/"
-default_url_base_ports_incoming = "http://incoming.ports.debian.org/"
-default_url_base_security = "http://security.debian.org/"
+default_url_base = "https://deb.debian.org/debian/"
+default_url_base_incoming = "https://incoming.debian.org/debian-buildd/"
+default_url_base_ports = "https://deb.debian.org/debian-ports/"
+default_url_base_ports_incoming = "https://incoming.ports.debian.org/"
+default_url_base_security = "https://deb.debian.org/debian-security/"
 
 
 class url_debian_flat(object):

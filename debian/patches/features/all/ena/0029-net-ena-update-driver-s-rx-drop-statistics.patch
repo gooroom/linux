@@ -1,0 +1,40 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Fri, 23 Jun 2017 11:21:59 +0300
+Subject: [29/43] net: ena: update driver's rx drop statistics
+Origin: https://git.kernel.org/linus/11a9a460199f35f6cbd9d65516a262060cba4fec
+
+rx drop counter is reported by the device in the keep-alive
+event.
+update the driver's counter with the device counter.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index d532ef827dd7..67cb36ddef7a 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -3490,8 +3490,17 @@ static void ena_keep_alive_wd(void *adapter_data,
+ 			      struct ena_admin_aenq_entry *aenq_e)
+ {
+ 	struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
++	struct ena_admin_aenq_keep_alive_desc *desc;
++	u64 rx_drops;
+ 
++	desc = (struct ena_admin_aenq_keep_alive_desc *)aenq_e;
+ 	adapter->last_keep_alive_jiffies = jiffies;
++
++	rx_drops = ((u64)desc->rx_drops_high << 32) | desc->rx_drops_low;
++
++	u64_stats_update_begin(&adapter->syncp);
++	adapter->dev_stats.rx_drops = rx_drops;
++	u64_stats_update_end(&adapter->syncp);
+ }
+ 
+ static void ena_notification(void *adapter_data,
+-- 
+2.19.2
+

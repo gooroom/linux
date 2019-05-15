@@ -1,0 +1,33 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Tue, 17 Oct 2017 07:33:05 +0000
+Subject: [34/43] net: ena: fix wrong max Tx/Rx queues on ethtool
+Origin: https://git.kernel.org/linus/a59df396768a7e37c6ddafeb9666a30c8ac07854
+
+ethtool ena_get_channels() expose the max number of queues as the max
+number of queues ENA supports (128 queues) and not the actual number
+of created queues.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_ethtool.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_ethtool.c b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
+index b1212debc2e1..967020fb26ee 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_ethtool.c
++++ b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
+@@ -742,8 +742,8 @@ static void ena_get_channels(struct net_device *netdev,
+ {
+ 	struct ena_adapter *adapter = netdev_priv(netdev);
+ 
+-	channels->max_rx = ENA_MAX_NUM_IO_QUEUES;
+-	channels->max_tx = ENA_MAX_NUM_IO_QUEUES;
++	channels->max_rx = adapter->num_queues;
++	channels->max_tx = adapter->num_queues;
+ 	channels->max_other = 0;
+ 	channels->max_combined = 0;
+ 	channels->rx_count = adapter->num_queues;
+-- 
+2.19.2
+

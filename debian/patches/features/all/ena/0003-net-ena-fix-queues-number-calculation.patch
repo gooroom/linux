@@ -1,0 +1,31 @@
+From: Netanel Belgazal <netanel@annapurnalabs.com>
+Date: Thu, 9 Feb 2017 15:21:28 +0200
+Subject: [03/43] net/ena: fix queues number calculation
+Origin: https://git.kernel.org/linus/6a1ce2fb67161f249b372a87d1d9899d8b087c8e
+
+The ENA driver tries to open a queue per vCPU.
+To determine how many vCPUs the instance have it uses num_possible_cpus()
+while it should have use num_online_cpus() instead.
+
+Signed-off-by: Netanel Belgazal <netanel@annapurnalabs.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 3a36f8155201..d1d4b01f4dbf 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2674,7 +2674,7 @@ static int ena_calc_io_queue_num(struct pci_dev *pdev,
+ 		io_sq_num = get_feat_ctx->max_queues.max_sq_num;
+ 	}
+ 
+-	io_queue_num = min_t(int, num_possible_cpus(), ENA_MAX_NUM_IO_QUEUES);
++	io_queue_num = min_t(int, num_online_cpus(), ENA_MAX_NUM_IO_QUEUES);
+ 	io_queue_num = min_t(int, io_queue_num, io_sq_num);
+ 	io_queue_num = min_t(int, io_queue_num,
+ 			     get_feat_ctx->max_queues.max_cq_num);
+-- 
+2.19.2
+

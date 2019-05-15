@@ -1,0 +1,37 @@
+From: Arthur Kiyanovski <akiyano@amazon.com>
+Date: Tue, 9 Oct 2018 11:21:28 +0300
+Subject: [12/13] net: ena: fix rare bug when failed restart/resume is followed
+ by driver removal
+Origin: https://git.kernel.org/linus/d7703ddbd7c9cb1ab7c08e1b85b314ff8cea38e9
+
+In a rare scenario when ena_device_restore() fails, followed by device
+remove, an FLR will not be issued. In this case, the device will keep
+sending asynchronous AENQ keep-alive events, even after driver removal,
+leading to memory corruption.
+
+Fixes: 8c5c7abdeb2d ("net: ena: add power management ops to the ENA driver")
+Signed-off-by: Arthur Kiyanovski <akiyano@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index cb97be3f3ac3..728675420b25 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2632,7 +2632,11 @@ static int ena_restore_device(struct ena_adapter *adapter)
+ 	ena_free_mgmnt_irq(adapter);
+ 	ena_disable_msix(adapter);
+ err_device_destroy:
++	ena_com_abort_admin_commands(ena_dev);
++	ena_com_wait_for_abort_completion(ena_dev);
+ 	ena_com_admin_destroy(ena_dev);
++	ena_com_mmio_reg_read_request_destroy(ena_dev);
++	ena_com_dev_reset(ena_dev, ENA_REGS_RESET_DRIVER_INVALID_STATE);
+ err:
+ 	clear_bit(ENA_FLAG_DEVICE_RUNNING, &adapter->flags);
+ 	clear_bit(ENA_FLAG_ONGOING_RESET, &adapter->flags);
+-- 
+2.19.2
+

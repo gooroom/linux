@@ -1,0 +1,41 @@
+From: Arthur Kiyanovski <akiyano@amazon.com>
+Date: Tue, 9 Oct 2018 11:21:27 +0300
+Subject: [11/13] net: ena: fix warning in rmmod caused by double iounmap
+Origin: https://git.kernel.org/linus/d79c3888bde6581da7ff9f9d6f581900ecb5e632
+
+Memory mapped with devm_ioremap is automatically freed when the driver
+is disconnected from the device. Therefore there is no need to
+explicitly call devm_iounmap.
+
+Fixes: 0857d92f71b6 ("net: ena: add missing unmap bars on device removal")
+Fixes: 411838e7b41c ("net: ena: fix rare kernel crash when bar memory remap fails")
+Signed-off-by: Arthur Kiyanovski <akiyano@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index a7c14c3b127f..cb97be3f3ac3 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -3110,15 +3110,8 @@ static int ena_rss_init_default(struct ena_adapter *adapter)
+ 
+ static void ena_release_bars(struct ena_com_dev *ena_dev, struct pci_dev *pdev)
+ {
+-	int release_bars;
++	int release_bars = pci_select_bars(pdev, IORESOURCE_MEM) & ENA_BAR_MASK;
+ 
+-	if (ena_dev->mem_bar)
+-		devm_iounmap(&pdev->dev, ena_dev->mem_bar);
+-
+-	if (ena_dev->reg_bar)
+-		devm_iounmap(&pdev->dev, ena_dev->reg_bar);
+-
+-	release_bars = pci_select_bars(pdev, IORESOURCE_MEM) & ENA_BAR_MASK;
+ 	pci_release_selected_regions(pdev, release_bars);
+ }
+ 
+-- 
+2.19.2
+

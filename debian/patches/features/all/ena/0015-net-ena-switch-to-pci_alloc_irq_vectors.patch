@@ -1,0 +1,187 @@
+From: Christoph Hellwig <hch@lst.de>
+Date: Tue, 11 Apr 2017 13:01:22 +0200
+Subject: [15/43] net/ena: switch to pci_alloc_irq_vectors
+Origin: https://git.kernel.org/linus/da6f4cf58e403628de026f06b608005beb8995ba
+
+Remove the deprecated pci_enable_msix API in favour of its successor.
+
+Signed-off-by: Christoph Hellwig <hch@lst.de>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 55 +++++---------------
+ drivers/net/ethernet/amazon/ena/ena_netdev.h |  2 -
+ 2 files changed, 12 insertions(+), 45 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 942e7adf540a..870aa61a22e9 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -140,7 +140,7 @@ static int ena_init_rx_cpu_rmap(struct ena_adapter *adapter)
+ 		int irq_idx = ENA_IO_IRQ_IDX(i);
+ 
+ 		rc = irq_cpu_rmap_add(adapter->netdev->rx_cpu_rmap,
+-				      adapter->msix_entries[irq_idx].vector);
++				      pci_irq_vector(adapter->pdev, irq_idx));
+ 		if (rc) {
+ 			free_irq_cpu_rmap(adapter->netdev->rx_cpu_rmap);
+ 			adapter->netdev->rx_cpu_rmap = NULL;
+@@ -1215,13 +1215,7 @@ static irqreturn_t ena_intr_msix_io(int irq, void *data)
+ 
+ static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
+ {
+-	int i, msix_vecs, rc;
+-
+-	if (test_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags)) {
+-		netif_err(adapter, probe, adapter->netdev,
+-			  "Error, MSI-X is already enabled\n");
+-		return -EPERM;
+-	}
++	int msix_vecs, rc;
+ 
+ 	/* Reserved the max msix vectors we might need */
+ 	msix_vecs = ENA_MAX_MSIX_VEC(num_queues);
+@@ -1229,16 +1223,9 @@ static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
+ 	netif_dbg(adapter, probe, adapter->netdev,
+ 		  "trying to enable MSI-X, vectors %d\n", msix_vecs);
+ 
+-	adapter->msix_entries = vzalloc(msix_vecs * sizeof(struct msix_entry));
+-
+-	if (!adapter->msix_entries)
+-		return -ENOMEM;
+-
+-	for (i = 0; i < msix_vecs; i++)
+-		adapter->msix_entries[i].entry = i;
+-
+-	rc = pci_enable_msix(adapter->pdev, adapter->msix_entries, msix_vecs);
+-	if (rc != 0) {
++	rc = pci_alloc_irq_vectors(adapter->pdev, msix_vecs, msix_vecs,
++			PCI_IRQ_MSIX);
++	if (rc < 0) {
+ 		netif_err(adapter, probe, adapter->netdev,
+ 			  "Failed to enable MSI-X, vectors %d rc %d\n",
+ 			  msix_vecs, rc);
+@@ -1255,7 +1242,6 @@ static int ena_enable_msix(struct ena_adapter *adapter, int num_queues)
+ 	}
+ 
+ 	adapter->msix_vecs = msix_vecs;
+-	set_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags);
+ 
+ 	return 0;
+ }
+@@ -1271,7 +1257,7 @@ static void ena_setup_mgmnt_intr(struct ena_adapter *adapter)
+ 		ena_intr_msix_mgmnt;
+ 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].data = adapter;
+ 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector =
+-		adapter->msix_entries[ENA_MGMNT_IRQ_IDX].vector;
++		pci_irq_vector(adapter->pdev, ENA_MGMNT_IRQ_IDX);
+ 	cpu = cpumask_first(cpu_online_mask);
+ 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].cpu = cpu;
+ 	cpumask_set_cpu(cpu,
+@@ -1294,7 +1280,7 @@ static void ena_setup_io_intr(struct ena_adapter *adapter)
+ 		adapter->irq_tbl[irq_idx].handler = ena_intr_msix_io;
+ 		adapter->irq_tbl[irq_idx].data = &adapter->ena_napi[i];
+ 		adapter->irq_tbl[irq_idx].vector =
+-			adapter->msix_entries[irq_idx].vector;
++			pci_irq_vector(adapter->pdev, irq_idx);
+ 		adapter->irq_tbl[irq_idx].cpu = cpu;
+ 
+ 		cpumask_set_cpu(cpu,
+@@ -1332,12 +1318,6 @@ static int ena_request_io_irq(struct ena_adapter *adapter)
+ 	struct ena_irq *irq;
+ 	int rc = 0, i, k;
+ 
+-	if (!test_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags)) {
+-		netif_err(adapter, ifup, adapter->netdev,
+-			  "Failed to request I/O IRQ: MSI-X is not enabled\n");
+-		return -EINVAL;
+-	}
+-
+ 	for (i = ENA_IO_IRQ_FIRST_IDX; i < adapter->msix_vecs; i++) {
+ 		irq = &adapter->irq_tbl[i];
+ 		rc = request_irq(irq->vector, irq->handler, flags, irq->name,
+@@ -1396,16 +1376,6 @@ static void ena_free_io_irq(struct ena_adapter *adapter)
+ 	}
+ }
+ 
+-static void ena_disable_msix(struct ena_adapter *adapter)
+-{
+-	if (test_and_clear_bit(ENA_FLAG_MSIX_ENABLED, &adapter->flags))
+-		pci_disable_msix(adapter->pdev);
+-
+-	if (adapter->msix_entries)
+-		vfree(adapter->msix_entries);
+-	adapter->msix_entries = NULL;
+-}
+-
+ static void ena_disable_io_intr_sync(struct ena_adapter *adapter)
+ {
+ 	int i;
+@@ -2495,8 +2465,7 @@ static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *adapter,
+ 	return 0;
+ 
+ err_disable_msix:
+-	ena_disable_msix(adapter);
+-
++	pci_free_irq_vectors(adapter->pdev);
+ 	return rc;
+ }
+ 
+@@ -2534,7 +2503,7 @@ static void ena_fw_reset_device(struct work_struct *work)
+ 
+ 	ena_free_mgmnt_irq(adapter);
+ 
+-	ena_disable_msix(adapter);
++	pci_free_irq_vectors(adapter->pdev);
+ 
+ 	ena_com_abort_admin_commands(ena_dev);
+ 
+@@ -2585,7 +2554,7 @@ static void ena_fw_reset_device(struct work_struct *work)
+ 	return;
+ err_disable_msix:
+ 	ena_free_mgmnt_irq(adapter);
+-	ena_disable_msix(adapter);
++	pci_free_irq_vectors(adapter->pdev);
+ err_device_destroy:
+ 	ena_com_admin_destroy(ena_dev);
+ err:
+@@ -3124,7 +3093,7 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ err_free_msix:
+ 	ena_com_dev_reset(ena_dev);
+ 	ena_free_mgmnt_irq(adapter);
+-	ena_disable_msix(adapter);
++	pci_free_irq_vectors(adapter->pdev);
+ err_worker_destroy:
+ 	ena_com_destroy_interrupt_moderation(ena_dev);
+ 	del_timer(&adapter->timer_service);
+@@ -3209,7 +3178,7 @@ static void ena_remove(struct pci_dev *pdev)
+ 
+ 	ena_free_mgmnt_irq(adapter);
+ 
+-	ena_disable_msix(adapter);
++	pci_free_irq_vectors(adapter->pdev);
+ 
+ 	free_netdev(netdev);
+ 
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.h b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+index e8663ede2097..2747343fb1a7 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.h
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.h
+@@ -248,7 +248,6 @@ enum ena_flags_t {
+ 	ENA_FLAG_DEVICE_RUNNING,
+ 	ENA_FLAG_DEV_UP,
+ 	ENA_FLAG_LINK_UP,
+-	ENA_FLAG_MSIX_ENABLED,
+ 	ENA_FLAG_TRIGGER_RESET
+ };
+ 
+@@ -267,7 +266,6 @@ struct ena_adapter {
+ 
+ 	int num_queues;
+ 
+-	struct msix_entry *msix_entries;
+ 	int msix_vecs;
+ 
+ 	u32 tx_usecs, rx_usecs; /* interrupt moderation */
+-- 
+2.19.2
+

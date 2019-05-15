@@ -1,0 +1,81 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Wed, 3 Jan 2018 06:17:29 +0000
+Subject: [01/13] net: ena: unmask MSI-X only after device initialization is
+ completed
+Origin: https://git.kernel.org/linus/7853b49ce8e0ef6364d24512b287463841d71bd3
+
+Under certain conditions MSI-X interrupt might arrive right after it
+was unmasked in ena_up(). There is a chance it would be processed by
+the driver before device ENA_FLAG_DEV_UP flag is set. In such a case
+the interrupt is ignored.
+ENA device operates in auto-masked mode, therefore ignoring
+interrupt leaves it masked for good.
+Moving unmask of interrupt to be the last step in ena_up().
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 26 ++++++++++----------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index c268331bbb01..1590d573acc7 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -1577,7 +1577,7 @@ static int ena_rss_configure(struct ena_adapter *adapter)
+ 
+ static int ena_up_complete(struct ena_adapter *adapter)
+ {
+-	int rc, i;
++	int rc;
+ 
+ 	rc = ena_rss_configure(adapter);
+ 	if (rc)
+@@ -1594,17 +1594,6 @@ static int ena_up_complete(struct ena_adapter *adapter)
+ 
+ 	ena_napi_enable_all(adapter);
+ 
+-	/* Enable completion queues interrupt */
+-	for (i = 0; i < adapter->num_queues; i++)
+-		ena_unmask_interrupt(&adapter->tx_ring[i],
+-				     &adapter->rx_ring[i]);
+-
+-	/* schedule napi in case we had pending packets
+-	 * from the last time we disable napi
+-	 */
+-	for (i = 0; i < adapter->num_queues; i++)
+-		napi_schedule(&adapter->ena_napi[i].napi);
+-
+ 	return 0;
+ }
+ 
+@@ -1741,7 +1730,7 @@ static int ena_create_all_io_rx_queues(struct ena_adapter *adapter)
+ 
+ static int ena_up(struct ena_adapter *adapter)
+ {
+-	int rc;
++	int rc, i;
+ 
+ 	netdev_dbg(adapter->netdev, "%s\n", __func__);
+ 
+@@ -1791,6 +1780,17 @@ static int ena_up(struct ena_adapter *adapter)
+ 
+ 	set_bit(ENA_FLAG_DEV_UP, &adapter->flags);
+ 
++	/* Enable completion queues interrupt */
++	for (i = 0; i < adapter->num_queues; i++)
++		ena_unmask_interrupt(&adapter->tx_ring[i],
++				     &adapter->rx_ring[i]);
++
++	/* schedule napi in case we had pending packets
++	 * from the last time we disable napi
++	 */
++	for (i = 0; i < adapter->num_queues; i++)
++		napi_schedule(&adapter->ena_napi[i].napi);
++
+ 	return rc;
+ 
+ err_up:
+-- 
+2.19.2
+

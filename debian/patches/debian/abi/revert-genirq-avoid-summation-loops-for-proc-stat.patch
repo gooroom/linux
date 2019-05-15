@@ -1,0 +1,109 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 8 Apr 2019 19:29:35 +0100
+Subject: Revert "genirq: Avoid summation loops for /proc/stat"
+Forwarded: not-needed
+
+This reverts commit acb5aefd789bd138c5a0616581efe0ccf1087781, which
+causes a kernel ABI change and is only a performance improvement.
+---
+ include/linux/irqdesc.h |  1 -
+ kernel/irq/chip.c       | 12 ++----------
+ kernel/irq/internals.h  |  8 +-------
+ kernel/irq/irqdesc.c    |  7 +------
+ 4 files changed, 4 insertions(+), 24 deletions(-)
+
+diff --git a/include/linux/irqdesc.h b/include/linux/irqdesc.h
+index bb5547a83daf..c9be57931b58 100644
+--- a/include/linux/irqdesc.h
++++ b/include/linux/irqdesc.h
+@@ -61,7 +61,6 @@ struct irq_desc {
+ 	unsigned int		core_internal_state__do_not_mess_with_it;
+ 	unsigned int		depth;		/* nested irq disables */
+ 	unsigned int		wake_depth;	/* nested wake enables */
+-	unsigned int		tot_count;
+ 	unsigned int		irq_count;	/* For detecting broken IRQs */
+ 	unsigned long		last_unhandled;	/* Aging timer for unhandled count */
+ 	unsigned int		irqs_unhandled;
+diff --git a/kernel/irq/chip.c b/kernel/irq/chip.c
+index 9e745cc0726d..f30110e1b8c9 100644
+--- a/kernel/irq/chip.c
++++ b/kernel/irq/chip.c
+@@ -729,11 +729,7 @@ void handle_percpu_irq(struct irq_desc *desc)
+ {
+ 	struct irq_chip *chip = irq_desc_get_chip(desc);
+ 
+-	/*
+-	 * PER CPU interrupts are not serialized. Do not touch
+-	 * desc->tot_count.
+-	 */
+-	__kstat_incr_irqs_this_cpu(desc);
++	kstat_incr_irqs_this_cpu(desc);
+ 
+ 	if (chip->irq_ack)
+ 		chip->irq_ack(&desc->irq_data);
+@@ -762,11 +758,7 @@ void handle_percpu_devid_irq(struct irq_desc *desc)
+ 	unsigned int irq = irq_desc_get_irq(desc);
+ 	irqreturn_t res;
+ 
+-	/*
+-	 * PER CPU interrupts are not serialized. Do not touch
+-	 * desc->tot_count.
+-	 */
+-	__kstat_incr_irqs_this_cpu(desc);
++	kstat_incr_irqs_this_cpu(desc);
+ 
+ 	if (chip->irq_ack)
+ 		chip->irq_ack(&desc->irq_data);
+diff --git a/kernel/irq/internals.h b/kernel/irq/internals.h
+index 22e3f29a30d8..bc226e783bd2 100644
+--- a/kernel/irq/internals.h
++++ b/kernel/irq/internals.h
+@@ -199,18 +199,12 @@ static inline bool irqd_has_set(struct irq_data *d, unsigned int mask)
+ 
+ #undef __irqd_to_state
+ 
+-static inline void __kstat_incr_irqs_this_cpu(struct irq_desc *desc)
++static inline void kstat_incr_irqs_this_cpu(struct irq_desc *desc)
+ {
+ 	__this_cpu_inc(*desc->kstat_irqs);
+ 	__this_cpu_inc(kstat.irqs_sum);
+ }
+ 
+-static inline void kstat_incr_irqs_this_cpu(struct irq_desc *desc)
+-{
+-	__kstat_incr_irqs_this_cpu(desc);
+-	desc->tot_count++;
+-}
+-
+ static inline int irq_desc_get_node(struct irq_desc *desc)
+ {
+ 	return irq_common_data_get_node(&desc->irq_common_data);
+diff --git a/kernel/irq/irqdesc.c b/kernel/irq/irqdesc.c
+index 5e0ea17d01a6..77977f55dff7 100644
+--- a/kernel/irq/irqdesc.c
++++ b/kernel/irq/irqdesc.c
+@@ -109,7 +109,6 @@ static void desc_set_defaults(unsigned int irq, struct irq_desc *desc, int node,
+ 	desc->depth = 1;
+ 	desc->irq_count = 0;
+ 	desc->irqs_unhandled = 0;
+-	desc->tot_count = 0;
+ 	desc->name = NULL;
+ 	desc->owner = owner;
+ 	for_each_possible_cpu(cpu)
+@@ -881,15 +880,11 @@ unsigned int kstat_irqs_cpu(unsigned int irq, int cpu)
+ unsigned int kstat_irqs(unsigned int irq)
+ {
+ 	struct irq_desc *desc = irq_to_desc(irq);
+-	unsigned int sum = 0;
+ 	int cpu;
++	unsigned int sum = 0;
+ 
+ 	if (!desc || !desc->kstat_irqs)
+ 		return 0;
+-	if (!irq_settings_is_per_cpu_devid(desc) &&
+-	    !irq_settings_is_per_cpu(desc))
+-	    return desc->tot_count;
+-
+ 	for_each_possible_cpu(cpu)
+ 		sum += *per_cpu_ptr(desc->kstat_irqs, cpu);
+ 	return sum;

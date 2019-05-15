@@ -1,11 +1,16 @@
 [abi]
-abiname: 8
+abiname: 9
 ignore-changes:
  __cpuhp_*
  bpf_analyzer
+ cpu_tlbstate
  cxl_*
  inet_frag_*
  inet_frags_*
+ injectm
+ ip6_expire_frag_queue
+ ip6_frag_*
+ mce_*
  mm_iommu_*
  mv_mbus_*
  register_cxl_calls
@@ -13,18 +18,22 @@ ignore-changes:
  tpm_*
  tpmm_chip_alloc
  unregister_cxl_calls
- module:arch/x86/kvm/*
+ module:drivers/block/loop
  module:drivers/crypto/ccp/*
+ module:drivers/edac/edac_mce_amd
  module:drivers/hv/*
  module:drivers/iio/common/hid-sensors/*
  module:drivers/iio/common/st_sensors/**
+ module:drivers/net/ethernet/**
  module:drivers/net/wireless/**
+ module:drivers/nfc/**
  module:drivers/nvdimm/*
  module:drivers/nvme/**
  module:drivers/power/supply/bq27xxx_battery
  module:drivers/s390/net/qeth
  module:drivers/s390/net/qeth*
  module:drivers/scsi/cxgbi/*
+ module:drivers/scsi/esp_scsi
  module:drivers/scsi/libiscs*
  module:drivers/scsi/qla2xxx/qla2xxx
  module:drivers/scsi/ufs/*
@@ -35,8 +44,11 @@ ignore-changes:
  module:drivers/usb/musb/**
  module:fs/nfs/nfs
  module:net/ceph/libceph
+ module:net/nfc/hci/hci
  module:net/l2tp/**
+ module:net/vmw_vsock/*
  module:sound/firewire/snd-firewire-lib
+ module:sound/pci/hda/*
 # btree library is only selected by few drivers so not useful OOT
  btree_*
  visitor*
@@ -57,6 +69,30 @@ ignore-changes:
  first_ec
 # Exported for tracefs only
  debugfs_create_automount
+# Exported for KVM drivers only
+ __gfn_*
+ __kvm_*
+ gfn_*
+ kvm_*
+ mark_page_dirty
+ vcpu_*
+ module:arch/powerpc/kvm/*
+ module:arch/s390/kvm/*
+ module:arch/x86/kvm/*
+# Exported for Xen drivers only
+ *_xen_*
+ *_xenballooned_*
+ *_xenbus_*
+ *_xenstore_*
+ gnttab_*
+ HYPERVISOR_*
+ x86_hyper_xen
+ xen_*
+ xenbus_*
+# modules will use their own inline copy (cf. #911421)
+ return_address
+# Exported for xt_physdev only
+ br_netfilter_enable
 
 [base]
 arches:

@@ -1,0 +1,67 @@
+From: Eric Dumazet <edumazet@google.com>
+Date: Thu, 27 Sep 2018 09:31:58 -0700
+Subject: [10/13] net: ena: remove ndo_poll_controller
+Origin: https://git.kernel.org/linus/21627982e4fff76a053f4d08d7fb56e532e08d52
+
+As diagnosed by Song Liu, ndo_poll_controller() can
+be very dangerous on loaded hosts, since the cpu
+calling ndo_poll_controller() might steal all NAPI
+contexts (for all RX/TX queues of the NIC). This capture
+can last for unlimited amount of time, since one
+cpu is generally not able to drain all the queues under load.
+
+ena uses NAPI for TX completions, so we better let core
+networking stack call the napi->poll() to avoid the capture.
+
+Signed-off-by: Eric Dumazet <edumazet@google.com>
+Cc: Netanel Belgazal <netanel@amazon.com>
+Cc: Saeed Bishara <saeedb@amazon.com>
+Cc: Zorik Machulsky <zorik@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 22 --------------------
+ 1 file changed, 22 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index b08fab07abdc..a7c14c3b127f 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -2197,25 +2197,6 @@ static netdev_tx_t ena_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ 	return NETDEV_TX_OK;
+ }
+ 
+-#ifdef CONFIG_NET_POLL_CONTROLLER
+-static void ena_netpoll(struct net_device *netdev)
+-{
+-	struct ena_adapter *adapter = netdev_priv(netdev);
+-	int i;
+-
+-	/* Dont schedule NAPI if the driver is in the middle of reset
+-	 * or netdev is down.
+-	 */
+-
+-	if (!test_bit(ENA_FLAG_DEV_UP, &adapter->flags) ||
+-	    test_bit(ENA_FLAG_TRIGGER_RESET, &adapter->flags))
+-		return;
+-
+-	for (i = 0; i < adapter->num_queues; i++)
+-		napi_schedule(&adapter->ena_napi[i].napi);
+-}
+-#endif /* CONFIG_NET_POLL_CONTROLLER */
+-
+ static u16 ena_select_queue(struct net_device *dev, struct sk_buff *skb,
+ 			    void *accel_priv, select_queue_fallback_t fallback)
+ {
+@@ -2382,9 +2363,6 @@ static const struct net_device_ops ena_netdev_ops = {
+ 	.ndo_change_mtu		= ena_change_mtu,
+ 	.ndo_set_mac_address	= NULL,
+ 	.ndo_validate_addr	= eth_validate_addr,
+-#ifdef CONFIG_NET_POLL_CONTROLLER
+-	.ndo_poll_controller	= ena_netpoll,
+-#endif /* CONFIG_NET_POLL_CONTROLLER */
+ };
+ 
+ static int ena_device_validate_params(struct ena_adapter *adapter,
+-- 
+2.19.2
+

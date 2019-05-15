@@ -21,22 +21,23 @@ Cc: Hugh Dickins <hughd@google.com>
 Cc: Larry Woodman <lwoodman@redhat.com>
 Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
 Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+[carnil: Update for 4.9.162: Context changes in expand_downwards()]
 ---
  mm/mmap.c | 10 +++-------
  1 file changed, 3 insertions(+), 7 deletions(-)
 
 --- a/mm/mmap.c
 +++ b/mm/mmap.c
-@@ -2312,7 +2312,6 @@ int expand_downwards(struct vm_area_stru
+@@ -2344,7 +2344,6 @@ int expand_downwards(struct vm_area_stru
  {
  	struct mm_struct *mm = vma->vm_mm;
  	struct vm_area_struct *prev;
 -	unsigned long gap_addr;
- 	int error;
+ 	int error = 0;
  
  	address &= PAGE_MASK;
-@@ -2321,15 +2320,12 @@ int expand_downwards(struct vm_area_stru
- 		return error;
+@@ -2352,15 +2351,12 @@ int expand_downwards(struct vm_area_stru
+ 		return -EPERM;
  
  	/* Enforce stack_guard_gap */
 -	gap_addr = address - stack_guard_gap;

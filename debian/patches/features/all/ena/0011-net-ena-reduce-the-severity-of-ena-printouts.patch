@@ -1,0 +1,127 @@
+From: Netanel Belgazal <netanel@annapurnalabs.com>
+Date: Thu, 9 Feb 2017 15:21:36 +0200
+Subject: [11/43] net/ena: reduce the severity of ena printouts
+Origin: https://git.kernel.org/linus/5add6e4a222f2eb437992af6b39c8a9c9a28604a
+
+Signed-off-by: Netanel Belgazal <netanel@annapurnalabs.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.c    | 27 ++++++++++++--------
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 14 +++++++---
+ 2 files changed, 28 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
+index 6b0658b6cc6b..b3b3b4d4b1c9 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_com.c
+@@ -786,7 +786,7 @@ static int ena_com_get_feature_ex(struct ena_com_dev *ena_dev,
+ 	int ret;
+ 
+ 	if (!ena_com_check_supported_feature_id(ena_dev, feature_id)) {
+-		pr_info("Feature %d isn't supported\n", feature_id);
++		pr_debug("Feature %d isn't supported\n", feature_id);
+ 		return -EPERM;
+ 	}
+ 
+@@ -1128,7 +1128,13 @@ int ena_com_execute_admin_command(struct ena_com_admin_queue *admin_queue,
+ 	comp_ctx = ena_com_submit_admin_cmd(admin_queue, cmd, cmd_size,
+ 					    comp, comp_size);
+ 	if (unlikely(IS_ERR(comp_ctx))) {
+-		pr_err("Failed to submit command [%ld]\n", PTR_ERR(comp_ctx));
++		if (comp_ctx == ERR_PTR(-ENODEV))
++			pr_debug("Failed to submit command [%ld]\n",
++				 PTR_ERR(comp_ctx));
++		else
++			pr_err("Failed to submit command [%ld]\n",
++			       PTR_ERR(comp_ctx));
++
+ 		return PTR_ERR(comp_ctx);
+ 	}
+ 
+@@ -1903,7 +1909,7 @@ int ena_com_set_dev_mtu(struct ena_com_dev *ena_dev, int mtu)
+ 	int ret;
+ 
+ 	if (!ena_com_check_supported_feature_id(ena_dev, ENA_ADMIN_MTU)) {
+-		pr_info("Feature %d isn't supported\n", ENA_ADMIN_MTU);
++		pr_debug("Feature %d isn't supported\n", ENA_ADMIN_MTU);
+ 		return -EPERM;
+ 	}
+ 
+@@ -1956,8 +1962,8 @@ int ena_com_set_hash_function(struct ena_com_dev *ena_dev)
+ 
+ 	if (!ena_com_check_supported_feature_id(ena_dev,
+ 						ENA_ADMIN_RSS_HASH_FUNCTION)) {
+-		pr_info("Feature %d isn't supported\n",
+-			ENA_ADMIN_RSS_HASH_FUNCTION);
++		pr_debug("Feature %d isn't supported\n",
++			 ENA_ADMIN_RSS_HASH_FUNCTION);
+ 		return -EPERM;
+ 	}
+ 
+@@ -2120,7 +2126,8 @@ int ena_com_set_hash_ctrl(struct ena_com_dev *ena_dev)
+ 
+ 	if (!ena_com_check_supported_feature_id(ena_dev,
+ 						ENA_ADMIN_RSS_HASH_INPUT)) {
+-		pr_info("Feature %d isn't supported\n", ENA_ADMIN_RSS_HASH_INPUT);
++		pr_debug("Feature %d isn't supported\n",
++			 ENA_ADMIN_RSS_HASH_INPUT);
+ 		return -EPERM;
+ 	}
+ 
+@@ -2278,8 +2285,8 @@ int ena_com_indirect_table_set(struct ena_com_dev *ena_dev)
+ 
+ 	if (!ena_com_check_supported_feature_id(
+ 		    ena_dev, ENA_ADMIN_RSS_REDIRECTION_TABLE_CONFIG)) {
+-		pr_info("Feature %d isn't supported\n",
+-			ENA_ADMIN_RSS_REDIRECTION_TABLE_CONFIG);
++		pr_debug("Feature %d isn't supported\n",
++			 ENA_ADMIN_RSS_REDIRECTION_TABLE_CONFIG);
+ 		return -EPERM;
+ 	}
+ 
+@@ -2550,8 +2557,8 @@ int ena_com_init_interrupt_moderation(struct ena_com_dev *ena_dev)
+ 
+ 	if (rc) {
+ 		if (rc == -EPERM) {
+-			pr_info("Feature %d isn't supported\n",
+-				ENA_ADMIN_INTERRUPT_MODERATION);
++			pr_debug("Feature %d isn't supported\n",
++				 ENA_ADMIN_INTERRUPT_MODERATION);
+ 			rc = 0;
+ 		} else {
+ 			pr_err("Failed to get interrupt moderation admin cmd. rc: %d\n",
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index ca23519e665c..31ecd54afc74 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -570,6 +570,7 @@ static void ena_free_all_rx_bufs(struct ena_adapter *adapter)
+  */
+ static void ena_free_tx_bufs(struct ena_ring *tx_ring)
+ {
++	bool print_once = true;
+ 	u32 i;
+ 
+ 	for (i = 0; i < tx_ring->ring_size; i++) {
+@@ -581,9 +582,16 @@ static void ena_free_tx_bufs(struct ena_ring *tx_ring)
+ 		if (!tx_info->skb)
+ 			continue;
+ 
+-		netdev_notice(tx_ring->netdev,
+-			      "free uncompleted tx skb qid %d idx 0x%x\n",
+-			      tx_ring->qid, i);
++		if (print_once) {
++			netdev_notice(tx_ring->netdev,
++				      "free uncompleted tx skb qid %d idx 0x%x\n",
++				      tx_ring->qid, i);
++			print_once = false;
++		} else {
++			netdev_dbg(tx_ring->netdev,
++				   "free uncompleted tx skb qid %d idx 0x%x\n",
++				   tx_ring->qid, i);
++		}
+ 
+ 		ena_buf = tx_info->bufs;
+ 		dma_unmap_single(tx_ring->dev,
+-- 
+2.19.2
+

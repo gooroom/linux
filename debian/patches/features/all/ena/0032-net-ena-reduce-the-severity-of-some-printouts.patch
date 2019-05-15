@@ -1,0 +1,39 @@
+From: Netanel Belgazal <netanel@amazon.com>
+Date: Tue, 17 Oct 2017 07:33:03 +0000
+Subject: [32/43] net: ena: reduce the severity of some printouts
+Origin: https://git.kernel.org/linus/cd7aea1875c54c69a54a333b75e9d8732503f273
+
+Decrease log level of checksum errors as these messages can be
+triggered remotely by bad packets.
+
+Signed-off-by: Netanel Belgazal <netanel@amazon.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 67cb36ddef7a..92128baf4c97 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -973,7 +973,7 @@ static inline void ena_rx_checksum(struct ena_ring *rx_ring,
+ 		u64_stats_update_begin(&rx_ring->syncp);
+ 		rx_ring->rx_stats.bad_csum++;
+ 		u64_stats_update_end(&rx_ring->syncp);
+-		netif_err(rx_ring->adapter, rx_err, rx_ring->netdev,
++		netif_dbg(rx_ring->adapter, rx_err, rx_ring->netdev,
+ 			  "RX IPv4 header checksum error\n");
+ 		return;
+ 	}
+@@ -986,7 +986,7 @@ static inline void ena_rx_checksum(struct ena_ring *rx_ring,
+ 			u64_stats_update_begin(&rx_ring->syncp);
+ 			rx_ring->rx_stats.bad_csum++;
+ 			u64_stats_update_end(&rx_ring->syncp);
+-			netif_err(rx_ring->adapter, rx_err, rx_ring->netdev,
++			netif_dbg(rx_ring->adapter, rx_err, rx_ring->netdev,
+ 				  "RX L4 checksum error\n");
+ 			skb->ip_summed = CHECKSUM_NONE;
+ 			return;
+-- 
+2.19.2
+

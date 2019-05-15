@@ -1,0 +1,44 @@
+From: Wei Yongjun <weiyongjun1@huawei.com>
+Date: Sat, 22 Oct 2016 14:36:36 +0000
+Subject: [01/43] net: ena: use setup_timer() and mod_timer()
+Origin: https://git.kernel.org/linus/f850b4a77d71a9cac513dadff91891a78c12ba05
+
+Use setup_timer() instead of init_timer(), being the preferred/standard
+way to set a timer up.
+
+Also, quoting the mod_timer() function comment:
+-> mod_timer() is a more efficient way to update the expire field of an
+   active timer (if the timer is inactive it will be activated).
+
+Use setup_timer and mod_timer to setup and arm a timer, to make the code
+cleaner and easier to read.
+
+Signed-off-by: Wei Yongjun <weiyongjun1@huawei.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_netdev.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+index 0c298878bf46..39c2c365b370 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
++++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
+@@ -3032,12 +3032,9 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 
+ 	adapter->last_keep_alive_jiffies = jiffies;
+ 
+-	init_timer(&adapter->timer_service);
+-	adapter->timer_service.expires = round_jiffies(jiffies + HZ);
+-	adapter->timer_service.function = ena_timer_service;
+-	adapter->timer_service.data = (unsigned long)adapter;
+-
+-	add_timer(&adapter->timer_service);
++	setup_timer(&adapter->timer_service, ena_timer_service,
++		    (unsigned long)adapter);
++	mod_timer(&adapter->timer_service, round_jiffies(jiffies + HZ));
+ 
+ 	dev_info(&pdev->dev, "%s found at mem %lx, mac addr %pM Queues %d\n",
+ 		 DEVICE_NAME, (long)pci_resource_start(pdev, 0),
+-- 
+2.19.2
+

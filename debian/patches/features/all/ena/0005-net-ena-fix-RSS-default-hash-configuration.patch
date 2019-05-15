@@ -1,0 +1,34 @@
+From: Netanel Belgazal <netanel@annapurnalabs.com>
+Date: Thu, 9 Feb 2017 15:21:30 +0200
+Subject: [05/43] net/ena: fix RSS default hash configuration
+Origin: https://git.kernel.org/linus/422e21e7619bb8751aa1cd32a9b671b1baaf3d18
+
+ENA default hash configures IPv4_frag hash twice instead of
+configure non-IP packets.
+
+The bug caused IPv4 fragmented packets to be calculated based on
+L2 source and destination address instead of L3 source and destination.
+IPv4 packets can reach to the wrong Rx queue.
+
+Signed-off-by: Netanel Belgazal <netanel@annapurnalabs.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/amazon/ena/ena_com.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
+index bcd993140f84..6b0658b6cc6b 100644
+--- a/drivers/net/ethernet/amazon/ena/ena_com.c
++++ b/drivers/net/ethernet/amazon/ena/ena_com.c
+@@ -2192,7 +2192,7 @@ int ena_com_set_default_hash_ctrl(struct ena_com_dev *ena_dev)
+ 	hash_ctrl->selected_fields[ENA_ADMIN_RSS_IP4_FRAG].fields =
+ 		ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA;
+ 
+-	hash_ctrl->selected_fields[ENA_ADMIN_RSS_IP4_FRAG].fields =
++	hash_ctrl->selected_fields[ENA_ADMIN_RSS_NOT_IP].fields =
+ 		ENA_ADMIN_RSS_L2_DA | ENA_ADMIN_RSS_L2_SA;
+ 
+ 	for (i = 0; i < ENA_ADMIN_RSS_PROTO_NUM; i++) {
+-- 
+2.19.2
+
