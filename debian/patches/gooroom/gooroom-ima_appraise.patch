@@ -1,14 +1,26 @@
+From ff54688b2a0ea70c2c3cb53615a56a778376124c Mon Sep 17 00:00:00 2001
+From: "jongkyung.woo" <jkwoo@gooroom.kr>
+Date: Wed, 15 May 2019 11:51:25 +0900
+Subject: [PATCH] fix ima_appraise on gooroom
+
+---
+ security/integrity/ima/ima_appraise.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
 diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
-index 1bcbc12..0abbea8 100644
+index af55c31..6917fe5 100644
 --- a/security/integrity/ima/ima_appraise.c
 +++ b/security/integrity/ima/ima_appraise.c
-@@ -306,7 +306,8 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
- 	if (rc < 0)
+@@ -315,7 +315,8 @@ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file)
  		return;
  
+ 	inode_lock(file_inode(file));
 -	ima_fix_xattr(dentry, iint);
 +	if (ima_appraise & IMA_APPRAISE_FIX)
 +		ima_fix_xattr(dentry, iint);
+ 	inode_unlock(file_inode(file));
  }
  
- /**
+-- 
+2.11.0
+
