@@ -1,8 +1,8 @@
-From 9874819f06bb85065db5c8cc0f4d8d2984db9925 Mon Sep 17 00:00:00 2001
+From fdb9b9634465e87439e0cf8c5736dc43771be0d6 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 22 May 2017 13:04:50 -0700
-Subject: [PATCH 030/370] futex,rt_mutex: Fix rt_mutex_cleanup_proxy_lock()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
+Subject: [PATCH 030/368] futex,rt_mutex: Fix rt_mutex_cleanup_proxy_lock()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.178-rt131.tar.xz
 
 Markus reported that the glibc/nptl/tst-robustpi8 test was failing after
 commit:
@@ -73,11 +73,11 @@ Link: http://lkml.kernel.org/r/20170519154850.mlomgdsd26drq5j6@hirez.programming
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/locking/rtmutex.c | 24 ++++++++++++++++++------
- 1 file changed, 18 insertions(+), 6 deletions(-)
+ kernel/locking/rtmutex.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index ed2755befa35..4b2126de44bb 100644
+index ed2755befa35..1c032c286efe 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1775,12 +1775,14 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
@@ -99,7 +99,7 @@ index ed2755befa35..4b2126de44bb 100644
  	raw_spin_unlock_irq(&lock->wait_lock);
  
  	return ret;
-@@ -1811,16 +1813,26 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
+@@ -1811,13 +1813,24 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
  	bool cleanup = false;
  
  	raw_spin_lock_irq(&lock->wait_lock);
@@ -124,10 +124,7 @@ index ed2755befa35..4b2126de44bb 100644
 -		fixup_rt_mutex_waiters(lock);
  		cleanup = true;
  	}
--
- 	/*
- 	 * try_to_take_rt_mutex() sets the waiter bit unconditionally. We might
- 	 * have to fix that up.
+ 
 -- 
-2.19.1
+2.20.1
 
