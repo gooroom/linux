@@ -26,7 +26,7 @@ able to rely on their being present until we bump ABI.
  #endif
  	struct sock		*diag_nlsk;
  	atomic_t		fnhe_genid;
-+#ifndef __GENKSYMS__
++#if !defined(__GENKSYMS__) && !defined(MODULE)
 +	int			ipv4_sysctl_tcp_min_snd_mss;
 +#endif
  };
@@ -87,3 +87,15 @@ able to rely on their being present until we bump ABI.
  			icsk->icsk_mtup.search_low = tcp_mss_to_mtu(sk, mss);
  			tcp_sync_mss(sk, icsk->icsk_pmtu_cookie);
  		}
+--- a/include/uapi/linux/snmp.h
++++ b/include/uapi/linux/snmp.h
+@@ -282,7 +282,9 @@ enum
+ 	LINUX_MIB_TCPKEEPALIVE,			/* TCPKeepAlive */
+ 	LINUX_MIB_TCPMTUPFAIL,			/* TCPMTUPFail */
+ 	LINUX_MIB_TCPMTUPSUCCESS,		/* TCPMTUPSuccess */
++#if !defined(__KERNEL__) || (!defined(__GENKSYMS__) && !defined(MODULE))
+ 	LINUX_MIB_TCPWQUEUETOOBIG,		/* TCPWqueueTooBig */
++#endif
+ 	__LINUX_MIB_MAX
+ };
+ 
