@@ -1,0 +1,118 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Sat, 11 May 2019 15:03:16 +0200
+Subject: [PATCH 3/3] genirq: convert affinity_notify swork to kthread
+Origin: https://lore.kernel.org/linux-rt-users/20190511134722.3v4dhf7fs3uqy3a4@linutronix.de/
+
+The struct affinity_notify uses a swork based worker instead of a
+workqueue because it requires a raw_spinlock_t for locking which the
+workqueue can't offer.
+Due to a recent change it is required to flush a work element to ensure
+that the data structure can be released without an active worker. The
+swork based code does not offer this functionality.
+Instead of adding it, I'm converting the swork element to a kthread
+based worker which already offers this functionality and this is also
+what it used in v5.0 based RT.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[bwh: Also update invocation of the IRQ affinity notifier in qla2xxx]
+---
+ include/linux/interrupt.h |  4 ++--
+ kernel/irq/manage.c       | 23 ++++++++---------------
+ 2 files changed, 10 insertions(+), 17 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -14,7 +14,7 @@
+ #include <linux/hrtimer.h>
+ #include <linux/kref.h>
+ #include <linux/workqueue.h>
+-#include <linux/swork.h>
++#include <linux/kthread.h>
+ 
+ #include <linux/atomic.h>
+ #include <asm/ptrace.h>
+@@ -232,7 +232,7 @@ struct irq_affinity_notify {
+ 	unsigned int irq;
+ 	struct kref kref;
+ #ifdef CONFIG_PREEMPT_RT_BASE
+-	struct swork_event swork;
++	struct kthread_work work;
+ #else
+ 	struct work_struct work;
+ #endif
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -237,7 +237,7 @@ int irq_set_affinity_locked(struct irq_d
+ 		kref_get(&desc->affinity_notify->kref);
+ 
+ #ifdef CONFIG_PREEMPT_RT_BASE
+-		swork_queue(&desc->affinity_notify->swork);
++		kthread_schedule_work(&desc->affinity_notify->work);
+ #else
+ 		schedule_work(&desc->affinity_notify->work);
+ #endif
+@@ -302,21 +302,11 @@ out:
+ }
+ 
+ #ifdef CONFIG_PREEMPT_RT_BASE
+-static void init_helper_thread(void)
+-{
+-	static int init_sworker_once;
+-
+-	if (init_sworker_once)
+-		return;
+-	if (WARN_ON(swork_get()))
+-		return;
+-	init_sworker_once = 1;
+-}
+ 
+-static void irq_affinity_notify(struct swork_event *swork)
++static void irq_affinity_notify(struct kthread_work *work)
+ {
+ 	struct irq_affinity_notify *notify =
+-		container_of(swork, struct irq_affinity_notify, swork);
++		container_of(work, struct irq_affinity_notify, work);
+ 	_irq_affinity_notify(notify);
+ }
+ 
+@@ -359,8 +349,7 @@ irq_set_affinity_notifier(unsigned int i
+ 		notify->irq = irq;
+ 		kref_init(&notify->kref);
+ #ifdef CONFIG_PREEMPT_RT_BASE
+-		INIT_SWORK(&notify->swork, irq_affinity_notify);
+-		init_helper_thread();
++		kthread_init_work(&notify->work, irq_affinity_notify);
+ #else
+ 		INIT_WORK(&notify->work, irq_affinity_notify);
+ #endif
+@@ -372,7 +361,11 @@ irq_set_affinity_notifier(unsigned int i
+ 	raw_spin_unlock_irqrestore(&desc->lock, flags);
+ 
+ 	if (old_notify) {
++#ifdef CONFIG_PREEMPT_RT_BASE
++		kthread_cancel_work_sync(&old_notify->work);
++#else
+ 		cancel_work_sync(&old_notify->work);
++#endif
+ 		kref_put(&old_notify->kref, old_notify->release);
+ 	}
+ 
+--- a/drivers/scsi/qla2xxx/qla_isr.c
++++ b/drivers/scsi/qla2xxx/qla_isr.c
+@@ -8,6 +8,7 @@
+ #include "qla_target.h"
+ 
+ #include <linux/delay.h>
++#include <linux/kthread.h>
+ #include <linux/slab.h>
+ #include <scsi/scsi_tcq.h>
+ #include <scsi/scsi_bsg_fc.h>
+@@ -3132,7 +3133,7 @@ qla24xx_enable_msix(struct qla_hw_data *
+ 		*/
+ 		kref_get(&qentry->irq_notify.kref);
+ #ifdef CONFIG_PREEMPT_RT_BASE
+-		swork_queue(&qentry->irq_notify.swork);
++		kthread_schedule_work(&qentry->irq_notify.work);
+ #else
+ 		schedule_work(&qentry->irq_notify.work);
+ #endif
