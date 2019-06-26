@@ -1,0 +1,30 @@
+From: Salvatore Bonaccorso <carnil@debian.org>
+Date: Fri, 17 May 2019 21:47:02 +0200
+Subject: Revert "x86: stop exporting msr-index.h to userland"
+Forwarded: not-needed
+
+This reverts commit 626743f43da44598076019a82193caf49dca1fde from
+linux-4.9.y branch in 4.9.176.
+
+Upstream un-exports <asm/msr-index.h> starting in 4.9.176.  However, to
+avoid build regressions for user-space in stretch, we should keep it
+working as a UAPI header.
+---
+ arch/x86/include/uapi/asm/Kbuild | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/x86/include/uapi/asm/Kbuild b/arch/x86/include/uapi/asm/Kbuild
+index 1c532b3f18ea..3dec769cadf7 100644
+--- a/arch/x86/include/uapi/asm/Kbuild
++++ b/arch/x86/include/uapi/asm/Kbuild
+@@ -27,6 +27,7 @@ header-y += ldt.h
+ header-y += mce.h
+ header-y += mman.h
+ header-y += msgbuf.h
++header-y += msr-index.h
+ header-y += msr.h
+ header-y += mtrr.h
+ header-y += param.h
+-- 
+2.20.1
+

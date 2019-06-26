@@ -1,8 +1,8 @@
-From 37f448351beba18c1e71741f94f81e653197945f Mon Sep 17 00:00:00 2001
+From 1e47e57d0ecc6091b7c2c87db5e30ec8224843c0 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 22 Mar 2017 11:35:56 +0100
-Subject: [PATCH 013/370] futex,rt_mutex: Introduce rt_mutex_init_waiter()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.146-rt125.tar.xz
+Subject: [PATCH 013/368] futex,rt_mutex: Introduce rt_mutex_init_waiter()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.178-rt131.tar.xz
 
 Upstream commit 50809358dd7199aa7ce232f6877dd09ec30ef374
 
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 11 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 802a2a09b0c2..600f7c3f93ae 100644
+index e464e03aa52b..a1934f8f4b52 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -3005,10 +3005,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
@@ -44,7 +44,7 @@ index 802a2a09b0c2..600f7c3f93ae 100644
  	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, VERIFY_WRITE);
  	if (unlikely(ret != 0))
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index c0639b5c7314..d7dbce177f2c 100644
+index de302c580d65..e1896ac74c37 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1176,6 +1176,14 @@ void rt_mutex_adjust_pi(struct task_struct *task)
@@ -74,7 +74,7 @@ index c0639b5c7314..d7dbce177f2c 100644
  	/*
  	 * Technically we could use raw_spin_[un]lock_irq() here, but this can
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index d4d98c9a992d..74b4cf2f5912 100644
+index 882d84eda50a..b550e9d86b1f 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
 @@ -104,6 +104,7 @@ extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
@@ -86,5 +86,5 @@ index d4d98c9a992d..74b4cf2f5912 100644
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
 -- 
-2.19.1
+2.20.1
 
