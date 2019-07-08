@@ -12,7 +12,6 @@ need them.
 - Change the Makefiles to build each driver as an object with the
   "_linux" suffix (which is what Anbox expects)
 - Change config symbol types to tristate
-
 ---
  drivers/android/Kconfig          | 2 +-
  drivers/android/Makefile         | 7 ++++---
@@ -36,10 +35,11 @@ index 6fdf2abe4598..329ec9941fbf 100644
  	default n
  	---help---
 diff --git a/drivers/android/Makefile b/drivers/android/Makefile
-index c7856e3200da..314312a27fc1 100644
+index c9d3d0c99c25..55411d9a9c2a 100644
 --- a/drivers/android/Makefile
 +++ b/drivers/android/Makefile
-@@ -1,5 +1,6 @@
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0-only
  ccflags-y += -I$(src)			# needed for trace events
  
 -obj-$(CONFIG_ANDROID_BINDERFS)		+= binderfs.o
@@ -50,10 +50,10 @@ index c7856e3200da..314312a27fc1 100644
 +binder_linux-$(CONFIG_ANDROID_BINDERFS)	+= binderfs.o
 +binder_linux-$(CONFIG_ANDROID_BINDER_IPC_SELFTEST) += binder_alloc_selftest.o
 diff --git a/drivers/android/binder_alloc.c b/drivers/android/binder_alloc.c
-index 195f120c4e8c..ba4e15ff4f5f 100644
+index ce5603c2291c..099fef731148 100644
 --- a/drivers/android/binder_alloc.c
 +++ b/drivers/android/binder_alloc.c
-@@ -46,7 +46,7 @@ enum {
+@@ -37,7 +37,7 @@ enum {
  };
  static uint32_t binder_alloc_debug_mask = BINDER_DEBUG_USER_ERROR;
  
@@ -63,23 +63,23 @@ index 195f120c4e8c..ba4e15ff4f5f 100644
  
  #define binder_alloc_debug(mask, x...) \
 diff --git a/drivers/staging/android/Kconfig b/drivers/staging/android/Kconfig
-index 17c5587805f5..c46669f32bfa 100644
+index d6d605d5cbde..afe9085369a3 100644
 --- a/drivers/staging/android/Kconfig
 +++ b/drivers/staging/android/Kconfig
-@@ -3,7 +3,7 @@ menu "Android"
+@@ -4,7 +4,7 @@ menu "Android"
  if ANDROID
  
  config ASHMEM
 -	bool "Enable the Anonymous Shared Memory Subsystem"
 +	tristate "Enable the Anonymous Shared Memory Subsystem"
- 	default n
  	depends on SHMEM
  	help
+ 	  The ashmem subsystem is a new shared memory allocator, similar to
 diff --git a/drivers/staging/android/Makefile b/drivers/staging/android/Makefile
-index 90e6154f11a4..daa6c28be54b 100644
+index 14bd9c6ce10d..c202aa4f8323 100644
 --- a/drivers/staging/android/Makefile
 +++ b/drivers/staging/android/Makefile
-@@ -2,5 +2,6 @@ ccflags-y += -I$(src)			# needed for trace events
+@@ -3,5 +3,6 @@ ccflags-y += -I$(src)			# needed for trace events
  
  obj-y					+= ion/
  

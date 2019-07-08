@@ -19,11 +19,11 @@ cc: linux-efi@vger.kernel.org
  security/lock_down.c    |  1 +
  4 files changed, 20 insertions(+), 3 deletions(-)
 
-diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index adeee6329f55..57d7aa991011 100644
---- a/arch/x86/kernel/setup.c
-+++ b/arch/x86/kernel/setup.c
-@@ -65,6 +65,7 @@
+Index: debian-kernel/arch/x86/kernel/setup.c
+===================================================================
+--- debian-kernel.orig/arch/x86/kernel/setup.c
++++ debian-kernel/arch/x86/kernel/setup.c
+@@ -66,6 +66,7 @@
  #include <linux/dma-mapping.h>
  #include <linux/ctype.h>
  #include <linux/uaccess.h>
@@ -31,17 +31,17 @@ index adeee6329f55..57d7aa991011 100644
  
  #include <linux/percpu.h>
  #include <linux/crash_dump.h>
-@@ -1005,6 +1006,9 @@ void __init setup_arch(char **cmdline_p)
+@@ -1012,6 +1013,9 @@ void __init setup_arch(char **cmdline_p)
  	if (efi_enabled(EFI_BOOT))
  		efi_init();
  
 +	efi_set_secure_boot(boot_params.secure_boot);
 +	init_lockdown();
 +
- 	dmi_scan_machine();
- 	dmi_memdev_walk();
- 	dmi_set_dump_stack_arch_desc();
-@@ -1159,8 +1163,6 @@ void __init setup_arch(char **cmdline_p)
+ 	dmi_setup();
+ 
+ 	/*
+@@ -1164,8 +1168,6 @@ void __init setup_arch(char **cmdline_p)
  	/* Allocate bigger log buffer */
  	setup_log_buf(1);
  
@@ -50,10 +50,10 @@ index adeee6329f55..57d7aa991011 100644
  	reserve_initrd();
  
  	acpi_table_upgrade();
-diff --git a/fs/debugfs/inode.c b/fs/debugfs/inode.c
-index 3a62dbfd3840..43c363f1d2e2 100644
---- a/fs/debugfs/inode.c
-+++ b/fs/debugfs/inode.c
+Index: debian-kernel/fs/debugfs/inode.c
+===================================================================
+--- debian-kernel.orig/fs/debugfs/inode.c
++++ debian-kernel/fs/debugfs/inode.c
 @@ -40,7 +40,7 @@ static bool debugfs_registered;
  static int debugfs_setattr(struct dentry *dentry, struct iattr *ia)
  {
@@ -63,11 +63,11 @@ index 3a62dbfd3840..43c363f1d2e2 100644
  		return -EPERM;
  	return simple_setattr(dentry, ia);
  }
-diff --git a/security/Kconfig b/security/Kconfig
-index 5091d3010717..5af0a933181b 100644
---- a/security/Kconfig
-+++ b/security/Kconfig
-@@ -247,6 +247,20 @@ config ALLOW_LOCKDOWN_LIFT_BY_SYSRQ
+Index: debian-kernel/security/Kconfig
+===================================================================
+--- debian-kernel.orig/security/Kconfig
++++ debian-kernel/security/Kconfig
+@@ -256,6 +256,20 @@ config ALLOW_LOCKDOWN_LIFT_BY_SYSRQ
  	  Allow the lockdown on a kernel to be lifted, by pressing a SysRq key
  	  combination on a wired keyboard.
  
@@ -88,10 +88,10 @@ index 5091d3010717..5af0a933181b 100644
  source "security/selinux/Kconfig"
  source "security/smack/Kconfig"
  source "security/tomoyo/Kconfig"
-diff --git a/security/lock_down.c b/security/lock_down.c
-index 2c6b00f0c229..527f7e51dc8d 100644
---- a/security/lock_down.c
-+++ b/security/lock_down.c
+Index: debian-kernel/security/lock_down.c
+===================================================================
+--- debian-kernel.orig/security/lock_down.c
++++ debian-kernel/security/lock_down.c
 @@ -12,6 +12,7 @@
  #include <linux/security.h>
  #include <linux/export.h>
