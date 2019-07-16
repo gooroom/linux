@@ -1,7 +1,7 @@
 From: Haris Okanovic <haris.okanovic@ni.com>
 Date: Tue, 15 Aug 2017 15:13:08 -0500
 Subject: [PATCH] tpm_tis: fix stall after iowrite*()s
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 ioread8() operations to TPM MMIO addresses can stall the cpu when
 immediately following a sequence of iowrite*()'s to the same region.
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/char/tpm/tpm_tis.c
 +++ b/drivers/char/tpm/tpm_tis.c
-@@ -53,6 +53,31 @@ static inline struct tpm_tis_tcg_phy *to
+@@ -49,6 +49,31 @@ static inline struct tpm_tis_tcg_phy *to
  	return container_of(data, struct tpm_tis_tcg_phy, priv);
  }
  
@@ -58,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static bool interrupts = true;
  module_param(interrupts, bool, 0444);
  MODULE_PARM_DESC(interrupts, "Enable interrupts");
-@@ -150,7 +175,7 @@ static int tpm_tcg_write_bytes(struct tp
+@@ -146,7 +171,7 @@ static int tpm_tcg_write_bytes(struct tp
  	struct tpm_tis_tcg_phy *phy = to_tpm_tis_tcg_phy(data);
  
  	while (len--)
@@ -67,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return 0;
  }
-@@ -177,7 +202,7 @@ static int tpm_tcg_write32(struct tpm_ti
+@@ -173,7 +198,7 @@ static int tpm_tcg_write32(struct tpm_ti
  {
  	struct tpm_tis_tcg_phy *phy = to_tpm_tis_tcg_phy(data);
  

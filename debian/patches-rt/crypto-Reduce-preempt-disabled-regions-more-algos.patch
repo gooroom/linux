@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 21 Feb 2014 17:24:04 +0100
 Subject: crypto: Reduce preempt disabled regions, more algos
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Don Estabrook reported
 | kernel: WARNING: CPU: 2 PID: 858 at kernel/sched/core.c:2428 migrate_disable+0xed/0x100()
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/x86/crypto/cast5_avx_glue.c
 +++ b/arch/x86/crypto/cast5_avx_glue.c
-@@ -61,7 +61,7 @@ static inline void cast5_fpu_end(bool fp
+@@ -46,7 +46,7 @@ static inline void cast5_fpu_end(bool fp
  
  static int ecb_crypt(struct skcipher_request *req, bool enc)
  {
@@ -53,7 +53,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
  	struct cast5_ctx *ctx = crypto_skcipher_ctx(tfm);
  	struct skcipher_walk walk;
-@@ -76,7 +76,7 @@ static int ecb_crypt(struct skcipher_req
+@@ -61,7 +61,7 @@ static int ecb_crypt(struct skcipher_req
  		u8 *wsrc = walk.src.virt.addr;
  		u8 *wdst = walk.dst.virt.addr;
  
@@ -62,7 +62,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		/* Process multi-block batch */
  		if (nbytes >= bsize * CAST5_PARALLEL_BLOCKS) {
-@@ -105,10 +105,9 @@ static int ecb_crypt(struct skcipher_req
+@@ -90,10 +90,9 @@ static int ecb_crypt(struct skcipher_req
  		} while (nbytes >= bsize);
  
  done:
@@ -74,7 +74,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return err;
  }
  
-@@ -212,7 +211,7 @@ static int cbc_decrypt(struct skcipher_r
+@@ -197,7 +196,7 @@ static int cbc_decrypt(struct skcipher_r
  {
  	struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
  	struct cast5_ctx *ctx = crypto_skcipher_ctx(tfm);
@@ -83,7 +83,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct skcipher_walk walk;
  	unsigned int nbytes;
  	int err;
-@@ -220,12 +219,11 @@ static int cbc_decrypt(struct skcipher_r
+@@ -205,12 +204,11 @@ static int cbc_decrypt(struct skcipher_r
  	err = skcipher_walk_virt(&walk, req, false);
  
  	while ((nbytes = walk.nbytes)) {
@@ -98,7 +98,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return err;
  }
  
-@@ -292,7 +290,7 @@ static int ctr_crypt(struct skcipher_req
+@@ -277,7 +275,7 @@ static int ctr_crypt(struct skcipher_req
  {
  	struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
  	struct cast5_ctx *ctx = crypto_skcipher_ctx(tfm);
@@ -107,7 +107,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct skcipher_walk walk;
  	unsigned int nbytes;
  	int err;
-@@ -300,13 +298,12 @@ static int ctr_crypt(struct skcipher_req
+@@ -285,13 +283,12 @@ static int ctr_crypt(struct skcipher_req
  	err = skcipher_walk_virt(&walk, req, false);
  
  	while ((nbytes = walk.nbytes) >= CAST5_BLOCK_SIZE) {
@@ -125,7 +125,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		err = skcipher_walk_done(&walk, 0);
 --- a/arch/x86/crypto/glue_helper.c
 +++ b/arch/x86/crypto/glue_helper.c
-@@ -38,7 +38,7 @@ int glue_ecb_req_128bit(const struct com
+@@ -23,7 +23,7 @@ int glue_ecb_req_128bit(const struct com
  	void *ctx = crypto_skcipher_ctx(crypto_skcipher_reqtfm(req));
  	const unsigned int bsize = 128 / 8;
  	struct skcipher_walk walk;
@@ -134,7 +134,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	unsigned int nbytes;
  	int err;
  
-@@ -51,7 +51,7 @@ int glue_ecb_req_128bit(const struct com
+@@ -36,7 +36,7 @@ int glue_ecb_req_128bit(const struct com
  		unsigned int i;
  
  		fpu_enabled = glue_fpu_begin(bsize, gctx->fpu_blocks_limit,
@@ -143,7 +143,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		for (i = 0; i < gctx->num_funcs; i++) {
  			func_bytes = bsize * gctx->funcs[i].num_blocks;
  
-@@ -69,10 +69,9 @@ int glue_ecb_req_128bit(const struct com
+@@ -54,10 +54,9 @@ int glue_ecb_req_128bit(const struct com
  			if (nbytes < bsize)
  				break;
  		}
@@ -155,7 +155,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return err;
  }
  EXPORT_SYMBOL_GPL(glue_ecb_req_128bit);
-@@ -115,7 +114,7 @@ int glue_cbc_decrypt_req_128bit(const st
+@@ -100,7 +99,7 @@ int glue_cbc_decrypt_req_128bit(const st
  	void *ctx = crypto_skcipher_ctx(crypto_skcipher_reqtfm(req));
  	const unsigned int bsize = 128 / 8;
  	struct skcipher_walk walk;
@@ -164,7 +164,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	unsigned int nbytes;
  	int err;
  
-@@ -129,7 +128,7 @@ int glue_cbc_decrypt_req_128bit(const st
+@@ -114,7 +113,7 @@ int glue_cbc_decrypt_req_128bit(const st
  		u128 last_iv;
  
  		fpu_enabled = glue_fpu_begin(bsize, gctx->fpu_blocks_limit,
@@ -173,7 +173,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/* Start of the last block. */
  		src += nbytes / bsize - 1;
  		dst += nbytes / bsize - 1;
-@@ -161,10 +160,10 @@ int glue_cbc_decrypt_req_128bit(const st
+@@ -146,10 +145,10 @@ int glue_cbc_decrypt_req_128bit(const st
  done:
  		u128_xor(dst, dst, (u128 *)walk.iv);
  		*(u128 *)walk.iv = last_iv;
@@ -185,7 +185,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return err;
  }
  EXPORT_SYMBOL_GPL(glue_cbc_decrypt_req_128bit);
-@@ -175,7 +174,7 @@ int glue_ctr_req_128bit(const struct com
+@@ -160,7 +159,7 @@ int glue_ctr_req_128bit(const struct com
  	void *ctx = crypto_skcipher_ctx(crypto_skcipher_reqtfm(req));
  	const unsigned int bsize = 128 / 8;
  	struct skcipher_walk walk;
@@ -194,7 +194,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	unsigned int nbytes;
  	int err;
  
-@@ -189,7 +188,7 @@ int glue_ctr_req_128bit(const struct com
+@@ -174,7 +173,7 @@ int glue_ctr_req_128bit(const struct com
  		le128 ctrblk;
  
  		fpu_enabled = glue_fpu_begin(bsize, gctx->fpu_blocks_limit,
@@ -203,7 +203,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		be128_to_le128(&ctrblk, (be128 *)walk.iv);
  
-@@ -213,11 +212,10 @@ int glue_ctr_req_128bit(const struct com
+@@ -198,11 +197,10 @@ int glue_ctr_req_128bit(const struct com
  		}
  
  		le128_to_be128((be128 *)walk.iv, &ctrblk);
@@ -216,7 +216,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (nbytes) {
  		le128 ctrblk;
  		u128 tmp;
-@@ -278,7 +276,7 @@ int glue_xts_req_128bit(const struct com
+@@ -263,7 +261,7 @@ int glue_xts_req_128bit(const struct com
  {
  	const unsigned int bsize = 128 / 8;
  	struct skcipher_walk walk;
@@ -225,7 +225,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	unsigned int nbytes;
  	int err;
  
-@@ -289,21 +287,24 @@ int glue_xts_req_128bit(const struct com
+@@ -274,21 +272,24 @@ int glue_xts_req_128bit(const struct com
  
  	/* set minimum length to bsize, for tweak_fn */
  	fpu_enabled = glue_fpu_begin(bsize, gctx->fpu_blocks_limit,

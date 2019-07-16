@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
 Subject: buffer_head: Replace bh_uptodate_lock for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
-@@ -274,8 +274,7 @@ static void end_buffer_async_read(struct
+@@ -275,8 +275,7 @@ static void end_buffer_async_read(struct
  	 * decide that the page is now completely done.
  	 */
  	first = page_buffers(page);
@@ -26,7 +26,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	clear_buffer_async_read(bh);
  	unlock_buffer(bh);
  	tmp = bh;
-@@ -288,8 +287,7 @@ static void end_buffer_async_read(struct
+@@ -289,8 +288,7 @@ static void end_buffer_async_read(struct
  		}
  		tmp = tmp->b_this_page;
  	} while (tmp != bh);
@@ -36,7 +36,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	/*
  	 * If none of the buffers had errors and they are all
-@@ -301,9 +299,7 @@ static void end_buffer_async_read(struct
+@@ -302,9 +300,7 @@ static void end_buffer_async_read(struct
  	return;
  
  still_busy:
@@ -47,7 +47,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /*
-@@ -330,8 +326,7 @@ void end_buffer_async_write(struct buffe
+@@ -331,8 +327,7 @@ void end_buffer_async_write(struct buffe
  	}
  
  	first = page_buffers(page);
@@ -57,7 +57,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	clear_buffer_async_write(bh);
  	unlock_buffer(bh);
-@@ -343,15 +338,12 @@ void end_buffer_async_write(struct buffe
+@@ -344,15 +339,12 @@ void end_buffer_async_write(struct buffe
  		}
  		tmp = tmp->b_this_page;
  	}
@@ -75,7 +75,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  EXPORT_SYMBOL(end_buffer_async_write);
  
-@@ -3368,6 +3360,7 @@ struct buffer_head *alloc_buffer_head(gf
+@@ -3372,6 +3364,7 @@ struct buffer_head *alloc_buffer_head(gf
  	struct buffer_head *ret = kmem_cache_zalloc(bh_cachep, gfp_flags);
  	if (ret) {
  		INIT_LIST_HEAD(&ret->b_assoc_buffers);
@@ -103,11 +103,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 -		local_irq_restore(flags);
 +		bh_uptodate_unlock_irqrestore(head, flags);
  		if (!under_io) {
- #ifdef CONFIG_EXT4_FS_ENCRYPTION
+ #ifdef CONFIG_FS_ENCRYPTION
  			if (data_page)
 --- a/fs/ntfs/aops.c
 +++ b/fs/ntfs/aops.c
-@@ -106,8 +106,7 @@ static void ntfs_end_buffer_async_read(s
+@@ -92,8 +92,7 @@ static void ntfs_end_buffer_async_read(s
  				"0x%llx.", (unsigned long long)bh->b_blocknr);
  	}
  	first = page_buffers(page);
@@ -117,7 +117,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	clear_buffer_async_read(bh);
  	unlock_buffer(bh);
  	tmp = bh;
-@@ -122,8 +121,7 @@ static void ntfs_end_buffer_async_read(s
+@@ -108,8 +107,7 @@ static void ntfs_end_buffer_async_read(s
  		}
  		tmp = tmp->b_this_page;
  	} while (tmp != bh);
@@ -127,7 +127,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * If none of the buffers had errors then we can set the page uptodate,
  	 * but we first have to perform the post read mst fixups, if the
-@@ -156,9 +154,7 @@ static void ntfs_end_buffer_async_read(s
+@@ -142,9 +140,7 @@ static void ntfs_end_buffer_async_read(s
  	unlock_page(page);
  	return;
  still_busy:

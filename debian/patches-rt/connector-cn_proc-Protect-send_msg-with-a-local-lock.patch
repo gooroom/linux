@@ -2,7 +2,7 @@ From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 16 Oct 2016 05:11:54 +0200
 Subject: [PATCH] connector/cn_proc: Protect send_msg() with a local lock
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:931
 |in_atomic(): 1, irqs_disabled(): 0, pid: 31807, name: sleep
@@ -36,7 +36,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/connector/cn_proc.c
 +++ b/drivers/connector/cn_proc.c
-@@ -32,6 +32,7 @@
+@@ -18,6 +18,7 @@
  #include <linux/pid_namespace.h>
  
  #include <linux/cn_proc.h>
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * Size of a cn_msg followed by a proc_event structure.  Since the
-@@ -54,10 +55,11 @@ static struct cb_id cn_proc_event_id = {
+@@ -40,10 +41,11 @@ static struct cb_id cn_proc_event_id = {
  
  /* proc_event_counts is used as the sequence number of the netlink message */
  static DEFINE_PER_CPU(__u32, proc_event_counts) = { 0 };
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	msg->seq = __this_cpu_inc_return(proc_event_counts) - 1;
  	((struct proc_event *)msg->data)->cpu = smp_processor_id();
-@@ -70,7 +72,7 @@ static inline void send_msg(struct cn_ms
+@@ -56,7 +58,7 @@ static inline void send_msg(struct cn_ms
  	 */
  	cn_netlink_send(msg, 0, CN_IDX_PROC, GFP_NOWAIT);
  

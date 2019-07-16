@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 4 Aug 2017 17:40:42 +0200
 Subject: [PATCH 1/2] locking: don't check for __LINUX_SPINLOCK_TYPES_H on -RT
  archs
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Upstream uses arch_spinlock_t within spinlock_t and requests that
 spinlock_types.h header file is included first.
@@ -54,7 +54,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  typedef struct {
 --- a/arch/arm64/include/asm/spinlock_types.h
 +++ b/arch/arm64/include/asm/spinlock_types.h
-@@ -16,10 +16,6 @@
+@@ -5,10 +5,6 @@
  #ifndef __ASM_SPINLOCK_TYPES_H
  #define __ASM_SPINLOCK_TYPES_H
  
@@ -67,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/arch/hexagon/include/asm/spinlock_types.h
 +++ b/arch/hexagon/include/asm/spinlock_types.h
-@@ -21,10 +21,6 @@
+@@ -8,10 +8,6 @@
  #ifndef _ASM_SPINLOCK_TYPES_H
  #define _ASM_SPINLOCK_TYPES_H
  
@@ -136,13 +136,13 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifndef __ASM_SPINLOCK_TYPES_H
  #define __ASM_SPINLOCK_TYPES_H
  
--#ifndef __LINUX_SPINLOCK_TYPES_H
+-#if !defined(__LINUX_SPINLOCK_TYPES_H) && !defined(__ASM_SPINLOCK_H)
 -# error "please don't include this file directly"
 -#endif
 -
- typedef struct {
- 	volatile unsigned int slock;
- } arch_spinlock_t;
+ #include <asm-generic/qspinlock_types.h>
+ #include <asm-generic/qrwlock_types.h>
+ 
 --- a/include/linux/spinlock_types_up.h
 +++ b/include/linux/spinlock_types_up.h
 @@ -1,10 +1,6 @@

@@ -1,7 +1,7 @@
 Subject: drm,i915: Use local_lock/unlock_irq() in intel_pipe_update_start/end()
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sat, 27 Feb 2016 09:01:42 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 
 [    8.014039] BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:918
@@ -62,15 +62,15 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/drivers/gpu/drm/i915/intel_sprite.c
 +++ b/drivers/gpu/drm/i915/intel_sprite.c
-@@ -36,6 +36,7 @@
- #include <drm/drm_rect.h>
- #include <drm/drm_atomic.h>
+@@ -38,6 +38,7 @@
  #include <drm/drm_plane_helper.h>
-+#include <linux/locallock.h>
- #include "intel_drv.h"
- #include "intel_frontbuffer.h"
+ #include <drm/drm_rect.h>
  #include <drm/i915_drm.h>
-@@ -61,6 +62,8 @@ int intel_usecs_to_scanlines(const struc
++#include <linux/locallock.h>
+ 
+ #include "i915_drv.h"
+ #include "intel_atomic_plane.h"
+@@ -79,6 +80,8 @@ int intel_usecs_to_scanlines(const struc
  #define VBLANK_EVASION_TIME_US 100
  #endif
  
@@ -79,7 +79,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * intel_pipe_update_start() - start update of a set of display registers
   * @new_crtc_state: the new crtc state
-@@ -110,7 +113,7 @@ void intel_pipe_update_start(const struc
+@@ -128,7 +131,7 @@ void intel_pipe_update_start(const struc
  		DRM_ERROR("PSR idle timed out 0x%x, atomic update may fail\n",
  			  psr_status);
  
@@ -88,7 +88,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	crtc->debug.min_vbl = min;
  	crtc->debug.max_vbl = max;
-@@ -134,11 +137,11 @@ void intel_pipe_update_start(const struc
+@@ -152,11 +155,11 @@ void intel_pipe_update_start(const struc
  			break;
  		}
  
@@ -102,7 +102,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  
  	finish_wait(wq, &wait);
-@@ -171,7 +174,7 @@ void intel_pipe_update_start(const struc
+@@ -189,7 +192,7 @@ void intel_pipe_update_start(const struc
  	return;
  
  irq_disable:
@@ -111,7 +111,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /**
-@@ -207,7 +210,7 @@ void intel_pipe_update_end(struct intel_
+@@ -225,7 +228,7 @@ void intel_pipe_update_end(struct intel_
  		new_crtc_state->base.event = NULL;
  	}
  

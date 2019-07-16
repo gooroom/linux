@@ -2,7 +2,7 @@ From: Julia Cartwright <julia@ni.com>
 Date: Mon, 7 May 2018 08:58:57 -0500
 Subject: [PATCH] squashfs: make use of local lock in multi_cpu
  decompressor
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Currently, the squashfs multi_cpu decompressor makes use of
 get_cpu_ptr()/put_cpu_ptr(), which unconditionally disable preemption
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/fs/squashfs/decompressor_multi_percpu.c
 +++ b/fs/squashfs/decompressor_multi_percpu.c
-@@ -10,6 +10,7 @@
+@@ -8,6 +8,7 @@
  #include <linux/slab.h>
  #include <linux/percpu.h>
  #include <linux/buffer_head.h>
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #include "squashfs_fs.h"
  #include "squashfs_fs_sb.h"
-@@ -25,6 +26,8 @@ struct squashfs_stream {
+@@ -23,6 +24,8 @@ struct squashfs_stream {
  	void		*stream;
  };
  
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void *squashfs_decompressor_create(struct squashfs_sb_info *msblk,
  						void *comp_opts)
  {
-@@ -79,10 +82,15 @@ int squashfs_decompress(struct squashfs_
+@@ -77,10 +80,15 @@ int squashfs_decompress(struct squashfs_
  {
  	struct squashfs_stream __percpu *percpu =
  			(struct squashfs_stream __percpu *) msblk->stream;

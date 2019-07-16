@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 10 Apr 2019 11:01:37 +0200
 Subject: [PATCH] drm/i915: Don't disable interrupts independently of the
  lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 The locks (timeline->lock and rq->lock) need to be taken with disabled
 interrupts. This is done in __retire_engine_request() by disabling the
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/gpu/drm/i915/i915_request.c
 +++ b/drivers/gpu/drm/i915/i915_request.c
-@@ -278,9 +278,7 @@ static void __retire_engine_request(stru
+@@ -202,9 +202,7 @@ static void __retire_engine_request(stru
  
  	GEM_BUG_ON(!i915_request_completed(rq));
  
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	GEM_BUG_ON(!list_is_first(&rq->link, &engine->timeline.requests));
  	list_del_init(&rq->link);
  	spin_unlock(&engine->timeline.lock);
-@@ -294,9 +292,7 @@ static void __retire_engine_request(stru
+@@ -219,9 +217,7 @@ static void __retire_engine_request(stru
  		GEM_BUG_ON(!atomic_read(&rq->i915->gt_pm.rps.num_waiters));
  		atomic_dec(&rq->i915->gt_pm.rps.num_waiters);
  	}

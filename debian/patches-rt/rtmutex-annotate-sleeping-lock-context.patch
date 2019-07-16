@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
 Subject: [PATCH] rtmutex: annotate sleeping lock context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define migrate_enable()		barrier()
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -672,6 +672,15 @@ struct task_struct {
+@@ -664,6 +664,15 @@ struct task_struct {
  # ifdef CONFIG_SCHED_DEBUG
  	int				migrate_disable_atomic;
  # endif
@@ -68,7 +68,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  
  #ifdef CONFIG_PREEMPT_RCU
-@@ -1813,6 +1822,23 @@ static __always_inline bool need_resched
+@@ -1816,6 +1825,23 @@ static __always_inline bool need_resched
  	return unlikely(tif_need_resched());
  }
  
@@ -94,7 +94,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   */
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1141,6 +1141,7 @@ void __sched rt_spin_lock_slowunlock(str
+@@ -1135,6 +1135,7 @@ void __sched rt_spin_lock_slowunlock(str
  
  void __lockfunc rt_spin_lock(spinlock_t *lock)
  {
@@ -102,7 +102,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1155,6 +1156,7 @@ void __lockfunc __rt_spin_lock(struct rt
+@@ -1149,6 +1150,7 @@ void __lockfunc __rt_spin_lock(struct rt
  #ifdef CONFIG_DEBUG_LOCK_ALLOC
  void __lockfunc rt_spin_lock_nested(spinlock_t *lock, int subclass)
  {
@@ -110,7 +110,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1168,6 +1170,7 @@ void __lockfunc rt_spin_unlock(spinlock_
+@@ -1162,6 +1164,7 @@ void __lockfunc rt_spin_unlock(spinlock_
  	spin_release(&lock->dep_map, 1, _RET_IP_);
  	rt_spin_lock_fastunlock(&lock->lock, rt_spin_lock_slowunlock);
  	migrate_enable();
@@ -118,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL(rt_spin_unlock);
  
-@@ -1193,12 +1196,15 @@ int __lockfunc rt_spin_trylock(spinlock_
+@@ -1187,12 +1190,15 @@ int __lockfunc rt_spin_trylock(spinlock_
  {
  	int ret;
  
@@ -136,7 +136,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return ret;
  }
  EXPORT_SYMBOL(rt_spin_trylock);
-@@ -1210,6 +1216,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
+@@ -1204,6 +1210,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
  	local_bh_disable();
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
@@ -144,7 +144,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		migrate_disable();
  		spin_acquire(&lock->dep_map, 0, 1, _RET_IP_);
  	} else
-@@ -1225,6 +1232,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
+@@ -1219,6 +1226,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
  	*flags = 0;
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
@@ -223,7 +223,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -330,11 +330,15 @@ void rcu_note_context_switch(bool preemp
+@@ -307,11 +307,15 @@ void rcu_note_context_switch(bool preemp
  	struct task_struct *t = current;
  	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
  	struct rcu_node *rnp;
@@ -242,7 +242,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7321,4 +7321,49 @@ void migrate_enable(void)
+@@ -7335,4 +7335,49 @@ void migrate_enable(void)
  	preempt_enable();
  }
  EXPORT_SYMBOL(migrate_enable);

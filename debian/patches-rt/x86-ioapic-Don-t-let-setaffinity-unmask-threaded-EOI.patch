@@ -2,7 +2,7 @@ From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 17 Jul 2018 18:25:31 +0200
 Subject: [PATCH] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 There is an issue with threaded interrupts which are marked ONESHOT
 and using the fasteoi handler.
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1722,19 +1722,20 @@ static bool io_apic_level_ack_pending(st
+@@ -1724,19 +1724,20 @@ static bool io_apic_level_ack_pending(st
  	return false;
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/* Only migrate the irq if the ack has been received.
  		 *
  		 * On rare occasions the broadcast level triggered ack gets
-@@ -1763,15 +1764,17 @@ static inline void ioapic_irqd_unmask(st
+@@ -1765,15 +1766,17 @@ static inline void ioapic_irqd_unmask(st
  		 */
  		if (!io_apic_level_ack_pending(data->chip_data))
  			irq_move_masked_irq(data);
@@ -81,7 +81,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  }
  #endif
-@@ -1780,11 +1783,11 @@ static void ioapic_ack_level(struct irq_
+@@ -1782,11 +1785,11 @@ static void ioapic_ack_level(struct irq_
  {
  	struct irq_cfg *cfg = irqd_cfg(irq_data);
  	unsigned long v;
@@ -95,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * It appears there is an erratum which affects at least version 0x11
-@@ -1839,7 +1842,7 @@ static void ioapic_ack_level(struct irq_
+@@ -1841,7 +1844,7 @@ static void ioapic_ack_level(struct irq_
  		eoi_ioapic_pin(cfg->vector, irq_data->chip_data);
  	}
  

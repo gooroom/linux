@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
 Subject: [PATCH] sched/migrate_disable: fallback to preempt_disable() instead
  barrier()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
 anymore so it has almost no users. However the futex code has a workaround for
@@ -69,7 +69,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return 0;
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -666,7 +666,7 @@ struct task_struct {
+@@ -658,7 +658,7 @@ struct task_struct {
  	int				nr_cpus_allowed;
  	const cpumask_t			*cpus_ptr;
  	cpumask_t			cpus_mask;
@@ -78,7 +78,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	int				migrate_disable;
  	int				migrate_disable_update;
  # ifdef CONFIG_SCHED_DEBUG
-@@ -674,8 +674,8 @@ struct task_struct {
+@@ -666,8 +666,8 @@ struct task_struct {
  # endif
  
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
@@ -90,7 +90,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1049,7 +1049,7 @@ void set_cpus_allowed_common(struct task
+@@ -1087,7 +1087,7 @@ void set_cpus_allowed_common(struct task
  	p->nr_cpus_allowed = cpumask_weight(new_mask);
  }
  
@@ -99,7 +99,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  int __migrate_disabled(struct task_struct *p)
  {
  	return p->migrate_disable;
-@@ -1089,7 +1089,7 @@ static void __do_set_cpus_allowed_tail(s
+@@ -1127,7 +1127,7 @@ static void __do_set_cpus_allowed_tail(s
  
  void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  {
@@ -108,7 +108,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (__migrate_disabled(p)) {
  		lockdep_assert_held(&p->pi_lock);
  
-@@ -1162,7 +1162,7 @@ static int __set_cpus_allowed_ptr(struct
+@@ -1200,7 +1200,7 @@ static int __set_cpus_allowed_ptr(struct
  	if (cpumask_test_cpu(task_cpu(p), new_mask) || __migrate_disabled(p))
  		goto out;
  
@@ -117,7 +117,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (__migrate_disabled(p)) {
  		p->migrate_disable_update = 1;
  		goto out;
-@@ -7177,7 +7177,7 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7193,7 +7193,7 @@ const u32 sched_prio_to_wmult[40] = {
  
  #undef CREATE_TRACE_POINTS
  
@@ -126,7 +126,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static inline void
  update_nr_migratory(struct task_struct *p, long delta)
-@@ -7325,45 +7325,44 @@ EXPORT_SYMBOL(migrate_enable);
+@@ -7339,45 +7339,44 @@ EXPORT_SYMBOL(migrate_enable);
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  void migrate_disable(void)
  {
@@ -181,7 +181,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
 --- a/kernel/sched/debug.c
 +++ b/kernel/sched/debug.c
-@@ -982,7 +982,7 @@ void proc_sched_show_task(struct task_st
+@@ -979,7 +979,7 @@ void proc_sched_show_task(struct task_st
  		P(dl.runtime);
  		P(dl.deadline);
  	}

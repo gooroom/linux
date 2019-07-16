@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 11 Oct 2017 17:43:49 +0200
 Subject: apparmor: use a locallock instead preempt_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 get_buffers() disables preemption which acts as a lock for the per-CPU
 variable. Since we can't disable preemption here on RT, a local_lock is
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/security/apparmor/include/path.h
 +++ b/security/apparmor/include/path.h
-@@ -40,8 +40,10 @@ struct aa_buffers {
+@@ -36,8 +36,10 @@ struct aa_buffers {
  
  #include <linux/percpu.h>
  #include <linux/preempt.h>
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #define ASSIGN(FN, A, X, N) ((X) = FN(A, N))
  #define EVAL1(FN, A, X) ASSIGN(FN, A, X, 0) /*X = FN(0)*/
-@@ -51,7 +53,17 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
+@@ -47,7 +49,17 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
  
  #define for_each_cpu_buffer(I) for ((I) = 0; (I) < MAX_PATH_BUFFERS; (I)++)
  
@@ -46,7 +46,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define AA_BUG_PREEMPT_ENABLED(X) AA_BUG(preempt_count() <= 0, X)
  #else
  #define AA_BUG_PREEMPT_ENABLED(X) /* nop */
-@@ -67,14 +79,15 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
+@@ -63,14 +75,15 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
  
  #define get_buffers(X...)						\
  do {									\
@@ -66,7 +66,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* __AA_PATH_H */
 --- a/security/apparmor/lsm.c
 +++ b/security/apparmor/lsm.c
-@@ -48,7 +48,7 @@
+@@ -44,7 +44,7 @@
  int apparmor_initialized;
  
  DEFINE_PER_CPU(struct aa_buffers, aa_buffers);

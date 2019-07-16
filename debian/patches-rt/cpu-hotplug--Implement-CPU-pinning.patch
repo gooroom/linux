@@ -1,7 +1,7 @@
 Subject: cpu/hotplug: Implement CPU pinning
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -670,6 +670,7 @@ struct task_struct {
+@@ -662,6 +662,7 @@ struct task_struct {
  #if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  	int				migrate_disable;
  	int				migrate_disable_update;
@@ -21,7 +21,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  # endif
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -75,6 +75,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_s
+@@ -76,6 +76,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_s
  	.fail = CPUHP_INVALID,
  };
  
@@ -33,7 +33,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #if defined(CONFIG_LOCKDEP) && defined(CONFIG_SMP)
  static struct lockdep_map cpuhp_state_up_map =
  	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-up", &cpuhp_state_up_map);
-@@ -286,7 +291,28 @@ static int cpu_hotplug_disabled;
+@@ -287,7 +292,28 @@ static int cpu_hotplug_disabled;
   */
  void pin_current_cpu(void)
  {
@@ -62,7 +62,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /**
-@@ -294,6 +320,13 @@ void pin_current_cpu(void)
+@@ -295,6 +321,13 @@ void pin_current_cpu(void)
   */
  void unpin_current_cpu(void)
  {
@@ -76,7 +76,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
-@@ -882,6 +915,7 @@ static int take_cpu_down(void *_param)
+@@ -885,6 +918,7 @@ static int take_cpu_down(void *_param)
  
  static int takedown_cpu(unsigned int cpu)
  {
@@ -84,7 +84,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -894,11 +928,14 @@ static int takedown_cpu(unsigned int cpu
+@@ -897,11 +931,14 @@ static int takedown_cpu(unsigned int cpu
  	 */
  	irq_lock_sparse();
  
@@ -99,7 +99,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -917,6 +954,7 @@ static int takedown_cpu(unsigned int cpu
+@@ -920,6 +957,7 @@ static int takedown_cpu(unsigned int cpu
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  

@@ -1,7 +1,7 @@
 From: Clark Williams <williams@redhat.com>
 Date: Tue, 3 Jul 2018 13:34:30 -0500
 Subject: [PATCH] fscache: initialize cookie hash table raw spinlocks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 The fscache cookie mechanism uses a hash table of hlist_bl_head structures. The
 PREEMPT_RT patcheset adds a raw spinlock to this structure and so on PREEMPT_RT
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/fs/fscache/cookie.c
 +++ b/fs/fscache/cookie.c
-@@ -962,3 +962,11 @@ int __fscache_check_consistency(struct f
+@@ -958,3 +958,11 @@ int __fscache_check_consistency(struct f
  	return -ESTALE;
  }
  EXPORT_SYMBOL(__fscache_check_consistency);
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +}
 --- a/fs/fscache/main.c
 +++ b/fs/fscache/main.c
-@@ -149,6 +149,7 @@ static int __init fscache_init(void)
+@@ -145,6 +145,7 @@ static int __init fscache_init(void)
  		ret = -ENOMEM;
  		goto error_cookie_jar;
  	}
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (!fscache_root)
 --- a/include/linux/fscache.h
 +++ b/include/linux/fscache.h
-@@ -230,6 +230,7 @@ extern void __fscache_readpages_cancel(s
+@@ -226,6 +226,7 @@ extern void __fscache_readpages_cancel(s
  extern void __fscache_disable_cookie(struct fscache_cookie *, const void *, bool);
  extern void __fscache_enable_cookie(struct fscache_cookie *, const void *, loff_t,
  				    bool (*)(void *), void *);

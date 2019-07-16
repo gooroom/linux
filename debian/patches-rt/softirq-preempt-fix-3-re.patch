@@ -1,7 +1,7 @@
 Subject: softirq: Check preemption after reenabling interrupts
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100 (CET)
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -49,7 +49,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static __init int blk_softirq_init(void)
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -184,8 +184,10 @@ do { \
+@@ -193,8 +193,10 @@ do { \
  
  #ifdef CONFIG_PREEMPT_RT_BASE
  # define preempt_enable_no_resched() sched_preempt_enable_no_resched()
@@ -60,7 +60,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
  
  #define preemptible()	(preempt_count() == 0 && !irqs_disabled())
-@@ -272,6 +274,7 @@ do { \
+@@ -281,6 +283,7 @@ do { \
  #define preempt_disable_notrace()		barrier()
  #define preempt_enable_no_resched_notrace()	barrier()
  #define preempt_enable_notrace()		barrier()
@@ -72,7 +72,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +++ b/lib/irq_poll.c
 @@ -37,6 +37,7 @@ void irq_poll_sched(struct irq_poll *iop
  	list_add_tail(&iop->list, this_cpu_ptr(&blk_cpu_iopoll));
- 	__raise_softirq_irqoff(IRQ_POLL_SOFTIRQ);
+ 	raise_softirq_irqoff(IRQ_POLL_SOFTIRQ);
  	local_irq_restore(flags);
 +	preempt_check_resched_rt();
  }
@@ -112,7 +112,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2754,6 +2754,7 @@ static void __netif_reschedule(struct Qd
+@@ -2750,6 +2750,7 @@ static void __netif_reschedule(struct Qd
  	sd->output_queue_tailp = &q->next_sched;
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_restore(flags);
@@ -120,7 +120,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  void __netif_schedule(struct Qdisc *q)
-@@ -2816,6 +2817,7 @@ void __dev_kfree_skb_irq(struct sk_buff
+@@ -2812,6 +2813,7 @@ void __dev_kfree_skb_irq(struct sk_buff
  	__this_cpu_write(softnet_data.completion_queue, skb);
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_restore(flags);
@@ -128,7 +128,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  EXPORT_SYMBOL(__dev_kfree_skb_irq);
  
-@@ -4295,6 +4297,7 @@ static int enqueue_to_backlog(struct sk_
+@@ -4294,6 +4296,7 @@ static int enqueue_to_backlog(struct sk_
  	rps_unlock(sd);
  
  	local_irq_restore(flags);
@@ -136,7 +136,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	atomic_long_inc(&skb->dev->rx_dropped);
  	kfree_skb(skb);
-@@ -5899,12 +5902,14 @@ static void net_rps_action_and_irq_enabl
+@@ -5894,12 +5897,14 @@ static void net_rps_action_and_irq_enabl
  		sd->rps_ipi_list = NULL;
  
  		local_irq_enable();
@@ -151,7 +151,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
-@@ -5982,6 +5987,7 @@ void __napi_schedule(struct napi_struct
+@@ -5977,6 +5982,7 @@ void __napi_schedule(struct napi_struct
  	local_irq_save(flags);
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  	local_irq_restore(flags);
@@ -159,7 +159,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  EXPORT_SYMBOL(__napi_schedule);
  
-@@ -9418,6 +9424,7 @@ static int dev_cpu_dead(unsigned int old
+@@ -9506,6 +9512,7 @@ static int dev_cpu_dead(unsigned int old
  
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();

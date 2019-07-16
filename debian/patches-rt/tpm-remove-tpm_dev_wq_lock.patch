@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Feb 2019 11:33:11 +0100
 Subject: [PATCH] tpm: remove tpm_dev_wq_lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Added in commit
 
@@ -19,11 +19,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/char/tpm/tpm-dev-common.c
 +++ b/drivers/char/tpm/tpm-dev-common.c
-@@ -25,7 +25,6 @@
+@@ -20,7 +20,6 @@
  #include "tpm-dev.h"
  
  static struct workqueue_struct *tpm_dev_wq;
 -static DEFINE_MUTEX(tpm_dev_wq_lock);
  
- static void tpm_async_work(struct work_struct *work)
- {
+ static ssize_t tpm_dev_transmit(struct tpm_chip *chip, struct tpm_space *space,
+ 				u8 *buf, size_t bufsiz)

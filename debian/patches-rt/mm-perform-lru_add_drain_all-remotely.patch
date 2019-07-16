@@ -1,7 +1,7 @@
 From: Luiz Capitulino <lcapitulino@redhat.com>
 Date: Fri, 27 May 2016 15:03:28 +0200
 Subject: [PATCH] mm: perform lru_add_drain_all() remotely
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 lru_add_drain_all() works by scheduling lru_add_drain_cpu() to run
 on all CPUs that have non-empty LRU pagevecs and then waiting for
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/mm/swap.c
 +++ b/mm/swap.c
-@@ -584,9 +584,15 @@ void lru_add_drain_cpu(int cpu)
+@@ -585,9 +585,15 @@ void lru_add_drain_cpu(int cpu)
  		unsigned long flags;
  
  		/* No harm done if a racing interrupt already did this */
@@ -41,7 +41,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
  	pvec = &per_cpu(lru_deactivate_file_pvecs, cpu);
-@@ -656,6 +662,16 @@ void lru_add_drain(void)
+@@ -657,6 +663,16 @@ void lru_add_drain(void)
  
  #ifdef CONFIG_SMP
  
@@ -58,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static DEFINE_PER_CPU(struct work_struct, lru_add_drain_work);
  
  static void lru_add_drain_per_cpu(struct work_struct *dummy)
-@@ -663,6 +679,16 @@ static void lru_add_drain_per_cpu(struct
+@@ -664,6 +680,16 @@ static void lru_add_drain_per_cpu(struct
  	lru_add_drain();
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Doesn't need any cpu hotplug locking because we do rely on per-cpu
   * kworkers being shut down before our page_alloc_cpu_dead callback is
-@@ -687,21 +713,19 @@ void lru_add_drain_all(void)
+@@ -688,21 +714,19 @@ void lru_add_drain_all(void)
  	cpumask_clear(&has_work);
  
  	for_each_online_cpu(cpu) {

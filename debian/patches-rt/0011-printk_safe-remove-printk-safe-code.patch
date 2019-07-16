@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:49 +0100
 Subject: [PATCH 11/25] printk_safe: remove printk safe code
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 vprintk variants are now NMI-safe so there is no longer a need for
 the "safe" calls.
@@ -21,15 +21,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/printk/Makefile         |    1 
  kernel/printk/internal.h       |   30 --
  kernel/printk/printk.c         |   13 -
- kernel/printk/printk_safe.c    |  427 -----------------------------------------
+ kernel/printk/printk_safe.c    |  415 -----------------------------------------
  kernel/trace/trace.c           |    2 
  lib/nmi_backtrace.c            |    6 
- 13 files changed, 7 insertions(+), 512 deletions(-)
+ 13 files changed, 7 insertions(+), 500 deletions(-)
  delete mode 100644 kernel/printk/printk_safe.c
 
 --- a/arch/powerpc/kernel/traps.c
 +++ b/arch/powerpc/kernel/traps.c
-@@ -174,7 +174,6 @@ extern void panic_flush_kmsg_start(void)
+@@ -171,7 +171,6 @@ extern void panic_flush_kmsg_start(void)
  
  extern void panic_flush_kmsg_end(void)
  {
@@ -71,7 +71,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -145,18 +145,6 @@ static inline __printf(1, 2) __cold
+@@ -146,18 +146,6 @@ static inline __printf(1, 2) __cold
  void early_printk(const char *s, ...) { }
  #endif
  
@@ -90,7 +90,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_PRINTK
  asmlinkage __printf(5, 0)
  int vprintk_emit(int facility, int level,
-@@ -201,9 +189,6 @@ void __init setup_log_buf(int early);
+@@ -202,9 +190,6 @@ void __init setup_log_buf(int early);
  void dump_stack_print_info(const char *log_lvl);
  void show_regs_print_info(const char *log_lvl);
  extern asmlinkage void dump_stack(void) __cold;
@@ -100,7 +100,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  static inline __printf(1, 0)
  int vprintk(const char *s, va_list args)
-@@ -267,18 +252,6 @@ static inline void show_regs_print_info(
+@@ -268,18 +253,6 @@ static inline void show_regs_print_info(
  static inline void dump_stack(void)
  {
  }
@@ -121,9 +121,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  extern int kptr_restrict;
 --- a/init/main.c
 +++ b/init/main.c
-@@ -648,7 +648,6 @@ asmlinkage __visible void __init start_k
- 	softirq_init();
- 	timekeeping_init();
+@@ -669,7 +669,6 @@ asmlinkage __visible void __init start_k
+ 	boot_init_stack_canary();
+ 
  	time_init();
 -	printk_safe_init();
  	perf_event_init();
@@ -131,7 +131,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	call_function_init();
 --- a/kernel/kexec_core.c
 +++ b/kernel/kexec_core.c
-@@ -972,7 +972,6 @@ void crash_kexec(struct pt_regs *regs)
+@@ -970,7 +970,6 @@ void crash_kexec(struct pt_regs *regs)
  	old_cpu = atomic_cmpxchg(&panic_cpu, PANIC_CPU_INVALID, this_cpu);
  	if (old_cpu == PANIC_CPU_INVALID) {
  		/* This is the 1st CPU which comes here, so go ahead. */
@@ -141,7 +141,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/*
 --- a/kernel/panic.c
 +++ b/kernel/panic.c
-@@ -223,7 +223,6 @@ void panic(const char *fmt, ...)
+@@ -228,7 +228,6 @@ void panic(const char *fmt, ...)
  	 * Bypass the panic_cpu check and call __crash_kexec directly.
  	 */
  	if (!_crash_kexec_post_notifiers) {
@@ -149,7 +149,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		__crash_kexec(NULL);
  
  		/*
-@@ -247,8 +246,6 @@ void panic(const char *fmt, ...)
+@@ -252,8 +251,6 @@ void panic(const char *fmt, ...)
  	 */
  	atomic_notifier_call_chain(&panic_notifier_list, 0, buf);
  
@@ -160,13 +160,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
 --- a/kernel/printk/Makefile
 +++ b/kernel/printk/Makefile
-@@ -1,3 +1,2 @@
+@@ -1,4 +1,3 @@
+ # SPDX-License-Identifier: GPL-2.0-only
  obj-y	= printk.o
 -obj-$(CONFIG_PRINTK)	+= printk_safe.o
  obj-$(CONFIG_A11Y_BRAILLE_CONSOLE)	+= braille.o
 --- a/kernel/printk/internal.h
 +++ b/kernel/printk/internal.h
-@@ -32,32 +32,6 @@ int vprintk_store(int facility, int leve
+@@ -20,32 +20,6 @@ int vprintk_store(int facility, int leve
  __printf(1, 0) int vprintk_default(const char *fmt, va_list args);
  __printf(1, 0) int vprintk_deferred(const char *fmt, va_list args);
  __printf(1, 0) int vprintk_func(const char *fmt, va_list args);
@@ -199,7 +200,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  void defer_console_output(void);
  
-@@ -70,10 +44,10 @@ void defer_console_output(void);
+@@ -58,10 +32,10 @@ void defer_console_output(void);
   * semaphore and some of console functions (console_unlock()/etc.), so
   * printk-safe must preserve the existing local IRQ guarantees.
   */
@@ -214,7 +215,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -#endif /* CONFIG_PRINTK */
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1675,13 +1675,6 @@ static bool cont_add(int facility, int l
+@@ -1726,13 +1726,6 @@ static bool cont_add(u32 caller_id, int
  }
  #endif /* 0 */
  
@@ -228,7 +229,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* ring buffer used as memory allocator for temporary sprint buffers */
  DECLARE_STATIC_PRINTKRB(sprint_rb,
  			ilog2(PRINTK_RECORD_MAX + sizeof(struct prb_entry) +
-@@ -1752,6 +1745,11 @@ asmlinkage int vprintk_emit(int facility
+@@ -1801,6 +1794,11 @@ asmlinkage int vprintk_emit(int facility
  }
  EXPORT_SYMBOL(vprintk_emit);
  
@@ -240,7 +241,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  asmlinkage int vprintk(const char *fmt, va_list args)
  {
  	return vprintk_func(fmt, args);
-@@ -3142,5 +3140,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
+@@ -3201,5 +3199,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
  	logbuf_unlock_irqrestore(flags);
  }
  EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
@@ -248,22 +249,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
 --- a/kernel/printk/printk_safe.c
 +++ /dev/null
-@@ -1,427 +0,0 @@
+@@ -1,415 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-or-later
 -/*
 - * printk_safe.c - Safe printk for printk-deadlock-prone contexts
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public License
-- * as published by the Free Software Foundation; either version 2
-- * of the License, or (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, see <http://www.gnu.org/licenses/>.
 - */
 -
 -#include <linux/preempt.h>
@@ -678,7 +667,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -8366,7 +8366,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -8874,7 +8874,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -686,7 +675,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -8447,7 +8446,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -8951,7 +8950,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  		atomic_dec(&per_cpu_ptr(iter.trace_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);

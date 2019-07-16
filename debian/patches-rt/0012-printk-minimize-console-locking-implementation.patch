@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:50 +0100
 Subject: [PATCH 12/25] printk: minimize console locking implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Since printing of the printk buffer is now handled by the printk
 kthread, minimize the console locking functions to just handle
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -209,19 +209,7 @@ static int nr_ext_console_drivers;
+@@ -217,19 +217,7 @@ static int nr_ext_console_drivers;
  
  static int __down_trylock_console_sem(unsigned long ip)
  {
@@ -38,7 +38,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return 1;
  	mutex_acquire(&console_lock_dep_map, 0, 1, ip);
  	return 0;
-@@ -230,13 +218,9 @@ static int __down_trylock_console_sem(un
+@@ -238,13 +226,9 @@ static int __down_trylock_console_sem(un
  
  static void __up_console_sem(unsigned long ip)
  {
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  #define up_console_sem() __up_console_sem(_RET_IP_)
  
-@@ -1498,82 +1482,6 @@ static void format_text(struct printk_lo
+@@ -1542,82 +1526,6 @@ static void format_text(struct printk_lo
  }
  
  /*
@@ -135,7 +135,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * Call the console drivers, asking them to write out
   * log_buf[start] to log_buf[end - 1].
   * The console_lock must be held.
-@@ -1830,8 +1738,6 @@ static ssize_t msg_print_ext_header(char
+@@ -1879,8 +1787,6 @@ static ssize_t msg_print_ext_header(char
  static ssize_t msg_print_ext_body(char *buf, size_t size,
  				  char *dict, size_t dict_len,
  				  char *text, size_t text_len) { return 0; }
@@ -144,7 +144,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static void call_console_drivers(const char *ext_text, size_t ext_len,
  				 const char *text, size_t len) {}
  static size_t msg_print_text(const struct printk_log *msg, bool syslog,
-@@ -2066,35 +1972,6 @@ int is_console_locked(void)
+@@ -2115,35 +2021,6 @@ int is_console_locked(void)
  {
  	return console_locked;
  }
@@ -180,7 +180,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /**
   * console_unlock - unlock the console system
-@@ -2102,147 +1979,17 @@ static inline int can_use_console(void)
+@@ -2151,147 +2028,17 @@ static inline int can_use_console(void)
   * Releases the console_lock which the caller holds on the console system
   * and the console driver list.
   *

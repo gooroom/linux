@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: hrtimer: by timers by default into the softirq context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -28,18 +28,18 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2274,7 +2274,7 @@ int kvm_create_lapic(struct kvm_vcpu *vc
+@@ -2308,7 +2308,7 @@ int kvm_create_lapic(struct kvm_vcpu *vc
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
 -		     HRTIMER_MODE_ABS_PINNED);
 +		     HRTIMER_MODE_ABS_PINNED_HARD);
  	apic->lapic_timer.timer.function = apic_timer_fn;
- 
- 	/*
+ 	if (timer_advance_ns == -1) {
+ 		apic->lapic_timer.timer_advance_ns = 1000;
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
-@@ -39,6 +39,7 @@ enum hrtimer_mode {
+@@ -38,6 +38,7 @@ enum hrtimer_mode {
  	HRTIMER_MODE_REL	= 0x01,
  	HRTIMER_MODE_PINNED	= 0x02,
  	HRTIMER_MODE_SOFT	= 0x04,
@@ -47,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
  	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
-@@ -49,6 +50,11 @@ enum hrtimer_mode {
+@@ -48,6 +49,11 @@ enum hrtimer_mode {
  	HRTIMER_MODE_ABS_PINNED_SOFT = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_SOFT,
  	HRTIMER_MODE_REL_PINNED_SOFT = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_SOFT,
  
@@ -61,7 +61,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
-@@ -1102,7 +1102,7 @@ static void __perf_mux_hrtimer_init(stru
+@@ -1103,7 +1103,7 @@ static void __perf_mux_hrtimer_init(stru
  	cpuctx->hrtimer_interval = ns_to_ktime(NSEC_PER_MSEC * interval);
  
  	raw_spin_lock_init(&cpuctx->hrtimer_lock);
@@ -70,7 +70,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -9212,7 +9212,7 @@ static void perf_swevent_init_hrtimer(st
+@@ -9488,7 +9488,7 @@ static void perf_swevent_init_hrtimer(st
  	if (!is_sampling_event(event))
  		return;
  
@@ -81,7 +81,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq
+@@ -317,7 +317,7 @@ static void hrtick_rq_init(struct rq *rq
  	rq->hrtick_csd.info = rq;
  #endif
  
@@ -92,7 +92,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else	/* CONFIG_SCHED_HRTICK */
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1054,7 +1054,7 @@ void init_dl_task_timer(struct sched_dl_
+@@ -1053,7 +1053,7 @@ void init_dl_task_timer(struct sched_dl_
  {
  	struct hrtimer *timer = &dl_se->dl_timer;
  
@@ -103,7 +103,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4916,9 +4916,9 @@ void init_cfs_bandwidth(struct cfs_bandw
+@@ -4945,9 +4945,9 @@ void init_cfs_bandwidth(struct cfs_bandw
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);
@@ -130,7 +130,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1126,7 +1126,9 @@ void hrtimer_start_range_ns(struct hrtim
+@@ -1109,7 +1109,9 @@ void hrtimer_start_range_ns(struct hrtim
  	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
  	 * match.
  	 */
@@ -140,7 +140,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	base = lock_hrtimer_base(timer, &flags);
  
-@@ -1286,10 +1288,17 @@ static inline int hrtimer_clockid_to_bas
+@@ -1269,10 +1271,17 @@ static inline int hrtimer_clockid_to_bas
  static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  			   enum hrtimer_mode mode)
  {
@@ -160,7 +160,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	memset(timer, 0, sizeof(struct hrtimer));
  
  	cpu_base = raw_cpu_ptr(&hrtimer_bases);
-@@ -1672,6 +1681,14 @@ static void __hrtimer_init_sleeper(struc
+@@ -1656,6 +1665,14 @@ static void __hrtimer_init_sleeper(struc
  				   enum hrtimer_mode mode,
  				   struct task_struct *task)
  {
@@ -188,7 +188,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -1307,7 +1307,7 @@ void tick_setup_sched_timer(void)
+@@ -1327,7 +1327,7 @@ void tick_setup_sched_timer(void)
  	/*
  	 * Emulate tick processing via per-CPU hrtimers:
  	 */
@@ -199,7 +199,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* Get the next period (per-CPU) */
 --- a/kernel/watchdog.c
 +++ b/kernel/watchdog.c
-@@ -483,7 +483,7 @@ static void watchdog_enable(unsigned int
+@@ -490,7 +490,7 @@ static void watchdog_enable(unsigned int
  	 * Start the timer first to prevent the NMI watchdog triggering
  	 * before the timer has a chance to fire.
  	 */

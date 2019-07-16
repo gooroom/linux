@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Sun, 17 Feb 2019 03:11:20 +0100
 Subject: [PATCH] printk: only allow kernel to emergency message
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Emergency messages exist as a mechanism for the kernel to
 communicate critical information to users. It is not meant for
@@ -11,12 +11,12 @@ processed by the emergency message code.
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/printk/printk.c |   18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ kernel/printk/printk.c |   17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1700,7 +1700,8 @@ static void printk_write_history(struct
+@@ -1744,7 +1744,8 @@ static void printk_write_history(struct
   * The console_lock must be held.
   */
  static void call_console_drivers(u64 seq, const char *ext_text, size_t ext_len,
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct console *con;
  
-@@ -1720,13 +1721,14 @@ static void call_console_drivers(u64 seq
+@@ -1764,13 +1765,14 @@ static void call_console_drivers(u64 seq
  			con->wrote_history = 1;
  			con->printk_seq = seq - 1;
  		}
@@ -43,20 +43,19 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			/* skip emergency messages, already printed */
  			if (con->printk_seq < seq)
  				con->printk_seq = seq;
-@@ -1894,7 +1896,11 @@ asmlinkage int vprintk_emit(int facility
+@@ -1941,7 +1943,10 @@ asmlinkage int vprintk_emit(int facility
  	 * - text points to beginning of text
  	 * - there is room before text for prefix
  	 */
 -	printk_emergency(rbuf, level & 7, ts_nsec, cpu, text, text_len);
 +	if (facility == 0) {
 +		/* only the kernel can create emergency messages */
-+		printk_emergency(rbuf, level & 7, ts_nsec, cpu,
-+				 text, text_len);
++		printk_emergency(rbuf, level & 7, ts_nsec, cpu, text, text_len);
 +	}
  
  	if ((lflags & LOG_CONT) || !(lflags & LOG_NEWLINE)) {
- 		cont_add(ctx, cpu, facility, level, lflags, text, text_len);
-@@ -2657,8 +2663,8 @@ static int printk_kthread_func(void *dat
+ 		 cont_add(ctx, cpu, caller_id, facility, level, lflags, text, text_len);
+@@ -2705,8 +2710,8 @@ static int printk_kthread_func(void *dat
  			    &len, printk_time);
  
  		console_lock();

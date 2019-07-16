@@ -1,7 +1,7 @@
 Subject: arm: Enable highmem for rt
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 13 Feb 2013 11:03:11 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 fixup highmem for ARM.
 
@@ -38,7 +38,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/arch/arm/mm/highmem.c
 +++ b/arch/arm/mm/highmem.c
-@@ -34,6 +34,11 @@ static inline pte_t get_fixmap_pte(unsig
+@@ -31,6 +31,11 @@ static inline pte_t get_fixmap_pte(unsig
  	return *ptep;
  }
  
@@ -50,7 +50,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void *kmap(struct page *page)
  {
  	might_sleep();
-@@ -54,12 +59,13 @@ EXPORT_SYMBOL(kunmap);
+@@ -51,12 +56,13 @@ EXPORT_SYMBOL(kunmap);
  
  void *kmap_atomic(struct page *page)
  {
@@ -65,7 +65,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	pagefault_disable();
  	if (!PageHighMem(page))
  		return page_address(page);
-@@ -79,7 +85,7 @@ void *kmap_atomic(struct page *page)
+@@ -76,7 +82,7 @@ void *kmap_atomic(struct page *page)
  
  	type = kmap_atomic_idx_push();
  
@@ -74,7 +74,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	vaddr = __fix_to_virt(idx);
  #ifdef CONFIG_DEBUG_HIGHMEM
  	/*
-@@ -93,7 +99,10 @@ void *kmap_atomic(struct page *page)
+@@ -90,7 +96,10 @@ void *kmap_atomic(struct page *page)
  	 * in place, so the contained TLB flush ensures the TLB is updated
  	 * with the new mapping.
  	 */
@@ -86,7 +86,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	return (void *)vaddr;
  }
-@@ -106,10 +115,13 @@ void __kunmap_atomic(void *kvaddr)
+@@ -103,10 +112,13 @@ void __kunmap_atomic(void *kvaddr)
  
  	if (kvaddr >= (void *)FIXADDR_START) {
  		type = kmap_atomic_idx();
@@ -101,7 +101,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_DEBUG_HIGHMEM
  		BUG_ON(vaddr != __fix_to_virt(idx));
  #else
-@@ -122,28 +134,56 @@ void __kunmap_atomic(void *kvaddr)
+@@ -119,28 +131,56 @@ void __kunmap_atomic(void *kvaddr)
  		kunmap_high(pte_page(pkmap_page_table[PKMAP_NR(vaddr)]));
  	}
  	pagefault_enable();

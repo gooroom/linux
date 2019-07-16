@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 4 Aug 2017 18:31:00 +0200
 Subject: [PATCH] hotplug: duct-tape RT-rwlock usage for non-RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 This type is only available on -RT. We need to craft something for
 non-RT. Since the only migrate_disable() user is -RT only, there is no
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -75,7 +75,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_s
+@@ -76,7 +76,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_s
  	.fail = CPUHP_INVALID,
  };
  
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static DEFINE_PER_CPU(struct rt_rw_lock, cpuhp_pin_lock) = \
  	__RWLOCK_RT_INITIALIZER(cpuhp_pin_lock);
  #endif
-@@ -291,6 +291,7 @@ static int cpu_hotplug_disabled;
+@@ -292,6 +292,7 @@ static int cpu_hotplug_disabled;
   */
  void pin_current_cpu(void)
  {
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct rt_rw_lock *cpuhp_pin;
  	unsigned int cpu;
  	int ret;
-@@ -313,6 +314,7 @@ void pin_current_cpu(void)
+@@ -314,6 +315,7 @@ void pin_current_cpu(void)
  		goto again;
  	}
  	current->pinned_on_cpu = cpu;
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /**
-@@ -320,6 +322,7 @@ void pin_current_cpu(void)
+@@ -321,6 +323,7 @@ void pin_current_cpu(void)
   */
  void unpin_current_cpu(void)
  {
@@ -47,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct rt_rw_lock *cpuhp_pin = this_cpu_ptr(&cpuhp_pin_lock);
  
  	if (WARN_ON(current->pinned_on_cpu != smp_processor_id()))
-@@ -327,6 +330,7 @@ void unpin_current_cpu(void)
+@@ -328,6 +331,7 @@ void unpin_current_cpu(void)
  
  	current->pinned_on_cpu = -1;
  	__read_rt_unlock(cpuhp_pin);
@@ -55,7 +55,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
-@@ -915,7 +919,9 @@ static int take_cpu_down(void *_param)
+@@ -918,7 +922,9 @@ static int take_cpu_down(void *_param)
  
  static int takedown_cpu(unsigned int cpu)
  {
@@ -65,7 +65,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -928,14 +934,18 @@ static int takedown_cpu(unsigned int cpu
+@@ -931,14 +937,18 @@ static int takedown_cpu(unsigned int cpu
  	 */
  	irq_lock_sparse();
  
@@ -84,7 +84,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -954,7 +964,9 @@ static int takedown_cpu(unsigned int cpu
+@@ -957,7 +967,9 @@ static int takedown_cpu(unsigned int cpu
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 25 Jan 2017 16:34:27 +0100
 Subject: [PATCH] radix-tree: use local locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 The preload functionality uses per-CPU variables and preempt-disable to
 ensure that it does not switch CPUs during its usage. This patch adds
@@ -33,7 +33,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * idr_for_each_entry() - Iterate over an IDR's elements of a given type.
 --- a/include/linux/radix-tree.h
 +++ b/include/linux/radix-tree.h
-@@ -239,6 +239,7 @@ unsigned int radix_tree_gang_lookup(cons
+@@ -226,6 +226,7 @@ unsigned int radix_tree_gang_lookup(cons
  			unsigned int max_items);
  int radix_tree_preload(gfp_t gfp_mask);
  int radix_tree_maybe_preload(gfp_t gfp_mask);
@@ -41,7 +41,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void radix_tree_init(void);
  void *radix_tree_tag_set(struct radix_tree_root *,
  			unsigned long index, unsigned int tag);
-@@ -256,11 +257,6 @@ unsigned int radix_tree_gang_lookup_tag_
+@@ -243,11 +244,6 @@ unsigned int radix_tree_gang_lookup_tag_
  		unsigned int max_items, unsigned int tag);
  int radix_tree_tagged(const struct radix_tree_root *, unsigned int tag);
  
@@ -55,7 +55,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			      unsigned long max);
 --- a/lib/radix-tree.c
 +++ b/lib/radix-tree.c
-@@ -39,7 +39,7 @@
+@@ -26,7 +26,7 @@
  #include <linux/slab.h>
  #include <linux/string.h>
  #include <linux/xarray.h>
@@ -64,7 +64,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * Radix tree node cache.
-@@ -85,6 +85,7 @@ struct radix_tree_preload {
+@@ -72,6 +72,7 @@ struct radix_tree_preload {
  	struct radix_tree_node *nodes;
  };
  static DEFINE_PER_CPU(struct radix_tree_preload, radix_tree_preloads) = { 0, };
@@ -72,7 +72,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static inline struct radix_tree_node *entry_to_node(void *ptr)
  {
-@@ -282,12 +283,13 @@ radix_tree_node_alloc(gfp_t gfp_mask, st
+@@ -269,12 +270,13 @@ radix_tree_node_alloc(gfp_t gfp_mask, st
  		 * succeed in getting a node here (and never reach
  		 * kmem_cache_alloc)
  		 */
@@ -87,7 +87,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/*
  		 * Update the allocation stack trace as this is more useful
  		 * for debugging.
-@@ -353,14 +355,14 @@ static __must_check int __radix_tree_pre
+@@ -340,14 +342,14 @@ static __must_check int __radix_tree_pre
  	 */
  	gfp_mask &= ~__GFP_ACCOUNT;
  
@@ -105,7 +105,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		rtp = this_cpu_ptr(&radix_tree_preloads);
  		if (rtp->nr < nr) {
  			node->parent = rtp->nodes;
-@@ -402,11 +404,17 @@ int radix_tree_maybe_preload(gfp_t gfp_m
+@@ -389,11 +391,17 @@ int radix_tree_maybe_preload(gfp_t gfp_m
  	if (gfpflags_allow_blocking(gfp_mask))
  		return __radix_tree_preload(gfp_mask, RADIX_TREE_PRELOAD_SIZE);
  	/* Preloading doesn't help anything with this gfp mask, skip it */
@@ -124,7 +124,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static unsigned radix_tree_load_root(const struct radix_tree_root *root,
  		struct radix_tree_node **nodep, unsigned long *maxindex)
  {
-@@ -1491,10 +1499,16 @@ EXPORT_SYMBOL(radix_tree_tagged);
+@@ -1478,10 +1486,16 @@ EXPORT_SYMBOL(radix_tree_tagged);
  void idr_preload(gfp_t gfp_mask)
  {
  	if (__radix_tree_preload(gfp_mask, IDR_PRELOAD_SIZE))

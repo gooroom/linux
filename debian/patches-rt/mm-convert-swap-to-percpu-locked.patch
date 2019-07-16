@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
 Subject: mm/swap: Convert to percpu locked
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -36,24 +36,24 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  extern void lru_cache_add_file(struct page *page);
 --- a/mm/compaction.c
 +++ b/mm/compaction.c
-@@ -1658,10 +1658,12 @@ static enum compact_result compact_zone(
+@@ -2226,10 +2226,12 @@ compact_zone(struct compact_control *cc,
  				block_start_pfn(cc->migrate_pfn, cc->order);
  
- 			if (cc->last_migrated_pfn < current_block_start) {
+ 			if (last_migrated_pfn < current_block_start) {
 -				cpu = get_cpu();
 +				cpu = get_cpu_light();
 +				local_lock_irq(swapvec_lock);
  				lru_add_drain_cpu(cpu);
 +				local_unlock_irq(swapvec_lock);
- 				drain_local_pages(zone);
+ 				drain_local_pages(cc->zone);
 -				put_cpu();
 +				put_cpu_light();
  				/* No more flushing until we migrate again */
- 				cc->last_migrated_pfn = 0;
+ 				last_migrated_pfn = 0;
  			}
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -7443,8 +7443,9 @@ void __init free_area_init(unsigned long
+@@ -7583,8 +7583,9 @@ void __init free_area_init(unsigned long
  
  static int page_alloc_cpu_dead(unsigned int cpu)
  {
@@ -66,7 +66,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
 --- a/mm/swap.c
 +++ b/mm/swap.c
-@@ -32,6 +32,7 @@
+@@ -33,6 +33,7 @@
  #include <linux/memcontrol.h>
  #include <linux/gfp.h>
  #include <linux/uio.h>
@@ -74,7 +74,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/hugetlb.h>
  #include <linux/page_idle.h>
  
-@@ -50,6 +51,8 @@ static DEFINE_PER_CPU(struct pagevec, lr
+@@ -51,6 +52,8 @@ static DEFINE_PER_CPU(struct pagevec, lr
  #ifdef CONFIG_SMP
  static DEFINE_PER_CPU(struct pagevec, activate_page_pvecs);
  #endif
@@ -83,7 +83,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /*
   * This path almost never happens for VM activity - pages are normally
-@@ -252,11 +255,11 @@ void rotate_reclaimable_page(struct page
+@@ -253,11 +256,11 @@ void rotate_reclaimable_page(struct page
  		unsigned long flags;
  
  		get_page(page);
@@ -97,7 +97,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-@@ -306,12 +309,13 @@ void activate_page(struct page *page)
+@@ -307,12 +310,13 @@ void activate_page(struct page *page)
  {
  	page = compound_head(page);
  	if (PageLRU(page) && !PageActive(page) && !PageUnevictable(page)) {
@@ -113,7 +113,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-@@ -333,7 +337,7 @@ void activate_page(struct page *page)
+@@ -334,7 +338,7 @@ void activate_page(struct page *page)
  
  static void __lru_cache_activate_page(struct page *page)
  {
@@ -122,7 +122,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	int i;
  
  	/*
-@@ -355,7 +359,7 @@ static void __lru_cache_activate_page(st
+@@ -356,7 +360,7 @@ static void __lru_cache_activate_page(st
  		}
  	}
  
@@ -131,7 +131,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /*
-@@ -397,12 +401,12 @@ EXPORT_SYMBOL(mark_page_accessed);
+@@ -398,12 +402,12 @@ EXPORT_SYMBOL(mark_page_accessed);
  
  static void __lru_cache_add(struct page *page)
  {
@@ -146,7 +146,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /**
-@@ -580,9 +584,9 @@ void lru_add_drain_cpu(int cpu)
+@@ -581,9 +585,9 @@ void lru_add_drain_cpu(int cpu)
  		unsigned long flags;
  
  		/* No harm done if a racing interrupt already did this */
@@ -158,7 +158,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  
  	pvec = &per_cpu(lru_deactivate_file_pvecs, cpu);
-@@ -614,11 +618,12 @@ void deactivate_file_page(struct page *p
+@@ -615,11 +619,12 @@ void deactivate_file_page(struct page *p
  		return;
  
  	if (likely(get_page_unless_zero(page))) {
@@ -173,7 +173,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-@@ -633,19 +638,20 @@ void mark_page_lazyfree(struct page *pag
+@@ -634,19 +639,20 @@ void mark_page_lazyfree(struct page *pag
  {
  	if (PageLRU(page) && PageAnon(page) && PageSwapBacked(page) &&
  	    !PageSwapCache(page) && !PageUnevictable(page)) {

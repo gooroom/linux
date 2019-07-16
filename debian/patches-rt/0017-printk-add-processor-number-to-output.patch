@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:55 +0100
 Subject: [PATCH 17/25] printk: add processor number to output
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 It can be difficult to sort printk out if multiple processors are
 printing simultaneously. Add the processor number to the printk
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -331,6 +331,7 @@ enum log_flags {
+@@ -338,6 +338,7 @@ enum log_flags {
  
  struct printk_log {
  	u64 ts_nsec;		/* timestamp in nanoseconds */
@@ -23,36 +23,36 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u16 len;		/* length of entire record */
  	u16 text_len;		/* length of text buffer */
  	u16 dict_len;		/* length of dictionary buffer */
-@@ -475,7 +476,7 @@ static u32 log_next(u32 idx)
+@@ -489,7 +490,7 @@ static u32 log_next(u32 idx)
  
  /* insert record into the buffer, discard old ones, update heads */
- static int log_store(int facility, int level,
+ static int log_store(u32 caller_id, int facility, int level,
 -		     enum log_flags flags, u64 ts_nsec,
 +		     enum log_flags flags, u64 ts_nsec, u16 cpu,
  		     const char *dict, u16 dict_len,
  		     const char *text, u16 text_len)
  {
-@@ -506,6 +507,7 @@ static int log_store(int facility, int l
- 	msg->level = level & 7;
- 	msg->flags = flags & 0x1f;
- 	msg->ts_nsec = ts_nsec;
+@@ -523,6 +524,7 @@ static int log_store(u32 caller_id, int
+ #ifdef CONFIG_PRINTK_CALLER
+ 	msg->caller_id = caller_id;
+ #endif
 +	msg->cpu = cpu;
  	msg->len = size;
  
  	/* insert message */
-@@ -570,9 +572,9 @@ static ssize_t msg_print_ext_header(char
+@@ -596,9 +598,9 @@ static ssize_t msg_print_ext_header(char
  
  	do_div(ts_usec, 1000);
  
--	return scnprintf(buf, size, "%u,%llu,%llu,%c;",
-+	return scnprintf(buf, size, "%u,%llu,%llu,%c,%hu;",
- 		       (msg->facility << 3) | msg->level, seq, ts_usec,
--		       msg->flags & LOG_CONT ? 'c' : '-');
-+		       msg->flags & LOG_CONT ? 'c' : '-', msg->cpu);
+-	return scnprintf(buf, size, "%u,%llu,%llu,%c%s;",
++	return scnprintf(buf, size, "%u,%llu,%llu,%c%s,%hu;",
+ 			 (msg->facility << 3) | msg->level, seq, ts_usec,
+-			 msg->flags & LOG_CONT ? 'c' : '-', caller);
++			 msg->flags & LOG_CONT ? 'c' : '-', caller, msg->cpu);
  }
  
  static ssize_t msg_print_ext_body(char *buf, size_t size,
-@@ -1110,6 +1112,11 @@ static inline void boot_delay_msec(int l
+@@ -1132,6 +1134,11 @@ static inline void boot_delay_msec(int l
  static bool printk_time = IS_ENABLED(CONFIG_PRINTK_TIME);
  module_param_named(time, printk_time, bool, S_IRUGO | S_IWUSR);
  
@@ -64,15 +64,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static size_t print_syslog(unsigned int level, char *buf)
  {
  	return sprintf(buf, "<%u>", level);
-@@ -1132,6 +1139,7 @@ static size_t print_prefix(const struct
- 		len = print_syslog((msg->facility << 3) | msg->level, buf);
- 	if (time)
- 		len += print_time(msg->ts_nsec, buf + len);
+@@ -1175,6 +1182,7 @@ static size_t print_prefix(const struct
+ 		buf[len++] = ' ';
+ 		buf[len] = '\0';
+ 	}
 +	len += print_cpu(msg->cpu, buf + len);
+ 
  	return len;
  }
- 
-@@ -1698,6 +1706,7 @@ asmlinkage int vprintk_emit(int facility
+@@ -1750,6 +1758,7 @@ asmlinkage int vprintk_emit(int facility
  	u64 ts_nsec;
  	char *text;
  	char *rbuf;
@@ -80,7 +80,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	ts_nsec = local_clock();
  
-@@ -1707,6 +1716,8 @@ asmlinkage int vprintk_emit(int facility
+@@ -1759,6 +1768,8 @@ asmlinkage int vprintk_emit(int facility
  		return printed_len;
  	}
  
@@ -89,12 +89,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	text = rbuf;
  	text_len = vscnprintf(text, PRINTK_SPRINT_MAX, fmt, args);
  
-@@ -1744,7 +1755,7 @@ asmlinkage int vprintk_emit(int facility
+@@ -1793,7 +1804,7 @@ asmlinkage int vprintk_emit(int facility
  	if (dict)
- 		lflags |= LOG_PREFIX|LOG_NEWLINE;
+ 		lflags |= LOG_NEWLINE;
  
--	printed_len = log_store(facility, level, lflags, ts_nsec,
-+	printed_len = log_store(facility, level, lflags, ts_nsec, cpu,
+-	printed_len = log_store(caller_id, facility, level, lflags, ts_nsec,
++	printed_len = log_store(caller_id, facility, level, lflags, ts_nsec, cpu,
  				dict, dictlen, text, text_len);
  
  	prb_commit(&h);

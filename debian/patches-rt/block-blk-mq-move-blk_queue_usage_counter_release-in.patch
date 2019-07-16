@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
 Subject: [PATCH] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -52,11 +52,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -447,12 +447,21 @@ void blk_queue_exit(struct request_queue
+@@ -403,12 +403,21 @@ void blk_queue_exit(struct request_queue
  	percpu_ref_put(&q->q_usage_counter);
  }
  
-+static void blk_queue_usage_counter_release_wrk(struct kthread_work *work)
++static void blk_queue_usage_counter_release_wrk(struct work_struct *work)
 +{
 +	struct request_queue *q =
 +		container_of(work, struct request_queue, mq_pcpu_wake);
@@ -71,18 +71,18 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 -	wake_up_all(&q->mq_freeze_wq);
 +	if (wq_has_sleeper(&q->mq_freeze_wq))
-+		kthread_schedule_work(&q->mq_pcpu_wake);
++		schedule_work(&q->mq_pcpu_wake);
  }
  
  static void blk_rq_timed_out_timer(struct timer_list *t)
-@@ -524,6 +533,7 @@ struct request_queue *blk_alloc_queue_no
+@@ -479,6 +488,7 @@ struct request_queue *blk_alloc_queue_no
  	spin_lock_init(&q->queue_lock);
  
  	init_waitqueue_head(&q->mq_freeze_wq);
-+	kthread_init_work(&q->mq_pcpu_wake, blk_queue_usage_counter_release_wrk);
++	INIT_WORK(&q->mq_pcpu_wake, blk_queue_usage_counter_release_wrk);
+ 	mutex_init(&q->mq_freeze_lock);
  
  	/*
- 	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -13,6 +13,7 @@
@@ -93,11 +93,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/pagemap.h>
  #include <linux/backing-dev-defs.h>
  #include <linux/wait.h>
-@@ -549,6 +550,7 @@ struct request_queue {
+@@ -554,6 +555,7 @@ struct request_queue {
  #endif
  	struct rcu_head		rcu_head;
  	wait_queue_head_t	mq_freeze_wq;
-+	struct kthread_work	mq_pcpu_wake;
- 	struct percpu_ref	q_usage_counter;
- 	struct list_head	all_q_node;
- 
++	struct work_struct	mq_pcpu_wake;
+ 	/*
+ 	 * Protect concurrent access to q_usage_counter by
+ 	 * percpu_ref_kill() and percpu_ref_reinit().

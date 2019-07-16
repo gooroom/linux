@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 09:13:42 +0200
 Subject: [PATCH] arm64: KVM: compute_layout before altenates are applied
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 compute_layout() is invoked as part of an alternative fixup under
 stop_machine() and needs a sleeping lock as part of get_random_long().
@@ -32,7 +32,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	" .if " __stringify(cb) " == 0\n"				      \
 --- a/arch/arm64/kernel/alternative.c
 +++ b/arch/arm64/kernel/alternative.c
-@@ -224,6 +224,7 @@ static int __apply_alternatives_multi_st
+@@ -238,6 +238,7 @@ static int __apply_alternatives_multi_st
  void __init apply_alternatives_all(void)
  {
  	/* better not try code patching on a live SMP system */
@@ -42,7 +42,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/arch/arm64/kvm/va_layout.c
 +++ b/arch/arm64/kvm/va_layout.c
-@@ -33,7 +33,7 @@ static u8 tag_lsb;
+@@ -22,7 +22,7 @@ static u8 tag_lsb;
  static u64 tag_val;
  static u64 va_mask;
  
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	phys_addr_t idmap_addr = __pa_symbol(__hyp_idmap_text_start);
  	u64 hyp_va_msb;
-@@ -121,8 +121,6 @@ void __init kvm_update_va_mask(struct al
+@@ -110,8 +110,6 @@ void __init kvm_update_va_mask(struct al
  
  	BUG_ON(nr_inst != 5);
  
@@ -60,7 +60,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	for (i = 0; i < nr_inst; i++) {
  		u32 rd, rn, insn, oinsn;
-@@ -167,9 +165,6 @@ void kvm_patch_vector_branch(struct alt_
+@@ -156,9 +154,6 @@ void kvm_patch_vector_branch(struct alt_
  		return;
  	}
  

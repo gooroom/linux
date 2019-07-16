@@ -1,7 +1,7 @@
 Subject: mm, rt: kmap_atomic scheduling
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 28 Jul 2011 10:43:51 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 In fact, with migrate_disable() existing one could play games with
 kmap_atomic. You could save/restore the kmap_atomic slots on context
@@ -39,7 +39,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  #include <asm/pgtable.h>
  #include <asm/ldt.h>
-@@ -195,6 +196,35 @@ start_thread(struct pt_regs *regs, unsig
+@@ -202,6 +203,35 @@ start_thread(struct pt_regs *regs, unsig
  }
  EXPORT_SYMBOL_GPL(start_thread);
  
@@ -75,7 +75,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  /*
   *	switch_to(x,y) should switch tasks from x to y.
-@@ -265,6 +295,8 @@ EXPORT_SYMBOL_GPL(start_thread);
+@@ -272,6 +302,8 @@ EXPORT_SYMBOL_GPL(start_thread);
  
  	switch_to_extra(prev_p, next_p);
  
@@ -86,7 +86,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	 * This must be done before restoring TLS segments so
 --- a/arch/x86/mm/highmem_32.c
 +++ b/arch/x86/mm/highmem_32.c
-@@ -32,10 +32,11 @@ EXPORT_SYMBOL(kunmap);
+@@ -33,10 +33,11 @@ EXPORT_SYMBOL(kunmap);
   */
  void *kmap_atomic_prot(struct page *page, pgprot_t prot)
  {
@@ -99,7 +99,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	pagefault_disable();
  
  	if (!PageHighMem(page))
-@@ -45,7 +46,10 @@ void *kmap_atomic_prot(struct page *page
+@@ -46,7 +47,10 @@ void *kmap_atomic_prot(struct page *page
  	idx = type + KM_TYPE_NR*smp_processor_id();
  	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
  	BUG_ON(!pte_none(*(kmap_pte-idx)));
@@ -111,7 +111,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	arch_flush_lazy_mmu_mode();
  
  	return (void *)vaddr;
-@@ -88,6 +92,9 @@ void __kunmap_atomic(void *kvaddr)
+@@ -89,6 +93,9 @@ void __kunmap_atomic(void *kvaddr)
  		 * is a bad idea also, in case the page changes cacheability
  		 * attributes or becomes a protected page in a hypervisor.
  		 */
@@ -121,7 +121,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  		kpte_clear_flush(kmap_pte-idx, vaddr);
  		kmap_atomic_idx_pop();
  		arch_flush_lazy_mmu_mode();
-@@ -100,7 +107,7 @@ void __kunmap_atomic(void *kvaddr)
+@@ -101,7 +108,7 @@ void __kunmap_atomic(void *kvaddr)
  #endif
  
  	pagefault_enable();
@@ -132,7 +132,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
 --- a/arch/x86/mm/iomap_32.c
 +++ b/arch/x86/mm/iomap_32.c
-@@ -59,6 +59,7 @@ EXPORT_SYMBOL_GPL(iomap_free);
+@@ -46,6 +46,7 @@ EXPORT_SYMBOL_GPL(iomap_free);
  
  void *kmap_atomic_prot_pfn(unsigned long pfn, pgprot_t prot)
  {
@@ -140,7 +140,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	unsigned long vaddr;
  	int idx, type;
  
-@@ -68,7 +69,10 @@ void *kmap_atomic_prot_pfn(unsigned long
+@@ -55,7 +56,10 @@ void *kmap_atomic_prot_pfn(unsigned long
  	type = kmap_atomic_idx_push();
  	idx = type + KM_TYPE_NR * smp_processor_id();
  	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
@@ -152,7 +152,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  	arch_flush_lazy_mmu_mode();
  
  	return (void *)vaddr;
-@@ -119,6 +123,9 @@ iounmap_atomic(void __iomem *kvaddr)
+@@ -106,6 +110,9 @@ iounmap_atomic(void __iomem *kvaddr)
  		 * is a bad idea also, in case the page changes cacheability
  		 * attributes or becomes a protected page in a hypervisor.
  		 */
@@ -248,9 +248,9 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  
  /* task_struct member predeclarations (sorted alphabetically): */
  struct audit_context;
-@@ -1210,6 +1211,12 @@ struct task_struct {
- 	int				softirq_nestcnt;
- 	unsigned int			softirqs_raised;
+@@ -1209,6 +1210,12 @@ struct task_struct {
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ 	struct rcu_head			put_rcu;
  #endif
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +# if defined CONFIG_HIGHMEM || defined CONFIG_X86_32

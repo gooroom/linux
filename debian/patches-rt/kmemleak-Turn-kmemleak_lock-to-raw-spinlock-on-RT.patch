@@ -1,7 +1,7 @@
 From: He Zhe <zhe.he@windriver.com>
 Date: Wed, 19 Dec 2018 16:30:57 +0100
 Subject: [PATCH] kmemleak: Turn kmemleak_lock to raw spinlock on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.0/older/patches-5.0.10-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2-rt1.tar.xz
 
 kmemleak_lock, as a rwlock on RT, can possibly be held in atomic context and
 causes the follow BUG.
@@ -76,7 +76,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/mm/kmemleak.c
 +++ b/mm/kmemleak.c
-@@ -26,7 +26,7 @@
+@@ -13,7 +13,7 @@
   *
   * The following locks and mutexes are used by kmemleak:
   *
@@ -85,7 +85,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *   accesses to the object_tree_root. The object_list is the main list
   *   holding the metadata (struct kmemleak_object) for the allocated memory
   *   blocks. The object_tree_root is a red black tree used to look-up
-@@ -199,7 +199,7 @@ static LIST_HEAD(gray_list);
+@@ -186,7 +186,7 @@ static LIST_HEAD(gray_list);
  /* search tree for object boundaries */
  static struct rb_root object_tree_root = RB_ROOT;
  /* rw_lock protecting the access to object_list and object_tree_root */
@@ -94,7 +94,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /* allocation caches for kmemleak internal data */
  static struct kmem_cache *object_cache;
-@@ -515,9 +515,9 @@ static struct kmemleak_object *find_and_
+@@ -497,9 +497,9 @@ static struct kmemleak_object *find_and_
  	struct kmemleak_object *object;
  
  	rcu_read_lock();
@@ -106,7 +106,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* check whether the object is still available */
  	if (object && !get_object(object))
-@@ -537,13 +537,13 @@ static struct kmemleak_object *find_and_
+@@ -519,13 +519,13 @@ static struct kmemleak_object *find_and_
  	unsigned long flags;
  	struct kmemleak_object *object;
  
@@ -122,7 +122,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return object;
  }
-@@ -618,7 +618,7 @@ static struct kmemleak_object *create_ob
+@@ -592,7 +592,7 @@ static struct kmemleak_object *create_ob
  	/* kernel backtrace */
  	object->trace_len = __save_stack_trace(object->trace);
  
@@ -131,7 +131,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	untagged_ptr = (unsigned long)kasan_reset_tag((void *)ptr);
  	min_addr = min(min_addr, untagged_ptr);
-@@ -650,7 +650,7 @@ static struct kmemleak_object *create_ob
+@@ -624,7 +624,7 @@ static struct kmemleak_object *create_ob
  
  	list_add_tail_rcu(&object->object_list, &object_list);
  out:
@@ -140,7 +140,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return object;
  }
  
-@@ -1337,7 +1337,7 @@ static void scan_block(void *_start, voi
+@@ -1311,7 +1311,7 @@ static void scan_block(void *_start, voi
  	unsigned long flags;
  	unsigned long untagged_ptr;
  
@@ -149,7 +149,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	for (ptr = start; ptr < end; ptr++) {
  		struct kmemleak_object *object;
  		unsigned long pointer;
-@@ -1395,7 +1395,7 @@ static void scan_block(void *_start, voi
+@@ -1369,7 +1369,7 @@ static void scan_block(void *_start, voi
  			spin_unlock(&object->lock);
  		}
  	}
