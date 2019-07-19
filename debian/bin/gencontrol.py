@@ -298,7 +298,7 @@ class Gencontrol(Base):
                       "PACKAGE_NAMES='%s' UDEB_UNSIGNED_TEST_BUILD=%s" %
                       (arch, makeflags,
                        ' '.join(p['Package'] for p in udeb_packages),
-                       build_signed)])
+                       False)])
 
         # This also needs to be built after the per-flavour/per-featureset
         # packages.
