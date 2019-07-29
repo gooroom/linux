@@ -1,0 +1,38 @@
+From: Will Deacon <will.deacon@arm.com>
+Date: Wed, 5 Sep 2018 15:34:43 +0100
+Subject: arm64: compat: Provide definition for COMPAT_SIGMINSTKSZ
+Origin: https://git.kernel.org/linus/24951465cbd279f60b1fdc2421b3694405bcff42
+
+arch/arm/ defines a SIGMINSTKSZ of 2k, so we should use the same value
+for compat tasks.
+
+Cc: Arnd Bergmann <arnd@arndb.de>
+Cc: Dominik Brodowski <linux@dominikbrodowski.net>
+Cc: "Eric W. Biederman" <ebiederm@xmission.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Oleg Nesterov <oleg@redhat.com>
+Reviewed-by: Dave Martin <Dave.Martin@arm.com>
+Reported-by: Steve McIntyre <steve.mcintyre@arm.com>
+Tested-by: Steve McIntyre <93sam@debian.org>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+---
+ arch/arm64/include/asm/compat.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/include/asm/compat.h b/arch/arm64/include/asm/compat.h
+index 1a037b94eba1..cee28a05ee98 100644
+--- a/arch/arm64/include/asm/compat.h
++++ b/arch/arm64/include/asm/compat.h
+@@ -159,6 +159,7 @@ static inline compat_uptr_t ptr_to_compat(void __user *uptr)
+ }
+ 
+ #define compat_user_stack_pointer() (user_stack_pointer(task_pt_regs(current)))
++#define COMPAT_MINSIGSTKSZ	2048
+ 
+ static inline void __user *arch_compat_alloc_user_space(long len)
+ {
+-- 
+2.20.1
+
