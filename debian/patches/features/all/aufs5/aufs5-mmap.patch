@@ -13,8 +13,8 @@ Index: debian-kernel/fs/proc/base.c
 ===================================================================
 --- debian-kernel.orig/fs/proc/base.c
 +++ debian-kernel/fs/proc/base.c
-@@ -2014,7 +2014,7 @@ static int map_files_get_link(struct den
- 	down_read(&mm->mmap_sem);
+@@ -2020,7 +2020,7 @@ static int map_files_get_link(struct den
+ 	rc = -ENOENT;
  	vma = find_exact_vma(mm, vm_start, vm_end);
  	if (vma && vma->vm_file) {
 -		*path = vma->vm_file->f_path;
@@ -42,7 +42,7 @@ Index: debian-kernel/fs/proc/task_mmu.c
 ===================================================================
 --- debian-kernel.orig/fs/proc/task_mmu.c
 +++ debian-kernel/fs/proc/task_mmu.c
-@@ -305,7 +305,10 @@ show_map_vma(struct seq_file *m, struct
+@@ -309,7 +309,10 @@ show_map_vma(struct seq_file *m, struct
  	const char *name = NULL;
  
  	if (file) {
@@ -54,7 +54,7 @@ Index: debian-kernel/fs/proc/task_mmu.c
  		dev = inode->i_sb->s_dev;
  		ino = inode->i_ino;
  		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
-@@ -1761,7 +1764,7 @@ static int show_numa_map(struct seq_file
+@@ -1774,7 +1777,7 @@ static int show_numa_map(struct seq_file
  	struct proc_maps_private *proc_priv = &numa_priv->proc_maps;
  	struct vm_area_struct *vma = v;
  	struct numa_maps *md = &numa_priv->md;
@@ -83,7 +83,7 @@ Index: debian-kernel/include/linux/mm.h
 ===================================================================
 --- debian-kernel.orig/include/linux/mm.h
 +++ debian-kernel/include/linux/mm.h
-@@ -1553,6 +1553,28 @@ static inline void unmap_shared_mapping_
+@@ -1558,6 +1558,28 @@ static inline void unmap_shared_mapping_
  	unmap_mapping_range(mapping, holebegin, holelen, 0);
  }
  
@@ -162,7 +162,7 @@ Index: debian-kernel/mm/filemap.c
 ===================================================================
 --- debian-kernel.orig/mm/filemap.c
 +++ debian-kernel/mm/filemap.c
-@@ -2671,7 +2671,7 @@ vm_fault_t filemap_page_mkwrite(struct v
+@@ -2723,7 +2723,7 @@ vm_fault_t filemap_page_mkwrite(struct v
  	vm_fault_t ret = VM_FAULT_LOCKED;
  
  	sb_start_pagefault(inode->i_sb);
