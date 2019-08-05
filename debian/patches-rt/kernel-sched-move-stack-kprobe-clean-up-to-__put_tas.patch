@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/vmacache.h>
  #include <linux/nsproxy.h>
  #include <linux/capability.h>
-@@ -742,6 +743,15 @@ void __put_task_struct(struct task_struc
+@@ -747,6 +748,15 @@ void __put_task_struct(struct task_struc
  	WARN_ON(refcount_read(&tsk->usage));
  	WARN_ON(tsk == current);
  
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	put_task_stack(tsk);
 +
  	cgroup_free(tsk);
- 	task_numa_free(tsk);
+ 	task_numa_free(tsk, true);
  	security_task_free(tsk);
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
