@@ -339,21 +339,7 @@ install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_$(
 		cp -a $(SOURCE_DIR)/arch/$(KERNEL_ARCH)/lib/crtsavres.o $(DIR)/arch/$(KERNEL_ARCH)/lib; \
 	fi
 
-	@echo 'VERSION = 2' > $(DIR)/Makefile
-	@echo 'PATCHLEVEL = 6' >> $(DIR)/Makefile
-
-	@echo 'MAKEARGS := -C $(BASE_DIR_COMMON) O=$(BASE_DIR)' >> $(DIR)/Makefile
-	@echo 'MAKEFLAGS += --no-print-directory' >> $(DIR)/Makefile
-
-	@echo '.PHONY: all $$(MAKECMDGOALS)' >> $(DIR)/Makefile
-	@echo 'cmd := $$(filter-out all Makefile,$$(MAKECMDGOALS))' >> $(DIR)/Makefile
-	@echo 'all:' >> $(DIR)/Makefile
-	@echo '	@$$(MAKE) $$(MAKEARGS) $$(cmd)' >> $(DIR)/Makefile
-	@echo 'Makefile:;' >> $(DIR)/Makefile
-	@echo '$$(cmd): all' >> $(DIR)/Makefile
-	@echo '	@:' >> $(DIR)/Makefile
-	@echo '%/: all' >> $(DIR)/Makefile
-	@echo '	@:' >> $(DIR)/Makefile
+	@echo 'include $(BASE_DIR_COMMON)/Makefile' >> $(DIR)/Makefile
 
 	dh_link /usr/lib/$(PACKAGE_NAME_KBUILD)/scripts $(BASE_DIR)/scripts
 	dh_link /usr/lib/$(PACKAGE_NAME_KBUILD)/tools $(BASE_DIR)/tools
