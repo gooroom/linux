@@ -1,4 +1,6 @@
 _add_etc_network_interfaces() {
+  test -f /etc/network/interfaces || return 0
+
   echo '** Network interface configuration:' >&3
   # Hide passwords/keys
   awk '$1 ~ /key|pass|^wpa-(anonymous|identity|phase|pin|private|psk)/ { gsub(".", "*", $2); }
@@ -32,6 +34,8 @@ add_network() {
 
 ask_network() {
   test $same_system = yep || return 0
+  test -f /etc/network/interfaces || return 0
+
   yesno "Include network configuration from this computer? " nop
   test $REPLY = yep || return 0
 
