@@ -22,11 +22,9 @@ cc: linux-efi@vger.kernel.org
  4 files changed, 50 insertions(+), 19 deletions(-)
  create mode 100644 drivers/firmware/efi/secureboot.c
 
-diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
-index 0957dd73d127..7c2162f9e769 100644
 --- a/arch/x86/kernel/setup.c
 +++ b/arch/x86/kernel/setup.c
-@@ -1197,19 +1197,7 @@ void __init setup_arch(char **cmdline_p)
+@@ -1159,19 +1159,7 @@ void __init setup_arch(char **cmdline_p)
  	/* Allocate bigger log buffer */
  	setup_log_buf(1);
  
@@ -47,11 +45,9 @@ index 0957dd73d127..7c2162f9e769 100644
  
  	reserve_initrd();
  
-diff --git a/drivers/firmware/efi/Makefile b/drivers/firmware/efi/Makefile
-index 0329d319d89a..883f9f7eefc6 100644
 --- a/drivers/firmware/efi/Makefile
 +++ b/drivers/firmware/efi/Makefile
-@@ -23,6 +23,7 @@ obj-$(CONFIG_EFI_FAKE_MEMMAP)		+= fake_mem.o
+@@ -24,6 +24,7 @@ obj-$(CONFIG_EFI_FAKE_MEMMAP)		+= fake_m
  obj-$(CONFIG_EFI_BOOTLOADER_CONTROL)	+= efibc.o
  obj-$(CONFIG_EFI_TEST)			+= test/
  obj-$(CONFIG_EFI_DEV_PATH_PARSER)	+= dev-path-parser.o
@@ -59,9 +55,6 @@ index 0329d319d89a..883f9f7eefc6 100644
  obj-$(CONFIG_APPLE_PROPERTIES)		+= apple-properties.o
  
  arm-obj-$(CONFIG_EFI)			:= arm-init.o arm-runtime.o
-diff --git a/drivers/firmware/efi/secureboot.c b/drivers/firmware/efi/secureboot.c
-new file mode 100644
-index 000000000000..9070055de0a1
 --- /dev/null
 +++ b/drivers/firmware/efi/secureboot.c
 @@ -0,0 +1,38 @@
@@ -103,11 +96,9 @@ index 000000000000..9070055de0a1
 +		}
 +	}
 +}
-diff --git a/include/linux/efi.h b/include/linux/efi.h
-index 66f4a4e79f4b..7c7a7e33e4d1 100644
 --- a/include/linux/efi.h
 +++ b/include/linux/efi.h
-@@ -1103,6 +1103,14 @@ extern int __init efi_setup_pcdp_console(char *);
+@@ -1152,6 +1152,14 @@ extern int __init efi_setup_pcdp_console
  #define EFI_DBG			8	/* Print additional debug info at runtime */
  #define EFI_NX_PE_DATA		9	/* Can runtime data regions be mapped non-executable? */
  #define EFI_MEM_ATTR		10	/* Did firmware publish an EFI_MEMORY_ATTRIBUTES table? */
@@ -122,7 +113,7 @@ index 66f4a4e79f4b..7c7a7e33e4d1 100644
  
  #ifdef CONFIG_EFI
  /*
-@@ -1115,6 +1123,7 @@ static inline bool efi_enabled(int feature)
+@@ -1164,6 +1172,7 @@ static inline bool efi_enabled(int featu
  extern void efi_reboot(enum reboot_mode reboot_mode, const char *__unused);
  
  extern bool efi_is_table_address(unsigned long phys_addr);
@@ -130,7 +121,7 @@ index 66f4a4e79f4b..7c7a7e33e4d1 100644
  #else
  static inline bool efi_enabled(int feature)
  {
-@@ -1133,6 +1142,7 @@ static inline bool efi_is_table_address(unsigned long phys_addr)
+@@ -1182,6 +1191,7 @@ static inline bool efi_is_table_address(
  {
  	return false;
  }
@@ -138,8 +129,8 @@ index 66f4a4e79f4b..7c7a7e33e4d1 100644
  #endif
  
  extern int efi_status_to_err(efi_status_t status);
-@@ -1518,12 +1528,6 @@ efi_status_t efi_setup_gop(efi_system_table_t *sys_table_arg,
- bool efi_runtime_disabled(void);
+@@ -1572,12 +1582,6 @@ static inline bool efi_runtime_disabled(
+ 
  extern void efi_call_virt_check_flags(unsigned long flags, const char *call);
  
 -enum efi_secureboot_mode {
