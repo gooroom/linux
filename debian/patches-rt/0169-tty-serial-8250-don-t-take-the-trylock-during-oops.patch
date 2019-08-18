@@ -1,8 +1,8 @@
-From 511eaf0e0ecbd9898b7f680f08ab0636062f3c7e Mon Sep 17 00:00:00 2001
+From 872de798df0e839bfdfdaebdde0eae1b50de4614 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Apr 2016 16:55:02 +0200
-Subject: [PATCH 169/269] tty: serial: 8250: don't take the trylock during oops
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Subject: [PATCH 169/283] tty: serial: 8250: don't take the trylock during oops
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 An oops with irqs off (panic() from irqsafe hrtimer like the watchdog
 timer) will lead to a lockdep warning on each invocation and as such
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
-index 3f779d25ec0c..851d7f6046a4 100644
+index e26d87b6ffc5..8d85448975d3 100644
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
-@@ -3239,10 +3239,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
+@@ -3238,10 +3238,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
  
  	serial8250_rpm_get(up);
  

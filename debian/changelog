@@ -2153,6 +2153,33 @@ linux (4.19.67-1) UNRELEASED; urgency=medium
   * rtc-s35390a: backport fix to make hwclock able to read the time
     (Closes: #932845)
 
+  [ Ben Hutchings ]
+  * [rt] Update to 4.19.59-rt24:
+    - Fix build failure after "genirq: Prevent use-after-free and work
+      list corruption":
+      + Update "genirq: Do not invoke the affinity callback via a workqueue on
+        RT"
+      + kthread: add a global worker thread.
+      + genirq: Do not invoke the affinity callback via a workqueue on RT
+      + genirq: Handle missing work_struct in irq_set_affinity_notifier()
+    - Update "irqwork: push most work into softirq context" to resolve
+      conflict with "irq_work: Do not raise an IPI when queueing work on the
+      local CPU"
+    - Drop "random: avoid preempt_disable()ed section"
+    - arm: imx6: cpuidle: Use raw_spinlock_t
+    - rcu: Don't allow to change rcu_normal_after_boot on RT
+    - sched/core: Drop a preempt_disable_rt() statement
+    - timers: Redo the notification of canceling timers on -RT
+    - Fix futex regression in 4.19.21:
+      + Revert "futex: Ensure lock/unlock symetry versus pi_lock and hash
+        bucket lock"
+      + Revert "futex: Fix bug on when a requeued RT task times out"
+      + Revert "rtmutex: Handle the various new futex race conditions"
+      + Revert "futex: workaround migrate_disable/enable in different context"
+      + futex: Make the futex_hash_bucket lock raw
+      + futex: Delay deallocation of pi_state
+    - mm/zswap: Do not disable preemption in zswap_frontswap_store()
+
  -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 23 Jun 2019 16:15:17 +0200
 
 linux (4.19.37-5+deb10u2) buster-security; urgency=high
