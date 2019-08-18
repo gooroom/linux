@@ -21,6 +21,11 @@ _add_etc_network_interfaces() {
   echo '** Network interface configuration:' >&3
 
   while read file; do
+    if ! [ -r "$file" ]; then
+      echo "*** $file: unreadable" >&3
+      echo >&3
+      continue
+    fi
     echo "*** $file:" >&3
     # Hide passwords/keys
     awk '$1 ~ /key|pass|^wpa-(anonymous|identity|phase|pin|private|psk)/ { gsub(".", "*", $2); }
