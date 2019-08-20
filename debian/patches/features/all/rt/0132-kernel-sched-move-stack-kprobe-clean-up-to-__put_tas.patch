@@ -16,8 +16,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/sched/core.c |  9 ---------
  2 files changed, 10 insertions(+), 9 deletions(-)
 
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 1c375cd748a8..bb3840fadbaf 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -77,6 +77,7 @@
@@ -28,7 +26,7 @@ index 1c375cd748a8..bb3840fadbaf 100644
  
  #include <asm/pgtable.h>
  #include <asm/pgalloc.h>
-@@ -390,6 +391,15 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -395,6 +396,15 @@ void __put_task_struct(struct task_struc
  	WARN_ON(atomic_read(&tsk->usage));
  	WARN_ON(tsk == current);
  
@@ -42,13 +40,11 @@ index 1c375cd748a8..bb3840fadbaf 100644
 +	put_task_stack(tsk);
 +
  	cgroup_free(tsk);
- 	task_numa_free(tsk);
+ 	task_numa_free(tsk, true);
  	security_task_free(tsk);
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 750affe45537..d25fa461ce82 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2797,15 +2797,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2797,15 +2797,6 @@ static struct rq *finish_task_switch(str
  		if (prev->sched_class->task_dead)
  			prev->sched_class->task_dead(prev);
  
@@ -64,6 +60,3 @@ index 750affe45537..d25fa461ce82 100644
  		put_task_struct(prev);
  	}
  
--- 
-2.20.1
-
