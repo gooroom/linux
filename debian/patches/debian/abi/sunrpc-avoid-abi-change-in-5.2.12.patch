@@ -1,0 +1,23 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Tue, 10 Sep 2019 10:23:41 +0100
+Subject: sunrpc: Avoid ABI change in 5.2.12
+Forwarded: not-needed
+
+Commit e0e3650991cd "Revert "NFSv4/flexfiles: Abort I/O early if the
+layout segment was invalidated"" deleted the operation pointer
+rpc_call_ops::rpc_call_prepare_transmit because it couldn't be called
+safely.  To avoid an ABI change, add the operation back but never use
+it.
+
+---
+--- a/include/linux/sunrpc/sched.h
++++ b/include/linux/sunrpc/sched.h
+@@ -98,6 +98,8 @@ typedef void			(*rpc_action)(struct rpc_
+ 
+ struct rpc_call_ops {
+ 	void (*rpc_call_prepare)(struct rpc_task *, void *);
++	/* no longer used: */
++	void (*rpc_call_prepare_transmit)(struct rpc_task *, void *);
+ 	void (*rpc_call_done)(struct rpc_task *, void *);
+ 	void (*rpc_count_stats)(struct rpc_task *, void *);
+ 	void (*rpc_release)(void *);
