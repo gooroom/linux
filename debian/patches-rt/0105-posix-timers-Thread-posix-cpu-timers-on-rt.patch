@@ -1,8 +1,8 @@
-From 34b024b3a992c144a3df653c0ad623a8a69dc735 Mon Sep 17 00:00:00 2001
+From f7d44ae1ff53ff9277b2207c7987b8ffa0a65738 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 105/269] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Subject: [PATCH 105/283] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -58,10 +58,10 @@ index 0b49b9cf5571..9e3362748214 100644
  	.thread_group	= LIST_HEAD_INIT(init_task.thread_group),
  	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
 diff --git a/kernel/fork.c b/kernel/fork.c
-index bfe9c5c3eb88..1b8ac523aa99 100644
+index 98c971cb1d36..492bc898b09a 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1575,6 +1575,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1585,6 +1585,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {

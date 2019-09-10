@@ -1,9 +1,9 @@
-From 3933bc43d3be58eb86a118b1bd147cd4a2c9b33d Mon Sep 17 00:00:00 2001
+From a0f3744dd80367c9d401ebb5764b426fa7634006 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
-Subject: [PATCH 186/269] block: blk-mq: move blk_queue_usage_counter_release()
+Subject: [PATCH 186/283] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -52,10 +52,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 581bf704154a..0a651b442cec 100644
+index b6010a1c3aad..38b1bd493165 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -968,12 +968,21 @@ void blk_queue_exit(struct request_queue *q)
+@@ -967,12 +967,21 @@ void blk_queue_exit(struct request_queue *q)
  	percpu_ref_put(&q->q_usage_counter);
  }
  
@@ -78,7 +78,7 @@ index 581bf704154a..0a651b442cec 100644
  }
  
  static void blk_rq_timed_out_timer(struct timer_list *t)
-@@ -1066,6 +1075,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id,
+@@ -1069,6 +1078,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id,
  	queue_flag_set_unlocked(QUEUE_FLAG_BYPASS, q);
  
  	init_waitqueue_head(&q->mq_freeze_wq);
@@ -86,7 +86,7 @@ index 581bf704154a..0a651b442cec 100644
  
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
-@@ -3956,6 +3966,8 @@ int __init blk_dev_init(void)
+@@ -3958,6 +3968,8 @@ int __init blk_dev_init(void)
  	if (!kblockd_workqueue)
  		panic("Failed to create kblockd\n");
  

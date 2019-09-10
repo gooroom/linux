@@ -1,8 +1,8 @@
-From e6cdcf7dbf2aa921c55ed19673c775491efc2a75 Mon Sep 17 00:00:00 2001
+From 2cb581744045c7aea758c05bbc5c84389753b1a5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
-Subject: [PATCH 199/269] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Subject: [PATCH 199/283] net: move xmit_recursion to per-task variable on -RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -198,7 +198,7 @@ index a023e1ba5d8f..a9a5edfa9689 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 327a985bf0c7..ee90223959fc 100644
+index 616429a4715c..1a8677236939 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3537,8 +3537,10 @@ static void skb_update_prio(struct sk_buff *skb)
@@ -249,7 +249,7 @@ index 327a985bf0c7..ee90223959fc 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 diff --git a/net/core/filter.c b/net/core/filter.c
-index eb81e9db4093..2dd1f2eef4fa 100644
+index 34ec9324737b..03925960fb5c 100644
 --- a/net/core/filter.c
 +++ b/net/core/filter.c
 @@ -2000,7 +2000,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
