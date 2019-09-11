@@ -322,7 +322,7 @@ class Gencontrol(Base):
         ('compiler', 'COMPILER', False),
         ('compiler-filename', 'COMPILER', True),
         ('kernel-arch', 'KERNEL_ARCH', False),
-        ('cflags', 'CFLAGS_KERNEL', True),
+        ('cflags', 'KCFLAGS', True),
         ('override-host-type', 'OVERRIDE_HOST_TYPE', True),
     )
 
