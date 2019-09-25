@@ -8,6 +8,8 @@ according to the latest ENA spec version.
 
 Signed-off-by: Arthur Kiyanovski <akiyano@amazon.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
+[carnil: Refresh for context changes in 4.9.180 due to 7b4ff6aeb67a
+("net: ena: gcc 8: fix compilation warning")]
 ---
  drivers/net/ethernet/amazon/ena/ena_admin_defs.h  | 31 ++++++++++++++++++++++-
  drivers/net/ethernet/amazon/ena/ena_com.c         | 12 +++------
@@ -155,7 +157,7 @@ Index: linux/drivers/net/ethernet/amazon/ena/ena_netdev.c
 +	host_info->bdf = (pdev->bus->number << 8) | pdev->devfn;
  	host_info->os_type = ENA_ADMIN_OS_LINUX;
  	host_info->kernel_ver = LINUX_VERSION_CODE;
- 	strncpy(host_info->kernel_ver_str, utsname()->version,
+ 	strlcpy(host_info->kernel_ver_str, utsname()->version,
 @@ -2237,7 +2239,9 @@ static void ena_config_host_info(struct
  	host_info->driver_version =
  		(DRV_MODULE_VER_MAJOR) |

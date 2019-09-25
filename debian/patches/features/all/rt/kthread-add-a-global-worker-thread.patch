@@ -1,0 +1,67 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 12 Feb 2019 15:09:38 +0100
+Subject: [PATCH 2/3] kthread: add a global worker thread.
+Origin: https://lore.kernel.org/linux-rt-users/20190511134722.3v4dhf7fs3uqy3a4@linutronix.de/
+
+Add kthread_schedule_work() which uses a global kthread for all its
+jobs.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/kthread.h |  6 ++++++
+ init/main.c             |  1 +
+ kernel/kthread.c        | 13 +++++++++++++
+ 3 files changed, 20 insertions(+)
+
+diff --git a/include/linux/kthread.h b/include/linux/kthread.h
+index d7d248602a0eb..994cfa5ef0449 100644
+--- a/include/linux/kthread.h
++++ b/include/linux/kthread.h
+@@ -196,5 +196,11 @@ bool kthread_cancel_work_sync(struct kthread_work *work);
+ bool kthread_cancel_delayed_work_sync(struct kthread_delayed_work *work);
+ 
+ void kthread_destroy_worker(struct kthread_worker *worker);
++extern struct kthread_worker kthread_global_worker;
++void kthread_init_global_worker(void);
++static inline bool kthread_schedule_work(struct kthread_work *work)
++{
++	return kthread_queue_work(&kthread_global_worker, work);
++}
+ 
+ #endif /* _LINUX_KTHREAD_H */
+diff --git a/init/main.c b/init/main.c
+index e8f68be18f692..0d5dbdf500998 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -1008,6 +1008,7 @@ static noinline void __init kernel_init_freeable(void)
+ 
+ 	smp_prepare_cpus(setup_max_cpus);
+ 
++	kthread_init_global_worker();
+ 	do_pre_smp_initcalls();
+ 	lockup_detector_init();
+ 
+diff --git a/kernel/kthread.c b/kernel/kthread.c
+index d6e8f65cbae90..826e2c8c62d46 100644
+--- a/kernel/kthread.c
++++ b/kernel/kthread.c
+@@ -1159,3 +1159,16 @@ void kthread_destroy_worker(struct kthread_worker *worker)
+ 	kfree(worker);
+ }
+ EXPORT_SYMBOL(kthread_destroy_worker);
++
++DEFINE_KTHREAD_WORKER(kthread_global_worker);
++EXPORT_SYMBOL(kthread_global_worker);
++
++__init void kthread_init_global_worker(void)
++{
++	kthread_global_worker.task = kthread_create(kthread_worker_fn,
++						    &kthread_global_worker,
++						    "ktwork");
++	if (WARN_ON(IS_ERR(kthread_global_worker.task)))
++		return;
++	wake_up_process(kthread_global_worker.task);
++}
+-- 
+2.20.1
+
