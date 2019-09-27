@@ -58,6 +58,21 @@ install-signed:
 	dh_md5sums
 	dh_builddeb
 
+install-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-meta:
+	dh_testdir
+	dh_prep
+	ln -sf linux-image.meta.NEWS debian/$(PACKAGE_NAME).NEWS
+	dh_bugfiles
+	dh_installchangelogs
+	dh_installdocs
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol -- $(GENCONTROL_ARGS)
+	dh_md5sums
+	dh_builddeb
+
 install-udeb_$(ARCH): export KW_DEFCONFIG_DIR=/usr/share/linux-support-$(ABINAME)/installer
 install-udeb_$(ARCH): export KW_CONFIG_DIR=/usr/share/linux-support-$(ABINAME)/installer
 install-udeb_$(ARCH): DH_OPTIONS=$(PACKAGE_NAMES:%=-p%)
