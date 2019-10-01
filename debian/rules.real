@@ -40,6 +40,7 @@ export DEB_HOST_ARCH DEB_HOST_GNU_TYPE DEB_BUILD_ARCH
 export DEB_BUILD_PATH = $(CURDIR)  # for dpkg-buildflags
 export LC_ALL = C.UTF-8
 undefine LANGUAGE
+export LINK_DOC_PACKAGE
 
 stamp = [ -d $(dir $@) ] || mkdir $(dir $@); touch $@
 
@@ -232,7 +233,7 @@ endif
 
 install-base:
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-	dh_installdocs
+	dh_installdocs $(if $(LINK_DOC_PACKAGE),--link-doc=$(LINK_DOC_PACKAGE))
 endif
 	dh_installchangelogs
 	dh_compress
@@ -286,13 +287,10 @@ endif
 install-doc-meta: PACKAGE_NAME = $(SOURCE_BASENAME)-doc$(SOURCE_SUFFIX)
 install-doc-meta: PACKAGE_DIR = debian/$(PACKAGE_NAME)
 install-doc-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-doc-meta: LINK_DOC_PACKAGE = $(SOURCE_BASENAME)-doc-$(VERSION)
 install-doc-meta:
 	dh_testdir
 	dh_prep
-	mkdir -p $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE_NAME)
-	for file in CREDITS.gz Documentation html MAINTAINERS.gz; do \
-		ln -sf ../$(SOURCE_BASENAME)-doc-$(VERSION)/$$file $(PACKAGE_DIR)/usr/share/doc/$(PACKAGE_NAME)/ || exit; \
-	done
 	+$(MAKE_SELF) install-base
 
 install-headers_$(ARCH): PACKAGE_NAMES = linux-headers-$(ABINAME)-all linux-headers-$(ABINAME)-all-$(ARCH)
@@ -371,6 +369,7 @@ install-headers_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_$(
 
 install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-headers$(SOURCE_SUFFIX)$(LOCALVERSION)
 install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-headers-$(ABINAME)$(LOCALVERSION)
 install-headers-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
 	dh_testdir
 	dh_prep
@@ -459,6 +458,7 @@ endif
 	  install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_bug \
 	  PACKAGE_DIR='$(PACKAGE_DIR)' PACKAGE_NAME='$(PACKAGE_NAME)' REAL_VERSION='$(REAL_VERSION)'
 	dh_strip --no-automatic-dbgsym -Xvmlinux
+	ln -sf linux-image.NEWS debian/$(PACKAGE_NAME).NEWS
 	+$(MAKE_SELF) install-base
 
 install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_dt: DT_INSTALL_DIR = $(PACKAGE_DIR)/usr/lib/linux-image-$(REAL_VERSION)
@@ -492,10 +492,10 @@ install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)_bug:
 
 install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-image$(SOURCE_SUFFIX)$(LOCALVERSION)
 install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-image-$(ABINAME)$(LOCALVERSION)
 install-image-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
 	dh_testdir
 	dh_prep
-	ln -sf linux-image.meta.NEWS debian/$(PACKAGE_NAME).NEWS
 	dh_bugfiles
 	+$(MAKE_SELF) install-base
 
@@ -536,6 +536,7 @@ endif
 
 install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): PACKAGE_NAME = linux-image$(SOURCE_SUFFIX)$(LOCALVERSION)-dbg
 install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DH_OPTIONS = -p$(PACKAGE_NAME)
+install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR): LINK_DOC_PACKAGE = linux-image-$(ABINAME)$(LOCALVERSION)-dbg
 install-image-dbg-meta_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
 	dh_testdir
 	dh_prep
@@ -556,7 +557,7 @@ ifneq (,$(filter linux-image-$(ARCH)-signed-template,$(packages_enabled)))
 	PYTHONHASHSEED=0 debian/bin/gencontrol_signed.py $(ARCH)
 	cp -R	debian/compat \
 		debian/copyright \
-		debian/linux-image.meta.NEWS \
+		debian/linux-image.NEWS \
 		debian/signing_templates/README.source \
 		debian/signing_templates/rules \
 		debian/signing_templates/rules.real \
@@ -607,6 +608,7 @@ install-source: $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz
 
 install-source-meta: PACKAGE_NAME = $(SOURCE_BASENAME)-source$(SOURCE_SUFFIX)
 install-source-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-source-meta: LINK_DOC_PACKAGE = $(SOURCE_BASENAME)-source-$(VERSION)
 install-source-meta:
 	dh_testdir
 	dh_prep
@@ -736,6 +738,7 @@ endif
 
 install-perf-meta: PACKAGE_NAME = linux-perf$(SOURCE_SUFFIX)
 install-perf-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-perf-meta: LINK_DOC_PACKAGE = linux-perf-$(VERSION)
 install-perf-meta:
 	dh_testdir
 	dh_prep

@@ -44,6 +44,7 @@ install-signed:
 		$(PACKAGE_DIR)/usr/share/bug/$(PACKAGE_NAME)/info
 	dh_install
 	dh_installchangelogs
+	ln -sf linux-image.NEWS debian/$(PACKAGE_NAME).NEWS
 	dh_installdocs
 	dh_compress
 	dh_fixperms
@@ -62,10 +63,8 @@ install-meta: DH_OPTIONS = -p$(PACKAGE_NAME)
 install-meta:
 	dh_testdir
 	dh_prep
-	ln -sf linux-image.meta.NEWS debian/$(PACKAGE_NAME).NEWS
 	dh_bugfiles
-	dh_installchangelogs
-	dh_installdocs
+	dh_installdocs --link-doc=linux-image-$(ABINAME)$(LOCALVERSION)
 	dh_compress
 	dh_fixperms
 	dh_installdeb
