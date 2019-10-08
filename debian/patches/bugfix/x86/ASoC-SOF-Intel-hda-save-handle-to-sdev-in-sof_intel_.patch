@@ -1,0 +1,47 @@
+commit 7623ae793c28cc0928c5d1292542dbb92fc2e9e2
+Author: Ranjani Sridharan <ranjani.sridharan@linux.intel.com>
+Date:   Wed Jun 12 12:23:33 2019 -0500
+
+    ASoC: SOF: Intel: hda: save handle to sdev in sof_intel_hda_stream
+    
+    Add a snd_sof_dev member to sof_intel_hda_stream. This will be
+    used to access the snd_sof_dev during link hw_params callback.
+    
+    Signed-off-by: Ranjani Sridharan <ranjani.sridharan@linux.intel.com>
+    Signed-off-by: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
+    Signed-off-by: Mark Brown <broonie@kernel.org>
+
+diff --git a/sound/soc/sof/intel/hda-stream.c b/sound/soc/sof/intel/hda-stream.c
+index c92006f89499..1cd94e7631a8 100644
+--- a/sound/soc/sof/intel/hda-stream.c
++++ b/sound/soc/sof/intel/hda-stream.c
+@@ -564,6 +564,8 @@ int hda_dsp_stream_init(struct snd_sof_dev *sdev)
+ 		if (!hda_stream)
+ 			return -ENOMEM;
+ 
++		hda_stream->sdev = sdev;
++
+ 		stream = &hda_stream->hda_stream;
+ 
+ 		stream->pphc_addr = sdev->bar[HDA_DSP_PP_BAR] +
+@@ -617,6 +619,8 @@ int hda_dsp_stream_init(struct snd_sof_dev *sdev)
+ 		if (!hda_stream)
+ 			return -ENOMEM;
+ 
++		hda_stream->sdev = sdev;
++
+ 		stream = &hda_stream->hda_stream;
+ 
+ 		/* we always have DSP support */
+diff --git a/sound/soc/sof/intel/hda.h b/sound/soc/sof/intel/hda.h
+index 6c7dee2627d0..502b0a3c2e3c 100644
+--- a/sound/soc/sof/intel/hda.h
++++ b/sound/soc/sof/intel/hda.h
+@@ -409,6 +409,7 @@ static inline struct hda_bus *sof_to_hbus(struct snd_sof_dev *s)
+ }
+ 
+ struct sof_intel_hda_stream {
++	struct snd_sof_dev *sdev;
+ 	struct hdac_ext_stream hda_stream;
+ 	struct sof_intel_stream stream;
+ 	int hw_params_upon_resume; /* set up hw_params upon resume */
