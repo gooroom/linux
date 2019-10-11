@@ -1,11 +1,11 @@
-From da94fdf57dbc4e55dd359d103c8f61cc2811f47c Mon Sep 17 00:00:00 2001
+From 76870a6a1befc6db5eb65682cb8190cf093d49a5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 13:40:10 +0100
-Subject: [PATCH 223/269] crypto: limit more FPU-enabled sections
+Subject: [PATCH 223/283] crypto: limit more FPU-enabled sections
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 Those crypto drivers use SSE/AVX/… for their crypto work and in order to
 do so in kernel they need to enable the "FPU" in kernel mode which
@@ -69,11 +69,11 @@ index dce7c5d39c2f..6194160b7fbc 100644
  }
  
 diff --git a/arch/x86/include/asm/fpu/api.h b/arch/x86/include/asm/fpu/api.h
-index a9caac9d4a72..18b31f22ca5d 100644
+index b56d504af654..e51c7094075d 100644
 --- a/arch/x86/include/asm/fpu/api.h
 +++ b/arch/x86/include/asm/fpu/api.h
-@@ -25,6 +25,7 @@ extern void __kernel_fpu_begin(void);
- extern void __kernel_fpu_end(void);
+@@ -20,6 +20,7 @@
+  */
  extern void kernel_fpu_begin(void);
  extern void kernel_fpu_end(void);
 +extern void kernel_fpu_resched(void);
@@ -81,10 +81,10 @@ index a9caac9d4a72..18b31f22ca5d 100644
  
  /*
 diff --git a/arch/x86/kernel/fpu/core.c b/arch/x86/kernel/fpu/core.c
-index 2ea85b32421a..6914dc569d1e 100644
+index 2e5003fef51a..768c53767bb2 100644
 --- a/arch/x86/kernel/fpu/core.c
 +++ b/arch/x86/kernel/fpu/core.c
-@@ -138,6 +138,18 @@ void kernel_fpu_end(void)
+@@ -136,6 +136,18 @@ void kernel_fpu_end(void)
  }
  EXPORT_SYMBOL_GPL(kernel_fpu_end);
  

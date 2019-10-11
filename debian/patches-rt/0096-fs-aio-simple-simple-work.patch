@@ -1,8 +1,8 @@
-From 39010d30f3244de6b51646a0325b6292d8c84282 Mon Sep 17 00:00:00 2001
+From b576efb7cedb58ffa58242d7b0df24d14063ba0e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 16 Feb 2015 18:49:10 +0100
-Subject: [PATCH 096/269] fs/aio: simple simple work
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Subject: [PATCH 096/283] fs/aio: simple simple work
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:768
 |in_atomic(): 1, irqs_disabled(): 0, pid: 26, name: rcuos/2
@@ -30,7 +30,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/fs/aio.c b/fs/aio.c
-index 45d5ef8dd0a8..7db10b87c9bc 100644
+index 911e23087dfb..16dcf8521c2c 100644
 --- a/fs/aio.c
 +++ b/fs/aio.c
 @@ -42,6 +42,7 @@
@@ -49,7 +49,7 @@ index 45d5ef8dd0a8..7db10b87c9bc 100644
  
  	/*
  	 * signals when all in-flight requests are done
-@@ -255,6 +257,7 @@ static int __init aio_setup(void)
+@@ -265,6 +267,7 @@ static int __init aio_setup(void)
  		.mount		= aio_mount,
  		.kill_sb	= kill_anon_super,
  	};
@@ -57,7 +57,7 @@ index 45d5ef8dd0a8..7db10b87c9bc 100644
  	aio_mnt = kern_mount(&aio_fs);
  	if (IS_ERR(aio_mnt))
  		panic("Failed to create aio fs mount.");
-@@ -596,9 +599,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
+@@ -606,9 +609,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
   * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
   * now it's safe to cancel any that need to be.
   */
@@ -69,7 +69,7 @@ index 45d5ef8dd0a8..7db10b87c9bc 100644
  	struct aio_kiocb *req;
  
  	spin_lock_irq(&ctx->ctx_lock);
-@@ -616,6 +619,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
+@@ -626,6 +629,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
  	percpu_ref_put(&ctx->reqs);
  }
  

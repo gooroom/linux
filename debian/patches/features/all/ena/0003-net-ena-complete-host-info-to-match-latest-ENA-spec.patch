@@ -15,8 +15,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/amazon/ena/ena_netdev.c  | 10 ++++--
  4 files changed, 43 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/net/ethernet/amazon/ena/ena_admin_defs.h b/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
-index 4532e574ebcd..d735164efea3 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
 +++ b/drivers/net/ethernet/amazon/ena/ena_admin_defs.h
 @@ -63,6 +63,8 @@ enum ena_admin_aq_completion_status {
@@ -68,7 +66,7 @@ index 4532e574ebcd..d735164efea3 100644
  };
  
  struct ena_admin_rss_ind_table_entry {
-@@ -1008,6 +1030,13 @@ struct ena_admin_ena_mmio_req_read_less_resp {
+@@ -1008,6 +1030,13 @@ struct ena_admin_ena_mmio_req_read_less_
  #define ENA_ADMIN_HOST_INFO_MINOR_MASK GENMASK(15, 8)
  #define ENA_ADMIN_HOST_INFO_SUB_MINOR_SHIFT 16
  #define ENA_ADMIN_HOST_INFO_SUB_MINOR_MASK GENMASK(23, 16)
@@ -82,8 +80,6 @@ index 4532e574ebcd..d735164efea3 100644
  
  /* aenq_common_desc */
  #define ENA_ADMIN_AENQ_COMMON_DESC_PHASE_MASK BIT(0)
-diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
-index 7635c38e77dd..b6e6a4721931 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_com.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_com.c
 @@ -41,9 +41,6 @@
@@ -96,7 +92,7 @@ index 7635c38e77dd..b6e6a4721931 100644
  
  #define ENA_CTRL_MAJOR		0
  #define ENA_CTRL_MINOR		0
-@@ -1400,11 +1397,6 @@ int ena_com_validate_version(struct ena_com_dev *ena_dev)
+@@ -1400,11 +1397,6 @@ int ena_com_validate_version(struct ena_
  			ENA_REGS_VERSION_MAJOR_VERSION_SHIFT,
  		ver & ENA_REGS_VERSION_MINOR_VERSION_MASK);
  
@@ -108,7 +104,7 @@ index 7635c38e77dd..b6e6a4721931 100644
  	pr_info("ena controller version: %d.%d.%d implementation version %d\n",
  		(ctrl_ver & ENA_REGS_CONTROLLER_VERSION_MAJOR_VERSION_MASK) >>
  			ENA_REGS_CONTROLLER_VERSION_MAJOR_VERSION_SHIFT,
-@@ -2441,6 +2433,10 @@ int ena_com_allocate_host_info(struct ena_com_dev *ena_dev)
+@@ -2441,6 +2433,10 @@ int ena_com_allocate_host_info(struct en
  	if (unlikely(!host_attr->host_info))
  		return -ENOMEM;
  
@@ -119,8 +115,6 @@ index 7635c38e77dd..b6e6a4721931 100644
  	return 0;
  }
  
-diff --git a/drivers/net/ethernet/amazon/ena/ena_common_defs.h b/drivers/net/ethernet/amazon/ena/ena_common_defs.h
-index bb8d73676eab..23beb7e7ed7b 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_common_defs.h
 +++ b/drivers/net/ethernet/amazon/ena/ena_common_defs.h
 @@ -32,8 +32,8 @@
@@ -134,11 +128,9 @@ index bb8d73676eab..23beb7e7ed7b 100644
  
  /* ENA operates with 48-bit memory addresses. ena_mem_addr_t */
  struct ena_common_mem_addr {
-diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-index 69a49784b204..0c9c0d3ce856 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-@@ -2206,7 +2206,8 @@ static u16 ena_select_queue(struct net_device *dev, struct sk_buff *skb,
+@@ -2206,7 +2206,8 @@ static u16 ena_select_queue(struct net_d
  	return qid;
  }
  
@@ -148,15 +140,15 @@ index 69a49784b204..0c9c0d3ce856 100644
  {
  	struct ena_admin_host_info *host_info;
  	int rc;
-@@ -2220,6 +2221,7 @@ static void ena_config_host_info(struct ena_com_dev *ena_dev)
+@@ -2220,6 +2221,7 @@ static void ena_config_host_info(struct
  
  	host_info = ena_dev->host_attr.host_info;
  
 +	host_info->bdf = (pdev->bus->number << 8) | pdev->devfn;
  	host_info->os_type = ENA_ADMIN_OS_LINUX;
  	host_info->kernel_ver = LINUX_VERSION_CODE;
- 	strncpy(host_info->kernel_ver_str, utsname()->version,
-@@ -2230,7 +2232,9 @@ static void ena_config_host_info(struct ena_com_dev *ena_dev)
+ 	strlcpy(host_info->kernel_ver_str, utsname()->version,
+@@ -2230,7 +2232,9 @@ static void ena_config_host_info(struct
  	host_info->driver_version =
  		(DRV_MODULE_VER_MAJOR) |
  		(DRV_MODULE_VER_MINOR << ENA_ADMIN_HOST_INFO_MINOR_SHIFT) |
@@ -167,7 +159,7 @@ index 69a49784b204..0c9c0d3ce856 100644
  
  	rc = ena_com_set_host_attributes(ena_dev);
  	if (rc) {
-@@ -2454,7 +2458,7 @@ static int ena_device_init(struct ena_com_dev *ena_dev, struct pci_dev *pdev,
+@@ -2454,7 +2458,7 @@ static int ena_device_init(struct ena_co
  	 */
  	ena_com_set_admin_polling_mode(ena_dev, true);
  
@@ -176,6 +168,3 @@ index 69a49784b204..0c9c0d3ce856 100644
  
  	/* Get Device Attributes*/
  	rc = ena_com_get_dev_attr_feat(ena_dev, get_feat_ctx);
--- 
-2.19.2
-

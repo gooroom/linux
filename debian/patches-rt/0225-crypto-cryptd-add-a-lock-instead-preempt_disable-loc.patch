@@ -1,9 +1,9 @@
-From b1616c1d9f52000a3614707e3c3ffe2b63c5fde9 Mon Sep 17 00:00:00 2001
+From 46ee243833b0300b7f72e77268030fba7d083f36 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 18:52:00 +0200
-Subject: [PATCH 225/269] crypto: cryptd - add a lock instead
+Subject: [PATCH 225/283] crypto: cryptd - add a lock instead
  preempt_disable/local_bh_disable
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.37-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
 
 cryptd has a per-CPU lock which protected with local_bh_disable() and
 preempt_disable().
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 9 insertions(+), 10 deletions(-)
 
 diff --git a/crypto/cryptd.c b/crypto/cryptd.c
-index addca7bae33f..8ad657cddc0a 100644
+index e0c8e907b086..e079f9a70201 100644
 --- a/crypto/cryptd.c
 +++ b/crypto/cryptd.c
 @@ -39,6 +39,7 @@ MODULE_PARM_DESC(cryptd_max_cpu_qlen, "Set cryptd Max queue depth");
