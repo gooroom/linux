@@ -1,0 +1,67 @@
+From: speck for Pawan Gupta <speck@linutronix.de>
+Date: Wed, 9 Oct 2019 16:22:56 -0700
+Subject: TAAv6 1
+
+Transactional Synchronization Extensions (TSX) may be used on certain
+processors as part of a speculative side channel attack.  A microcode
+update for existing processors that are vulnerable to this attack will
+add a new MSR, IA32_TSX_CTRL to allow the system administrator the
+option to disable TSX as one of the possible mitigations.  [Note that
+future processors that are not vulnerable will also support the
+IA32_TSX_CTRL MSR].  Add defines for the new IA32_TSX_CTRL MSR and its
+bits.
+
+TSX has two sub-features:
+
+1. Restricted Transactional Memory (RTM) is an explicitly-used feature
+   where new instructions begin and end TSX transactions.
+2. Hardware Lock Elision (HLE) is implicitly used when certain kinds of
+   "old" style locks are used by software.
+
+Bit 7 of the IA32_ARCH_CAPABILITIES indicates the presence of the
+IA32_TSX_CTRL MSR.
+
+There are two control bits in IA32_TSX_CTRL MSR:
+
+  Bit 0: When set it disables the Restricted Transactional Memory (RTM)
+         sub-feature of TSX (will force all transactions to abort on the
+	 XBEGIN instruction).
+
+  Bit 1: When set it disables the enumeration of the RTM and HLE feature
+         (i.e. it will make CPUID(EAX=7).EBX{bit4} and
+         CPUID(EAX=7).EBX{bit11} read as 0).
+
+The other TSX sub-feature, Hardware Lock Elision (HLE), is unconditionally
+disabled but still enumerated as present by CPUID(EAX=7).EBX{bit4}.
+
+Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Reviewed-by: Mark Gross <mgross@linux.intel.com>
+Reviewed-by: Tony Luck <tony.luck@intel.com>
+Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
+---
+ arch/x86/include/asm/msr-index.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/x86/include/asm/msr-index.h b/arch/x86/include/asm/msr-index.h
+index 8e4bcad17d32..bd51db32564d 100644
+--- a/arch/x86/include/asm/msr-index.h
++++ b/arch/x86/include/asm/msr-index.h
+@@ -84,6 +84,7 @@
+ 						  * physical address or cache type
+ 						  * without TLB invalidation.
+ 						  */
++#define ARCH_CAP_TSX_CTRL_MSR		BIT(7)	/* MSR for TSX control is available. */
+ 
+ #define MSR_IA32_FLUSH_CMD		0x0000010b
+ #define L1D_FLUSH			BIT(0)	/*
+@@ -94,6 +95,10 @@
+ #define MSR_IA32_BBL_CR_CTL		0x00000119
+ #define MSR_IA32_BBL_CR_CTL3		0x0000011e
+ 
++#define MSR_IA32_TSX_CTRL		0x00000122
++#define TSX_CTRL_RTM_DISABLE		BIT(0)	/* Disable RTM fxeature */
++#define TSX_CTRL_CPUID_CLEAR		BIT(1)	/* Disable TSX enumeration */
++
+ #define MSR_IA32_SYSENTER_CS		0x00000174
+ #define MSR_IA32_SYSENTER_ESP		0x00000175
+ #define MSR_IA32_SYSENTER_EIP		0x00000176
