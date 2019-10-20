@@ -1,0 +1,275 @@
+From: Junaid Shahid <junaids@google.com>
+Date: Thu, 3 Jan 2019 17:14:28 -0800
+Subject: kvm: Convert kvm_lock to a mutex
+
+commit 0d9ce162cf46c99628cc5da9510b959c7976735b upstream.
+
+It doesn't seem as if there is any particular need for kvm_lock to be a
+spinlock, so convert the lock to a mutex so that sleepable functions (in
+particular cond_resched()) can be called while holding it.
+
+Signed-off-by: Junaid Shahid <junaids@google.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+[bwh: Backported to 4.19: adjust context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ Documentation/virtual/kvm/locking.txt |  4 +---
+ arch/s390/kvm/kvm-s390.c              |  4 ++--
+ arch/x86/kvm/mmu.c                    |  4 ++--
+ arch/x86/kvm/x86.c                    | 14 ++++++-------
+ include/linux/kvm_host.h              |  2 +-
+ virt/kvm/kvm_main.c                   | 30 +++++++++++++--------------
+ 6 files changed, 28 insertions(+), 30 deletions(-)
+
+diff --git a/Documentation/virtual/kvm/locking.txt b/Documentation/virtual/kvm/locking.txt
+index 1bb8bcaf8497..635cd6eaf714 100644
+--- a/Documentation/virtual/kvm/locking.txt
++++ b/Documentation/virtual/kvm/locking.txt
+@@ -15,8 +15,6 @@ KVM Lock Overview
+ 
+ On x86, vcpu->mutex is taken outside kvm->arch.hyperv.hv_lock.
+ 
+-For spinlocks, kvm_lock is taken outside kvm->mmu_lock.
+-
+ Everything else is a leaf: no other lock is taken inside the critical
+ sections.
+ 
+@@ -169,7 +167,7 @@ which time it will be set using the Dirty tracking mechanism described above.
+ ------------
+ 
+ Name:		kvm_lock
+-Type:		spinlock_t
++Type:		mutex
+ Arch:		any
+ Protects:	- vm_list
+ 
+diff --git a/arch/s390/kvm/kvm-s390.c b/arch/s390/kvm/kvm-s390.c
+index fac1d4eaa426..3c317bc6b799 100644
+--- a/arch/s390/kvm/kvm-s390.c
++++ b/arch/s390/kvm/kvm-s390.c
+@@ -2110,13 +2110,13 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
+ 	kvm->arch.sca = (struct bsca_block *) get_zeroed_page(alloc_flags);
+ 	if (!kvm->arch.sca)
+ 		goto out_err;
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	sca_offset += 16;
+ 	if (sca_offset + sizeof(struct bsca_block) > PAGE_SIZE)
+ 		sca_offset = 0;
+ 	kvm->arch.sca = (struct bsca_block *)
+ 			((char *) kvm->arch.sca + sca_offset);
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	sprintf(debug_name, "kvm-%u", current->pid);
+ 
+diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
+index 88940261fb53..c9d4e02bd73a 100644
+--- a/arch/x86/kvm/mmu.c
++++ b/arch/x86/kvm/mmu.c
+@@ -5819,7 +5819,7 @@ mmu_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 	int nr_to_scan = sc->nr_to_scan;
+ 	unsigned long freed = 0;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		int idx;
+@@ -5869,7 +5869,7 @@ mmu_shrink_scan(struct shrinker *shrink, struct shrink_control *sc)
+ 		break;
+ 	}
+ 
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 	return freed;
+ }
+ 
+diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
+index 6ae8a013af31..0c085b895e6e 100644
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -6502,7 +6502,7 @@ static void kvm_hyperv_tsc_notifier(void)
+ 	struct kvm_vcpu *vcpu;
+ 	int cpu;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list)
+ 		kvm_make_mclock_inprogress_request(kvm);
+ 
+@@ -6528,7 +6528,7 @@ static void kvm_hyperv_tsc_notifier(void)
+ 
+ 		spin_unlock(&ka->pvclock_gtod_sync_lock);
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ }
+ #endif
+ 
+@@ -6586,17 +6586,17 @@ static int kvmclock_cpufreq_notifier(struct notifier_block *nb, unsigned long va
+ 
+ 	smp_call_function_single(freq->cpu, tsc_khz_changed, freq, 1);
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		kvm_for_each_vcpu(i, vcpu, kvm) {
+ 			if (vcpu->cpu != freq->cpu)
+ 				continue;
+ 			kvm_make_request(KVM_REQ_CLOCK_UPDATE, vcpu);
+-			if (vcpu->cpu != smp_processor_id())
++			if (vcpu->cpu != raw_smp_processor_id())
+ 				send_ipi = 1;
+ 		}
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	if (freq->old < freq->new && send_ipi) {
+ 		/*
+@@ -6722,12 +6722,12 @@ static void pvclock_gtod_update_fn(struct work_struct *work)
+ 	struct kvm_vcpu *vcpu;
+ 	int i;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list)
+ 		kvm_for_each_vcpu(i, vcpu, kvm)
+ 			kvm_make_request(KVM_REQ_MASTERCLOCK_UPDATE, vcpu);
+ 	atomic_set(&kvm_guest_has_master_clock, 0);
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ }
+ 
+ static DECLARE_WORK(pvclock_gtod_work, pvclock_gtod_update_fn);
+diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
+index d42a36e4e6c2..5246a480d15a 100644
+--- a/include/linux/kvm_host.h
++++ b/include/linux/kvm_host.h
+@@ -141,7 +141,7 @@ static inline bool is_error_page(struct page *page)
+ 
+ extern struct kmem_cache *kvm_vcpu_cache;
+ 
+-extern spinlock_t kvm_lock;
++extern struct mutex kvm_lock;
+ extern struct list_head vm_list;
+ 
+ struct kvm_io_range {
+diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
+index 4a584a575221..6a8fe26198b9 100644
+--- a/virt/kvm/kvm_main.c
++++ b/virt/kvm/kvm_main.c
+@@ -92,7 +92,7 @@ EXPORT_SYMBOL_GPL(halt_poll_ns_shrink);
+  *	kvm->lock --> kvm->slots_lock --> kvm->irq_lock
+  */
+ 
+-DEFINE_SPINLOCK(kvm_lock);
++DEFINE_MUTEX(kvm_lock);
+ static DEFINE_RAW_SPINLOCK(kvm_count_lock);
+ LIST_HEAD(vm_list);
+ 
+@@ -684,9 +684,9 @@ static struct kvm *kvm_create_vm(unsigned long type)
+ 	if (r)
+ 		goto out_err;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_add(&kvm->vm_list, &vm_list);
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	preempt_notifier_inc();
+ 
+@@ -732,9 +732,9 @@ static void kvm_destroy_vm(struct kvm *kvm)
+ 	kvm_uevent_notify_change(KVM_EVENT_DESTROY_VM, kvm);
+ 	kvm_destroy_vm_debugfs(kvm);
+ 	kvm_arch_sync_events(kvm);
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_del(&kvm->vm_list);
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 	kvm_free_irq_routing(kvm);
+ 	for (i = 0; i < KVM_NR_BUSES; i++) {
+ 		struct kvm_io_bus *bus = kvm_get_bus(kvm, i);
+@@ -3828,13 +3828,13 @@ static int vm_stat_get(void *_offset, u64 *val)
+ 	u64 tmp_val;
+ 
+ 	*val = 0;
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		stat_tmp.kvm = kvm;
+ 		vm_stat_get_per_vm((void *)&stat_tmp, &tmp_val);
+ 		*val += tmp_val;
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 	return 0;
+ }
+ 
+@@ -3847,12 +3847,12 @@ static int vm_stat_clear(void *_offset, u64 val)
+ 	if (val)
+ 		return -EINVAL;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		stat_tmp.kvm = kvm;
+ 		vm_stat_clear_per_vm((void *)&stat_tmp, 0);
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	return 0;
+ }
+@@ -3867,13 +3867,13 @@ static int vcpu_stat_get(void *_offset, u64 *val)
+ 	u64 tmp_val;
+ 
+ 	*val = 0;
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		stat_tmp.kvm = kvm;
+ 		vcpu_stat_get_per_vm((void *)&stat_tmp, &tmp_val);
+ 		*val += tmp_val;
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 	return 0;
+ }
+ 
+@@ -3886,12 +3886,12 @@ static int vcpu_stat_clear(void *_offset, u64 val)
+ 	if (val)
+ 		return -EINVAL;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	list_for_each_entry(kvm, &vm_list, vm_list) {
+ 		stat_tmp.kvm = kvm;
+ 		vcpu_stat_clear_per_vm((void *)&stat_tmp, 0);
+ 	}
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	return 0;
+ }
+@@ -3912,7 +3912,7 @@ static void kvm_uevent_notify_change(unsigned int type, struct kvm *kvm)
+ 	if (!kvm_dev.this_device || !kvm)
+ 		return;
+ 
+-	spin_lock(&kvm_lock);
++	mutex_lock(&kvm_lock);
+ 	if (type == KVM_EVENT_CREATE_VM) {
+ 		kvm_createvm_count++;
+ 		kvm_active_vms++;
+@@ -3921,7 +3921,7 @@ static void kvm_uevent_notify_change(unsigned int type, struct kvm *kvm)
+ 	}
+ 	created = kvm_createvm_count;
+ 	active = kvm_active_vms;
+-	spin_unlock(&kvm_lock);
++	mutex_unlock(&kvm_lock);
+ 
+ 	env = kzalloc(sizeof(*env), GFP_KERNEL);
+ 	if (!env)
