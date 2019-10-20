@@ -1,0 +1,54 @@
+From: Wei Yang <richard.weiyang@gmail.com>
+Date: Thu, 6 Sep 2018 05:58:16 +0800
+Subject: KVM: x86: adjust kvm_mmu_page member to save 8 bytes
+
+commit 3ff519f29d98ecdc1961d825d105d68711093b6b upstream.
+
+On a 64bits machine, struct is naturally aligned with 8 bytes. Since
+kvm_mmu_page member *unsync* and *role* are less then 4 bytes, we can
+rearrange the sequence to compace the struct.
+
+As the comment shows, *role* and *gfn* are used to key the shadow page. In
+order to keep the comment valid, this patch moves the *unsync* up and
+exchange the position of *role* and *gfn*.
+
+From /proc/slabinfo, it shows the size of kvm_mmu_page is 8 bytes less and
+with one more object per slap after applying this patch.
+
+    # name            <active_objs> <num_objs> <objsize> <objperslab>
+    kvm_mmu_page_header      0           0       168         24
+
+    kvm_mmu_page_header      0           0       160         25
+
+Signed-off-by: Wei Yang <richard.weiyang@gmail.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/include/asm/kvm_host.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/include/asm/kvm_host.h b/arch/x86/include/asm/kvm_host.h
+index 222cb69e1219..18085c9cc32f 100644
+--- a/arch/x86/include/asm/kvm_host.h
++++ b/arch/x86/include/asm/kvm_host.h
+@@ -261,18 +261,18 @@ struct kvm_rmap_head {
+ struct kvm_mmu_page {
+ 	struct list_head link;
+ 	struct hlist_node hash_link;
++	bool unsync;
+ 
+ 	/*
+ 	 * The following two entries are used to key the shadow page in the
+ 	 * hash table.
+ 	 */
+-	gfn_t gfn;
+ 	union kvm_mmu_page_role role;
++	gfn_t gfn;
+ 
+ 	u64 *spt;
+ 	/* hold the gfn of each spte inside spt */
+ 	gfn_t *gfns;
+-	bool unsync;
+ 	int root_count;          /* Currently serving as active root */
+ 	unsigned int unsync_children;
+ 	struct kvm_rmap_head parent_ptes; /* rmap pointers to parent sptes */
