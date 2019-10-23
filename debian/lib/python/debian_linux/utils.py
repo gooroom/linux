@@ -23,12 +23,12 @@ class Templates(object):
             for dir in self.dirs:
                 filename = "%s/%s%s" % (dir, name, suffix)
                 if os.path.exists(filename):
-                    f = codecs.open(filename, 'r', 'utf-8')
-                    if prefix == 'control':
-                        return read_control(f)
-                    if prefix == 'tests-control':
-                        return read_tests_control(f)
-                    return f.read()
+                    with codecs.open(filename, 'r', 'utf-8') as f:
+                        if prefix == 'control':
+                            return read_control(f)
+                        if prefix == 'tests-control':
+                            return read_tests_control(f)
+                        return f.read()
 
     def get(self, key, default=None):
         if key in self._cache:
