@@ -226,21 +226,6 @@ class Gencontrol(Base):
             'linux-image-%(abiname)s%(localversion)s' % vars,
             output_dir=self.template_debian_dir)
 
-        os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
-                    exist_ok=True)
-        with open(self.package_dir
-                  + '/usr/share/lintian/overrides/%(template)s' % vars,
-                  'a') as lintian_overrides:
-            for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
-                script_name = (self.template_debian_dir
-                               + '/linux-image-%s%s.%s'
-                               % (vars['abiname'], vars['localversion'],
-                                  script_base))
-                lintian_overrides.write('%s: script-not-executable %s\n' %
-                                        (vars['template'],
-                                         os.path.relpath(script_name,
-                                                         self.package_dir)))
-
     def write(self, packages, makefile):
         self.write_changelog()
         self.write_control(packages.values(),

@@ -640,10 +640,6 @@ class Gencontrol(Base):
             self.substitute_debhelper_config(
                 'image-dbg', vars,
                 'linux-image-%(abiname)s%(localversion)s-dbg' % vars)
-            # XXX Should be done automatically based on template perms?
-            os.chmod('debian/linux-image-%(abiname)s%(localversion)s-dbg'
-                     '.lintian-overrides' % vars,
-                     0o755)
 
     def process_changelog(self):
         version = self.version = self.changelog[0].version

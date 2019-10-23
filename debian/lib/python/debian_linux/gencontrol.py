@@ -1,4 +1,5 @@
 import codecs
+import os
 import re
 from collections import OrderedDict
 
@@ -365,6 +366,8 @@ class Gencontrol(object):
                 target = '%s/%s.%s' % (output_dir, package_name, id)
                 with open(target, 'w') as f:
                     f.write(self.substitute(template, vars))
+                    os.chmod(f.fileno(),
+                             self.templates.get_mode(name) & 0o777)
 
     def merge_build_depends(self, packages):
         # Merge Build-Depends pseudo-fields from binary packages into the
