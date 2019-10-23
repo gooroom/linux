@@ -110,7 +110,7 @@ class Gencontrol(Base):
 
     def do_main_recurse(self, packages, makefile, vars, makeflags, extra):
         # Each signed source package only covers a single architecture
-        self.do_arch(packages, makefile, self.vars['arch'], vars.copy(),
+        self.do_arch(packages, makefile, vars['arch'], vars.copy(),
                      makeflags.copy(), extra)
 
     def do_extra(self, packages, makefile):
@@ -230,7 +230,7 @@ class Gencontrol(Base):
         os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
                     exist_ok=True)
         with open(self.package_dir
-                  + '/usr/share/lintian/overrides/%(template)s' % self.vars,
+                  + '/usr/share/lintian/overrides/%(template)s' % vars,
                   'a') as lintian_overrides:
             for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
                 script_name = (self.template_debian_dir
@@ -240,7 +240,7 @@ class Gencontrol(Base):
                 self._substitute_file('image.%s' % script_base, vars,
                                       script_name)
                 lintian_overrides.write('%s: script-not-executable %s\n' %
-                                        (self.vars['template'],
+                                        (vars['template'],
                                          os.path.relpath(script_name,
                                                          self.package_dir)))
 

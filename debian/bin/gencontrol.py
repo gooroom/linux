@@ -85,8 +85,8 @@ class Gencontrol(Base):
             'ABINAME': self.abiname_version + self.abiname_part,
             'SOURCEVERSION': self.version.complete,
         })
-        makeflags['SOURCE_BASENAME'] = self.vars['source_basename']
-        makeflags['SOURCE_SUFFIX'] = self.vars['source_suffix']
+        makeflags['SOURCE_BASENAME'] = vars['source_basename']
+        makeflags['SOURCE_SUFFIX'] = vars['source_suffix']
 
         # Prepare to generate debian/tests/control
         self.tests_control = self.process_packages(
@@ -172,7 +172,7 @@ class Gencontrol(Base):
 
     def do_main_packages(self, packages, vars, makeflags, extra):
         packages.extend(self.process_packages(
-            self.templates["control.main"], self.vars))
+            self.templates["control.main"], vars))
 
         # Only build the metapackages if their names won't exactly match
         # the packages they depend on
@@ -181,25 +181,25 @@ class Gencontrol(Base):
 
         if self.config.merge('packages').get('docs', True):
             packages.extend(self.process_packages(
-                self.templates["control.docs"], self.vars))
+                self.templates["control.docs"], vars))
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.docs.meta"], vars))
         if self.config.merge('packages').get('tools-unversioned', True):
             packages.extend(self.process_packages(
-                self.templates["control.tools-unversioned"], self.vars))
+                self.templates["control.tools-unversioned"], vars))
         if self.config.merge('packages').get('tools-versioned', True):
             packages.extend(self.process_packages(
-                self.templates["control.tools-versioned"], self.vars))
-            self._substitute_file('perf.lintian-overrides', self.vars,
+                self.templates["control.tools-versioned"], vars))
+            self._substitute_file('perf.lintian-overrides', vars,
                                   'debian/linux-perf-%s.lintian-overrides' %
-                                  self.vars['version'])
+                                  vars['version'])
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.tools-versioned.meta"], vars))
         if self.config.merge('packages').get('source', True):
             packages.extend(self.process_packages(
-                self.templates["control.sourcebin"], self.vars))
+                self.templates["control.sourcebin"], vars))
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.sourcebin.meta"], vars))
