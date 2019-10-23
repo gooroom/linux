@@ -350,6 +350,22 @@ class Gencontrol(object):
 
         return re.sub(r'@([-_a-z0-9]+)@', subst, str(s))
 
+    # Substitute kernel version etc. into maintainer scripts,
+    # bug presubj message and lintian overrides
+    def substitute_debhelper_config(self, prefix, vars, package_name,
+                                    output_dir='debian'):
+        for id in ['bug-presubj', 'lintian-overrides',
+                   'postinst', 'postrm', 'preinst', 'prerm']:
+            name = '%s.%s' % (prefix, id)
+            try:
+                template = self.templates[name]
+            except KeyError:
+                continue
+            else:
+                target = '%s/%s.%s' % (output_dir, package_name, id)
+                with open(target, 'w') as f:
+                    f.write(self.substitute(template, vars))
+
     def merge_build_depends(self, packages):
         # Merge Build-Depends pseudo-fields from binary packages into the
         # source package

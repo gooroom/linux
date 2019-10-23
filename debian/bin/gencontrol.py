@@ -73,10 +73,6 @@ class Gencontrol(Base):
             if src in data or not optional:
                 makeflags[dst] = data[src]
 
-    def _substitute_file(self, template, vars, target, append=False):
-        with open(target, 'a' if append else 'w') as f:
-            f.write(self.substitute(self.templates[template], vars))
-
     def do_main_setup(self, vars, makeflags, extra):
         super(Gencontrol, self).do_main_setup(vars, makeflags, extra)
         makeflags.update({
@@ -191,9 +187,8 @@ class Gencontrol(Base):
         if self.config.merge('packages').get('tools-versioned', True):
             packages.extend(self.process_packages(
                 self.templates["control.tools-versioned"], vars))
-            self._substitute_file(
-                'perf.lintian-overrides', vars,
-                'debian/linux-perf-%(version)s.lintian-overrides' % vars)
+            self.substitute_debhelper_config('perf', vars,
+                                              'linux-perf-%(version)s' % vars)
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.tools-versioned.meta"], vars))
@@ -493,12 +488,9 @@ class Gencontrol(Base):
         if do_meta and not build_signed:
             packages_own.extend(self.process_packages(
                 self.templates["control.image.meta"], vars))
-
-            # Include a bug presubj message directing reporters to the real
-            # image package.
-            self._substitute_file(
-                "image.meta.bug-presubj", vars,
-                "debian/linux-image%(localversion)s.bug-presubj" % vars)
+            self.substitute_debhelper_config(
+                "image.meta", vars,
+                "linux-image%(localversion)s" % vars)
 
         package_headers = self.process_package(headers[0], vars)
         package_headers['Depends'].extend(relations_compiler_headers)
@@ -533,10 +525,9 @@ class Gencontrol(Base):
             if do_meta:
                 packages_own.extend(self.process_packages(
                     self.templates["control.image-dbg.meta"], vars))
-                self._substitute_file(
-                    'image-dbg.meta.lintian-overrides', vars,
-                    'debian/linux-image%(localversion)s-dbg.lintian-overrides'
-                    % vars)
+                self.substitute_debhelper_config(
+                    'image-dbg.meta', vars,
+                    'linux-image%(localversion)s-dbg' % vars)
 
         merge_packages(packages, packages_own, arch)
 
@@ -630,22 +621,18 @@ class Gencontrol(Base):
                      cmds=["$(MAKE) -f debian/rules.real %s %s" %
                            (merged_config, makeflags)])
 
-        # Substitute kernel version etc. into maintainer scripts,
-        # translations and lintian overrides
-        self._substitute_file(
-            'headers.postinst', vars,
-            'debian/linux-headers-%(abiname)s%(localversion)s.postinst' % vars)
-        for name in ['postinst', 'postrm', 'preinst', 'prerm']:
-            self._substitute_file('image.%s' % name, vars,
-                                  'debian/%s.%s' %
-                                  (image_main['Package'], name))
+        self.substitute_debhelper_config(
+            'headers', vars,
+            'linux-headers-%(abiname)s%(localversion)s' % vars)
+        self.substitute_debhelper_config('image', vars, image_main['Package'])
         if build_debug:
-            debug_lintian_over = \
-                'debian/linux-image-%(abiname)s%(localversion)s-dbg' \
-                '.lintian-overrides' % vars
-            self._substitute_file('image-dbg.lintian-overrides', vars,
-                                  debug_lintian_over)
-            os.chmod(debug_lintian_over, 0o755)
+            self.substitute_debhelper_config(
+                'image-dbg', vars,
+                'linux-image-%(abiname)s%(localversion)s-dbg' % vars)
+            # XXX Should be done automatically based on template perms?
+            os.chmod('debian/linux-image-%(abiname)s%(localversion)s-dbg'
+                     '.lintian-overrides' % vars,
+                     0o755)
 
     def process_changelog(self):
         version = self.version = self.changelog[0].version
