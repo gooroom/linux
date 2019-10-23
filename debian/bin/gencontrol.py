@@ -191,9 +191,9 @@ class Gencontrol(Base):
         if self.config.merge('packages').get('tools-versioned', True):
             packages.extend(self.process_packages(
                 self.templates["control.tools-versioned"], vars))
-            self._substitute_file('perf.lintian-overrides', vars,
-                                  'debian/linux-perf-%s.lintian-overrides' %
-                                  vars['version'])
+            self._substitute_file(
+                'perf.lintian-overrides', vars,
+                'debian/linux-perf-%(version)s.lintian-overrides' % vars)
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.tools-versioned.meta"], vars))
@@ -498,7 +498,7 @@ class Gencontrol(Base):
             # image package.
             self._substitute_file(
                 "image.meta.bug-presubj", vars,
-                "debian/linux-image%s.bug-presubj" % vars['localversion'])
+                "debian/linux-image%(localversion)s.bug-presubj" % vars)
 
         package_headers = self.process_package(headers[0], vars)
         package_headers['Depends'].extend(relations_compiler_headers)
@@ -535,8 +535,8 @@ class Gencontrol(Base):
                     self.templates["control.image-dbg.meta"], vars))
                 self._substitute_file(
                     'image-dbg.meta.lintian-overrides', vars,
-                    'debian/linux-image%s-dbg.lintian-overrides' %
-                    vars['localversion'])
+                    'debian/linux-image%(localversion)s-dbg.lintian-overrides'
+                    % vars)
 
         merge_packages(packages, packages_own, arch)
 
@@ -607,9 +607,8 @@ class Gencontrol(Base):
         if build_signed:
             makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
         # Add "salt" to fix #872263
-        makeflags['KCONFIG_OPTIONS'] += (' -o "BUILD_SALT=\\"%s%s\\""' %
-                                         (vars['abiname'],
-                                          vars['localversion']))
+        makeflags['KCONFIG_OPTIONS'] += \
+            ' -o "BUILD_SALT=\\"%(abiname)s%(localversion)s\\""' % vars
 
         cmds_binary_arch = ["$(MAKE) -f debian/rules.real binary-arch-flavour "
                             "%s" %
@@ -633,17 +632,17 @@ class Gencontrol(Base):
 
         # Substitute kernel version etc. into maintainer scripts,
         # translations and lintian overrides
-        self._substitute_file('headers.postinst', vars,
-                              'debian/linux-headers-%s%s.postinst' %
-                              (vars['abiname'], vars['localversion']))
+        self._substitute_file(
+            'headers.postinst', vars,
+            'debian/linux-headers-%(abiname)s%(localversion)s.postinst' % vars)
         for name in ['postinst', 'postrm', 'preinst', 'prerm']:
             self._substitute_file('image.%s' % name, vars,
                                   'debian/%s.%s' %
                                   (image_main['Package'], name))
         if build_debug:
-            debug_lintian_over = (
-                'debian/linux-image-%s%s-dbg.lintian-overrides' %
-                (vars['abiname'], vars['localversion']))
+            debug_lintian_over = \
+                'debian/linux-image-%(abiname)s%(localversion)s-dbg' \
+                '.lintian-overrides' % vars
             self._substitute_file('image-dbg.lintian-overrides', vars,
                                   debug_lintian_over)
             os.chmod(debug_lintian_over, 0o755)
