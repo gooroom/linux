@@ -191,6 +191,9 @@ class Gencontrol(Base):
         if self.config.merge('packages').get('tools-versioned', True):
             packages.extend(self.process_packages(
                 self.templates["control.tools-versioned"], self.vars))
+            self._substitute_file('perf.lintian-overrides', self.vars,
+                                  'debian/linux-perf-%s.lintian-overrides' %
+                                  self.vars['version'])
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.tools-versioned.meta"], vars))
@@ -200,10 +203,6 @@ class Gencontrol(Base):
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.sourcebin.meta"], vars))
-
-        self._substitute_file('perf.lintian-overrides', self.vars,
-                              'debian/linux-perf-%s.lintian-overrides' %
-                              self.vars['version'])
 
     def do_indep_featureset_setup(self, vars, makeflags, featureset, extra):
         makeflags['LOCALVERSION'] = vars['localversion']
