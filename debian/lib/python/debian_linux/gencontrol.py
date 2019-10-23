@@ -354,7 +354,7 @@ class Gencontrol(object):
     # bug presubj message and lintian overrides
     def substitute_debhelper_config(self, prefix, vars, package_name,
                                     output_dir='debian'):
-        for id in ['bug-presubj', 'lintian-overrides',
+        for id in ['bug-presubj', 'lintian-overrides', 'maintscript',
                    'postinst', 'postrm', 'preinst', 'prerm']:
             name = '%s.%s' % (prefix, id)
             try:

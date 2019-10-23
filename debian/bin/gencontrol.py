@@ -181,6 +181,9 @@ class Gencontrol(Base):
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.docs.meta"], vars))
+                self.substitute_debhelper_config(
+                    'docs.meta', vars,
+                    '%(source_basename)s-doc%(source_suffix)s' % vars)
         if self.config.merge('packages').get('tools-unversioned', True):
             packages.extend(self.process_packages(
                 self.templates["control.tools-unversioned"], vars))
@@ -192,12 +195,17 @@ class Gencontrol(Base):
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.tools-versioned.meta"], vars))
+                self.substitute_debhelper_config('perf.meta', vars,
+                                                  'linux-perf')
         if self.config.merge('packages').get('source', True):
             packages.extend(self.process_packages(
                 self.templates["control.sourcebin"], vars))
             if do_meta:
                 packages.extend(self.process_packages(
                     self.templates["control.sourcebin.meta"], vars))
+                self.substitute_debhelper_config(
+                    'sourcebin.meta', vars,
+                    '%(source_basename)s-source%(source_suffix)s' % vars)
 
     def do_indep_featureset_setup(self, vars, makeflags, featureset, extra):
         makeflags['LOCALVERSION'] = vars['localversion']
@@ -501,6 +509,9 @@ class Gencontrol(Base):
         if do_meta:
             packages_own.extend(self.process_packages(
                 self.templates["control.headers.meta"], vars))
+            self.substitute_debhelper_config(
+                'headers.meta', vars,
+                'linux-headers%(localversion)s' % vars)
 
         if config_entry_build.get('vdso', False):
             makeflags['VDSO'] = True
