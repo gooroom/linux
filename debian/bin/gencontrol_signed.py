@@ -220,8 +220,8 @@ class Gencontrol(Base):
             # image package.
             self._substitute_file(
                 "image.meta.bug-presubj", vars,
-                self.template_debian_dir +
-                "/linux-image%s.bug-presubj" % vars['localversion'])
+                self.template_debian_dir
+                + "/linux-image%s.bug-presubj" % vars['localversion'])
 
         merge_packages(packages, packages_own, arch)
         makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour),
