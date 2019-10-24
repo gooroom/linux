@@ -1,18 +1,27 @@
-From: speck for Pawan Gupta <speck@linutronix.de>
-Date: Wed, 9 Oct 2019 16:26:56 -0700
-Subject: TAAv6 5
+From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Date: Wed, 23 Oct 2019 12:19:51 +0200
+Subject: x86/speculation/taa: Add sysfs reporting for TSX Async Abort
 
 Add the sysfs reporting file for TSX Async Abort. It exposes the
 vulnerability and the mitigation state similar to the existing files for
 the other hardware vulnerabilities.
 
-sysfs file path is:
+Sysfs file path is:
 /sys/devices/system/cpu/vulnerabilities/tsx_async_abort
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
 Reviewed-by: Mark Gross <mgross@linux.intel.com>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
 Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Jiri Kosina <jkosina@suse.cz>
+Cc: Josh Poimboeuf <jpoimboe@redhat.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: x86-ml <x86@kernel.org>
 [bwh: Forward-ported on top of NX: Fix conflicts (neighbouring
  insertions) in arch/x86/kernel/cpu/bugs.c, drivers/base/cpu.c,
  include/linux/cpu.h]
@@ -24,16 +33,16 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  3 files changed, 35 insertions(+)
 
 diff --git a/arch/x86/kernel/cpu/bugs.c b/arch/x86/kernel/cpu/bugs.c
-index 841f106a277a..c435bc5dc19b 100644
+index 828b2fe4bc0a..1ed43b858c52 100644
 --- a/arch/x86/kernel/cpu/bugs.c
 +++ b/arch/x86/kernel/cpu/bugs.c
-@@ -1439,6 +1439,21 @@ static ssize_t mds_show_state(char *buf)
+@@ -1426,6 +1426,21 @@ static ssize_t mds_show_state(char *buf)
  		       sched_smt_active() ? "vulnerable" : "disabled");
  }
  
 +static ssize_t tsx_async_abort_show_state(char *buf)
 +{
-+	if ((taa_mitigation == TAA_MITIGATION_TSX_DISABLE) ||
++	if ((taa_mitigation == TAA_MITIGATION_TSX_DISABLED) ||
 +	    (taa_mitigation == TAA_MITIGATION_OFF))
 +		return sprintf(buf, "%s\n", taa_strings[taa_mitigation]);
 +
@@ -49,7 +58,7 @@ index 841f106a277a..c435bc5dc19b 100644
  static char *stibp_state(void)
  {
  	if (spectre_v2_enabled == SPECTRE_V2_IBRS_ENHANCED)
-@@ -1510,6 +1525,9 @@ static ssize_t cpu_show_common(struct device *dev, struct device_attribute *attr
+@@ -1497,6 +1512,9 @@ static ssize_t cpu_show_common(struct device *dev, struct device_attribute *attr
  	case X86_BUG_ITLB_MULTIHIT:
  		return itlb_multihit_show_state(buf);
  
@@ -59,7 +68,7 @@ index 841f106a277a..c435bc5dc19b 100644
  	default:
  		break;
  	}
-@@ -1551,4 +1569,9 @@ ssize_t cpu_show_itlb_multihit(struct device *dev, struct device_attribute *attr
+@@ -1538,4 +1556,9 @@ ssize_t cpu_show_itlb_multihit(struct device *dev, struct device_attribute *attr
  {
  	return cpu_show_common(dev, attr, buf, X86_BUG_ITLB_MULTIHIT);
  }

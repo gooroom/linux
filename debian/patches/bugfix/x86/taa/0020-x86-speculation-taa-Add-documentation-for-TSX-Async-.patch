@@ -1,16 +1,29 @@
-From: speck for Pawan Gupta <speck@linutronix.de>
-Date: Wed, 9 Oct 2019 16:29:57 -0700
-Subject: TAAv6 8
+From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Date: Wed, 23 Oct 2019 12:32:55 +0200
+Subject: x86/speculation/taa: Add documentation for TSX Async Abort
 
 Add the documenation for TSX Async Abort. Include the description of
 the issue, how to check the mitigation state, control the mitigation,
 guidance for system administrators.
 
-Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+ [ bp: Add proper SPDX tags, touch ups. ]
+
 Co-developed-by: Antonio Gomez Iglesias <antonio.gomez.iglesias@intel.com>
+Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Signed-off-by: Antonio Gomez Iglesias <antonio.gomez.iglesias@intel.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
 Reviewed-by: Mark Gross <mgross@linux.intel.com>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>
+Cc: Josh Poimboeuf <jpoimboe@redhat.com>
+Cc: Juergen Gross <jgross@suse.com>
+Cc: linux-doc@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: x86-ml <x86@kernel.org>
 [bwh: Forward-ported on top of NX: Fix conflict (neighbouring
  insertions) in Documentation/ABI/testing/sysfs-devices-system-cpu]
 [bwh: Backported to 4.19: adjust context]
@@ -18,11 +31,11 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  .../ABI/testing/sysfs-devices-system-cpu      |   1 +
  Documentation/admin-guide/hw-vuln/index.rst   |   1 +
- .../admin-guide/hw-vuln/tsx_async_abort.rst   | 240 ++++++++++++++++++
+ .../admin-guide/hw-vuln/tsx_async_abort.rst   | 256 ++++++++++++++++++
  .../admin-guide/kernel-parameters.txt         |  36 +++
  Documentation/x86/index.rst                   |   1 +
- Documentation/x86/tsx_async_abort.rst         |  54 ++++
- 6 files changed, 333 insertions(+)
+ Documentation/x86/tsx_async_abort.rst         | 117 ++++++++
+ 6 files changed, 412 insertions(+)
  create mode 100644 Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
  create mode 100644 Documentation/x86/tsx_async_abort.rst
 
@@ -45,7 +58,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +   tsx_async_abort
 --- /dev/null
 +++ b/Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
-@@ -0,0 +1,240 @@
+@@ -0,0 +1,256 @@
++.. SPDX-License-Identifier: GPL-2.0
++
 +TAA - TSX Asynchronous Abort
 +======================================
 +
@@ -59,7 +74,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +This vulnerability only affects Intel processors that support Intel
 +Transactional Synchronization Extensions (TSX) when the TAA_NO bit (bit 8)
 +is 0 in the IA32_ARCH_CAPABILITIES MSR.  On processors where the MDS_NO bit
-+(bit 5)is 0 in the IA32_ARCH_CAPABILITIES MSR, the existing MDS mitigations
++(bit 5) is 0 in the IA32_ARCH_CAPABILITIES MSR, the existing MDS mitigations
 +also mitigate against TAA.
 +
 +Whether a processor is affected or not can be read out from the TAA
@@ -81,13 +96,13 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +Problem
 +-------
 +
-+When performing store, load, L1 refill operations, processors write data into
-+temporary microarchitectural structures (buffers). The data in the buffer can
-+be forwarded to load operations as an optimization.
++When performing store, load or L1 refill operations, processors write
++data into temporary microarchitectural structures (buffers). The data in
++those buffers can be forwarded to load operations as an optimization.
 +
-+Intel TSX are an extension to the x86 instruction set architecture that adds
++Intel TSX is an extension to the x86 instruction set architecture that adds
 +hardware transactional memory support to improve performance of multi-threaded
-+software. TSX lets the processor expose and exploit concurrence hidden in an
++software. TSX lets the processor expose and exploit concurrency hidden in an
 +application due to dynamically avoiding unnecessary synchronization.
 +
 +TSX supports atomic memory transactions that are either committed (success) or
@@ -108,8 +123,8 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +attacker needs to begin a TSX transaction and raise an asynchronous abort
 +to try to leak some of data stored in the buffers.
 +
-+Deeper technical information is available in the TAA specific x86 architecture
-+section: :ref:`Documentation/x86/tsx_async_abort.rst <tsx_async_abort>`.
++More detailed technical information is available in the TAA specific x86
++architecture section: :ref:`Documentation/x86/tsx_async_abort.rst <tsx_async_abort>`.
 +
 +
 +Attack scenarios
@@ -180,8 +195,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +
 +
 +The mitigation can be controlled at boot time via a kernel command line option.
-+See :ref:`taa_mitigation_control_command_line`. It also provides a sysfs
-+interface. See :ref:`taa_mitigation_sysfs`.
++See :ref:`taa_mitigation_control_command_line`.
 +
 +.. _virt_mechanism:
 +
@@ -254,6 +268,21 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +buffers.  For platforms without TSX control "tsx" command line argument has no
 +effect.
 +
++For the affected platforms below table indicates the mitigation status for the
++combinations of CPUID bit MD_CLEAR and IA32_ARCH_CAPABILITIES MSR bits MDS_NO
++and TSX_CTRL_MSR.
++
++  =======  =========  =============  ========================================
++  MDS_NO   MD_CLEAR   TSX_CTRL_MSR   Status
++  =======  =========  =============  ========================================
++    0          0            0        Vulnerable (needs ucode)
++    0          1            0        MDS and TAA mitigated via VERW
++    1          1            0        MDS fixed, TAA vulnerable if TSX enabled
++                                     because MD_CLEAR has no meaning and
++                                     VERW is not guaranteed to clear buffers
++    1          X            1        MDS fixed, TAA can be mitigated by
++                                     VERW or TSX_CTRL_MSR
++  =======  =========  =============  ========================================
 +
 +Mitigation selection guide
 +--------------------------
@@ -285,7 +314,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +
 +The kernel's default action for vulnerable processors is:
 +
-+  - Deploy TSX disable mitigation (tsx_async_abort=full).
++  - Deploy TSX disable mitigation (tsx_async_abort=full tsx=off).
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
 @@ -2538,6 +2538,7 @@
@@ -304,9 +333,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	mminit_loglevel=
  			[KNL] When CONFIG_DEBUG_MEMORY_INIT is set, this
-@@ -4528,6 +4530,40 @@
- 			neutralize any effect of /proc/sys/kernel/sysrq.
- 			Useful for debugging.
+@@ -4718,6 +4720,40 @@
+ 
+ 			Not specifying this option is equivalent to tsx=off.
  
 +	tsx_async_abort= [X86,INTEL] Control mitigation for the TSX Async
 +			Abort (TAA) vulnerability.
@@ -342,9 +371,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +			For details see:
 +			Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
 +
- 	tcpmhash_entries= [KNL,NET]
- 			Set the number of tcp_metrics_hash slots.
- 			Default value is 8192 or 16384 depending on total
+ 	turbografx.map[2|3]=	[HW,JOY]
+ 			TurboGraFX parallel port interface
+ 			Format:
 --- a/Documentation/x86/index.rst
 +++ b/Documentation/x86/index.rst
 @@ -6,3 +6,4 @@ x86 architecture specifics
@@ -354,9 +383,11 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +   tsx_async_abort
 --- /dev/null
 +++ b/Documentation/x86/tsx_async_abort.rst
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,117 @@
++.. SPDX-License-Identifier: GPL-2.0
++
 +TSX Async Abort (TAA) mitigation
-+=================================================
++================================
 +
 +.. _tsx_async_abort:
 +
@@ -376,15 +407,14 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +Mitigation strategy
 +-------------------
 +
-+a) TSX disable - One of the mitigation is to disable TSX feature. A new MSR
-+IA32_TSX_CTRL will be available in future and current processors and after a
-+microcode update in which can be used to disable TSX.  This MSR can be used to
-+disable the TSX feature and the enumeration of the TSX feature bits(RTM and
-+HLE) in CPUID.
++a) TSX disable - one of the mitigations is to disable TSX. A new MSR
++IA32_TSX_CTRL will be available in future and current processors after
++microcode update which can be used to disable TSX. In addition, it
++controls the enumeration of the TSX feature bits (RTM and HLE) in CPUID.
 +
-+b) CPU clear buffers - Similar to MDS, clearing the CPU buffers mitigates this
-+vulnerability. More details on this approach can be found here
-+https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/mds.html
++b) Clear CPU buffers - similar to MDS, clearing the CPU buffers mitigates this
++vulnerability. More details on this approach can be found in
++:ref:`Documentation/admin-guide/hw-vuln/mds.rst <mds>`.
 +
 +Kernel internal mitigation modes
 +--------------------------------
@@ -406,6 +436,68 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +                  effort approach without guarantee.
 + =============    ============================================================
 +
-+If the CPU is affected and "tsx_async_abort" kernel command line parameter is
++If the CPU is affected and the "tsx_async_abort" kernel command line parameter is
 +not provided then the kernel selects an appropriate mitigation depending on the
 +status of RTM and MD_CLEAR CPUID bits.
++
++Below tables indicate the impact of tsx=on|off|auto cmdline options on state of
++TAA mitigation, VERW behavior and TSX feature for various combinations of
++MSR_IA32_ARCH_CAPABILITIES bits.
++
++1. "tsx=off"
++
++=========  =========  ============  ============  ==============  ===================  ======================
++MSR_IA32_ARCH_CAPABILITIES bits     Result with cmdline tsx=off
++----------------------------------  -------------------------------------------------------------------------
++TAA_NO     MDS_NO     TSX_CTRL_MSR  TSX state     VERW can clear  TAA mitigation       TAA mitigation
++                                    after bootup  CPU buffers     tsx_async_abort=off  tsx_async_abort=full
++=========  =========  ============  ============  ==============  ===================  ======================
++    0          0           0         HW default         Yes           Same as MDS           Same as MDS
++    0          0           1        Invalid case   Invalid case       Invalid case          Invalid case
++    0          1           0         HW default         No         Need ucode update     Need ucode update
++    0          1           1          Disabled          Yes           TSX disabled          TSX disabled
++    1          X           1          Disabled           X             None needed           None needed
++=========  =========  ============  ============  ==============  ===================  ======================
++
++2. "tsx=on"
++
++=========  =========  ============  ============  ==============  ===================  ======================
++MSR_IA32_ARCH_CAPABILITIES bits     Result with cmdline tsx=on
++----------------------------------  -------------------------------------------------------------------------
++TAA_NO     MDS_NO     TSX_CTRL_MSR  TSX state     VERW can clear  TAA mitigation       TAA mitigation
++                                    after bootup  CPU buffers     tsx_async_abort=off  tsx_async_abort=full
++=========  =========  ============  ============  ==============  ===================  ======================
++    0          0           0         HW default        Yes            Same as MDS          Same as MDS
++    0          0           1        Invalid case   Invalid case       Invalid case         Invalid case
++    0          1           0         HW default        No          Need ucode update     Need ucode update
++    0          1           1          Enabled          Yes               None              Same as MDS
++    1          X           1          Enabled          X              None needed          None needed
++=========  =========  ============  ============  ==============  ===================  ======================
++
++3. "tsx=auto"
++
++=========  =========  ============  ============  ==============  ===================  ======================
++MSR_IA32_ARCH_CAPABILITIES bits     Result with cmdline tsx=auto
++----------------------------------  -------------------------------------------------------------------------
++TAA_NO     MDS_NO     TSX_CTRL_MSR  TSX state     VERW can clear  TAA mitigation       TAA mitigation
++                                    after bootup  CPU buffers     tsx_async_abort=off  tsx_async_abort=full
++=========  =========  ============  ============  ==============  ===================  ======================
++    0          0           0         HW default    Yes                Same as MDS           Same as MDS
++    0          0           1        Invalid case  Invalid case        Invalid case          Invalid case
++    0          1           0         HW default    No              Need ucode update     Need ucode update
++    0          1           1          Disabled      Yes               TSX disabled          TSX disabled
++    1          X           1          Enabled       X                 None needed           None needed
++=========  =========  ============  ============  ==============  ===================  ======================
++
++In the tables, TSX_CTRL_MSR is a new bit in MSR_IA32_ARCH_CAPABILITIES that
++indicates whether MSR_IA32_TSX_CTRL is supported.
++
++There are two control bits in IA32_TSX_CTRL MSR:
++
++      Bit 0: When set it disables the Restricted Transactional Memory (RTM)
++             sub-feature of TSX (will force all transactions to abort on the
++             XBEGIN instruction).
++
++      Bit 1: When set it disables the enumeration of the RTM and HLE feature
++             (i.e. it will make CPUID(EAX=7).EBX{bit4} and
++             CPUID(EAX=7).EBX{bit11} read as 0).
