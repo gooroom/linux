@@ -1,26 +1,40 @@
-From: speck for Pawan Gupta <speck@linutronix.de>
-Date: Wed, 9 Oct 2019 16:28:56 -0700
-Subject: TAAv6 7
+From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Date: Wed, 23 Oct 2019 12:28:57 +0200
+Subject: x86/tsx: Add "auto" option to the tsx= cmdline parameter
 
 Platforms which are not affected by X86_BUG_TAA may want the TSX feature
 enabled. Add "auto" option to the TSX cmdline parameter. When tsx=auto
 disable TSX when X86_BUG_TAA is present, otherwise enable TSX.
 
 More details on X86_BUG_TAA can be found here:
-https://www.kernel.org/doc/html/latest/hw-vuln/tsx_async_abort.html
+https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/tsx_async_abort.html
+
+ [ bp: Extend the arg buffer to accommodate "auto\0". ]
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
-Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
-[bwh: Backported to 4.9: adjust filename]
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: "Paul E. McKenney" <paulmck@linux.ibm.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Jonathan Corbet <corbet@lwn.net>
+Cc: Josh Poimboeuf <jpoimboe@redhat.com>
+Cc: Juergen Gross <jgross@suse.com>
+Cc: linux-doc@vger.kernel.org
+Cc: Mark Gross <mgross@linux.intel.com>
+Cc: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: x86-ml <x86@kernel.org>
+[bwh: Backported to 4.9: adjust filenames]
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  Documentation/kernel-parameters.txt | 5 +++++
- arch/x86/kernel/cpu/tsx.c           | 5 +++++
- 2 files changed, 10 insertions(+)
+ arch/x86/kernel/cpu/tsx.c           | 7 ++++++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 02da621fd244..d725d79f6f5f 100644
+index 02da621fd244..2ce069fdc4db 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
 @@ -4541,6 +4541,11 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
@@ -30,16 +44,25 @@ index 02da621fd244..d725d79f6f5f 100644
 +			auto	- Disable TSX if X86_BUG_TAA is present,
 +				  otherwise enable TSX on the system.
 +
-+			More details on X86_BUG_TAA are here:
++			More details on X86_BUG_TAA here:
 +			Documentation/hw-vuln/tsx_async_abort.rst
  
  			Not specifying this option is equivalent to tsx=off.
  
 diff --git a/arch/x86/kernel/cpu/tsx.c b/arch/x86/kernel/cpu/tsx.c
-index fcadaa8a512b..fdfa716963fc 100644
+index e5933ef50add..89ab91eacd4f 100644
 --- a/arch/x86/kernel/cpu/tsx.c
 +++ b/arch/x86/kernel/cpu/tsx.c
-@@ -80,6 +80,11 @@ void __init tsx_init(void)
+@@ -69,7 +69,7 @@ static bool __init tsx_ctrl_is_supported(void)
+ 
+ void __init tsx_init(void)
+ {
+-	char arg[4] = {};
++	char arg[5] = {};
+ 	int ret;
+ 
+ 	if (!tsx_ctrl_is_supported())
+@@ -81,6 +81,11 @@ void __init tsx_init(void)
  			tsx_ctrl_state = TSX_CTRL_ENABLE;
  		} else if (!strcmp(arg, "off")) {
  			tsx_ctrl_state = TSX_CTRL_DISABLE;
@@ -50,4 +73,4 @@ index fcadaa8a512b..fdfa716963fc 100644
 +				tsx_ctrl_state = TSX_CTRL_ENABLE;
  		} else {
  			tsx_ctrl_state = TSX_CTRL_DISABLE;
- 			pr_info("tsx: invalid option, defaulting to off\n");
+ 			pr_err("tsx: invalid option, defaulting to off\n");

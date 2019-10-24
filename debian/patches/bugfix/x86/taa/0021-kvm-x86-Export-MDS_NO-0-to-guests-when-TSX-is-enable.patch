@@ -1,12 +1,12 @@
-From: speck for Pawan Gupta <speck@linutronix.de>
-Date: Wed, 9 Oct 2019 16:27:56 -0700
-Subject: TAAv6 6
+From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Date: Wed, 23 Oct 2019 12:23:33 +0200
+Subject: kvm/x86: Export MDS_NO=0 to guests when TSX is enabled
 
-Export IA32_ARCH_CAPABILITIES MSR bit MDS_NO=0 to guests on TSX Async
-Abort(TAA) affected hosts that have TSX enabled and updated microcode.
-This is required so that the guests don't complain,
+Export the IA32_ARCH_CAPABILITIES MSR bit MDS_NO=0 to guests on TSX
+Async Abort(TAA) affected hosts that have TSX enabled and updated
+microcode. This is required so that the guests don't complain,
 
-	"Vulnerable: Clear CPU buffers attempted, no microcode"
+  "Vulnerable: Clear CPU buffers attempted, no microcode"
 
 when the host has the updated microcode to clear CPU buffers.
 
@@ -16,29 +16,39 @@ Guests can't do this check themselves when the ARCH_CAP_TSX_CTRL bit is
 not exported to the guests.
 
 In this case export MDS_NO=0 to the guests. When guests have
-CPUID.MD_CLEAR=1 guests deploy MDS mitigation which also mitigates TAA.
+CPUID.MD_CLEAR=1, they deploy MDS mitigation which also mitigates TAA.
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
 Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Joerg Roedel <joro@8bytes.org>
+Cc: kvm ML <kvm@vger.kernel.org>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Cc: "Radim Krcmar" <rkrcmar@redhat.com>
+Cc: Sean Christopherson <sean.j.christopherson@intel.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: x86-ml <x86@kernel.org>
 ---
  arch/x86/kvm/x86.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
 diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index 3b784fdb43af..edfa4ef749d3 100644
+index 0ee28485d195..fd487088bee5 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -1044,6 +1044,25 @@ u64 kvm_get_arch_capabilities(void)
+@@ -1052,6 +1052,25 @@ u64 kvm_get_arch_capabilities(void)
  	if (l1tf_vmx_mitigation != VMENTER_L1D_FLUSH_NEVER)
  		data |= ARCH_CAP_SKIP_VMENTRY_L1DFLUSH;
  
 +	/*
 +	 * On TAA affected systems, export MDS_NO=0 when:
-+	 *	- TSX is enabled on host, i.e. X86_FEATURE_RTM=1.
++	 *	- TSX is enabled on the host, i.e. X86_FEATURE_RTM=1.
 +	 *	- Updated microcode is present. This is detected by
-+	 *	  the presence of ARCH_CAP_TSX_CTRL_MSR. This ensures
-+	 *	  VERW clears CPU buffers.
++	 *	  the presence of ARCH_CAP_TSX_CTRL_MSR and ensures
++	 *	  that VERW clears CPU buffers.
 +	 *
 +	 * When MDS_NO=0 is exported, guests deploy clear CPU buffer
 +	 * mitigation and don't complain:

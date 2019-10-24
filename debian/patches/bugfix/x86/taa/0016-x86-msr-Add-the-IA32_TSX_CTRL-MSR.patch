@@ -1,15 +1,17 @@
-From: speck for Pawan Gupta <speck@linutronix.de>
-Date: Wed, 9 Oct 2019 16:22:56 -0700
-Subject: TAAv6 1
+From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Date: Wed, 23 Oct 2019 10:45:50 +0200
+Subject: x86/msr: Add the IA32_TSX_CTRL MSR
 
 Transactional Synchronization Extensions (TSX) may be used on certain
 processors as part of a speculative side channel attack.  A microcode
 update for existing processors that are vulnerable to this attack will
-add a new MSR, IA32_TSX_CTRL to allow the system administrator the
-option to disable TSX as one of the possible mitigations.  [Note that
-future processors that are not vulnerable will also support the
-IA32_TSX_CTRL MSR].  Add defines for the new IA32_TSX_CTRL MSR and its
-bits.
+add a new MSR - IA32_TSX_CTRL to allow the system administrator the
+option to disable TSX as one of the possible mitigations.
+
+  [ Note that future processors that are not vulnerable will also
+    support the IA32_TSX_CTRL MSR. ]
+
+Add defines for the new IA32_TSX_CTRL MSR and its bits.
 
 TSX has two sub-features:
 
@@ -23,27 +25,34 @@ IA32_TSX_CTRL MSR.
 
 There are two control bits in IA32_TSX_CTRL MSR:
 
-  Bit 0: When set it disables the Restricted Transactional Memory (RTM)
+  Bit 0: When set, it disables the Restricted Transactional Memory (RTM)
          sub-feature of TSX (will force all transactions to abort on the
 	 XBEGIN instruction).
 
-  Bit 1: When set it disables the enumeration of the RTM and HLE feature
+  Bit 1: When set, it disables the enumeration of the RTM and HLE feature
          (i.e. it will make CPUID(EAX=7).EBX{bit4} and
-         CPUID(EAX=7).EBX{bit11} read as 0).
+	  CPUID(EAX=7).EBX{bit11} read as 0).
 
-The other TSX sub-feature, Hardware Lock Elision (HLE), is unconditionally
-disabled but still enumerated as present by CPUID(EAX=7).EBX{bit4}.
+The other TSX sub-feature, Hardware Lock Elision (HLE), is
+unconditionally disabled but still enumerated as present by
+CPUID(EAX=7).EBX{bit4}.
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
 Reviewed-by: Mark Gross <mgross@linux.intel.com>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
 Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: x86-ml <x86@kernel.org>
 ---
  arch/x86/include/asm/msr-index.h | 5 +++++
  1 file changed, 5 insertions(+)
 
 diff --git a/arch/x86/include/asm/msr-index.h b/arch/x86/include/asm/msr-index.h
-index 8e4bcad17d32..bd51db32564d 100644
+index 8e4bcad17d32..1d809faaae01 100644
 --- a/arch/x86/include/asm/msr-index.h
 +++ b/arch/x86/include/asm/msr-index.h
 @@ -84,6 +84,7 @@
@@ -59,7 +68,7 @@ index 8e4bcad17d32..bd51db32564d 100644
  #define MSR_IA32_BBL_CR_CTL3		0x0000011e
  
 +#define MSR_IA32_TSX_CTRL		0x00000122
-+#define TSX_CTRL_RTM_DISABLE		BIT(0)	/* Disable RTM fxeature */
++#define TSX_CTRL_RTM_DISABLE		BIT(0)	/* Disable RTM feature */
 +#define TSX_CTRL_CPUID_CLEAR		BIT(1)	/* Disable TSX enumeration */
 +
  #define MSR_IA32_SYSENTER_CS		0x00000174
