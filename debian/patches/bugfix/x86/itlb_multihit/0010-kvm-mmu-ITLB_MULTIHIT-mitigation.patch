@@ -1,5 +1,5 @@
 From: Paolo Bonzini <pbonzini@redhat.com>
-Date: Fri, 11 Oct 2019 12:40:14 +0200
+Date: Thu, 24 Oct 2019 18:34:28 +0200
 Subject: kvm: mmu: ITLB_MULTIHIT mitigation
 
 With some Intel processors, putting the same virtual address in the TLB
@@ -30,8 +30,8 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  arch/x86/kernel/cpu/bugs.c                    |  13 +-
  arch/x86/kvm/mmu.c                            | 135 +++++++++++++++++-
  arch/x86/kvm/paging_tmpl.h                    |  29 +++-
- arch/x86/kvm/x86.c                            |   1 +
- 6 files changed, 178 insertions(+), 13 deletions(-)
+ arch/x86/kvm/x86.c                            |   9 ++
+ 6 files changed, 186 insertions(+), 13 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
 index 16607b178b47..b2c1a5c63ab3 100644
@@ -451,7 +451,7 @@ index 3b022b08b577..adf42dc8d38b 100644
  
  out_unlock:
 diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index 2714c1a0e59f..406a37aa61c7 100644
+index 2714c1a0e59f..ec80bb27504f 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
 @@ -206,6 +206,7 @@ struct kvm_stats_debugfs_item debugfs_entries[] = {
@@ -462,3 +462,18 @@ index 2714c1a0e59f..406a37aa61c7 100644
  	{ "max_mmu_page_hash_collisions",
  		VM_STAT(max_mmu_page_hash_collisions) },
  	{ NULL }
+@@ -1130,6 +1131,14 @@ u64 kvm_get_arch_capabilities(void)
+ 
+ 	rdmsrl_safe(MSR_IA32_ARCH_CAPABILITIES, &data);
+ 
++	/*
++	 * If nx_huge_pages is enabled, KVM's shadow paging will ensure that
++	 * the nested hypervisor runs with NX huge pages.  If it is not,
++	 * L1 is anyway vulnerable to ITLB_MULTIHIT explots from other
++	 * L1 guests, so it need not worry about its own (L2) guests.
++	 */
++	data |= ARCH_CAP_PSCHANGE_MC_NO;
++
+ 	/*
+ 	 * If we're doing cache flushes (either "always" or "cond")
+ 	 * we will do one whenever the guest does a vmlaunch/vmresume.

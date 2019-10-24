@@ -1,5 +1,5 @@
 From: Junaid Shahid <junaids@google.com>
-Date: Fri, 11 Oct 2019 12:40:16 +0200
+Date: Thu, 24 Oct 2019 18:34:30 +0200
 Subject: kvm: x86: mmu: Recovery of shattered NX large pages
 
 The page table pages corresponding to broken down large pages are
@@ -266,10 +266,10 @@ index 65892288bf51..f7b2de7b6382 100644
 +
  #endif
 diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index 406a37aa61c7..1ecadf51f154 100644
+index ec80bb27504f..da688e726632 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -8950,6 +8950,7 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
+@@ -8958,6 +8958,7 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
  	INIT_HLIST_HEAD(&kvm->arch.mask_notifier_list);
  	INIT_LIST_HEAD(&kvm->arch.active_mmu_pages);
  	INIT_LIST_HEAD(&kvm->arch.zapped_obsolete_pages);
@@ -277,7 +277,7 @@ index 406a37aa61c7..1ecadf51f154 100644
  	INIT_LIST_HEAD(&kvm->arch.assigned_dev_head);
  	atomic_set(&kvm->arch.noncoherent_dma_count, 0);
  
-@@ -8981,6 +8982,11 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
+@@ -8989,6 +8990,11 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
  	return 0;
  }
  
@@ -289,7 +289,7 @@ index 406a37aa61c7..1ecadf51f154 100644
  static void kvm_unload_vcpu_mmu(struct kvm_vcpu *vcpu)
  {
  	vcpu_load(vcpu);
-@@ -9082,6 +9088,11 @@ int x86_set_memory_region(struct kvm *kvm, int id, gpa_t gpa, u32 size)
+@@ -9090,6 +9096,11 @@ int x86_set_memory_region(struct kvm *kvm, int id, gpa_t gpa, u32 size)
  }
  EXPORT_SYMBOL_GPL(x86_set_memory_region);
  
