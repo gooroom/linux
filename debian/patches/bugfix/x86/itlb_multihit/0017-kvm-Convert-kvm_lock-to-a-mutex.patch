@@ -20,8 +20,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  virt/kvm/kvm_main.c                   | 30 +++++++++++++--------------
  6 files changed, 28 insertions(+), 30 deletions(-)
 
---- a/Documentation/virtual/kvm/locking.txt
-+++ b/Documentation/virtual/kvm/locking.txt
+Index: linux/Documentation/virtual/kvm/locking.txt
+===================================================================
+--- linux.orig/Documentation/virtual/kvm/locking.txt
++++ linux/Documentation/virtual/kvm/locking.txt
 @@ -15,8 +15,6 @@ The acquisition orders for mutexes are a
  
  On x86, vcpu->mutex is taken outside kvm->arch.hyperv.hv_lock.
@@ -40,9 +42,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  Arch:		any
  Protects:	- vm_list
  
---- a/arch/s390/kvm/kvm-s390.c
-+++ b/arch/s390/kvm/kvm-s390.c
-@@ -2108,13 +2108,13 @@ int kvm_arch_init_vm(struct kvm *kvm, un
+Index: linux/arch/s390/kvm/kvm-s390.c
+===================================================================
+--- linux.orig/arch/s390/kvm/kvm-s390.c
++++ linux/arch/s390/kvm/kvm-s390.c
+@@ -2110,13 +2110,13 @@ int kvm_arch_init_vm(struct kvm *kvm, un
  	kvm->arch.sca = (struct bsca_block *) get_zeroed_page(alloc_flags);
  	if (!kvm->arch.sca)
  		goto out_err;
@@ -58,8 +62,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	sprintf(debug_name, "kvm-%u", current->pid);
  
---- a/arch/x86/kvm/mmu.c
-+++ b/arch/x86/kvm/mmu.c
+Index: linux/arch/x86/kvm/mmu.c
+===================================================================
+--- linux.orig/arch/x86/kvm/mmu.c
++++ linux/arch/x86/kvm/mmu.c
 @@ -5819,7 +5819,7 @@ mmu_shrink_scan(struct shrinker *shrink,
  	int nr_to_scan = sc->nr_to_scan;
  	unsigned long freed = 0;
@@ -78,9 +84,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return freed;
  }
  
---- a/arch/x86/kvm/x86.c
-+++ b/arch/x86/kvm/x86.c
-@@ -6498,7 +6498,7 @@ static void kvm_hyperv_tsc_notifier(void
+Index: linux/arch/x86/kvm/x86.c
+===================================================================
+--- linux.orig/arch/x86/kvm/x86.c
++++ linux/arch/x86/kvm/x86.c
+@@ -6529,7 +6529,7 @@ static void kvm_hyperv_tsc_notifier(void
  	struct kvm_vcpu *vcpu;
  	int cpu;
  
@@ -89,7 +97,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	list_for_each_entry(kvm, &vm_list, vm_list)
  		kvm_make_mclock_inprogress_request(kvm);
  
-@@ -6524,7 +6524,7 @@ static void kvm_hyperv_tsc_notifier(void
+@@ -6555,7 +6555,7 @@ static void kvm_hyperv_tsc_notifier(void
  
  		spin_unlock(&ka->pvclock_gtod_sync_lock);
  	}
@@ -98,7 +106,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  #endif
  
-@@ -6582,17 +6582,17 @@ static int kvmclock_cpufreq_notifier(str
+@@ -6613,17 +6613,17 @@ static int kvmclock_cpufreq_notifier(str
  
  	smp_call_function_single(freq->cpu, tsc_khz_changed, freq, 1);
  
@@ -119,7 +127,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	if (freq->old < freq->new && send_ipi) {
  		/*
-@@ -6718,12 +6718,12 @@ static void pvclock_gtod_update_fn(struc
+@@ -6749,12 +6749,12 @@ static void pvclock_gtod_update_fn(struc
  	struct kvm_vcpu *vcpu;
  	int i;
  
@@ -134,8 +142,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static DECLARE_WORK(pvclock_gtod_work, pvclock_gtod_update_fn);
---- a/include/linux/kvm_host.h
-+++ b/include/linux/kvm_host.h
+Index: linux/include/linux/kvm_host.h
+===================================================================
+--- linux.orig/include/linux/kvm_host.h
++++ linux/include/linux/kvm_host.h
 @@ -141,7 +141,7 @@ static inline bool is_error_page(struct
  
  extern struct kmem_cache *kvm_vcpu_cache;
@@ -145,8 +155,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  extern struct list_head vm_list;
  
  struct kvm_io_range {
---- a/virt/kvm/kvm_main.c
-+++ b/virt/kvm/kvm_main.c
+Index: linux/virt/kvm/kvm_main.c
+===================================================================
+--- linux.orig/virt/kvm/kvm_main.c
++++ linux/virt/kvm/kvm_main.c
 @@ -92,7 +92,7 @@ EXPORT_SYMBOL_GPL(halt_poll_ns_shrink);
   *	kvm->lock --> kvm->slots_lock --> kvm->irq_lock
   */

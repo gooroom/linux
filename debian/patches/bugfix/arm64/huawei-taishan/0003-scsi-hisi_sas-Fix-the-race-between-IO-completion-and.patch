@@ -20,11 +20,11 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  drivers/scsi/hisi_sas/hisi_sas_main.c | 55 ++++++++++++++++++++++-----
  1 file changed, 46 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/scsi/hisi_sas/hisi_sas_main.c b/drivers/scsi/hisi_sas/hisi_sas_main.c
-index 6a959a927e9d..2f57a318a71b 100644
---- a/drivers/scsi/hisi_sas/hisi_sas_main.c
-+++ b/drivers/scsi/hisi_sas/hisi_sas_main.c
-@@ -958,8 +958,7 @@ static int hisi_sas_control_phy(struct asd_sas_phy *sas_phy, enum phy_func func,
+Index: linux/drivers/scsi/hisi_sas/hisi_sas_main.c
+===================================================================
+--- linux.orig/drivers/scsi/hisi_sas/hisi_sas_main.c
++++ linux/drivers/scsi/hisi_sas/hisi_sas_main.c
+@@ -958,8 +958,7 @@ static int hisi_sas_control_phy(struct a
  
  static void hisi_sas_task_done(struct sas_task *task)
  {
@@ -34,7 +34,7 @@ index 6a959a927e9d..2f57a318a71b 100644
  	complete(&task->slow_task->completion);
  }
  
-@@ -968,13 +967,17 @@ static void hisi_sas_tmf_timedout(struct timer_list *t)
+@@ -968,13 +967,17 @@ static void hisi_sas_tmf_timedout(struct
  	struct sas_task_slow *slow = from_timer(slow, t, timer);
  	struct sas_task *task = slow->task;
  	unsigned long flags;
@@ -54,7 +54,7 @@ index 6a959a927e9d..2f57a318a71b 100644
  }
  
  #define TASK_TIMEOUT 20
-@@ -1025,10 +1028,18 @@ static int hisi_sas_exec_internal_tmf_task(struct domain_device *device,
+@@ -1025,10 +1028,18 @@ static int hisi_sas_exec_internal_tmf_ta
  		if ((task->task_state_flags & SAS_TASK_STATE_ABORTED)) {
  			if (!(task->task_state_flags & SAS_TASK_STATE_DONE)) {
  				struct hisi_sas_slot *slot = task->lldd_task;
@@ -74,7 +74,7 @@ index 6a959a927e9d..2f57a318a71b 100644
  
  				goto ex_err;
  			} else
-@@ -1404,6 +1415,17 @@ static int hisi_sas_abort_task(struct sas_task *task)
+@@ -1404,6 +1415,17 @@ static int hisi_sas_abort_task(struct sa
  
  	spin_lock_irqsave(&task->task_state_lock, flags);
  	if (task->task_state_flags & SAS_TASK_STATE_DONE) {
@@ -92,7 +92,7 @@ index 6a959a927e9d..2f57a318a71b 100644
  		spin_unlock_irqrestore(&task->task_state_lock, flags);
  		rc = TMF_RESP_FUNC_COMPLETE;
  		goto out;
-@@ -1459,12 +1481,19 @@ static int hisi_sas_abort_task(struct sas_task *task)
+@@ -1459,12 +1481,19 @@ static int hisi_sas_abort_task(struct sa
  		/* SMP */
  		struct hisi_sas_slot *slot = task->lldd_task;
  		u32 tag = slot->idx;
@@ -114,15 +114,14 @@ index 6a959a927e9d..2f57a318a71b 100644
  	}
  
  out:
-@@ -1830,9 +1859,17 @@ hisi_sas_internal_task_abort(struct hisi_hba *hisi_hba,
+@@ -1830,9 +1859,17 @@ hisi_sas_internal_task_abort(struct hisi
  	if ((task->task_state_flags & SAS_TASK_STATE_ABORTED)) {
  		if (!(task->task_state_flags & SAS_TASK_STATE_DONE)) {
  			struct hisi_sas_slot *slot = task->lldd_task;
--
--			if (slot)
 +			struct hisi_sas_cq *cq =
 +				&hisi_hba->cq[slot->dlvry_queue];
-+
+ 
+-			if (slot)
 +			if (slot) {
 +				/*
 +				 * flush tasklet to avoid free'ing task
@@ -134,6 +133,3 @@ index 6a959a927e9d..2f57a318a71b 100644
  			dev_err(dev, "internal task abort: timeout and not done.\n");
  			res = -EIO;
  			goto exit;
--- 
-2.20.1
-
