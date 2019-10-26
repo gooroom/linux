@@ -213,7 +213,7 @@ class Gencontrol(Base):
                                  (packages_meta[0]['Package'], makeflags)]
 
             self.substitute_debhelper_config(
-                'image', vars,
+                'image.meta', vars,
                 'linux-image%(localversion)s' % vars,
                 output_dir=self.template_debian_dir)
 
