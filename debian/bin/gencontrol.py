@@ -343,6 +343,7 @@ class Gencontrol(Base):
         ('kernel-arch', 'KERNEL_ARCH', False),
         ('cflags', 'KCFLAGS', True),
         ('override-host-type', 'OVERRIDE_HOST_TYPE', True),
+        ('cross-compile-compat', 'CROSS_COMPILE_COMPAT', True),
     )
 
     flavour_makeflags_build = (
