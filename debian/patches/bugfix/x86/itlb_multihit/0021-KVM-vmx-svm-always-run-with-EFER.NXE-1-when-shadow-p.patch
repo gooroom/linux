@@ -2,7 +2,8 @@ From: Paolo Bonzini <pbonzini@redhat.com>
 Date: Sun, 27 Oct 2019 16:23:23 +0100
 Subject: KVM: vmx, svm: always run with EFER.NXE=1 when shadow paging is
  active
-Origin: https://git.kernel.org/linus/9167ab79936206118cc60e47dcb926c3489f3bd5
+
+commit 9167ab79936206118cc60e47dcb926c3489f3bd5 upstream.
 
 VMX already does so if the host has SMEP, in order to support the combination of
 CR0.WP=1 and CR4.SMEP=1.  However, it is perfectly safe to always do so, and in
@@ -14,19 +15,18 @@ SVM does not have similar code, but it should since recent AMD processors do
 support SMEP.  So this patch also makes the code for the two vendors more similar
 while fixing NPT=0, CR0.WP=1 and CR4.SMEP=1 on AMD processors.
 
-Cc: stable@vger.kernel.org
 Cc: Joerg Roedel <jroedel@suse.de>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
-[Salvatore Bonaccorso: Backport to 4.9: Adjust context, filename change back to
- arch/x86/kvm/vmx.c]
+[bwh: Backported to 4.9: adjust filename]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
- arch/x86/kvm/svm.c     | 10 ++++++++--
- arch/x86/kvm/vmx.c     | 14 +++-----------
+ arch/x86/kvm/svm.c | 10 ++++++++--
+ arch/x86/kvm/vmx.c | 14 +++-----------
  2 files changed, 11 insertions(+), 13 deletions(-)
 
 --- a/arch/x86/kvm/svm.c
 +++ b/arch/x86/kvm/svm.c
-@@ -736,8 +736,14 @@ static int get_npt_level(struct kvm_vcpu
+@@ -590,8 +590,14 @@ static int get_npt_level(void)
  static void svm_set_efer(struct kvm_vcpu *vcpu, u64 efer)
  {
  	vcpu->arch.efer = efer;
@@ -45,7 +45,7 @@ Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
  	mark_dirty(to_svm(vcpu)->vmcb, VMCB_CR);
 --- a/arch/x86/kvm/vmx.c
 +++ b/arch/x86/kvm/vmx.c
-@@ -2785,17 +2785,9 @@ static bool update_transition_efer(struc
+@@ -2219,17 +2219,9 @@ static bool update_transition_efer(struc
  	u64 guest_efer = vmx->vcpu.arch.efer;
  	u64 ignore_bits = 0;
  

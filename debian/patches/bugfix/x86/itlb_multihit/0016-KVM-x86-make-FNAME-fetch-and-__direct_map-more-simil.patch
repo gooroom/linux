@@ -18,11 +18,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  arch/x86/kvm/paging_tmpl.h | 30 ++++++++++-----------
  2 files changed, 39 insertions(+), 44 deletions(-)
 
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 2cf1ff7e3af7..bf370b63928e 100644
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
-@@ -2757,40 +2757,39 @@ static void direct_pte_prefetch(struct kvm_vcpu *vcpu, u64 *sptep)
+@@ -2757,40 +2757,39 @@ static void direct_pte_prefetch(struct k
  	__direct_pte_prefetch(vcpu, sp, sptep);
  }
  
@@ -61,16 +59,16 @@ index 2cf1ff7e3af7..bf370b63928e 100644
 -		drop_large_spte(vcpu, iterator.sptep);
 -		if (!is_shadow_present_pte(*iterator.sptep)) {
 -			u64 base_addr = iterator.addr;
+-
+-			base_addr &= PT64_LVL_ADDR_MASK(iterator.level);
+-			pseudo_gfn = base_addr >> PAGE_SHIFT;
+-			sp = kvm_mmu_get_page(vcpu, pseudo_gfn, iterator.addr,
+-					      iterator.level - 1, 1, ACC_ALL);
 +		drop_large_spte(vcpu, it.sptep);
 +		if (!is_shadow_present_pte(*it.sptep)) {
 +			sp = kvm_mmu_get_page(vcpu, base_gfn, it.addr,
 +					      it.level - 1, true, ACC_ALL);
  
--			base_addr &= PT64_LVL_ADDR_MASK(iterator.level);
--			pseudo_gfn = base_addr >> PAGE_SHIFT;
--			sp = kvm_mmu_get_page(vcpu, pseudo_gfn, iterator.addr,
--					      iterator.level - 1, 1, ACC_ALL);
--
 -			link_shadow_page(vcpu, iterator.sptep, sp);
 +			link_shadow_page(vcpu, it.sptep, sp);
  		}
@@ -86,7 +84,7 @@ index 2cf1ff7e3af7..bf370b63928e 100644
  }
  
  static void kvm_send_hwpoison_signal(unsigned long address, struct task_struct *tsk)
-@@ -3062,8 +3061,7 @@ static int nonpaging_map(struct kvm_vcpu *vcpu, gva_t v, u32 error_code,
+@@ -3062,8 +3061,7 @@ static int nonpaging_map(struct kvm_vcpu
  	make_mmu_pages_available(vcpu);
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, &gfn, &pfn, &level);
@@ -96,7 +94,7 @@ index 2cf1ff7e3af7..bf370b63928e 100644
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-@@ -3598,8 +3596,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
+@@ -3598,8 +3596,7 @@ static int tdp_page_fault(struct kvm_vcp
  	make_mmu_pages_available(vcpu);
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, &gfn, &pfn, &level);
@@ -106,11 +104,9 @@ index 2cf1ff7e3af7..bf370b63928e 100644
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-diff --git a/arch/x86/kvm/paging_tmpl.h b/arch/x86/kvm/paging_tmpl.h
-index 6e55098c854a..8e9d5c0922e9 100644
 --- a/arch/x86/kvm/paging_tmpl.h
 +++ b/arch/x86/kvm/paging_tmpl.h
-@@ -579,6 +579,7 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -579,6 +579,7 @@ static int FNAME(fetch)(struct kvm_vcpu
  	struct kvm_shadow_walk_iterator it;
  	unsigned direct_access, access = gw->pt_access;
  	int top_level, ret;
@@ -118,7 +114,7 @@ index 6e55098c854a..8e9d5c0922e9 100644
  
  	direct_access = gw->pte_access;
  
-@@ -623,31 +624,29 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -623,31 +624,29 @@ static int FNAME(fetch)(struct kvm_vcpu
  			link_shadow_page(vcpu, it.sptep, sp);
  	}
  
@@ -163,7 +159,7 @@ index 6e55098c854a..8e9d5c0922e9 100644
  	return ret;
  
  out_gpte_changed:
-@@ -810,7 +809,6 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code,
+@@ -810,7 +809,6 @@ static int FNAME(page_fault)(struct kvm_
  		transparent_hugepage_adjust(vcpu, &walker.gfn, &pfn, &level);
  	r = FNAME(fetch)(vcpu, addr, &walker, write_fault,
  			 level, pfn, map_writable, prefault);

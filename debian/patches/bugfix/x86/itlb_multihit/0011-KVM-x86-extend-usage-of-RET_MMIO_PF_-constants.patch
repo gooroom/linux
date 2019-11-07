@@ -16,8 +16,6 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  arch/x86/kvm/paging_tmpl.h | 18 ++++----
  2 files changed, 54 insertions(+), 57 deletions(-)
 
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index d2e7f05bdd01..df142bb700f6 100644
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
 @@ -142,6 +142,20 @@ module_param(dbg, bool, 0644);
@@ -41,7 +39,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  struct pte_list_desc {
  	u64 *sptes[PTE_LIST_EXT];
  	struct pte_list_desc *more;
-@@ -2598,13 +2612,13 @@ static int set_spte(struct kvm_vcpu *vcpu, u64 *sptep,
+@@ -2598,13 +2612,13 @@ done:
  	return ret;
  }
  
@@ -59,7 +57,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	pgprintk("%s: spte %llx write_fault %d gfn %llx\n", __func__,
  		 *sptep, write_fault, gfn);
-@@ -2634,12 +2648,12 @@ static bool mmu_set_spte(struct kvm_vcpu *vcpu, u64 *sptep, unsigned pte_access,
+@@ -2634,12 +2648,12 @@ static bool mmu_set_spte(struct kvm_vcpu
  	if (set_spte(vcpu, sptep, pte_access, level, gfn, pfn, speculative,
  	      true, host_writable)) {
  		if (write_fault)
@@ -74,7 +72,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	pgprintk("%s: setting spte %llx\n", __func__, *sptep);
  	pgprintk("instantiating %s PTE (%s) at %llx (%llx) addr %p\n",
-@@ -2659,7 +2673,7 @@ static bool mmu_set_spte(struct kvm_vcpu *vcpu, u64 *sptep, unsigned pte_access,
+@@ -2659,7 +2673,7 @@ static bool mmu_set_spte(struct kvm_vcpu
  
  	kvm_release_pfn_clean(pfn);
  
@@ -83,7 +81,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  }
  
  static kvm_pfn_t pte_prefetch_gfn_to_pfn(struct kvm_vcpu *vcpu, gfn_t gfn,
-@@ -2798,14 +2812,13 @@ static int kvm_handle_bad_page(struct kvm_vcpu *vcpu, gfn_t gfn, kvm_pfn_t pfn)
+@@ -2798,14 +2812,13 @@ static int kvm_handle_bad_page(struct kv
  	 * Do not cache the mmio info caused by writing the readonly gfn
  	 * into the spte otherwise read access on readonly gfn also can
  	 * caused mmio page fault and treat it as mmio access.
@@ -100,7 +98,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  	}
  
  	return -EFAULT;
-@@ -3031,13 +3044,13 @@ static int nonpaging_map(struct kvm_vcpu *vcpu, gva_t v, u32 error_code,
+@@ -3031,13 +3044,13 @@ static int nonpaging_map(struct kvm_vcpu
  	}
  
  	if (fast_page_fault(vcpu, v, level, error_code))
@@ -116,7 +114,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	if (handle_abnormal_pfn(vcpu, v, gfn, pfn, ACC_ALL, &r))
  		return r;
-@@ -3056,7 +3069,7 @@ static int nonpaging_map(struct kvm_vcpu *vcpu, gva_t v, u32 error_code,
+@@ -3056,7 +3069,7 @@ static int nonpaging_map(struct kvm_vcpu
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
@@ -125,7 +123,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  }
  
  
-@@ -3383,54 +3396,38 @@ walk_shadow_page_get_mmio_spte(struct kvm_vcpu *vcpu, u64 addr, u64 *sptep)
+@@ -3383,54 +3396,38 @@ exit:
  	return reserved;
  }
  
@@ -185,7 +183,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  }
  EXPORT_SYMBOL_GPL(handle_mmio_page_fault);
  
-@@ -3480,7 +3477,7 @@ static int nonpaging_page_fault(struct kvm_vcpu *vcpu, gva_t gva,
+@@ -3480,7 +3477,7 @@ static int nonpaging_page_fault(struct k
  	pgprintk("%s: gva %lx error %x\n", __func__, gva, error_code);
  
  	if (page_fault_handle_page_track(vcpu, error_code, gfn))
@@ -194,7 +192,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	r = mmu_topup_memory_caches(vcpu);
  	if (r)
-@@ -3568,7 +3565,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
+@@ -3568,7 +3565,7 @@ static int tdp_page_fault(struct kvm_vcp
  	MMU_WARN_ON(!VALID_PAGE(vcpu->arch.mmu.root_hpa));
  
  	if (page_fault_handle_page_track(vcpu, error_code, gfn))
@@ -203,7 +201,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	r = mmu_topup_memory_caches(vcpu);
  	if (r)
-@@ -3585,13 +3582,13 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
+@@ -3585,13 +3582,13 @@ static int tdp_page_fault(struct kvm_vcp
  	}
  
  	if (fast_page_fault(vcpu, gpa, level, error_code))
@@ -219,7 +217,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	if (handle_abnormal_pfn(vcpu, 0, gfn, pfn, ACC_ALL, &r))
  		return r;
-@@ -3610,7 +3607,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
+@@ -3610,7 +3607,7 @@ static int tdp_page_fault(struct kvm_vcp
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
@@ -228,7 +226,7 @@ index d2e7f05bdd01..df142bb700f6 100644
  }
  
  static void nonpaging_init_context(struct kvm_vcpu *vcpu,
-@@ -4526,24 +4523,24 @@ int kvm_mmu_page_fault(struct kvm_vcpu *vcpu, gva_t cr2, u32 error_code,
+@@ -4526,24 +4523,24 @@ int kvm_mmu_page_fault(struct kvm_vcpu *
  	enum emulation_result er;
  	bool direct = vcpu->arch.mmu.direct_map || mmu_is_nested(vcpu);
  
@@ -262,11 +260,9 @@ index d2e7f05bdd01..df142bb700f6 100644
  
  	if (mmio_info_in_cache(vcpu, cr2, direct))
  		emulation_type = 0;
-diff --git a/arch/x86/kvm/paging_tmpl.h b/arch/x86/kvm/paging_tmpl.h
-index 37363900297d..82ff96773ab7 100644
 --- a/arch/x86/kvm/paging_tmpl.h
 +++ b/arch/x86/kvm/paging_tmpl.h
-@@ -577,7 +577,7 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -577,7 +577,7 @@ static int FNAME(fetch)(struct kvm_vcpu
  	struct kvm_mmu_page *sp = NULL;
  	struct kvm_shadow_walk_iterator it;
  	unsigned direct_access, access = gw->pt_access;
@@ -275,7 +271,7 @@ index 37363900297d..82ff96773ab7 100644
  
  	direct_access = gw->pte_access;
  
-@@ -643,15 +643,15 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -643,15 +643,15 @@ static int FNAME(fetch)(struct kvm_vcpu
  	}
  
  	clear_sp_write_flooding_count(it.sptep);
@@ -295,7 +291,7 @@ index 37363900297d..82ff96773ab7 100644
  }
  
   /*
-@@ -746,12 +746,12 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code,
+@@ -746,12 +746,12 @@ static int FNAME(page_fault)(struct kvm_
  		if (!prefault)
  			inject_page_fault(vcpu, &walker.fault);
  
@@ -310,7 +306,7 @@ index 37363900297d..82ff96773ab7 100644
  	}
  
  	vcpu->arch.write_fault_to_shadow_pgtable = false;
-@@ -773,7 +773,7 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code,
+@@ -773,7 +773,7 @@ static int FNAME(page_fault)(struct kvm_
  
  	if (try_async_pf(vcpu, prefault, walker.gfn, addr, &pfn, write_fault,
  			 &map_writable))
@@ -319,7 +315,7 @@ index 37363900297d..82ff96773ab7 100644
  
  	if (handle_abnormal_pfn(vcpu, mmu_is_nested(vcpu) ? 0 : addr,
  				walker.gfn, pfn, walker.pte_access, &r))
-@@ -818,7 +818,7 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code,
+@@ -818,7 +818,7 @@ static int FNAME(page_fault)(struct kvm_
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);

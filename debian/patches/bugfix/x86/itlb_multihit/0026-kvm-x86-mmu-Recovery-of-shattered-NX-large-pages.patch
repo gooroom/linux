@@ -1,35 +1,38 @@
 From: Junaid Shahid <junaids@google.com>
-Date: Thu, 24 Oct 2019 18:34:30 +0200
+Date: Mon, 4 Nov 2019 12:22:03 +0100
 Subject: kvm: x86: mmu: Recovery of shattered NX large pages
 
-The page table pages corresponding to broken down large pages are
-zapped in FIFO order, so that the large page can potentially
-be recovered, if it is no longer being used for execution.  This removes
-the performance penalty for walking deeper EPT page tables.
+commit 1aa9b9572b10529c2e64e2b8f44025d86e124308 upstream.
+
+The page table pages corresponding to broken down large pages are zapped in
+FIFO order, so that the large page can potentially be recovered, if it is
+not longer being used for execution.  This removes the performance penalty
+for walking deeper EPT page tables.
 
 By default, one large page will last about one hour once the guest
 reaches a steady state.
 
 Signed-off-by: Junaid Shahid <junaids@google.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
-[bwh: Backported to 4.9: adjust filename, context]
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bwh: Backported to 4.9:
+ - Update another error path in kvm_create_vm() to use out_err_no_mmu_notifier
+ - Adjust filename, context]
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  Documentation/kernel-parameters.txt |   6 ++
- arch/x86/include/asm/kvm_host.h     |   5 ++
+ arch/x86/include/asm/kvm_host.h     |   4 +
  arch/x86/kvm/mmu.c                  | 129 ++++++++++++++++++++++++++++
  arch/x86/kvm/mmu.h                  |   4 +
  arch/x86/kvm/x86.c                  |  11 +++
  virt/kvm/kvm_main.c                 |  30 ++++++-
- 6 files changed, 184 insertions(+), 1 deletion(-)
+ 6 files changed, 183 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
-index 28c1d8e43662..f77e2de2e407 100644
 --- a/Documentation/kernel-parameters.txt
 +++ b/Documentation/kernel-parameters.txt
-@@ -1986,6 +1986,12 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
- 			If the sw workaround is enabled for the host, guests
- 			need not enable it for nested guests.
+@@ -1988,6 +1988,12 @@ bytes respectively. Such letter suffixes
+ 			If the software workaround is enabled for the host,
+ 			guests do need not to enable it for nested guests.
  
 +	kvm.nx_huge_pages_recovery_ratio=
 +			[KVM] Controls how many 4KiB pages are periodically zapped
@@ -40,8 +43,6 @@ index 28c1d8e43662..f77e2de2e407 100644
  	kvm-amd.nested=	[KVM,AMD] Allow nested virtualization in KVM/SVM.
  			Default is 1 (enabled)
  
-diff --git a/arch/x86/include/asm/kvm_host.h b/arch/x86/include/asm/kvm_host.h
-index bc1a482de343..32afa0752fd8 100644
 --- a/arch/x86/include/asm/kvm_host.h
 +++ b/arch/x86/include/asm/kvm_host.h
 @@ -261,6 +261,8 @@ struct kvm_rmap_head {
@@ -61,17 +62,14 @@ index bc1a482de343..32afa0752fd8 100644
  	struct kvm_page_track_notifier_node mmu_sp_tracker;
  	struct kvm_page_track_notifier_head track_notifier_head;
  
-@@ -799,6 +802,8 @@ struct kvm_arch {
+@@ -799,6 +802,7 @@ struct kvm_arch {
  
  	bool x2apic_format;
  	bool x2apic_broadcast_quirk_disabled;
-+
 +	struct task_struct *nx_lpage_recovery_thread;
  };
  
  struct kvm_vm_stat {
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 1b9815eedb4b..3c7935b8880e 100644
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
 @@ -37,6 +37,7 @@
@@ -109,7 +107,7 @@ index 1b9815eedb4b..3c7935b8880e 100644
  
  /*
   * When setting this variable to true it enables Two-Dimensional-Paging
-@@ -880,6 +891,8 @@ static void account_huge_nx_page(struct kvm *kvm, struct kvm_mmu_page *sp)
+@@ -880,6 +891,8 @@ static void account_huge_nx_page(struct
  		return;
  
  	++kvm->stat.nx_lpage_splits;
@@ -118,7 +116,7 @@ index 1b9815eedb4b..3c7935b8880e 100644
  	sp->lpage_disallowed = true;
  }
  
-@@ -904,6 +917,7 @@ static void unaccount_huge_nx_page(struct kvm *kvm, struct kvm_mmu_page *sp)
+@@ -904,6 +917,7 @@ static void unaccount_huge_nx_page(struc
  {
  	--kvm->stat.nx_lpage_splits;
  	sp->lpage_disallowed = false;
@@ -126,7 +124,7 @@ index 1b9815eedb4b..3c7935b8880e 100644
  }
  
  static bool __mmu_gfn_lpage_is_disallowed(gfn_t gfn, int level,
-@@ -5166,6 +5180,8 @@ static int set_nx_huge_pages(const char *val, const struct kernel_param *kp)
+@@ -5172,6 +5186,8 @@ static int set_nx_huge_pages(const char
  			idx = srcu_read_lock(&kvm->srcu);
  			kvm_mmu_invalidate_zap_all_pages(kvm);
  			srcu_read_unlock(&kvm->srcu, idx);
@@ -135,7 +133,7 @@ index 1b9815eedb4b..3c7935b8880e 100644
  		}
  		mutex_unlock(&kvm_lock);
  	}
-@@ -5241,3 +5257,116 @@ void kvm_mmu_module_exit(void)
+@@ -5247,3 +5263,116 @@ void kvm_mmu_module_exit(void)
  	unregister_shrinker(&mmu_shrinker);
  	mmu_audit_disable();
  }
@@ -252,11 +250,9 @@ index 1b9815eedb4b..3c7935b8880e 100644
 +	if (kvm->arch.nx_lpage_recovery_thread)
 +		kthread_stop(kvm->arch.nx_lpage_recovery_thread);
 +}
-diff --git a/arch/x86/kvm/mmu.h b/arch/x86/kvm/mmu.h
-index 8cc9a32566f0..e584689e7d46 100644
 --- a/arch/x86/kvm/mmu.h
 +++ b/arch/x86/kvm/mmu.h
-@@ -185,4 +185,8 @@ void kvm_mmu_gfn_disallow_lpage(struct kvm_memory_slot *slot, gfn_t gfn);
+@@ -185,4 +185,8 @@ void kvm_mmu_gfn_disallow_lpage(struct k
  void kvm_mmu_gfn_allow_lpage(struct kvm_memory_slot *slot, gfn_t gfn);
  bool kvm_mmu_slot_gfn_write_protect(struct kvm *kvm,
  				    struct kvm_memory_slot *slot, u64 gfn);
@@ -265,11 +261,9 @@ index 8cc9a32566f0..e584689e7d46 100644
 +void kvm_mmu_pre_destroy_vm(struct kvm *kvm);
 +
  #endif
-diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index 276d5ad5e478..0ee28485d195 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -8081,6 +8081,7 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
+@@ -8079,6 +8079,7 @@ int kvm_arch_init_vm(struct kvm *kvm, un
  	INIT_HLIST_HEAD(&kvm->arch.mask_notifier_list);
  	INIT_LIST_HEAD(&kvm->arch.active_mmu_pages);
  	INIT_LIST_HEAD(&kvm->arch.zapped_obsolete_pages);
@@ -277,7 +271,7 @@ index 276d5ad5e478..0ee28485d195 100644
  	INIT_LIST_HEAD(&kvm->arch.assigned_dev_head);
  	atomic_set(&kvm->arch.noncoherent_dma_count, 0);
  
-@@ -8109,6 +8110,11 @@ int kvm_arch_init_vm(struct kvm *kvm, unsigned long type)
+@@ -8107,6 +8108,11 @@ int kvm_arch_init_vm(struct kvm *kvm, un
  	return 0;
  }
  
@@ -289,7 +283,7 @@ index 276d5ad5e478..0ee28485d195 100644
  static void kvm_unload_vcpu_mmu(struct kvm_vcpu *vcpu)
  {
  	int r;
-@@ -8215,6 +8221,11 @@ int x86_set_memory_region(struct kvm *kvm, int id, gpa_t gpa, u32 size)
+@@ -8213,6 +8219,11 @@ int x86_set_memory_region(struct kvm *kv
  }
  EXPORT_SYMBOL_GPL(x86_set_memory_region);
  
@@ -301,11 +295,9 @@ index 276d5ad5e478..0ee28485d195 100644
  void kvm_arch_destroy_vm(struct kvm *kvm)
  {
  	if (current->mm == kvm->mm) {
-diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
-index c73687b80e07..0fc93519e63e 100644
 --- a/virt/kvm/kvm_main.c
 +++ b/virt/kvm/kvm_main.c
-@@ -613,6 +613,23 @@ static int kvm_create_vm_debugfs(struct kvm *kvm, int fd)
+@@ -613,6 +613,23 @@ static int kvm_create_vm_debugfs(struct
  	return 0;
  }
  
@@ -329,7 +321,7 @@ index c73687b80e07..0fc93519e63e 100644
  static struct kvm *kvm_create_vm(unsigned long type)
  {
  	int r, i;
-@@ -660,10 +677,14 @@ static struct kvm *kvm_create_vm(unsigned long type)
+@@ -660,11 +677,15 @@ static struct kvm *kvm_create_vm(unsigne
  		kvm->buses[i] = kzalloc(sizeof(struct kvm_io_bus),
  					GFP_KERNEL);
  		if (!kvm->buses[i])
@@ -338,14 +330,15 @@ index c73687b80e07..0fc93519e63e 100644
  	}
  
  	r = kvm_init_mmu_notifier(kvm);
-+	if (r)
+ 	if (r)
 +		goto out_err_no_mmu_notifier;
 +
 +	r = kvm_arch_post_init_vm(kvm);
- 	if (r)
++	if (r)
  		goto out_err;
  
-@@ -676,6 +697,11 @@ static struct kvm *kvm_create_vm(unsigned long type)
+ 	mutex_lock(&kvm_lock);
+@@ -676,6 +697,11 @@ static struct kvm *kvm_create_vm(unsigne
  	return kvm;
  
  out_err:
@@ -357,7 +350,7 @@ index c73687b80e07..0fc93519e63e 100644
  	cleanup_srcu_struct(&kvm->irq_srcu);
  out_err_no_irq_srcu:
  	cleanup_srcu_struct(&kvm->srcu);
-@@ -728,6 +754,8 @@ static void kvm_destroy_vm(struct kvm *kvm)
+@@ -728,6 +754,8 @@ static void kvm_destroy_vm(struct kvm *k
  	mutex_lock(&kvm_lock);
  	list_del(&kvm->vm_list);
  	mutex_unlock(&kvm_lock);
