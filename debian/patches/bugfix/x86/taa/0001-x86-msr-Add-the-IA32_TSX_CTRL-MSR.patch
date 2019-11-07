@@ -2,11 +2,18 @@ From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Date: Wed, 23 Oct 2019 10:45:50 +0200
 Subject: x86/msr: Add the IA32_TSX_CTRL MSR
 
+commit c2955f270a84762343000f103e0640d29c7a96f3 upstream.
+
 Transactional Synchronization Extensions (TSX) may be used on certain
 processors as part of a speculative side channel attack.  A microcode
 update for existing processors that are vulnerable to this attack will
 add a new MSR - IA32_TSX_CTRL to allow the system administrator the
 option to disable TSX as one of the possible mitigations.
+
+The CPUs which get this new MSR after a microcode upgrade are the ones
+which do not set MSR_IA32_ARCH_CAPABILITIES.MDS_NO (bit 5) because those
+CPUs have CPUID.MD_CLEAR, i.e., the VERW implementation which clears all
+CPU buffers takes care of the TAA case as well.
 
   [ Note that future processors that are not vulnerable will also
     support the IA32_TSX_CTRL MSR. ]
@@ -34,36 +41,33 @@ There are two control bits in IA32_TSX_CTRL MSR:
 	  CPUID(EAX=7).EBX{bit11} read as 0).
 
 The other TSX sub-feature, Hardware Lock Elision (HLE), is
-unconditionally disabled but still enumerated as present by
-CPUID(EAX=7).EBX{bit4}.
+unconditionally disabled by the new microcode but still enumerated
+as present by CPUID(EAX=7).EBX{bit4}, unless disabled by
+IA32_TSX_CTRL_MSR[1] - TSX_CTRL_CPUID_CLEAR.
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Signed-off-by: Borislav Petkov <bp@suse.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
 Reviewed-by: Mark Gross <mgross@linux.intel.com>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
-Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Paolo Bonzini <pbonzini@redhat.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: x86-ml <x86@kernel.org>
+Reviewed-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  arch/x86/include/asm/msr-index.h | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/arch/x86/include/asm/msr-index.h b/arch/x86/include/asm/msr-index.h
-index f58e6921cbf7..da7887a9f314 100644
 --- a/arch/x86/include/asm/msr-index.h
 +++ b/arch/x86/include/asm/msr-index.h
-@@ -91,6 +91,7 @@
- 						  * physical address or cache type
- 						  * without TLB invalidation.
+@@ -84,6 +84,7 @@
+ 						  * Microarchitectural Data
+ 						  * Sampling (MDS) vulnerabilities.
  						  */
 +#define ARCH_CAP_TSX_CTRL_MSR		BIT(7)	/* MSR for TSX control is available. */
  
  #define MSR_IA32_FLUSH_CMD		0x0000010b
  #define L1D_FLUSH			BIT(0)	/*
-@@ -101,6 +102,10 @@
+@@ -94,6 +95,10 @@
  #define MSR_IA32_BBL_CR_CTL		0x00000119
  #define MSR_IA32_BBL_CR_CTL3		0x0000011e
  

@@ -2,6 +2,8 @@ From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Date: Wed, 23 Oct 2019 12:23:33 +0200
 Subject: kvm/x86: Export MDS_NO=0 to guests when TSX is enabled
 
+commit e1d38b63acd843cfdd4222bf19a26700fd5c699e upstream.
+
 Export the IA32_ARCH_CAPABILITIES MSR bit MDS_NO=0 to guests on TSX
 Async Abort(TAA) affected hosts that have TSX enabled and updated
 microcode. This is required so that the guests don't complain,
@@ -20,26 +22,18 @@ CPUID.MD_CLEAR=1, they deploy MDS mitigation which also mitigates TAA.
 
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Signed-off-by: Borislav Petkov <bp@suse.de>
-Reviewed-by: Tony Luck <tony.luck@intel.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Tested-by: Neelima Krishnan <neelima.krishnan@intel.com>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Joerg Roedel <joro@8bytes.org>
-Cc: kvm ML <kvm@vger.kernel.org>
-Cc: Paolo Bonzini <pbonzini@redhat.com>
-Cc: "Radim Krcmar" <rkrcmar@redhat.com>
-Cc: Sean Christopherson <sean.j.christopherson@intel.com>
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: x86-ml <x86@kernel.org>
+Reviewed-by: Tony Luck <tony.luck@intel.com>
+Reviewed-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  arch/x86/kvm/x86.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index da688e726632..c68ee8d1ef8c 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -1151,6 +1151,25 @@ u64 kvm_get_arch_capabilities(void)
+@@ -1127,6 +1127,25 @@ u64 kvm_get_arch_capabilities(void)
  	if (l1tf_vmx_mitigation != VMENTER_L1D_FLUSH_NEVER)
  		data |= ARCH_CAP_SKIP_VMENTRY_L1DFLUSH;
  

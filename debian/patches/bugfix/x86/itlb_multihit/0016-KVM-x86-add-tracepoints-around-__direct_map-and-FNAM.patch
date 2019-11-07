@@ -15,8 +15,6 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  arch/x86/kvm/paging_tmpl.h |  2 ++
  3 files changed, 67 insertions(+), 7 deletions(-)
 
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 68fa10d890ee..7f9be921df7c 100644
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
 @@ -140,9 +140,6 @@ module_param(dbg, bool, 0644);
@@ -29,7 +27,7 @@ index 68fa10d890ee..7f9be921df7c 100644
  #define SPTE_HOST_WRITEABLE	(1ULL << PT_FIRST_AVAIL_BITS_SHIFT)
  #define SPTE_MMU_WRITEABLE	(1ULL << (PT_FIRST_AVAIL_BITS_SHIFT + 1))
  
-@@ -261,9 +258,13 @@ static u64 __read_mostly shadow_nonpresent_or_rsvd_lower_gfn_mask;
+@@ -261,9 +258,13 @@ static u64 __read_mostly shadow_nonprese
  
  
  static void mmu_spte_set(u64 *sptep, u64 spte);
@@ -43,7 +41,7 @@ index 68fa10d890ee..7f9be921df7c 100644
  void kvm_mmu_set_mmio_spte_mask(u64 mmio_mask, u64 mmio_value)
  {
  	BUG_ON((mmio_mask & mmio_value) != mmio_value);
-@@ -2992,10 +2993,7 @@ static int mmu_set_spte(struct kvm_vcpu *vcpu, u64 *sptep, unsigned pte_access,
+@@ -2992,10 +2993,7 @@ static int mmu_set_spte(struct kvm_vcpu
  		ret = RET_PF_EMULATE;
  
  	pgprintk("%s: setting spte %llx\n", __func__, *sptep);
@@ -55,7 +53,7 @@ index 68fa10d890ee..7f9be921df7c 100644
  	if (!was_rmapped && is_large_pte(*sptep))
  		++vcpu->kvm->stat.lpages;
  
-@@ -3106,6 +3104,7 @@ static int __direct_map(struct kvm_vcpu *vcpu, gpa_t gpa, int write,
+@@ -3106,6 +3104,7 @@ static int __direct_map(struct kvm_vcpu
  	if (!VALID_PAGE(vcpu->arch.mmu.root_hpa))
  		return RET_PF_RETRY;
  
@@ -63,8 +61,6 @@ index 68fa10d890ee..7f9be921df7c 100644
  	for_each_shadow_entry(vcpu, gpa, it) {
  		base_gfn = gfn & ~(KVM_PAGES_PER_HPAGE(it.level) - 1);
  		if (it.level == level)
-diff --git a/arch/x86/kvm/mmutrace.h b/arch/x86/kvm/mmutrace.h
-index c73bf4e4988c..918b0d5bf272 100644
 --- a/arch/x86/kvm/mmutrace.h
 +++ b/arch/x86/kvm/mmutrace.h
 @@ -325,6 +325,65 @@ TRACE_EVENT(
@@ -133,11 +129,9 @@ index c73bf4e4988c..918b0d5bf272 100644
  #endif /* _TRACE_KVMMMU_H */
  
  #undef TRACE_INCLUDE_PATH
-diff --git a/arch/x86/kvm/paging_tmpl.h b/arch/x86/kvm/paging_tmpl.h
-index 4aab953f1d31..3b022b08b577 100644
 --- a/arch/x86/kvm/paging_tmpl.h
 +++ b/arch/x86/kvm/paging_tmpl.h
-@@ -649,6 +649,8 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -649,6 +649,8 @@ static int FNAME(fetch)(struct kvm_vcpu
  
  	base_gfn = gw->gfn;
  

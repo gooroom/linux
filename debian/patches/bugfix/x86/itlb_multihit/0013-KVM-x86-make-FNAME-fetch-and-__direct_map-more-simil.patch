@@ -18,11 +18,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  arch/x86/kvm/paging_tmpl.h | 30 ++++++++++-----------
  2 files changed, 39 insertions(+), 44 deletions(-)
 
-diff --git a/arch/x86/kvm/mmu.c b/arch/x86/kvm/mmu.c
-index 7dc18fb42168..42a7120323bb 100644
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
-@@ -3087,40 +3087,39 @@ static void direct_pte_prefetch(struct kvm_vcpu *vcpu, u64 *sptep)
+@@ -3087,40 +3087,39 @@ static void direct_pte_prefetch(struct k
  	__direct_pte_prefetch(vcpu, sp, sptep);
  }
  
@@ -86,7 +84,7 @@ index 7dc18fb42168..42a7120323bb 100644
  }
  
  static void kvm_send_hwpoison_signal(unsigned long address, struct task_struct *tsk)
-@@ -3453,8 +3452,7 @@ static int nonpaging_map(struct kvm_vcpu *vcpu, gva_t v, u32 error_code,
+@@ -3453,8 +3452,7 @@ static int nonpaging_map(struct kvm_vcpu
  		goto out_unlock;
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, &gfn, &pfn, &level);
@@ -96,7 +94,7 @@ index 7dc18fb42168..42a7120323bb 100644
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-@@ -4088,8 +4086,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
+@@ -4088,8 +4086,7 @@ static int tdp_page_fault(struct kvm_vcp
  		goto out_unlock;
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, &gfn, &pfn, &level);
@@ -106,11 +104,9 @@ index 7dc18fb42168..42a7120323bb 100644
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-diff --git a/arch/x86/kvm/paging_tmpl.h b/arch/x86/kvm/paging_tmpl.h
-index 569c55dae3fa..eb95d3672acd 100644
 --- a/arch/x86/kvm/paging_tmpl.h
 +++ b/arch/x86/kvm/paging_tmpl.h
-@@ -602,6 +602,7 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -602,6 +602,7 @@ static int FNAME(fetch)(struct kvm_vcpu
  	struct kvm_shadow_walk_iterator it;
  	unsigned direct_access, access = gw->pt_access;
  	int top_level, ret;
@@ -118,7 +114,7 @@ index 569c55dae3fa..eb95d3672acd 100644
  
  	direct_access = gw->pte_access;
  
-@@ -646,31 +647,29 @@ static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
+@@ -646,31 +647,29 @@ static int FNAME(fetch)(struct kvm_vcpu
  			link_shadow_page(vcpu, it.sptep, sp);
  	}
  
@@ -163,7 +159,7 @@ index 569c55dae3fa..eb95d3672acd 100644
  	return ret;
  
  out_gpte_changed:
-@@ -833,7 +832,6 @@ static int FNAME(page_fault)(struct kvm_vcpu *vcpu, gva_t addr, u32 error_code,
+@@ -833,7 +832,6 @@ static int FNAME(page_fault)(struct kvm_
  		transparent_hugepage_adjust(vcpu, &walker.gfn, &pfn, &level);
  	r = FNAME(fetch)(vcpu, addr, &walker, write_fault,
  			 level, pfn, map_writable, prefault);

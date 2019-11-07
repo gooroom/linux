@@ -1,15 +1,16 @@
 From: Junaid Shahid <junaids@google.com>
-Date: Thu, 24 Oct 2019 18:34:29 +0200
-Subject: kvm: Add helper function for creating VM worker
+Date: Mon, 4 Nov 2019 12:22:02 +0100
+Subject: kvm: Add helper function for creating VM worker threads
 
- threads
+commit c57c80467f90e5504c8df9ad3555d2c78800bf94 upstream.
 
-This adds a function to create a kernel thread associated with a given
-VM. In particular, it ensures that the worker thread inherits the
-priority and cgroups of the calling thread.
+Add a function to create a kernel thread associated with a given VM. In
+particular, it ensures that the worker thread inherits the priority and
+cgroups of the calling thread.
 
 Signed-off-by: Junaid Shahid <junaids@google.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 [bwh: Backported to 4.19: adjust context]
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
@@ -17,11 +18,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  virt/kvm/kvm_main.c      | 84 ++++++++++++++++++++++++++++++++++++++++
  2 files changed, 90 insertions(+)
 
-diff --git a/include/linux/kvm_host.h b/include/linux/kvm_host.h
-index 553a3115a735..96207939d862 100644
 --- a/include/linux/kvm_host.h
 +++ b/include/linux/kvm_host.h
-@@ -1305,4 +1305,10 @@ static inline int kvm_arch_vcpu_run_pid_change(struct kvm_vcpu *vcpu)
+@@ -1305,4 +1305,10 @@ static inline int kvm_arch_vcpu_run_pid_
  }
  #endif /* CONFIG_HAVE_KVM_VCPU_RUN_PID_CHANGE */
  
@@ -32,8 +31,6 @@ index 553a3115a735..96207939d862 100644
 +				struct task_struct **thread_ptr);
 +
  #endif
-diff --git a/virt/kvm/kvm_main.c b/virt/kvm/kvm_main.c
-index 5482949b452c..77da54d334b2 100644
 --- a/virt/kvm/kvm_main.c
 +++ b/virt/kvm/kvm_main.c
 @@ -51,6 +51,7 @@

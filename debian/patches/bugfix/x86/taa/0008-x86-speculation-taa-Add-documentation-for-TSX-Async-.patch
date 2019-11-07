@@ -2,49 +2,42 @@ From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Date: Wed, 23 Oct 2019 12:32:55 +0200
 Subject: x86/speculation/taa: Add documentation for TSX Async Abort
 
+commit a7a248c593e4fd7a67c50b5f5318fe42a0db335e upstream.
+
 Add the documenation for TSX Async Abort. Include the description of
 the issue, how to check the mitigation state, control the mitigation,
 guidance for system administrators.
 
- [ bp: Add proper SPDX tags, touch ups. ]
+ [ bp: Add proper SPDX tags, touch ups by Josh and me. ]
 
 Co-developed-by: Antonio Gomez Iglesias <antonio.gomez.iglesias@intel.com>
+
 Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Signed-off-by: Antonio Gomez Iglesias <antonio.gomez.iglesias@intel.com>
 Signed-off-by: Borislav Petkov <bp@suse.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Reviewed-by: Mark Gross <mgross@linux.intel.com>
 Reviewed-by: Tony Luck <tony.luck@intel.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>
-Cc: Fenghua Yu <fenghua.yu@intel.com>
-Cc: "H. Peter Anvin" <hpa@zytor.com>
-Cc: Ingo Molnar <mingo@redhat.com>
-Cc: Jonathan Corbet <corbet@lwn.net>
-Cc: Josh Poimboeuf <jpoimboe@redhat.com>
-Cc: Juergen Gross <jgross@suse.com>
-Cc: linux-doc@vger.kernel.org
-Cc: Thomas Gleixner <tglx@linutronix.de>
-Cc: x86-ml <x86@kernel.org>
-[bwh: Forward-ported on top of NX: Fix conflict (neighbouring
- insertions) in Documentation/ABI/testing/sysfs-devices-system-cpu]
+Reviewed-by: Josh Poimboeuf <jpoimboe@redhat.com>
 [bwh: Backported to 4.19: adjust context]
 Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  .../ABI/testing/sysfs-devices-system-cpu      |   1 +
  Documentation/admin-guide/hw-vuln/index.rst   |   1 +
- .../admin-guide/hw-vuln/tsx_async_abort.rst   | 256 ++++++++++++++++++
- .../admin-guide/kernel-parameters.txt         |  36 +++
+ .../admin-guide/hw-vuln/tsx_async_abort.rst   | 276 ++++++++++++++++++
+ .../admin-guide/kernel-parameters.txt         |  38 +++
  Documentation/x86/index.rst                   |   1 +
  Documentation/x86/tsx_async_abort.rst         | 117 ++++++++
- 6 files changed, 412 insertions(+)
+ 6 files changed, 434 insertions(+)
  create mode 100644 Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
  create mode 100644 Documentation/x86/tsx_async_abort.rst
 
 --- a/Documentation/ABI/testing/sysfs-devices-system-cpu
 +++ b/Documentation/ABI/testing/sysfs-devices-system-cpu
-@@ -479,6 +479,7 @@ What:		/sys/devices/system/cpu/vulnerabi
+@@ -478,6 +478,7 @@ What:		/sys/devices/system/cpu/vulnerabi
+ 		/sys/devices/system/cpu/vulnerabilities/spec_store_bypass
  		/sys/devices/system/cpu/vulnerabilities/l1tf
  		/sys/devices/system/cpu/vulnerabilities/mds
- 		/sys/devices/system/cpu/vulnerabilities/itlb_multihit
 +		/sys/devices/system/cpu/vulnerabilities/tsx_async_abort
  Date:		January 2018
  Contact:	Linux kernel mailing list <linux-kernel@vger.kernel.org>
@@ -58,7 +51,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +   tsx_async_abort
 --- /dev/null
 +++ b/Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,276 @@
 +.. SPDX-License-Identifier: GPL-2.0
 +
 +TAA - TSX Asynchronous Abort
@@ -121,7 +114,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +
 +The victim of a malicious actor does not need to make use of TSX. Only the
 +attacker needs to begin a TSX transaction and raise an asynchronous abort
-+to try to leak some of data stored in the buffers.
++which in turn potenitally leaks data stored in the buffers.
 +
 +More detailed technical information is available in the TAA specific x86
 +architecture section: :ref:`Documentation/x86/tsx_async_abort.rst <tsx_async_abort>`.
@@ -133,9 +126,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +Attacks against the TAA vulnerability can be implemented from unprivileged
 +applications running on hosts or guests.
 +
-+As for MDS, the attacker has no control over the memory addresses that can be
-+leaked. Only the victim is responsible for bringing data to the CPU. As a
-+result, the malicious actor has to first sample as much data as possible and
++As for MDS, the attacker has no control over the memory addresses that can
++be leaked. Only the victim is responsible for bringing data to the CPU. As
++a result, the malicious actor has to sample as much data as possible and
 +then postprocess it to try to infer any useful information from it.
 +
 +A potential attacker only has read access to the data. Also, there is no direct
@@ -202,11 +195,12 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +Virtualization mitigation
 +^^^^^^^^^^^^^^^^^^^^^^^^^
 +
-+Affected systems where the host has the TAA microcode and the TAA mitigation is
-+ON (with TSX disabled) are not vulnerable regardless of the status of the VMs.
++Affected systems where the host has TAA microcode and TAA is mitigated by
++having disabled TSX previously, are not vulnerable regardless of the status
++of the VMs.
 +
-+In all other cases, if the host either does not have the TAA microcode or the
-+kernel is not mitigated, the system might be vulnerable.
++In all other cases, if the host either does not have the TAA microcode or
++the kernel is not mitigated, the system might be vulnerable.
 +
 +
 +.. _taa_mitigation_control_command_line:
@@ -244,11 +238,23 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +The valid options are:
 +
 +  ============  =============================================================
-+  off		Disables TSX.
++  off		Disables TSX on the system.
++
++                Note that this option takes effect only on newer CPUs which are
++                not vulnerable to MDS, i.e., have MSR_IA32_ARCH_CAPABILITIES.MDS_NO=1
++                and which get the new IA32_TSX_CTRL MSR through a microcode
++                update. This new MSR allows for the reliable deactivation of
++                the TSX functionality.
 +
 +  on		Enables TSX.
 +
-+  auto		Disables TSX on affected platform, otherwise enables TSX.
++                Although there are mitigations for all known security
++                vulnerabilities, TSX has been known to be an accelerator for
++                several previous speculation-related CVEs, and so there may be
++                unknown security risks associated with leaving it enabled.
++
++  auto		Disables TSX if X86_BUG_TAA is present, otherwise enables TSX
++                on the system.
 +  ============  =============================================================
 +
 +Not specifying this option is equivalent to "tsx=off".
@@ -256,17 +262,24 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +The following combinations of the "tsx_async_abort" and "tsx" are possible. For
 +affected platforms tsx=auto is equivalent to tsx=off and the result will be:
 +
-+  =========  ====================   =========================================
-+  tsx=on     tsx_async_abort=full   The system will use VERW to clear CPU
-+                                    buffers.
-+  tsx=on     tsx_async_abort=off    The system is vulnerable.
-+  tsx=off    tsx_async_abort=full   TSX is disabled. System is not vulnerable.
-+  tsx=off    tsx_async_abort=off    TSX is disabled. System is not vulnerable.
-+  =========  ====================   =========================================
++  =========  ==========================   =========================================
++  tsx=on     tsx_async_abort=full         The system will use VERW to clear CPU
++                                          buffers. Cross-thread attacks are still
++					  possible on SMT machines.
++  tsx=on     tsx_async_abort=full,nosmt   As above, cross-thread attacks on SMT
++                                          mitigated.
++  tsx=on     tsx_async_abort=off          The system is vulnerable.
++  tsx=off    tsx_async_abort=full         TSX might be disabled if microcode
++                                          provides a TSX control MSR. If so,
++					  system is not vulnerable.
++  tsx=off    tsx_async_abort=full,nosmt   Ditto
++  tsx=off    tsx_async_abort=off          ditto
++  =========  ==========================   =========================================
++
 +
 +For unaffected platforms "tsx=on" and "tsx_async_abort=full" does not clear CPU
-+buffers.  For platforms without TSX control "tsx" command line argument has no
-+effect.
++buffers.  For platforms without TSX control (MSR_IA32_ARCH_CAPABILITIES.MDS_NO=0)
++"tsx" command line argument has no effect.
 +
 +For the affected platforms below table indicates the mitigation status for the
 +combinations of CPUID bit MD_CLEAR and IA32_ARCH_CAPABILITIES MSR bits MDS_NO
@@ -275,7 +288,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +  =======  =========  =============  ========================================
 +  MDS_NO   MD_CLEAR   TSX_CTRL_MSR   Status
 +  =======  =========  =============  ========================================
-+    0          0            0        Vulnerable (needs ucode)
++    0          0            0        Vulnerable (needs microcode)
 +    0          1            0        MDS and TAA mitigated via VERW
 +    1          1            0        MDS fixed, TAA vulnerable if TSX enabled
 +                                     because MD_CLEAR has no meaning and
@@ -317,7 +330,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +  - Deploy TSX disable mitigation (tsx_async_abort=full tsx=off).
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -2538,6 +2538,7 @@
+@@ -2521,6 +2521,7 @@
  					       spec_store_bypass_disable=off [X86,PPC]
  					       l1tf=off [X86]
  					       mds=off [X86]
@@ -325,7 +338,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  			auto (default)
  				Mitigate all CPU vulnerabilities, but leave SMT
-@@ -2553,6 +2554,7 @@
+@@ -2536,6 +2537,7 @@
  				be fully mitigated, even if it means losing SMT.
  				Equivalent to: l1tf=flush,nosmt [X86]
  					       mds=full,nosmt [X86]
@@ -333,9 +346,9 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	mminit_loglevel=
  			[KNL] When CONFIG_DEBUG_MEMORY_INIT is set, this
-@@ -4718,6 +4720,40 @@
- 
- 			Not specifying this option is equivalent to tsx=off.
+@@ -4714,6 +4716,42 @@
+ 			See Documentation/admin-guide/hw-vuln/tsx_async_abort.rst
+ 			for more details.
  
 +	tsx_async_abort= [X86,INTEL] Control mitigation for the TSX Async
 +			Abort (TAA) vulnerability.
@@ -356,6 +369,8 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +			options are:
 +
 +			full       - Enable TAA mitigation on vulnerable CPUs
++				     if TSX is enabled.
++
 +			full,nosmt - Enable TAA mitigation and disable SMT on
 +				     vulnerable CPUs. If TSX is disabled, SMT
 +				     is not disabled because CPU is not
