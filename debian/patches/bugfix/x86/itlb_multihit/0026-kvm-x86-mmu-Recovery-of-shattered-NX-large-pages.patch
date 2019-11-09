@@ -1,8 +1,8 @@
 From: Junaid Shahid <junaids@google.com>
-Date: Mon, 4 Nov 2019 12:22:03 +0100
+Date: Fri, 1 Nov 2019 00:14:14 +0100
 Subject: kvm: x86: mmu: Recovery of shattered NX large pages
 
-commit 1aa9b9572b10529c2e64e2b8f44025d86e124308 upstream.
+commit 1aa9b9572b10529c2e64e2b8f44025d86e124308 upstream
 
 The page table pages corresponding to broken down large pages are zapped in
 FIFO order, so that the large page can potentially be recovered, if it is
@@ -15,10 +15,8 @@ reaches a steady state.
 Signed-off-by: Junaid Shahid <junaids@google.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-[bwh: Backported to 4.19:
- - Update another error path in kvm_create_vm() to use out_err_no_mmu_notifier
- - Adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
  .../admin-guide/kernel-parameters.txt         |   6 +
  arch/x86/include/asm/kvm_host.h               |   4 +
@@ -45,16 +43,15 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
 --- a/arch/x86/include/asm/kvm_host.h
 +++ b/arch/x86/include/asm/kvm_host.h
-@@ -281,6 +281,8 @@ struct kvm_rmap_head {
+@@ -281,6 +281,7 @@ struct kvm_rmap_head {
  struct kvm_mmu_page {
  	struct list_head link;
  	struct hlist_node hash_link;
 +	struct list_head lpage_disallowed_link;
-+
- 	bool unsync;
- 	bool lpage_disallowed; /* Can't be replaced by an equiv large page */
  
-@@ -805,6 +807,7 @@ struct kvm_arch {
+ 	/*
+ 	 * The following two entries are used to key the shadow page in the
+@@ -805,6 +806,7 @@ struct kvm_arch {
  	 */
  	struct list_head active_mmu_pages;
  	struct list_head zapped_obsolete_pages;
@@ -62,10 +59,11 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	struct kvm_page_track_notifier_node mmu_sp_tracker;
  	struct kvm_page_track_notifier_head track_notifier_head;
  
-@@ -875,6 +878,7 @@ struct kvm_arch {
+@@ -875,6 +877,8 @@ struct kvm_arch {
  	bool x2apic_broadcast_quirk_disabled;
  
  	bool guest_can_read_msr_platform_info;
++
 +	struct task_struct *nx_lpage_recovery_thread;
  };
  
@@ -107,7 +105,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  /*
   * When setting this variable to true it enables Two-Dimensional-Paging
-@@ -1121,6 +1132,8 @@ static void account_huge_nx_page(struct
+@@ -1122,6 +1133,8 @@ static void account_huge_nx_page(struct
  		return;
  
  	++kvm->stat.nx_lpage_splits;
@@ -116,7 +114,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	sp->lpage_disallowed = true;
  }
  
-@@ -1145,6 +1158,7 @@ static void unaccount_huge_nx_page(struc
+@@ -1146,6 +1159,7 @@ static void unaccount_huge_nx_page(struc
  {
  	--kvm->stat.nx_lpage_splits;
  	sp->lpage_disallowed = false;
@@ -124,7 +122,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  }
  
  static bool __mmu_gfn_lpage_is_disallowed(gfn_t gfn, int level,
-@@ -6005,6 +6019,8 @@ static int set_nx_huge_pages(const char
+@@ -6006,6 +6020,8 @@ static int set_nx_huge_pages(const char
  			idx = srcu_read_lock(&kvm->srcu);
  			kvm_mmu_invalidate_zap_all_pages(kvm);
  			srcu_read_unlock(&kvm->srcu, idx);
@@ -133,7 +131,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  		}
  		mutex_unlock(&kvm_lock);
  	}
-@@ -6086,3 +6102,116 @@ void kvm_mmu_module_exit(void)
+@@ -6087,3 +6103,116 @@ void kvm_mmu_module_exit(void)
  	unregister_shrinker(&mmu_shrinker);
  	mmu_audit_disable();
  }
@@ -263,7 +261,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  #endif
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -8952,6 +8952,7 @@ int kvm_arch_init_vm(struct kvm *kvm, un
+@@ -8960,6 +8960,7 @@ int kvm_arch_init_vm(struct kvm *kvm, un
  	INIT_HLIST_HEAD(&kvm->arch.mask_notifier_list);
  	INIT_LIST_HEAD(&kvm->arch.active_mmu_pages);
  	INIT_LIST_HEAD(&kvm->arch.zapped_obsolete_pages);
@@ -271,7 +269,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	INIT_LIST_HEAD(&kvm->arch.assigned_dev_head);
  	atomic_set(&kvm->arch.noncoherent_dma_count, 0);
  
-@@ -8983,6 +8984,11 @@ int kvm_arch_init_vm(struct kvm *kvm, un
+@@ -8991,6 +8992,11 @@ int kvm_arch_init_vm(struct kvm *kvm, un
  	return 0;
  }
  
@@ -283,7 +281,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  static void kvm_unload_vcpu_mmu(struct kvm_vcpu *vcpu)
  {
  	vcpu_load(vcpu);
-@@ -9084,6 +9090,11 @@ int x86_set_memory_region(struct kvm *kv
+@@ -9092,6 +9098,11 @@ int x86_set_memory_region(struct kvm *kv
  }
  EXPORT_SYMBOL_GPL(x86_set_memory_region);
  

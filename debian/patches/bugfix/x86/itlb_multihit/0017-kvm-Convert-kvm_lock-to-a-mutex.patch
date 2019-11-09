@@ -2,7 +2,7 @@ From: Junaid Shahid <junaids@google.com>
 Date: Thu, 3 Jan 2019 17:14:28 -0800
 Subject: kvm: Convert kvm_lock to a mutex
 
-commit 0d9ce162cf46c99628cc5da9510b959c7976735b upstream.
+commit 0d9ce162cf46c99628cc5da9510b959c7976735b upstream
 
 It doesn't seem as if there is any particular need for kvm_lock to be a
 spinlock, so convert the lock to a mutex so that sleepable functions (in
@@ -10,8 +10,7 @@ particular cond_resched()) can be called while holding it.
 
 Signed-off-by: Junaid Shahid <junaids@google.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
-[bwh: Backported to 4.19: adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
  Documentation/virtual/kvm/locking.txt |  4 +---
  arch/s390/kvm/kvm-s390.c              |  4 ++--
@@ -81,7 +80,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
-@@ -6490,7 +6490,7 @@ static void kvm_hyperv_tsc_notifier(void
+@@ -6498,7 +6498,7 @@ static void kvm_hyperv_tsc_notifier(void
  	struct kvm_vcpu *vcpu;
  	int cpu;
  
@@ -90,7 +89,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	list_for_each_entry(kvm, &vm_list, vm_list)
  		kvm_make_mclock_inprogress_request(kvm);
  
-@@ -6516,7 +6516,7 @@ static void kvm_hyperv_tsc_notifier(void
+@@ -6524,7 +6524,7 @@ static void kvm_hyperv_tsc_notifier(void
  
  		spin_unlock(&ka->pvclock_gtod_sync_lock);
  	}
@@ -99,7 +98,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  }
  #endif
  
-@@ -6574,17 +6574,17 @@ static int kvmclock_cpufreq_notifier(str
+@@ -6582,17 +6582,17 @@ static int kvmclock_cpufreq_notifier(str
  
  	smp_call_function_single(freq->cpu, tsc_khz_changed, freq, 1);
  
@@ -120,7 +119,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	if (freq->old < freq->new && send_ipi) {
  		/*
-@@ -6710,12 +6710,12 @@ static void pvclock_gtod_update_fn(struc
+@@ -6718,12 +6718,12 @@ static void pvclock_gtod_update_fn(struc
  	struct kvm_vcpu *vcpu;
  	int i;
  
@@ -157,7 +156,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  static DEFINE_RAW_SPINLOCK(kvm_count_lock);
  LIST_HEAD(vm_list);
  
-@@ -684,9 +684,9 @@ static struct kvm *kvm_create_vm(unsigne
+@@ -685,9 +685,9 @@ static struct kvm *kvm_create_vm(unsigne
  	if (r)
  		goto out_err;
  
@@ -169,7 +168,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	preempt_notifier_inc();
  
-@@ -732,9 +732,9 @@ static void kvm_destroy_vm(struct kvm *k
+@@ -733,9 +733,9 @@ static void kvm_destroy_vm(struct kvm *k
  	kvm_uevent_notify_change(KVM_EVENT_DESTROY_VM, kvm);
  	kvm_destroy_vm_debugfs(kvm);
  	kvm_arch_sync_events(kvm);
@@ -181,7 +180,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	kvm_free_irq_routing(kvm);
  	for (i = 0; i < KVM_NR_BUSES; i++) {
  		struct kvm_io_bus *bus = kvm_get_bus(kvm, i);
-@@ -3828,13 +3828,13 @@ static int vm_stat_get(void *_offset, u6
+@@ -3831,13 +3831,13 @@ static int vm_stat_get(void *_offset, u6
  	u64 tmp_val;
  
  	*val = 0;
@@ -197,7 +196,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	return 0;
  }
  
-@@ -3847,12 +3847,12 @@ static int vm_stat_clear(void *_offset,
+@@ -3850,12 +3850,12 @@ static int vm_stat_clear(void *_offset,
  	if (val)
  		return -EINVAL;
  
@@ -212,7 +211,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	return 0;
  }
-@@ -3867,13 +3867,13 @@ static int vcpu_stat_get(void *_offset,
+@@ -3870,13 +3870,13 @@ static int vcpu_stat_get(void *_offset,
  	u64 tmp_val;
  
  	*val = 0;
@@ -228,7 +227,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	return 0;
  }
  
-@@ -3886,12 +3886,12 @@ static int vcpu_stat_clear(void *_offset
+@@ -3889,12 +3889,12 @@ static int vcpu_stat_clear(void *_offset
  	if (val)
  		return -EINVAL;
  
@@ -243,7 +242,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	return 0;
  }
-@@ -3912,7 +3912,7 @@ static void kvm_uevent_notify_change(uns
+@@ -3915,7 +3915,7 @@ static void kvm_uevent_notify_change(uns
  	if (!kvm_dev.this_device || !kvm)
  		return;
  
@@ -252,7 +251,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	if (type == KVM_EVENT_CREATE_VM) {
  		kvm_createvm_count++;
  		kvm_active_vms++;
-@@ -3921,7 +3921,7 @@ static void kvm_uevent_notify_change(uns
+@@ -3924,7 +3924,7 @@ static void kvm_uevent_notify_change(uns
  	}
  	created = kvm_createvm_count;
  	active = kvm_active_vms;

@@ -2,7 +2,7 @@ From: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Date: Wed, 23 Oct 2019 11:01:53 +0200
 Subject: x86/cpu: Add a "tsx=" cmdline option with TSX disabled by default
 
-commit 95c5824f75f3ba4c9e8e5a4b1a623c95390ac266 upstream.
+commit 95c5824f75f3ba4c9e8e5a4b1a623c95390ac266 upstream
 
 Add a kernel cmdline parameter "tsx" to control the Transactional
 Synchronization Extensions (TSX) feature. On CPUs that support TSX
@@ -22,16 +22,14 @@ Signed-off-by: Pawan Gupta <pawan.kumar.gupta@linux.intel.com>
 Signed-off-by: Borislav Petkov <bp@suse.de>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Reviewed-by: Josh Poimboeuf <jpoimboe@redhat.com>
-[bwh: Backported to 4.19: adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 ---
  .../admin-guide/kernel-parameters.txt         |  26 ++++
  arch/x86/kernel/cpu/Makefile                  |   2 +-
- arch/x86/kernel/cpu/common.c                  |   2 +
+ arch/x86/kernel/cpu/common.c                  |   1 +
  arch/x86/kernel/cpu/cpu.h                     |  16 +++
  arch/x86/kernel/cpu/intel.c                   |   5 +
  arch/x86/kernel/cpu/tsx.c                     | 125 ++++++++++++++++++
- 6 files changed, 175 insertions(+), 1 deletion(-)
+ 6 files changed, 174 insertions(+), 1 deletion(-)
  create mode 100644 arch/x86/kernel/cpu/tsx.c
 
 --- a/Documentation/admin-guide/kernel-parameters.txt
@@ -82,11 +80,10 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  obj-$(CONFIG_CPU_SUP_CENTAUR)		+= centaur.o
 --- a/arch/x86/kernel/cpu/common.c
 +++ b/arch/x86/kernel/cpu/common.c
-@@ -1482,6 +1482,8 @@ void __init identify_boot_cpu(void)
+@@ -1482,6 +1482,7 @@ void __init identify_boot_cpu(void)
  	enable_sep_cpu();
  #endif
  	cpu_detect_tlb(&boot_cpu_data);
-+
 +	tsx_init();
  }
  

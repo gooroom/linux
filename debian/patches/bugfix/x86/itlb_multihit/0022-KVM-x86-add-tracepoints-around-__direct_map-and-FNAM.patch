@@ -1,19 +1,18 @@
 From: Paolo Bonzini <pbonzini@redhat.com>
-Date: Mon, 1 Jul 2019 06:22:57 -0400
+Date: Thu, 4 Jul 2019 05:14:13 -0400
 Subject: KVM: x86: add tracepoints around __direct_map and FNAME(fetch)
 
-commit 335e192a3fa415e1202c8b9ecdaaecd643f823cc upstream.
+commit 335e192a3fa415e1202c8b9ecdaaecd643f823cc upstream
 
 These are useful in debugging shadow paging.
 
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
-[bwh: Backported to 4.19: adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- arch/x86/kvm/mmu.c         | 13 ++++-----
+ arch/x86/kvm/mmu.c         | 14 ++++-----
  arch/x86/kvm/mmutrace.h    | 59 ++++++++++++++++++++++++++++++++++++++
  arch/x86/kvm/paging_tmpl.h |  2 ++
- 3 files changed, 67 insertions(+), 7 deletions(-)
+ 3 files changed, 68 insertions(+), 7 deletions(-)
 
 --- a/arch/x86/kvm/mmu.c
 +++ b/arch/x86/kvm/mmu.c
@@ -27,7 +26,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  #define SPTE_HOST_WRITEABLE	(1ULL << PT_FIRST_AVAIL_BITS_SHIFT)
  #define SPTE_MMU_WRITEABLE	(1ULL << (PT_FIRST_AVAIL_BITS_SHIFT + 1))
  
-@@ -261,9 +258,13 @@ static u64 __read_mostly shadow_nonprese
+@@ -261,9 +258,14 @@ static u64 __read_mostly shadow_nonprese
  
  
  static void mmu_spte_set(u64 *sptep, u64 spte);
@@ -38,10 +37,11 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +#define CREATE_TRACE_POINTS
 +#include "mmutrace.h"
 +
++
  void kvm_mmu_set_mmio_spte_mask(u64 mmio_mask, u64 mmio_value)
  {
  	BUG_ON((mmio_mask & mmio_value) != mmio_value);
-@@ -2992,10 +2993,7 @@ static int mmu_set_spte(struct kvm_vcpu
+@@ -2992,10 +2994,7 @@ static int mmu_set_spte(struct kvm_vcpu
  		ret = RET_PF_EMULATE;
  
  	pgprintk("%s: setting spte %llx\n", __func__, *sptep);
@@ -53,7 +53,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	if (!was_rmapped && is_large_pte(*sptep))
  		++vcpu->kvm->stat.lpages;
  
-@@ -3106,6 +3104,7 @@ static int __direct_map(struct kvm_vcpu
+@@ -3106,6 +3105,7 @@ static int __direct_map(struct kvm_vcpu
  	if (!VALID_PAGE(vcpu->arch.mmu.root_hpa))
  		return RET_PF_RETRY;
  

@@ -2,7 +2,7 @@ From: Paolo Bonzini <pbonzini@redhat.com>
 Date: Mon, 4 Nov 2019 12:22:02 +0100
 Subject: kvm: mmu: ITLB_MULTIHIT mitigation
 
-commit b8e8c8303ff28c61046a4d0f6ea99aea609a7dc0 upstream.
+commit b8e8c8303ff28c61046a4d0f6ea99aea609a7dc0 upstream
 
 With some Intel processors, putting the same virtual address in the TLB
 as both a 4 KiB and 2 MiB page can confuse the instruction fetch unit
@@ -26,10 +26,8 @@ and direct EPT is treated in the same way.
 Originally-by: Junaid Shahid <junaids@google.com>
 Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-[bwh: Backported to 4.19:
- - Use kvm_mmu_invalidate_zap_all_pages() instead of kvm_mmu_zap_all_fast()
- - Adjust context]
-Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
  .../admin-guide/kernel-parameters.txt         |  19 +++
  arch/x86/include/asm/kvm_host.h               |   2 +
@@ -76,14 +74,14 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  				Mitigate all CPU vulnerabilities, but leave SMT
 --- a/arch/x86/include/asm/kvm_host.h
 +++ b/arch/x86/include/asm/kvm_host.h
-@@ -282,6 +282,7 @@ struct kvm_mmu_page {
- 	struct list_head link;
- 	struct hlist_node hash_link;
+@@ -293,6 +293,7 @@ struct kvm_mmu_page {
+ 	/* hold the gfn of each spte inside spt */
+ 	gfn_t *gfns;
  	bool unsync;
 +	bool lpage_disallowed; /* Can't be replaced by an equiv large page */
- 
- 	/*
- 	 * The following two entries are used to key the shadow page in the
+ 	int root_count;          /* Currently serving as active root */
+ 	unsigned int unsync_children;
+ 	struct kvm_rmap_head parent_ptes; /* rmap pointers to parent sptes */
 @@ -887,6 +888,7 @@ struct kvm_vm_stat {
  	ulong mmu_unsync;
  	ulong remote_tlb_flush;
@@ -94,7 +92,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
 --- a/arch/x86/kernel/cpu/bugs.c
 +++ b/arch/x86/kernel/cpu/bugs.c
-@@ -1229,6 +1229,9 @@ void x86_spec_ctrl_setup_ap(void)
+@@ -1225,6 +1225,9 @@ void x86_spec_ctrl_setup_ap(void)
  		x86_amd_ssb_disable();
  }
  
@@ -104,7 +102,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  #undef pr_fmt
  #define pr_fmt(fmt)	"L1TF: " fmt
  
-@@ -1384,17 +1387,25 @@ static ssize_t l1tf_show_state(char *buf
+@@ -1380,17 +1383,25 @@ static ssize_t l1tf_show_state(char *buf
  		       l1tf_vmx_states[l1tf_vmx_mitigation],
  		       sched_smt_active() ? "vulnerable" : "disabled");
  }
@@ -154,7 +152,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  /*
   * When setting this variable to true it enables Two-Dimensional-Paging
   * where the hardware walks 2 page tables:
-@@ -284,6 +298,11 @@ static inline bool spte_ad_enabled(u64 s
+@@ -285,6 +299,11 @@ static inline bool spte_ad_enabled(u64 s
  	return !(spte & shadow_acc_track_value);
  }
  
@@ -166,7 +164,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  static inline u64 spte_shadow_accessed_mask(u64 spte)
  {
  	MMU_WARN_ON((spte & shadow_mmio_mask) == shadow_mmio_value);
-@@ -1096,6 +1115,15 @@ static void account_shadowed(struct kvm
+@@ -1097,6 +1116,15 @@ static void account_shadowed(struct kvm
  	kvm_mmu_gfn_disallow_lpage(slot, gfn);
  }
  
@@ -182,7 +180,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  static void unaccount_shadowed(struct kvm *kvm, struct kvm_mmu_page *sp)
  {
  	struct kvm_memslots *slots;
-@@ -1113,6 +1141,12 @@ static void unaccount_shadowed(struct kv
+@@ -1114,6 +1142,12 @@ static void unaccount_shadowed(struct kv
  	kvm_mmu_gfn_allow_lpage(slot, gfn);
  }
  
@@ -195,7 +193,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  static bool __mmu_gfn_lpage_is_disallowed(gfn_t gfn, int level,
  					  struct kvm_memory_slot *slot)
  {
-@@ -2665,6 +2699,9 @@ static int kvm_mmu_prepare_zap_page(stru
+@@ -2666,6 +2700,9 @@ static int kvm_mmu_prepare_zap_page(stru
  			kvm_reload_remote_mmus(kvm);
  	}
  
@@ -205,7 +203,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	sp->role.invalid = 1;
  	return ret;
  }
-@@ -2873,6 +2910,11 @@ static int set_spte(struct kvm_vcpu *vcp
+@@ -2874,6 +2911,11 @@ static int set_spte(struct kvm_vcpu *vcp
  	if (!speculative)
  		spte |= spte_shadow_accessed_mask(spte);
  
@@ -217,7 +215,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	if (pte_access & ACC_EXEC_MASK)
  		spte |= shadow_x_mask;
  	else
-@@ -3091,9 +3133,32 @@ static void direct_pte_prefetch(struct k
+@@ -3092,9 +3134,32 @@ static void direct_pte_prefetch(struct k
  	__direct_pte_prefetch(vcpu, sp, sptep);
  }
  
@@ -251,7 +249,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  {
  	struct kvm_shadow_walk_iterator it;
  	struct kvm_mmu_page *sp;
-@@ -3106,6 +3171,12 @@ static int __direct_map(struct kvm_vcpu
+@@ -3107,6 +3172,12 @@ static int __direct_map(struct kvm_vcpu
  
  	trace_kvm_mmu_spte_requested(gpa, level, pfn);
  	for_each_shadow_entry(vcpu, gpa, it) {
@@ -264,7 +262,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  		base_gfn = gfn & ~(KVM_PAGES_PER_HPAGE(it.level) - 1);
  		if (it.level == level)
  			break;
-@@ -3116,6 +3187,8 @@ static int __direct_map(struct kvm_vcpu
+@@ -3117,6 +3188,8 @@ static int __direct_map(struct kvm_vcpu
  					      it.level - 1, true, ACC_ALL);
  
  			link_shadow_page(vcpu, it.sptep, sp);
@@ -273,7 +271,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  		}
  	}
  
-@@ -3416,11 +3489,14 @@ static int nonpaging_map(struct kvm_vcpu
+@@ -3417,11 +3490,14 @@ static int nonpaging_map(struct kvm_vcpu
  {
  	int r;
  	int level;
@@ -289,7 +287,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	level = mapping_level(vcpu, gfn, &force_pt_level);
  	if (likely(!force_pt_level)) {
  		/*
-@@ -3454,7 +3530,8 @@ static int nonpaging_map(struct kvm_vcpu
+@@ -3455,7 +3531,8 @@ static int nonpaging_map(struct kvm_vcpu
  		goto out_unlock;
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, gfn, &pfn, &level);
@@ -299,7 +297,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-@@ -4048,6 +4125,8 @@ static int tdp_page_fault(struct kvm_vcp
+@@ -4049,6 +4126,8 @@ static int tdp_page_fault(struct kvm_vcp
  	unsigned long mmu_seq;
  	int write = error_code & PFERR_WRITE_MASK;
  	bool map_writable;
@@ -308,7 +306,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	MMU_WARN_ON(!VALID_PAGE(vcpu->arch.mmu.root_hpa));
  
-@@ -4058,8 +4137,9 @@ static int tdp_page_fault(struct kvm_vcp
+@@ -4059,8 +4138,9 @@ static int tdp_page_fault(struct kvm_vcp
  	if (r)
  		return r;
  
@@ -320,7 +318,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  	level = mapping_level(vcpu, gfn, &force_pt_level);
  	if (likely(!force_pt_level)) {
  		if (level > PT_DIRECTORY_LEVEL &&
-@@ -4088,7 +4168,8 @@ static int tdp_page_fault(struct kvm_vcp
+@@ -4089,7 +4169,8 @@ static int tdp_page_fault(struct kvm_vcp
  		goto out_unlock;
  	if (likely(!force_pt_level))
  		transparent_hugepage_adjust(vcpu, gfn, &pfn, &level);
@@ -330,7 +328,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  out_unlock:
  	spin_unlock(&vcpu->kvm->mmu_lock);
  	kvm_release_pfn_clean(pfn);
-@@ -5886,10 +5967,58 @@ static void mmu_destroy_caches(void)
+@@ -5887,10 +5968,58 @@ static void mmu_destroy_caches(void)
  	kmem_cache_destroy(mmu_page_header_cache);
  }
  
