@@ -19,14 +19,12 @@ Signed-off-by: Jeremy Cline <jcline@redhat.com>
  kernel/module_signing.c | 16 ++++++++++++----
  1 file changed, 12 insertions(+), 4 deletions(-)
 
-Index: debian-kernel/kernel/module_signing.c
-===================================================================
---- debian-kernel.orig/kernel/module_signing.c
-+++ debian-kernel/kernel/module_signing.c
+--- a/kernel/module_signing.c
++++ b/kernel/module_signing.c
 @@ -135,6 +135,13 @@ int mod_verify_sig(const void *mod, stru
-				      VERIFYING_MODULE_SIGNATURE,
-				      NULL, NULL);
-	pr_devel("verify_pkcs7_signature() = %d\n", ret);
+ 				      VERIFYING_MODULE_SIGNATURE,
+ 				      NULL, NULL);
+ 	pr_devel("verify_pkcs7_signature() = %d\n", ret);
 +	if (ret == -ENOKEY && IS_ENABLED(CONFIG_INTEGRITY_PLATFORM_KEYRING)) {
 +		ret = verify_pkcs7_signature(mod, modlen, mod + modlen, sig_len,
 +				VERIFY_USE_PLATFORM_KEYRING,
@@ -34,6 +32,6 @@ Index: debian-kernel/kernel/module_signing.c
 +				NULL, NULL);
 +                pr_devel("verify_pkcs7_signature() = %d\n", ret);
 +	}
-
-	/* checking hash of module is in blacklist */
-	if (!ret)
+ 
+ 	/* checking hash of module is in blacklist */
+ 	if (!ret)
