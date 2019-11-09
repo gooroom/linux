@@ -77,14 +77,14 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  				Mitigate all CPU vulnerabilities, but leave SMT
 --- a/arch/x86/include/asm/kvm_host.h
 +++ b/arch/x86/include/asm/kvm_host.h
-@@ -262,6 +262,7 @@ struct kvm_mmu_page {
- 	struct list_head link;
- 	struct hlist_node hash_link;
+@@ -273,6 +273,7 @@ struct kvm_mmu_page {
+ 	/* hold the gfn of each spte inside spt */
+ 	gfn_t *gfns;
  	bool unsync;
 +	bool lpage_disallowed; /* Can't be replaced by an equiv large page */
- 
- 	/*
- 	 * The following two entries are used to key the shadow page in the
+ 	int root_count;          /* Currently serving as active root */
+ 	unsigned int unsync_children;
+ 	struct kvm_rmap_head parent_ptes; /* rmap pointers to parent sptes */
 @@ -811,6 +812,7 @@ struct kvm_vm_stat {
  	ulong mmu_unsync;
  	ulong remote_tlb_flush;
@@ -95,7 +95,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  struct kvm_vcpu_stat {
 --- a/arch/x86/kernel/cpu/bugs.c
 +++ b/arch/x86/kernel/cpu/bugs.c
-@@ -1237,6 +1237,9 @@ void x86_spec_ctrl_setup_ap(void)
+@@ -1233,6 +1233,9 @@ void x86_spec_ctrl_setup_ap(void)
  		x86_amd_ssb_disable();
  }
  
@@ -105,7 +105,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  #undef pr_fmt
  #define pr_fmt(fmt)	"L1TF: " fmt
  
-@@ -1392,17 +1395,25 @@ static ssize_t l1tf_show_state(char *buf
+@@ -1388,17 +1391,25 @@ static ssize_t l1tf_show_state(char *buf
  		       l1tf_vmx_states[l1tf_vmx_mitigation],
  		       sched_smt_active() ? "vulnerable" : "disabled");
  }
