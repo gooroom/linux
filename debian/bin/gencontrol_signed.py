@@ -36,6 +36,7 @@ class Gencontrol(Base):
             'template': 'linux-image-%s-signed-template' % arch,
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
+            'source_suffix': '',
             'source_upstream': self.version.upstream,
             'abiname': self.abiname,
             'imagebinaryversion': image_binary_version,
@@ -52,10 +53,6 @@ class Gencontrol(Base):
         os.makedirs(self.template_debian_dir, exist_ok=True)
 
         self.image_packages = []
-
-    def _substitute_file(self, template, vars, target, append=False):
-        with codecs.open(target, 'a' if append else 'w', 'utf-8') as f:
-            f.write(self.substitute(self.templates[template], vars))
 
     def do_main_setup(self, vars, makeflags, extra):
         makeflags['VERSION'] = self.version.linux_version
@@ -109,7 +106,7 @@ class Gencontrol(Base):
 
     def do_main_recurse(self, packages, makefile, vars, makeflags, extra):
         # Each signed source package only covers a single architecture
-        self.do_arch(packages, makefile, self.vars['arch'], vars.copy(),
+        self.do_arch(packages, makefile, vars['arch'], vars.copy(),
                      makeflags.copy(), extra)
 
     def do_extra(self, packages, makefile):
@@ -147,7 +144,15 @@ class Gencontrol(Base):
         super(Gencontrol, self).do_flavour_setup(vars, makeflags, arch,
                                                  featureset, flavour, extra)
 
+        config_description = self.config.merge('description', arch, featureset,
+                                               flavour)
         config_image = self.config.merge('image', arch, featureset, flavour)
+
+        vars['flavour'] = vars['localversion'][1:]
+        vars['class'] = config_description['hardware']
+        vars['longclass'] = (config_description.get('hardware-long')
+                             or vars['class'])
+
         vars['image-stem'] = config_image.get('install-stem')
         makeflags['IMAGE_INSTALL_STEM'] = vars['image-stem']
 
@@ -187,34 +192,39 @@ class Gencontrol(Base):
             image_package_name
             + ' (= %(imagebinaryversion)s) [%(arch)s]' % vars)
 
-        packages_signed = self.process_packages(
+        packages_own = self.process_packages(
             self.templates['control.image'], vars)
-        merge_packages(packages, packages_signed, arch)
+        assert len(packages_own) == 1
+        cmds_binary_arch = ["$(MAKE) -f debian/rules.real install-signed "
+                            "PACKAGE_NAME='%s' %s" %
+                            (packages_own[0]['Package'], makeflags)]
 
-        cmds_binary_arch = []
-        for i in packages_signed:
-            cmds_binary_arch += ["$(MAKE) -f debian/rules.real install-signed "
+        if self.config.merge('packages').get('meta', True):
+            packages_meta = self.process_packages(
+                self.templates['control.image.meta'], vars)
+            assert len(packages_meta) == 1
+
+            # Don't pretend to support build-profiles
+            del packages_meta[0]['Build-Profiles']
+
+            packages_own.extend(packages_meta)
+            cmds_binary_arch += ["$(MAKE) -f debian/rules.real install-meta "
                                  "PACKAGE_NAME='%s' %s" %
-                                 (i['Package'], makeflags)]
+                                 (packages_meta[0]['Package'], makeflags)]
+
+            self.substitute_debhelper_config(
+                'image.meta', vars,
+                'linux-image%(localversion)s' % vars,
+                output_dir=self.template_debian_dir)
+
+        merge_packages(packages, packages_own, arch)
         makefile.add('binary-arch_%s_%s_%s_real' % (arch, featureset, flavour),
                      cmds=cmds_binary_arch)
 
-        os.makedirs(self.package_dir + '/usr/share/lintian/overrides', 0o755,
-                    exist_ok=True)
-        with open(self.package_dir
-                  + '/usr/share/lintian/overrides/%(template)s' % self.vars,
-                  'a') as lintian_overrides:
-            for script_base in ['postinst', 'postrm', 'preinst', 'prerm']:
-                script_name = (self.template_debian_dir
-                               + '/linux-image-%s%s.%s'
-                               % (vars['abiname'], vars['localversion'],
-                                  script_base))
-                self._substitute_file('image.%s' % script_base, vars,
-                                      script_name)
-                lintian_overrides.write('%s: script-not-executable %s\n' %
-                                        (self.vars['template'],
-                                         os.path.relpath(script_name,
-                                                         self.package_dir)))
+        self.substitute_debhelper_config(
+            'image', vars,
+            'linux-image-%(abiname)s%(localversion)s' % vars,
+            output_dir=self.template_debian_dir)
 
     def write(self, packages, makefile):
         self.write_changelog()
