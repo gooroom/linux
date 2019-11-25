@@ -1,8 +1,7 @@
-From 21c221625426b72acf5aad55261378a107daab99 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
-Subject: [PATCH 198/283] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Subject: [PATCH 198/290] net: Use skbufhead with raw lock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5cb81c78a721cc47b52a8eba0ae24d8d44c8e349
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -53,7 +52,7 @@ index 28baccb1efd5..b4412944db54 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index abaf8a73403b..616429a4715c 100644
+index defca5df6baa..794c64b0a6ce 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -217,14 +217,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -141,7 +140,7 @@ index abaf8a73403b..616429a4715c 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9323,10 +9336,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9325,10 +9338,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -156,7 +155,7 @@ index abaf8a73403b..616429a4715c 100644
  
  	return 0;
  }
-@@ -9635,8 +9651,9 @@ static int __init net_dev_init(void)
+@@ -9639,8 +9655,9 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  
@@ -168,6 +167,3 @@ index abaf8a73403b..616429a4715c 100644
  #ifdef CONFIG_XFRM_OFFLOAD
  		skb_queue_head_init(&sd->xfrm_backlog);
  #endif
--- 
-2.20.1
-

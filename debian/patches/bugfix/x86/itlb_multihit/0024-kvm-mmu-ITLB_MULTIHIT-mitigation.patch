@@ -37,8 +37,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  arch/x86/kvm/x86.c                            |   9 ++
  6 files changed, 200 insertions(+), 13 deletions(-)
 
---- a/Documentation/admin-guide/kernel-parameters.txt
-+++ b/Documentation/admin-guide/kernel-parameters.txt
+Index: linux/Documentation/admin-guide/kernel-parameters.txt
+===================================================================
+--- linux.orig/Documentation/admin-guide/kernel-parameters.txt
++++ linux/Documentation/admin-guide/kernel-parameters.txt
 @@ -1956,6 +1956,19 @@
  			KVM MMU at runtime.
  			Default is 0 (off)
@@ -59,7 +61,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	kvm-amd.nested=	[KVM,AMD] Allow nested virtualization in KVM/SVM.
  			Default is 1 (enabled)
  
-@@ -2522,6 +2535,12 @@
+@@ -2524,6 +2537,12 @@
  					       l1tf=off [X86]
  					       mds=off [X86]
  					       tsx_async_abort=off [X86]
@@ -72,8 +74,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  			auto (default)
  				Mitigate all CPU vulnerabilities, but leave SMT
---- a/arch/x86/include/asm/kvm_host.h
-+++ b/arch/x86/include/asm/kvm_host.h
+Index: linux/arch/x86/include/asm/kvm_host.h
+===================================================================
+--- linux.orig/arch/x86/include/asm/kvm_host.h
++++ linux/arch/x86/include/asm/kvm_host.h
 @@ -293,6 +293,7 @@ struct kvm_mmu_page {
  	/* hold the gfn of each spte inside spt */
  	gfn_t *gfns;
@@ -82,7 +86,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	int root_count;          /* Currently serving as active root */
  	unsigned int unsync_children;
  	struct kvm_rmap_head parent_ptes; /* rmap pointers to parent sptes */
-@@ -887,6 +888,7 @@ struct kvm_vm_stat {
+@@ -890,6 +891,7 @@ struct kvm_vm_stat {
  	ulong mmu_unsync;
  	ulong remote_tlb_flush;
  	ulong lpages;
@@ -90,8 +94,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	ulong max_mmu_page_hash_collisions;
  };
  
---- a/arch/x86/kernel/cpu/bugs.c
-+++ b/arch/x86/kernel/cpu/bugs.c
+Index: linux/arch/x86/kernel/cpu/bugs.c
+===================================================================
+--- linux.orig/arch/x86/kernel/cpu/bugs.c
++++ linux/arch/x86/kernel/cpu/bugs.c
 @@ -1225,6 +1225,9 @@ void x86_spec_ctrl_setup_ap(void)
  		x86_amd_ssb_disable();
  }
@@ -129,8 +135,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  static ssize_t mds_show_state(char *buf)
  {
---- a/arch/x86/kvm/mmu.c
-+++ b/arch/x86/kvm/mmu.c
+Index: linux/arch/x86/kvm/mmu.c
+===================================================================
+--- linux.orig/arch/x86/kvm/mmu.c
++++ linux/arch/x86/kvm/mmu.c
 @@ -49,6 +49,20 @@
  #include <asm/kvm_page_track.h>
  #include "trace.h"
@@ -387,8 +395,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	kvm_mmu_reset_all_pte_masks();
  
  	pte_list_desc_cache = kmem_cache_create("pte_list_desc",
---- a/arch/x86/kvm/paging_tmpl.h
-+++ b/arch/x86/kvm/paging_tmpl.h
+Index: linux/arch/x86/kvm/paging_tmpl.h
+===================================================================
+--- linux.orig/arch/x86/kvm/paging_tmpl.h
++++ linux/arch/x86/kvm/paging_tmpl.h
 @@ -596,13 +596,14 @@ static void FNAME(pte_prefetch)(struct k
  static int FNAME(fetch)(struct kvm_vcpu *vcpu, gva_t addr,
  			 struct guest_walker *gw,
@@ -465,8 +475,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	kvm_mmu_audit(vcpu, AUDIT_POST_PAGE_FAULT);
  
  out_unlock:
---- a/arch/x86/kvm/x86.c
-+++ b/arch/x86/kvm/x86.c
+Index: linux/arch/x86/kvm/x86.c
+===================================================================
+--- linux.orig/arch/x86/kvm/x86.c
++++ linux/arch/x86/kvm/x86.c
 @@ -206,6 +206,7 @@ struct kvm_stats_debugfs_item debugfs_en
  	{ "mmu_unsync", VM_STAT(mmu_unsync) },
  	{ "remote_tlb_flush", VM_STAT(remote_tlb_flush) },
@@ -475,7 +487,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	{ "max_mmu_page_hash_collisions",
  		VM_STAT(max_mmu_page_hash_collisions) },
  	{ NULL }
-@@ -1116,6 +1117,14 @@ u64 kvm_get_arch_capabilities(void)
+@@ -1131,6 +1132,14 @@ u64 kvm_get_arch_capabilities(void)
  	rdmsrl_safe(MSR_IA32_ARCH_CAPABILITIES, &data);
  
  	/*
