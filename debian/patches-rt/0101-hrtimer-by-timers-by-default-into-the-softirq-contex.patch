@@ -1,9 +1,8 @@
-From da6822e02b92c82126e1e2ef3846912c9874b024 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 101/283] hrtimer: by timers by default into the softirq
+Subject: [PATCH 101/290] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7c5afdf61b2f178567e499bc4aec5050c12a82ce
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -29,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 031bd7f91f98..4b2a399f1df5 100644
+index 262e49301cae..c2f51b6e8974 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2252,7 +2252,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -2257,7 +2257,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -66,7 +65,7 @@ index 73ad7309436a..2bdb047c7656 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 171b83ebed4a..a7807c609c22 100644
+index 625ba462e5bb..9e17b38fdb98 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1102,7 +1102,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -78,7 +77,7 @@ index 171b83ebed4a..a7807c609c22 100644
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -9216,7 +9216,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
+@@ -9239,7 +9239,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
  	if (!is_sampling_event(event))
  		return;
  
@@ -88,7 +87,7 @@ index 171b83ebed4a..a7807c609c22 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 337cc72e6a6a..1f997ceec454 100644
+index ba6d51c7df61..86839f848805 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)
@@ -101,10 +100,10 @@ index 337cc72e6a6a..1f997ceec454 100644
  }
  #else	/* CONFIG_SCHED_HRTICK */
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index fb6e64417470..1794e152d888 100644
+index 4b13df38c069..974a8f9b615a 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1053,7 +1053,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
+@@ -1086,7 +1086,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
  {
  	struct hrtimer *timer = &dl_se->dl_timer;
  
@@ -114,10 +113,10 @@ index fb6e64417470..1794e152d888 100644
  }
  
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 0048a32a3b4d..4022ad749d85 100644
+index da5d60d25c27..5bbc77b948e7 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4908,9 +4908,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
+@@ -4967,9 +4967,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);
@@ -194,10 +193,10 @@ index 923a650e5c35..abf24e60b6e8 100644
  	sl->timer.function = hrtimer_wakeup;
  	sl->task = task;
 diff --git a/kernel/time/tick-broadcast-hrtimer.c b/kernel/time/tick-broadcast-hrtimer.c
-index a59641fb88b6..52649fdea3b5 100644
+index a836efd34589..c50e8f3262de 100644
 --- a/kernel/time/tick-broadcast-hrtimer.c
 +++ b/kernel/time/tick-broadcast-hrtimer.c
-@@ -106,7 +106,7 @@ static enum hrtimer_restart bc_handler(struct hrtimer *t)
+@@ -107,7 +107,7 @@ static enum hrtimer_restart bc_handler(struct hrtimer *t)
  
  void tick_setup_hrtimer_broadcast(void)
  {
@@ -232,6 +231,3 @@ index bbc4940f21af..defd493ba967 100644
  	hrtimer->function = watchdog_timer_fn;
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
--- 
-2.20.1
-

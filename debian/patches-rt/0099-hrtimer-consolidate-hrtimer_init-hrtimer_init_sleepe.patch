@@ -1,9 +1,8 @@
-From 2decd81945344204be663182b0eac46997f297b2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 099/283] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 099/290] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=956094850303bfde3d1c8d990ce9a247053d2c63
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -28,7 +27,7 @@ Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
  7 files changed, 67 insertions(+), 34 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 70d839b9c3b0..e3e7a88e03a6 100644
+index 684acaa96db7..4aa3284874f6 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -3128,10 +3128,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
@@ -285,6 +284,3 @@ index 092fa3d75b32..9d472d626aaa 100644
  		do {
  			set_current_state(TASK_INTERRUPTIBLE);
  			hrtimer_start_expires(&t.timer, HRTIMER_MODE_ABS);
--- 
-2.20.1
-

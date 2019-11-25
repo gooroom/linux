@@ -1,8 +1,7 @@
-From bc6dc2730e93dec5ead183a44781b5c8bf47b3d7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 106/283] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Subject: [PATCH 106/290] sched: Move task_struct cleanup to RCU
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c69af1bd9be59d1e008a9cabae469116cffd44b6
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -15,10 +14,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c2dfe6939773..a6f2f76b1162 100644
+index ba37d39d5c6b..a1ef00db6baa 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1186,6 +1186,9 @@ struct task_struct {
+@@ -1194,6 +1194,9 @@ struct task_struct {
  	unsigned int			sequential_io;
  	unsigned int			sequential_io_avg;
  #endif
@@ -58,7 +57,7 @@ index 108ede99e533..bb98c5b43f81 100644
  
  #ifdef CONFIG_ARCH_WANTS_DYNAMIC_TASK_STRUCT
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 492bc898b09a..cba3cade3d5b 100644
+index c940fee1426c..b14cb6876ac8 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -671,7 +671,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
@@ -91,6 +90,3 @@ index 492bc898b09a..cba3cade3d5b 100644
  
  void __init __weak arch_task_cache_init(void) { }
  
--- 
-2.20.1
-

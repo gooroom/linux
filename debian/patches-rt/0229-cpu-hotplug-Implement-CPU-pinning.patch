@@ -1,8 +1,7 @@
-From 8d14b62a0aef3f8f55641157c07a65df44f4cdda Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Subject: [PATCH 229/283] cpu/hotplug: Implement CPU pinning
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Subject: [PATCH 229/290] cpu/hotplug: Implement CPU pinning
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=673c270ddb52159dc10aae6859ad2c7fbdc784b1
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -11,7 +10,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 39 insertions(+)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 76e6cdafb992..0445d5c7ced0 100644
+index 834f46cb258b..4559d8039c45 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -671,6 +671,7 @@ struct task_struct {
@@ -23,7 +22,7 @@ index 76e6cdafb992..0445d5c7ced0 100644
  	int				migrate_disable_atomic;
  # endif
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 9001e1779325..89b56880314d 100644
+index 02e05a7e463c..e1cd4bfc03bc 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -75,6 +75,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
@@ -112,6 +111,3 @@ index 9001e1779325..89b56880314d 100644
  	/* Interrupts are moved away from the dying cpu, reenable alloc/free */
  	irq_unlock_sparse();
  
--- 
-2.20.1
-

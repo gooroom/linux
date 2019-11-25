@@ -1,8 +1,7 @@
-From 3e88f3c941795af8750994fd1a26f7031b691be6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:10:04 +0100
-Subject: [PATCH 189/283] net: Use cpu_chill() instead of cpu_relax()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.59-rt24.tar.xz
+Subject: [PATCH 189/290] net: Use cpu_chill() instead of cpu_relax()
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4e739662f4d14956803c5fa64a1ed3b08275bba8
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -15,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/net/packet/af_packet.c b/net/packet/af_packet.c
-index 93b5a4200585..47009dddb740 100644
+index 7204e7bbebb0..2c22fa8cf9bf 100644
 --- a/net/packet/af_packet.c
 +++ b/net/packet/af_packet.c
 @@ -63,6 +63,7 @@
@@ -65,6 +64,3 @@ index 0b347f46b2f4..f395f06031bc 100644
  	}
  }
  
--- 
-2.20.1
-
