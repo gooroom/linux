@@ -577,14 +577,6 @@ install-udeb_$(ARCH):
 ifneq (,$(filter linux-image-%,$(packages_enabled)))
 	dh_testdir
 	dh_prep
-ifeq ($(UDEB_UNSIGNED_TEST_BUILD),True)
-# kernel-wedge doesn't expect a -unsigned suffix; work around that for now
-	while read flavour; do \
-		rm -f debian/linux-image-$(ABINAME)-$$flavour; \
-		ln -s linux-image-$(ABINAME)-$$flavour-unsigned \
-			debian/linux-image-$(ABINAME)-$$flavour; \
-	done < <(awk '!/^#/ { print $$3 }' $(KW_CONFIG_DIR)/kernel-versions)
-endif
 	kernel-wedge install-files $(ABINAME)
 	kernel-wedge check $(PACKAGE_NAMES)
 	dh_fixperms
