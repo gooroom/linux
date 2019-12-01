@@ -18,6 +18,8 @@ block readers).
 
 Reported-by: kernel test robot <xiaolong.ye@intel.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[Aurelien Jarno: Backport to 4.19.86 due to context changes caused by
+aa84e0458d853 ("NFSv4.x: fix lock recovery during delegation recall")]
 ---
  fs/nfs/delegation.c |  4 ++--
  fs/nfs/nfs4_fs.h    |  2 +-
@@ -37,7 +39,7 @@ index 825a8c52165a..c14f02b41f0d 100644
 +		seq = read_seqbegin(&sp->so_reclaim_seqlock);
  		err = nfs4_open_delegation_recall(ctx, state, stateid);
  		if (!err)
- 			err = nfs_delegation_claim_locks(ctx, state, stateid);
+ 			err = nfs_delegation_claim_locks(state, stateid);
 -		if (!err && read_seqcount_retry(&sp->so_reclaim_seqcount, seq))
 +		if (!err && read_seqretry(&sp->so_reclaim_seqlock, seq))
  			err = -EAGAIN;
