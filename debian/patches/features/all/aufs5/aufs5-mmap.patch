@@ -1,7 +1,7 @@
 From: J. R. Okajima <hooanon05@yahoo.co.jp>
-Date: Sat Aug 3 23:41:50 2019 +0900
+Date: Fri Sep 20 05:32:03 2019 +0900
 Subject: aufs5.x-rcN mmap patch
-Origin: https://github.com/sfjro/aufs5-standalone/tree/3326ef6942b5e40f0ecc8248a6a77002d942ea7d
+Origin: https://github.com/sfjro/aufs5-standalone/tree/b7cf1e7560f30c37de4674a8249ca24ad926d5d6
 Bug-Debian: https://bugs.debian.org/541828
 
 Patch headers added by debian/bin/genpatch-aufs
@@ -83,7 +83,7 @@ Index: debian-kernel/include/linux/mm.h
 ===================================================================
 --- debian-kernel.orig/include/linux/mm.h
 +++ debian-kernel/include/linux/mm.h
-@@ -1515,6 +1515,28 @@ static inline void unmap_shared_mapping_
+@@ -1495,6 +1495,28 @@ static inline void unmap_shared_mapping_
  	unmap_mapping_range(mapping, holebegin, holelen, 0);
  }
  
@@ -116,7 +116,7 @@ Index: debian-kernel/include/linux/mm_types.h
 ===================================================================
 --- debian-kernel.orig/include/linux/mm_types.h
 +++ debian-kernel/include/linux/mm_types.h
-@@ -262,6 +262,7 @@ struct vm_region {
+@@ -267,6 +267,7 @@ struct vm_region {
  	unsigned long	vm_top;		/* region allocated to here */
  	unsigned long	vm_pgoff;	/* the offset in vm_file corresponding to vm_start */
  	struct file	*vm_file;	/* the backing file or NULL */
@@ -124,7 +124,7 @@ Index: debian-kernel/include/linux/mm_types.h
  
  	int		vm_usage;	/* region usage count (access under nommu_region_sem) */
  	bool		vm_icache_flushed : 1; /* true if the icache has been flushed for
-@@ -336,6 +337,7 @@ struct vm_area_struct {
+@@ -341,6 +342,7 @@ struct vm_area_struct {
  	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE
  					   units */
  	struct file * vm_file;		/* File we map to (can be NULL). */
@@ -136,7 +136,7 @@ Index: debian-kernel/kernel/fork.c
 ===================================================================
 --- debian-kernel.orig/kernel/fork.c
 +++ debian-kernel/kernel/fork.c
-@@ -562,7 +562,7 @@ static __latent_entropy int dup_mmap(str
+@@ -565,7 +565,7 @@ static __latent_entropy int dup_mmap(str
  			struct inode *inode = file_inode(file);
  			struct address_space *mapping = file->f_mapping;
  
@@ -162,7 +162,7 @@ Index: debian-kernel/mm/filemap.c
 ===================================================================
 --- debian-kernel.orig/mm/filemap.c
 +++ debian-kernel/mm/filemap.c
-@@ -2695,7 +2695,7 @@ vm_fault_t filemap_page_mkwrite(struct v
+@@ -2675,7 +2675,7 @@ vm_fault_t filemap_page_mkwrite(struct v
  	vm_fault_t ret = VM_FAULT_LOCKED;
  
  	sb_start_pagefault(inode->i_sb);
@@ -184,7 +184,7 @@ Index: debian-kernel/mm/mmap.c
  	mpol_put(vma_policy(vma));
  	vm_area_free(vma);
  	return next;
-@@ -940,7 +940,7 @@ again:
+@@ -915,7 +915,7 @@ again:
  	if (remove_next) {
  		if (file) {
  			uprobe_munmap(next, next->vm_start, next->vm_end);
@@ -193,7 +193,7 @@ Index: debian-kernel/mm/mmap.c
  		}
  		if (next->anon_vma)
  			anon_vma_merge(vma, next);
-@@ -1865,8 +1865,8 @@ out:
+@@ -1843,8 +1843,8 @@ out:
  	return addr;
  
  unmap_and_free_vma:
@@ -203,7 +203,7 @@ Index: debian-kernel/mm/mmap.c
  
  	/* Undo any partial mapping done by a device driver. */
  	unmap_region(mm, vma, prev, vma->vm_start, vma->vm_end);
-@@ -2695,7 +2695,7 @@ int __split_vma(struct mm_struct *mm, st
+@@ -2673,7 +2673,7 @@ int __split_vma(struct mm_struct *mm, st
  		goto out_free_mpol;
  
  	if (new->vm_file)
@@ -212,7 +212,7 @@ Index: debian-kernel/mm/mmap.c
  
  	if (new->vm_ops && new->vm_ops->open)
  		new->vm_ops->open(new);
-@@ -2714,7 +2714,7 @@ int __split_vma(struct mm_struct *mm, st
+@@ -2692,7 +2692,7 @@ int __split_vma(struct mm_struct *mm, st
  	if (new->vm_ops && new->vm_ops->close)
  		new->vm_ops->close(new);
  	if (new->vm_file)
@@ -221,7 +221,7 @@ Index: debian-kernel/mm/mmap.c
  	unlink_anon_vmas(new);
   out_free_mpol:
  	mpol_put(vma_policy(new));
-@@ -2906,7 +2906,7 @@ SYSCALL_DEFINE5(remap_file_pages, unsign
+@@ -2884,7 +2884,7 @@ SYSCALL_DEFINE5(remap_file_pages, unsign
  	struct vm_area_struct *vma;
  	unsigned long populate = 0;
  	unsigned long ret = -EINVAL;
@@ -230,7 +230,7 @@ Index: debian-kernel/mm/mmap.c
  
  	pr_warn_once("%s (%d) uses deprecated remap_file_pages() syscall. See Documentation/vm/remap_file_pages.rst.\n",
  		     current->comm, current->pid);
-@@ -2981,10 +2981,27 @@ SYSCALL_DEFINE5(remap_file_pages, unsign
+@@ -2959,10 +2959,27 @@ SYSCALL_DEFINE5(remap_file_pages, unsign
  		}
  	}
  
@@ -259,7 +259,7 @@ Index: debian-kernel/mm/mmap.c
  out:
  	up_write(&mm->mmap_sem);
  	if (populate)
-@@ -3274,7 +3291,7 @@ struct vm_area_struct *copy_vma(struct v
+@@ -3253,7 +3270,7 @@ struct vm_area_struct *copy_vma(struct v
  		if (anon_vma_clone(new_vma, vma))
  			goto out_free_mempol;
  		if (new_vma->vm_file)
@@ -272,7 +272,7 @@ Index: debian-kernel/mm/nommu.c
 ===================================================================
 --- debian-kernel.orig/mm/nommu.c
 +++ debian-kernel/mm/nommu.c
-@@ -552,7 +552,7 @@ static void __put_nommu_region(struct vm
+@@ -563,7 +563,7 @@ static void __put_nommu_region(struct vm
  		up_write(&nommu_region_sem);
  
  		if (region->vm_file)
@@ -281,7 +281,7 @@ Index: debian-kernel/mm/nommu.c
  
  		/* IO memory and memory shared directly out of the pagecache
  		 * from ramfs/tmpfs mustn't be released here */
-@@ -690,7 +690,7 @@ static void delete_vma(struct mm_struct
+@@ -695,7 +695,7 @@ static void delete_vma(struct mm_struct
  	if (vma->vm_ops && vma->vm_ops->close)
  		vma->vm_ops->close(vma);
  	if (vma->vm_file)
@@ -290,7 +290,7 @@ Index: debian-kernel/mm/nommu.c
  	put_nommu_region(vma->vm_region);
  	vm_area_free(vma);
  }
-@@ -1213,7 +1213,7 @@ unsigned long do_mmap(struct file *file,
+@@ -1218,7 +1218,7 @@ unsigned long do_mmap(struct file *file,
  					goto error_just_free;
  				}
  			}
@@ -299,7 +299,7 @@ Index: debian-kernel/mm/nommu.c
  			kmem_cache_free(vm_region_jar, region);
  			region = pregion;
  			result = start;
-@@ -1290,10 +1290,10 @@ error_just_free:
+@@ -1295,10 +1295,10 @@ error_just_free:
  	up_write(&nommu_region_sem);
  error:
  	if (region->vm_file)
