@@ -1,7 +1,7 @@
 From: He Zhe <zhe.he@windriver.com>
 Date: Wed, 19 Dec 2018 16:30:57 +0100
 Subject: [PATCH] kmemleak: Turn kmemleak_lock to raw spinlock on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2.17-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.4/older/patches-5.4.3-rt1.tar.xz
 
 kmemleak_lock, as a rwlock on RT, can possibly be held in atomic context and
 causes the follow BUG.
@@ -71,8 +71,8 @@ Link: https://lkml.kernel.org/r/1542877459-144382-1-git-send-email-zhe.he@windri
 Link: https://lkml.kernel.org/r/20181218150744.GB20197@arrakis.emea.arm.com
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- mm/kmemleak.c |   20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
+ mm/kmemleak.c |   28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
 
 --- a/mm/kmemleak.c
 +++ b/mm/kmemleak.c
@@ -85,7 +85,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *   accesses to the object_tree_root. The object_list is the main list
   *   holding the metadata (struct kmemleak_object) for the allocated memory
   *   blocks. The object_tree_root is a red black tree used to look-up
-@@ -186,7 +186,7 @@ static LIST_HEAD(gray_list);
+@@ -192,7 +192,7 @@ static LIST_HEAD(mem_pool_free_list);
  /* search tree for object boundaries */
  static struct rb_root object_tree_root = RB_ROOT;
  /* rw_lock protecting the access to object_list and object_tree_root */
@@ -94,7 +94,37 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /* allocation caches for kmemleak internal data */
  static struct kmem_cache *object_cache;
-@@ -497,9 +497,9 @@ static struct kmemleak_object *find_and_
+@@ -426,7 +426,7 @@ static struct kmemleak_object *mem_pool_
+ 	}
+ 
+ 	/* slab allocation failed, try the memory pool */
+-	write_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 	object = list_first_entry_or_null(&mem_pool_free_list,
+ 					  typeof(*object), object_list);
+ 	if (object)
+@@ -435,7 +435,7 @@ static struct kmemleak_object *mem_pool_
+ 		object = &mem_pool[--mem_pool_free_count];
+ 	else
+ 		pr_warn_once("Memory pool empty, consider increasing CONFIG_DEBUG_KMEMLEAK_MEM_POOL_SIZE\n");
+-	write_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ 
+ 	return object;
+ }
+@@ -453,9 +453,9 @@ static void mem_pool_free(struct kmemlea
+ 	}
+ 
+ 	/* add the object to the memory pool free list */
+-	write_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 	list_add(&object->object_list, &mem_pool_free_list);
+-	write_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ }
+ 
+ /*
+@@ -514,9 +514,9 @@ static struct kmemleak_object *find_and_
  	struct kmemleak_object *object;
  
  	rcu_read_lock();
@@ -106,23 +136,21 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* check whether the object is still available */
  	if (object && !get_object(object))
-@@ -519,13 +519,13 @@ static struct kmemleak_object *find_and_
+@@ -546,11 +546,11 @@ static struct kmemleak_object *find_and_
  	unsigned long flags;
  	struct kmemleak_object *object;
  
 -	write_lock_irqsave(&kmemleak_lock, flags);
 +	raw_spin_lock_irqsave(&kmemleak_lock, flags);
  	object = lookup_object(ptr, alias);
- 	if (object) {
- 		rb_erase(&object->rb_node, &object_tree_root);
- 		list_del_rcu(&object->object_list);
- 	}
+ 	if (object)
+ 		__remove_object(object);
 -	write_unlock_irqrestore(&kmemleak_lock, flags);
 +	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
  
  	return object;
  }
-@@ -592,7 +592,7 @@ static struct kmemleak_object *create_ob
+@@ -617,7 +617,7 @@ static struct kmemleak_object *create_ob
  	/* kernel backtrace */
  	object->trace_len = __save_stack_trace(object->trace);
  
@@ -131,7 +159,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	untagged_ptr = (unsigned long)kasan_reset_tag((void *)ptr);
  	min_addr = min(min_addr, untagged_ptr);
-@@ -624,7 +624,7 @@ static struct kmemleak_object *create_ob
+@@ -649,7 +649,7 @@ static struct kmemleak_object *create_ob
  
  	list_add_tail_rcu(&object->object_list, &object_list);
  out:
@@ -140,7 +168,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return object;
  }
  
-@@ -1311,7 +1311,7 @@ static void scan_block(void *_start, voi
+@@ -1233,7 +1233,7 @@ static void scan_block(void *_start, voi
  	unsigned long flags;
  	unsigned long untagged_ptr;
  
@@ -149,7 +177,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	for (ptr = start; ptr < end; ptr++) {
  		struct kmemleak_object *object;
  		unsigned long pointer;
-@@ -1369,7 +1369,7 @@ static void scan_block(void *_start, voi
+@@ -1291,7 +1291,7 @@ static void scan_block(void *_start, voi
  			spin_unlock(&object->lock);
  		}
  	}

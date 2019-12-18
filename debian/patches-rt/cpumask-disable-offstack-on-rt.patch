@@ -1,7 +1,7 @@
 Subject: cpumask: Disable CONFIG_CPUMASK_OFFSTACK for RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 14 Dec 2011 01:03:49 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.2/older/patches-5.2.17-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.4/older/patches-5.4.3-rt1.tar.xz
 
 There are "valid" GFP_ATOMIC allocations such as
 
@@ -47,22 +47,22 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -938,7 +938,7 @@ config CALGARY_IOMMU_ENABLED_BY_DEFAULT
+@@ -965,7 +965,7 @@ config CALGARY_IOMMU_ENABLED_BY_DEFAULT
  config MAXSMP
  	bool "Enable Maximum number of SMP Processors and NUMA Nodes"
  	depends on X86_64 && SMP && DEBUG_KERNEL
 -	select CPUMASK_OFFSTACK
-+	select CPUMASK_OFFSTACK if !PREEMPT_RT_FULL
++	select CPUMASK_OFFSTACK if !PREEMPT_RT
  	---help---
  	  Enable maximum number of CPUS and NUMA Nodes for this architecture.
  	  If unsure, say N.
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -469,6 +469,7 @@ config CHECK_SIGNATURE
+@@ -468,6 +468,7 @@ config CHECK_SIGNATURE
  
  config CPUMASK_OFFSTACK
  	bool "Force CPU masks off stack" if DEBUG_PER_CPU_MAPS
-+	depends on !PREEMPT_RT_FULL
++	depends on !PREEMPT_RT
  	help
  	  Use dynamic allocation for cpumask_var_t, instead of putting
  	  them on the stack.  This is a bit more expensive, but avoids
