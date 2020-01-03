@@ -1,20 +1,19 @@
+From 8724ddd9928b0fcc4f46e40fa2bc02c24bda9337 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 207/290] printk: Make rt aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=fdb4f35129331aff2fda4afcfeffc3f209b78725
+Subject: [PATCH 207/291] printk: Make rt aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-[Aurelien Jarno: Backport to 4.19.87 due to context changes caused by
-00988218f8cb2 ("printk: lock/unlock console only for new logbuf entries")]
 ---
  kernel/printk/printk.c | 33 ++++++++++++++++++++++++++++++---
  1 file changed, 30 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 210cdac1458d..c66755a0a046 100644
+index 9a7f259dbb20..83f386175dcc 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -1624,6 +1624,7 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
@@ -110,3 +109,6 @@ index 210cdac1458d..c66755a0a046 100644
  
  		if (do_cond_resched)
  			cond_resched();
+-- 
+2.24.0
+

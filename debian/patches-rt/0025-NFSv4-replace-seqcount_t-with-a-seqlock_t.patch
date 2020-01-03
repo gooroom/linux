@@ -1,7 +1,8 @@
+From 2c7ee1a045b00c6310d027dc5aa1a079ff655630 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
-Subject: [PATCH 025/290] NFSv4: replace seqcount_t with a seqlock_t
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=23180e2794932f9ce1ba1e0ef1ebb6a04c9ff676
+Subject: [PATCH 025/291] NFSv4: replace seqcount_t with a seqlock_t
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -18,8 +19,6 @@ block readers).
 
 Reported-by: kernel test robot <xiaolong.ye@intel.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[Aurelien Jarno: Backport to 4.19.86 due to context changes caused by
-aa84e0458d853 ("NFSv4.x: fix lock recovery during delegation recall")]
 ---
  fs/nfs/delegation.c |  4 ++--
  fs/nfs/nfs4_fs.h    |  2 +-
@@ -28,10 +27,10 @@ aa84e0458d853 ("NFSv4.x: fix lock recovery during delegation recall")]
  4 files changed, 21 insertions(+), 11 deletions(-)
 
 diff --git a/fs/nfs/delegation.c b/fs/nfs/delegation.c
-index 825a8c52165a..c14f02b41f0d 100644
+index 74ff459b75ef..6b422d1b5ae1 100644
 --- a/fs/nfs/delegation.c
 +++ b/fs/nfs/delegation.c
-@@ -152,11 +152,11 @@ static int nfs_delegation_claim_opens(struct inode *inode,
+@@ -162,11 +162,11 @@ static int nfs_delegation_claim_opens(struct inode *inode,
  		sp = state->owner;
  		/* Block nfs4_proc_unlck */
  		mutex_lock(&sp->so_delegreturn_mutex);
@@ -59,10 +58,10 @@ index 5b61520dce88..2771aafaca19 100644
  };
  
 diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 75faef7af22d..72abcccb8177 100644
+index 792f8821b5d6..041d235cf5ef 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
-@@ -2873,7 +2873,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2870,7 +2870,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  	unsigned int seq;
  	int ret;
  
@@ -71,7 +70,7 @@ index 75faef7af22d..72abcccb8177 100644
  
  	ret = _nfs4_proc_open(opendata, ctx);
  	if (ret != 0)
-@@ -2914,7 +2914,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2911,7 +2911,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  
  	if (d_inode(dentry) == state->inode) {
  		nfs_inode_attach_open_context(ctx);
@@ -132,3 +131,6 @@ index b3086e99420c..c9bf1eb7e1b2 100644
  	return status;
  }
  
+-- 
+2.24.0
+

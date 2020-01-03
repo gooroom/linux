@@ -1,7 +1,8 @@
+From a25da65a1a0ec5fa2a97c395ef73d03284be1c6e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 206/290] irqwork: push most work into softirq context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2207048a61c66cb5d93777d14f38a073404787c0
+Subject: [PATCH 206/291] irqwork: push most work into softirq context
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -222,7 +223,7 @@ index f162a4f54b05..278fe66bfb70 100644
  			rdp->rcu_iw_gp_seq = rnp->gp_seq;
  			irq_work_queue_on(&rdp->rcu_iw, rdp->cpu);
 diff --git a/kernel/sched/topology.c b/kernel/sched/topology.c
-index c0a751464971..6e95f1ca3e22 100644
+index 74b694392f2f..fb4d11bab6b7 100644
 --- a/kernel/sched/topology.c
 +++ b/kernel/sched/topology.c
 @@ -279,6 +279,7 @@ static int init_rootdomain(struct root_domain *rd)
@@ -258,3 +259,6 @@ index 3fab1c50bf1b..2fcd56aa6092 100644
  	__run_timers(base);
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
+-- 
+2.24.0
+

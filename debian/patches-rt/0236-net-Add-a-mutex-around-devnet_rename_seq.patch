@@ -1,7 +1,8 @@
+From 190a26356e77b087b41a4ef502e56aec24b9c598 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Mar 2013 18:06:20 +0100
-Subject: [PATCH 236/290] net: Add a mutex around devnet_rename_seq
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9b9fafec34118940cdc0ba2b843d8920157fd0a8
+Subject: [PATCH 236/291] net: Add a mutex around devnet_rename_seq
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 On RT write_seqcount_begin() disables preemption and device_rename()
 allocates memory with GFP_KERNEL and grabs later the sysfs_mutex
@@ -21,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 20 insertions(+), 14 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b5b4b3b162a7..1b1bf6186226 100644
+index 3b86d29da429..7b7d1adbd6b9 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -195,6 +195,7 @@ static unsigned int napi_gen_id = NR_CPUS;
@@ -107,3 +108,6 @@ index b5b4b3b162a7..1b1bf6186226 100644
  }
  
  /**
+-- 
+2.24.0
+

@@ -1,7 +1,8 @@
+From 9fb91a865bf531999865a16e329875975a0bbdea Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 7 Jan 2019 13:52:31 +0100
-Subject: [PATCH 011/290] sched/fair: Robustify CFS-bandwidth timer locking
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1a1e9d89852d01e24232b177091911f075b64f65
+Subject: [PATCH 011/291] sched/fair: Robustify CFS-bandwidth timer locking
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 Traditionally hrtimer callbacks were run with IRQs disabled, but with
 the introduction of HRTIMER_MODE_SOFT it is possible they run from
@@ -24,16 +25,15 @@ Tested-by: Mike Galbraith <efault@gmx.de>
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 Link: https://lkml.kernel.org/r/20190107125231.GE14122@hirez.programming.kicks-ass.net
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[Salvatore Bonaccorso: Backport to 4.19.84 due to context changes caused by
-502bd151448c ("sched/fair: Fix low cpu usage with high throttling by removing
-expiration of cpu-local slices")]
 ---
  kernel/sched/fair.c | 30 ++++++++++++++++--------------
  1 file changed, 16 insertions(+), 14 deletions(-)
 
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index f0abb8fe0ae9..b5e03fc56d65 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4560,7 +4560,7 @@
+@@ -4560,7 +4560,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
  		struct rq *rq = rq_of(cfs_rq);
  		struct rq_flags rf;
  
@@ -42,7 +42,7 @@ expiration of cpu-local slices")]
  		if (!cfs_rq_throttled(cfs_rq))
  			goto next;
  
-@@ -4579,7 +4579,7 @@
+@@ -4579,7 +4579,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
  			unthrottle_cfs_rq(cfs_rq);
  
  next:
@@ -51,7 +51,7 @@ expiration of cpu-local slices")]
  
  		if (!remaining)
  			break;
-@@ -4595,7 +4595,7 @@
+@@ -4595,7 +4595,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
   * period the timer is deactivated until scheduling resumes; cfs_b->idle is
   * used to track this state.
   */
@@ -60,7 +60,7 @@ expiration of cpu-local slices")]
  {
  	u64 runtime;
  	int throttled;
-@@ -4635,10 +4635,10 @@
+@@ -4635,10 +4635,10 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
  	while (throttled && cfs_b->runtime > 0 && !cfs_b->distribute_running) {
  		runtime = cfs_b->runtime;
  		cfs_b->distribute_running = 1;
@@ -73,7 +73,7 @@ expiration of cpu-local slices")]
  
  		cfs_b->distribute_running = 0;
  		throttled = !list_empty(&cfs_b->throttled_cfs_rq);
-@@ -4746,16 +4746,17 @@
+@@ -4746,16 +4746,17 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
  static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  {
  	u64 runtime = 0, slice = sched_cfs_bandwidth_slice();
@@ -94,7 +94,7 @@ expiration of cpu-local slices")]
  		return;
  	}
  
-@@ -4765,17 +4766,17 @@
+@@ -4765,17 +4766,17 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  	if (runtime)
  		cfs_b->distribute_running = 1;
  
@@ -115,7 +115,7 @@ expiration of cpu-local slices")]
  }
  
  /*
-@@ -4855,11 +4856,12 @@
+@@ -4855,11 +4856,12 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
  {
  	struct cfs_bandwidth *cfs_b =
  		container_of(timer, struct cfs_bandwidth, period_timer);
@@ -129,7 +129,7 @@ expiration of cpu-local slices")]
  	for (;;) {
  		overrun = hrtimer_forward_now(timer, cfs_b->period);
  		if (!overrun)
-@@ -4887,11 +4889,11 @@
+@@ -4895,11 +4897,11 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
  			count = 0;
  		}
  
@@ -143,3 +143,6 @@ expiration of cpu-local slices")]
  
  	return idle ? HRTIMER_NORESTART : HRTIMER_RESTART;
  }
+-- 
+2.24.0
+

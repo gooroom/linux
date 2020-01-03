@@ -1,7 +1,8 @@
+From 4614b75f982f6d986f99de8d4d35afd3da7140b4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
-Subject: [PATCH 199/290] net: move xmit_recursion to per-task variable on -RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e3b9f93dd4b63400c35e346f0647e8b27be7ff22
+Subject: [PATCH 199/291] net: move xmit_recursion to per-task variable on -RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -23,9 +24,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  net/core/filter.c         |  6 +--
  4 files changed, 104 insertions(+), 15 deletions(-)
 
+diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+index 42bbcb8c1ed1..c6d5808235f0 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -587,7 +587,11 @@
+@@ -587,7 +587,11 @@ struct netdev_queue {
   * write-mostly part
   */
  	spinlock_t		_xmit_lock ____cacheline_aligned_in_smp;
@@ -37,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
  	 * Time (in jiffies) of last Tx
  	 */
-@@ -2611,14 +2615,53 @@
+@@ -2611,14 +2615,53 @@ void netdev_freemem(struct net_device *dev);
  void synchronize_net(void);
  int init_dummy_netdev(struct net_device *dev);
  
@@ -92,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  struct net_device *dev_get_by_index(struct net *net, int ifindex);
  struct net_device *__dev_get_by_index(struct net *net, int ifindex);
  struct net_device *dev_get_by_index_rcu(struct net *net, int ifindex);
-@@ -3794,10 +3837,48 @@
+@@ -3794,10 +3837,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1U << debug_value) - 1;
  }
  
@@ -142,7 +145,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  static inline bool __netif_tx_acquire(struct netdev_queue *txq)
-@@ -3814,32 +3895,32 @@
+@@ -3814,32 +3895,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
  static inline void __netif_tx_lock_bh(struct netdev_queue *txq)
  {
  	spin_lock_bh(&txq->_xmit_lock);
@@ -180,21 +183,25 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		txq->trans_start = jiffies;
  }
  
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 53d92153700b..5e1cc92c2f5c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1217,6 +1217,9 @@
+@@ -1216,6 +1216,9 @@ struct task_struct {
+ #endif
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  	unsigned long			task_state_change;
- #endif
++#endif
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +	int				xmit_recursion;
-+#endif
+ #endif
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
- 	struct task_struct		*oom_reaper_list;
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 2d69e0c45ec2..aab9231a9f3b 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3537,8 +3537,10 @@
+@@ -3537,8 +3537,10 @@ static void skb_update_prio(struct sk_buff *skb)
  #define skb_update_prio(skb)
  #endif
  
@@ -205,7 +212,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /**
   *	dev_loopback_xmit - loop back @skb
-@@ -3829,9 +3831,12 @@
+@@ -3829,9 +3831,12 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
  	if (dev->flags & IFF_UP) {
  		int cpu = smp_processor_id(); /* ok because BHs are off */
  
@@ -220,7 +227,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				goto recursion_alert;
  
  			skb = validate_xmit_skb(skb, dev, &again);
-@@ -3841,9 +3846,9 @@
+@@ -3841,9 +3846,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
  			HARD_TX_LOCK(dev, txq, cpu);
  
  			if (!netif_xmit_stopped(txq)) {
@@ -232,7 +239,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				if (dev_xmit_complete(rc)) {
  					HARD_TX_UNLOCK(dev, txq);
  					goto out;
-@@ -8402,7 +8407,7 @@
+@@ -8402,7 +8407,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);
@@ -241,9 +248,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	netdev_queue_numa_node_write(queue, NUMA_NO_NODE);
  	queue->dev = dev;
  #ifdef CONFIG_BQL
+diff --git a/net/core/filter.c b/net/core/filter.c
+index e6fa88506c00..b3b9b8d8a28d 100644
 --- a/net/core/filter.c
 +++ b/net/core/filter.c
-@@ -2000,7 +2000,7 @@
+@@ -2000,7 +2000,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
  {
  	int ret;
  
@@ -252,7 +261,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		net_crit_ratelimited("bpf: recursion limit reached on datapath, buggy bpf program?\n");
  		kfree_skb(skb);
  		return -ENETDOWN;
-@@ -2008,9 +2008,9 @@
+@@ -2008,9 +2008,9 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
  
  	skb->dev = dev;
  
@@ -264,3 +273,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return ret;
  }
+-- 
+2.24.0
+

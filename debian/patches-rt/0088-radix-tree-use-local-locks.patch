@@ -1,7 +1,8 @@
+From 3bb3dc105ca3567ed9a3c0949c34212b6e1e29ab Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 25 Jan 2017 16:34:27 +0100
-Subject: [PATCH 088/290] radix-tree: use local locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b762851e97a0699769d8cac2a637edd30c800d1f
+Subject: [PATCH 088/291] radix-tree: use local locks
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 The preload functionality uses per-CPU variables and preempt-disable to
 ensure that it does not switch CPUs during its usage. This patch adds
@@ -18,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 18 deletions(-)
 
 diff --git a/include/linux/idr.h b/include/linux/idr.h
-index 3ec8628ce17f..54af68158f7d 100644
+index b6c6151c7446..81c9df5c04fa 100644
 --- a/include/linux/idr.h
 +++ b/include/linux/idr.h
 @@ -169,10 +169,7 @@ static inline bool idr_is_empty(const struct idr *idr)
@@ -59,7 +60,7 @@ index 34149e8b5f73..affb0fc4c5b6 100644
  int radix_tree_split(struct radix_tree_root *, unsigned long index,
  			unsigned new_order);
 diff --git a/lib/radix-tree.c b/lib/radix-tree.c
-index bc03ecc4dfd2..44257463f683 100644
+index e5cab5c4e383..9309e813bc1f 100644
 --- a/lib/radix-tree.c
 +++ b/lib/radix-tree.c
 @@ -38,7 +38,7 @@
@@ -170,3 +171,6 @@ index bc03ecc4dfd2..44257463f683 100644
  
  	if (!this_cpu_read(ida_bitmap)) {
  		struct ida_bitmap *bitmap = kzalloc(sizeof(*bitmap), gfp);
+-- 
+2.24.0
+

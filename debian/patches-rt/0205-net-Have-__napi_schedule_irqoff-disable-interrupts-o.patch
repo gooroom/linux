@@ -1,8 +1,9 @@
+From 50cb5c3e93b4d52ef9952799ca1f75ecdb4e43fb Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 205/290] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 205/291] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=82df0681d7324c3d2e4b92c5694ebd38e831cd5a
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -28,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index b6a75296eb46..946875cae933 100644
+index c6d5808235f0..9fbfeb432299 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -422,7 +422,19 @@ typedef enum rx_handler_result rx_handler_result_t;
@@ -52,10 +53,10 @@ index b6a75296eb46..946875cae933 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 051b3708e180..c9adf3a88771 100644
+index c1f60382b706..67df2536d4bf 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5952,6 +5952,7 @@ bool napi_schedule_prep(struct napi_struct *n)
+@@ -5966,6 +5966,7 @@ bool napi_schedule_prep(struct napi_struct *n)
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -63,7 +64,7 @@ index 051b3708e180..c9adf3a88771 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5963,6 +5964,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5977,6 +5978,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -71,3 +72,6 @@ index 051b3708e180..c9adf3a88771 100644
  
  bool napi_complete_done(struct napi_struct *n, int work_done)
  {
+-- 
+2.24.0
+
