@@ -1,8 +1,8 @@
-From a94b8b8a4cae1744d92b1ae2ad2943c6b509d1ad Mon Sep 17 00:00:00 2001
+From 29dc839b611dbf28552e256500cc026ae8077816 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
-Subject: [PATCH 045/368] NFSv4: replace seqcount_t with a seqlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.178-rt131.tar.xz
+Subject: [PATCH 045/367] NFSv4: replace seqcount_t with a seqlock_t
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.201-rt134.tar.xz
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -27,10 +27,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 21 insertions(+), 11 deletions(-)
 
 diff --git a/fs/nfs/delegation.c b/fs/nfs/delegation.c
-index dff600ae0d74..d726d2e09353 100644
+index 46afd7cdcc37..f886498d65e5 100644
 --- a/fs/nfs/delegation.c
 +++ b/fs/nfs/delegation.c
-@@ -150,11 +150,11 @@ static int nfs_delegation_claim_opens(struct inode *inode,
+@@ -160,11 +160,11 @@ static int nfs_delegation_claim_opens(struct inode *inode,
  		sp = state->owner;
  		/* Block nfs4_proc_unlck */
  		mutex_lock(&sp->so_delegreturn_mutex);
@@ -45,7 +45,7 @@ index dff600ae0d74..d726d2e09353 100644
  		mutex_unlock(&sp->so_delegreturn_mutex);
  		put_nfs_open_context(ctx);
 diff --git a/fs/nfs/nfs4_fs.h b/fs/nfs/nfs4_fs.h
-index 1452177c822d..f43b01d54c59 100644
+index c719389381dc..5dcaae387902 100644
 --- a/fs/nfs/nfs4_fs.h
 +++ b/fs/nfs/nfs4_fs.h
 @@ -111,7 +111,7 @@ struct nfs4_state_owner {
@@ -58,10 +58,10 @@ index 1452177c822d..f43b01d54c59 100644
  };
  
 diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 6d0d94fc243d..508dcb46ef22 100644
+index ca4249ae644f..46065e0bd5e9 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
-@@ -2706,7 +2706,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2705,7 +2705,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  	unsigned int seq;
  	int ret;
  
@@ -70,7 +70,7 @@ index 6d0d94fc243d..508dcb46ef22 100644
  
  	ret = _nfs4_proc_open(opendata);
  	if (ret != 0)
-@@ -2744,7 +2744,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2743,7 +2743,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  
  	if (d_inode(dentry) == state->inode) {
  		nfs_inode_attach_open_context(ctx);
@@ -80,10 +80,10 @@ index 6d0d94fc243d..508dcb46ef22 100644
  	}
  out:
 diff --git a/fs/nfs/nfs4state.c b/fs/nfs/nfs4state.c
-index 857af951831f..fe189db99ad7 100644
+index 4e63daeef633..57facf9519b8 100644
 --- a/fs/nfs/nfs4state.c
 +++ b/fs/nfs/nfs4state.c
-@@ -488,7 +488,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
+@@ -492,7 +492,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
  	nfs4_init_seqid_counter(&sp->so_seqid);
  	atomic_set(&sp->so_count, 1);
  	INIT_LIST_HEAD(&sp->so_lru);
@@ -92,7 +92,7 @@ index 857af951831f..fe189db99ad7 100644
  	mutex_init(&sp->so_delegreturn_mutex);
  	return sp;
  }
-@@ -1503,8 +1503,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1522,8 +1522,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  	 * recovering after a network partition or a reboot from a
  	 * server that doesn't support a grace period.
  	 */
@@ -106,7 +106,7 @@ index 857af951831f..fe189db99ad7 100644
  restart:
  	list_for_each_entry(state, &sp->so_states, open_states) {
  		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
-@@ -1573,14 +1577,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1592,14 +1596,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  		spin_lock(&sp->so_lock);
  		goto restart;
  	}
@@ -132,5 +132,5 @@ index 857af951831f..fe189db99ad7 100644
  }
  
 -- 
-2.20.1
+2.24.0
 
