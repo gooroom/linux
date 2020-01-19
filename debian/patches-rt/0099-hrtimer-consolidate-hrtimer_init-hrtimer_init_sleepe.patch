@@ -1,9 +1,9 @@
-From 60c6d506604f96849de575eab0339febb39c5058 Mon Sep 17 00:00:00 2001
+From 8553725681eb8c0f78dad5fb1ef542301586e9ff Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 099/291] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 099/290] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.90-rt35.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -63,7 +63,7 @@ index 22571abcaa4e..78a529d363f3 100644
  
  	while (1) {
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 3892e9c8b2de..b8bbaabd5aff 100644
+index 542b4fa2cda9..cbd041b22088 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -364,10 +364,17 @@ DECLARE_PER_CPU(struct tick_device, tick_cpu_device);
@@ -100,7 +100,7 @@ index 3892e9c8b2de..b8bbaabd5aff 100644
  static inline void destroy_hrtimer_on_stack(struct hrtimer *timer) { }
  #endif
  
-@@ -480,9 +496,6 @@ extern long hrtimer_nanosleep(const struct timespec64 *rqtp,
+@@ -486,9 +502,6 @@ extern long hrtimer_nanosleep(const struct timespec64 *rqtp,
  			      const enum hrtimer_mode mode,
  			      const clockid_t clockid);
  
@@ -170,10 +170,10 @@ index 5c8053098fc8..23e1f8a478e8 100644
  					     current->timer_slack_ns);
  	}
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index e1a549c9e399..4f43ece42f3b 100644
+index 7362554416fd..c6f755495a63 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1648,13 +1648,44 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
+@@ -1651,13 +1651,44 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
  	return HRTIMER_NORESTART;
  }
  
@@ -219,7 +219,7 @@ index e1a549c9e399..4f43ece42f3b 100644
  int nanosleep_copyout(struct restart_block *restart, struct timespec64 *ts)
  {
  	switch(restart->nanosleep.type) {
-@@ -1678,8 +1709,6 @@ static int __sched do_nanosleep(struct hrtimer_sleeper *t, enum hrtimer_mode mod
+@@ -1681,8 +1712,6 @@ static int __sched do_nanosleep(struct hrtimer_sleeper *t, enum hrtimer_mode mod
  {
  	struct restart_block *restart;
  
@@ -228,7 +228,7 @@ index e1a549c9e399..4f43ece42f3b 100644
  	do {
  		set_current_state(TASK_INTERRUPTIBLE);
  		hrtimer_start_expires(&t->timer, mode);
-@@ -1716,10 +1745,9 @@ static long __sched hrtimer_nanosleep_restart(struct restart_block *restart)
+@@ -1719,10 +1748,9 @@ static long __sched hrtimer_nanosleep_restart(struct restart_block *restart)
  	struct hrtimer_sleeper t;
  	int ret;
  
@@ -241,7 +241,7 @@ index e1a549c9e399..4f43ece42f3b 100644
  	ret = do_nanosleep(&t, HRTIMER_MODE_ABS);
  	destroy_hrtimer_on_stack(&t.timer);
  	return ret;
-@@ -1737,7 +1765,7 @@ long hrtimer_nanosleep(const struct timespec64 *rqtp,
+@@ -1740,7 +1768,7 @@ long hrtimer_nanosleep(const struct timespec64 *rqtp,
  	if (dl_task(current) || rt_task(current))
  		slack = 0;
  
@@ -250,7 +250,7 @@ index e1a549c9e399..4f43ece42f3b 100644
  	hrtimer_set_expires_range_ns(&t.timer, timespec64_to_ktime(*rqtp), slack);
  	ret = do_nanosleep(&t, mode);
  	if (ret != -ERESTART_RESTARTBLOCK)
-@@ -1936,11 +1964,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
+@@ -1939,11 +1967,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
  		return -EINTR;
  	}
  
@@ -286,5 +286,5 @@ index 092fa3d75b32..9d472d626aaa 100644
  			set_current_state(TASK_INTERRUPTIBLE);
  			hrtimer_start_expires(&t.timer, HRTIMER_MODE_ABS);
 -- 
-2.24.0
+2.24.1
 
