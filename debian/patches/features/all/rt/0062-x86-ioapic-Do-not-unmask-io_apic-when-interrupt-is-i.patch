@@ -10,24 +10,21 @@ migration. Do not unmask it when this is the case.
 
 Signed-off-by: Ingo Molnar <mingo@elte.hu>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bwh: Adjust to apply after "x86/ioapic: Prevent inconsistent state when moving
+ an interrupt"]
 ---
  arch/x86/kernel/apic/io_apic.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 09dd95cabfc2..2dc13f544f39 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1713,7 +1713,8 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
+@@ -1713,7 +1713,8 @@ static bool io_apic_level_ack_pending(st
  static inline bool ioapic_irqd_mask(struct irq_data *data)
  {
- 	/* If we are moving the irq we need to mask it */
+ 	/* If we are moving the IRQ we need to mask it */
 -	if (unlikely(irqd_is_setaffinity_pending(data))) {
 +	if (unlikely(irqd_is_setaffinity_pending(data) &&
 +		     !irqd_irq_inprogress(data))) {
- 		mask_ioapic_irq(data);
+ 		if (!irqd_irq_masked(data))
+ 			mask_ioapic_irq(data);
  		return true;
- 	}
--- 
-2.24.0
-
