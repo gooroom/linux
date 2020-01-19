@@ -17,10 +17,8 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  drivers/scsi/hisi_sas/hisi_sas_main.c | 44 ++++++++++++++-------------
  1 file changed, 23 insertions(+), 21 deletions(-)
 
-Index: linux/drivers/scsi/hisi_sas/hisi_sas_main.c
-===================================================================
---- linux.orig/drivers/scsi/hisi_sas/hisi_sas_main.c
-+++ linux/drivers/scsi/hisi_sas/hisi_sas_main.c
+--- a/drivers/scsi/hisi_sas/hisi_sas_main.c
++++ b/drivers/scsi/hisi_sas/hisi_sas_main.c
 @@ -303,36 +303,19 @@ static int hisi_sas_task_prep(struct sas
  			      int *pass)
  {
@@ -90,5 +88,5 @@ Index: linux/drivers/scsi/hisi_sas/hisi_sas_main.c
 +	dev = hisi_hba->dev;
 +
  	if (unlikely(test_bit(HISI_SAS_REJECT_CMD_BIT, &hisi_hba->flags))) {
- 		if (in_softirq())
- 			return -EINVAL;
+ 		/*
+ 		 * For IOs from upper layer, it may already disable preempt

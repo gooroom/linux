@@ -1,7 +1,8 @@
+From 369d276b8c46a573a55da8fdf568f3cb6522d075 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Mar 2013 19:01:05 +0100
 Subject: [PATCH 209/290] printk: Drop the logbuf_lock more often
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3bfadd9fc97cf1d7877b7d67316d67a96e82f182
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
 
 The lock is hold with irgs off. The latency drops 500us+ on my arm bugs
 with a "full" buffer after executing "dmesg" on the shell.
@@ -12,10 +13,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 28 insertions(+)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 1935cf91db0c..3b0f90ace2f1 100644
+index 217abc6a53e1..58517c68e896 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1420,12 +1420,23 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
+@@ -1427,12 +1427,23 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
  	u64 next_seq;
  	u64 seq;
  	u32 idx;
@@ -39,7 +40,7 @@ index 1935cf91db0c..3b0f90ace2f1 100644
  	/*
  	 * Find first record that fits, including all following records,
  	 * into the user-provided buffer for this dump.
-@@ -1438,6 +1449,14 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
+@@ -1445,6 +1456,14 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
  		len += msg_print_text(msg, true, NULL, 0);
  		idx = log_next(idx);
  		seq++;
@@ -54,7 +55,7 @@ index 1935cf91db0c..3b0f90ace2f1 100644
  	}
  
  	/* move first record forward until length fits into the buffer */
-@@ -1449,6 +1468,14 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
+@@ -1456,6 +1475,14 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
  		len -= msg_print_text(msg, true, NULL, 0);
  		idx = log_next(idx);
  		seq++;
@@ -69,7 +70,7 @@ index 1935cf91db0c..3b0f90ace2f1 100644
  	}
  
  	/* last message fitting into this dump */
-@@ -1486,6 +1513,7 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
+@@ -1493,6 +1520,7 @@ static int syslog_print_all(char __user *buf, int size, bool clear)
  		clear_seq = log_next_seq;
  		clear_idx = log_next_idx;
  	}
@@ -77,3 +78,6 @@ index 1935cf91db0c..3b0f90ace2f1 100644
  	logbuf_unlock_irq();
  
  	kfree(text);
+-- 
+2.24.1
+

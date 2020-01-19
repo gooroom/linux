@@ -1,7 +1,8 @@
+From aef8aedf3ea12fb22a6f2b340a3f6bd4aacac4e0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 22 Mar 2019 17:15:58 +0100
 Subject: [PATCH 264/290] powerpc: reshuffle TIF bits
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=02293a0f686ec8fb1f177452b08491a6a6fecbb3
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
 
 Powerpc32/64 does not compile because TIF_SYSCALL_TRACE's bit is higher
 than 15 and the assembly instructions don't expect that.
@@ -59,7 +60,7 @@ diff --git a/arch/powerpc/kernel/entry_32.S b/arch/powerpc/kernel/entry_32.S
 index 3783f3ef17a4..44bcf1585bd1 100644
 --- a/arch/powerpc/kernel/entry_32.S
 +++ b/arch/powerpc/kernel/entry_32.S
-@@ -393,7 +393,9 @@ _GLOBAL(DoSyscall)
+@@ -393,7 +393,9 @@ ret_from_syscall:
  	MTMSRD(r10)
  	lwz	r9,TI_FLAGS(r12)
  	li	r8,-MAX_ERRNO
@@ -70,7 +71,7 @@ index 3783f3ef17a4..44bcf1585bd1 100644
  	bne-	syscall_exit_work
  	cmplw	0,r3,r8
  	blt+	syscall_exit_cont
-@@ -511,13 +513,13 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRED_STWCX)
+@@ -511,13 +513,13 @@ syscall_dotrace:
  	b	syscall_dotrace_cont
  
  syscall_exit_work:
@@ -86,7 +87,7 @@ index 3783f3ef17a4..44bcf1585bd1 100644
  	bne-	1f
  	lwz	r11,_CCR(r1)			/* Load CR */
  	neg	r3,r3
-@@ -526,12 +528,12 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRED_STWCX)
+@@ -526,12 +528,12 @@ syscall_exit_work:
  
  1:	stw	r6,RESULT(r1)	/* Save result */
  	stw	r3,GPR3(r1)	/* Update return value */
@@ -102,10 +103,10 @@ index 3783f3ef17a4..44bcf1585bd1 100644
  3:	lwarx	r8,0,r12
  	andc	r8,r8,r11
 diff --git a/arch/powerpc/kernel/entry_64.S b/arch/powerpc/kernel/entry_64.S
-index 7671fa5da9fa..fe713d014220 100644
+index ef02e41d5d96..229cdb04e9b0 100644
 --- a/arch/powerpc/kernel/entry_64.S
 +++ b/arch/powerpc/kernel/entry_64.S
-@@ -250,7 +250,9 @@ system_call:			/* label this so stack traces look sane */
+@@ -250,7 +250,9 @@ system_call_exit:
  
  	ld	r9,TI_FLAGS(r12)
  	li	r11,-MAX_ERRNO
@@ -146,3 +147,6 @@ index 7671fa5da9fa..fe713d014220 100644
  	addi	r12,r12,TI_FLAGS
  3:	ldarx	r10,0,r12
  	andc	r10,r10,r11
+-- 
+2.24.1
+

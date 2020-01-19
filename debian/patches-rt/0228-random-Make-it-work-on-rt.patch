@@ -1,7 +1,8 @@
+From 56f7ebec5cf501075c40f3d7ff1283a3279f88ca Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
 Subject: [PATCH 228/290] random: Make it work on rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f07a155615d469ecdfbbe7236f9f2c32f694035c
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -20,7 +21,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 26 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 0a84b7f468ad..75ae2d9e8720 100644
+index 86fe1df90239..468a128c8ad8 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -1232,28 +1232,27 @@ static __u32 get_reg(struct fast_pool *f, struct pt_regs *regs)
@@ -58,7 +59,7 @@ index 0a84b7f468ad..75ae2d9e8720 100644
  	fast_mix(fast_pool);
  	add_interrupt_bench(cycles);
 diff --git a/drivers/hv/hv.c b/drivers/hv/hv.c
-index 8e923e70e594..e77716a62351 100644
+index 12bc9fa21111..278f03f50147 100644
 --- a/drivers/hv/hv.c
 +++ b/drivers/hv/hv.c
 @@ -112,10 +112,12 @@ int hv_post_message(union hv_connection_id connection_id,
@@ -161,3 +162,6 @@ index 5701774a6d71..ce86341a9e19 100644
  		wake_threads_waitq(desc);
  	}
  
+-- 
+2.24.1
+

@@ -1,7 +1,8 @@
+From e4cba91598b3be3d6bcadce513ffd80041895d70 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
 Subject: [PATCH 241/290] x86: Support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=fb1ac4d42675612d93fdf5915eb3ee4e0a65b1b0
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
 
 Implement the x86 pieces for lazy preempt.
 
@@ -17,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 79 insertions(+), 3 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1b05ae86bdde..736e369e141b 100644
+index f22e787329cf..a56f57f95993 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -180,6 +180,7 @@ config X86
@@ -84,7 +85,7 @@ diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
 index 7ffd83c57ef2..663a99f6320f 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -732,7 +732,23 @@ GLOBAL(swapgs_restore_regs_and_return_to_usermode)
+@@ -732,7 +732,23 @@ retint_kernel:
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
@@ -234,3 +235,6 @@ index 01de31db300d..ce1c5b9fbd8c 100644
  
  	/* TLB state for the entry code */
  	OFFSET(TLB_STATE_user_pcid_flush_mask, tlb_state, user_pcid_flush_mask);
+-- 
+2.24.1
+
