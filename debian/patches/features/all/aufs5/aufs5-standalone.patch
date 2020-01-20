@@ -1,13 +1,10 @@
 From: J. R. Okajima <hooanon05@yahoo.co.jp>
-Date: Tue Sep 3 18:57:39 2019 +0900
+Date: Sat Jan 18 08:39:36 2020 +0900
 Subject: aufs5.x-rcN standalone patch
-Origin: https://github.com/sfjro/aufs5-standalone/tree/b7cf1e7560f30c37de4674a8249ca24ad926d5d6
+Origin: https://github.com/sfjro/aufs5-standalone/tree/3d29dbdc3205e8958c3d78237dff8703014d34ea
 Bug-Debian: https://bugs.debian.org/541828
 
-Patch headers added by debian/bin/genpatch-aufs. This patch collides with the
-upstream code base, so it has been updated to remove the export of the symbol
-__devcgroup_check_permission in security/device_cgroup.c (the symbol is no longer
-global, it is static now).
+Patch headers added by debian/bin/genpatch-aufs
 
 SPDX-License-Identifier: GPL-2.0
 aufs5.x-rcN standalone patch
@@ -45,10 +42,10 @@ index 74d88dab98dd..71eb4fcace94 100644
  #ifdef CONFIG_USELIB
  /*
 diff --git a/fs/fcntl.c b/fs/fcntl.c
-index c01290dcb893..113ccee10a97 100644
+index b0935c67bd1e..07251ba86c31 100644
 --- a/fs/fcntl.c
 +++ b/fs/fcntl.c
-@@ -85,6 +85,7 @@ int setfl(int fd, struct file * filp, unsigned long arg)
+@@ -85,6 +85,7 @@ int setfl(int fd, struct file *filp, unsigned long arg)
   out:
  	return error;
  }
@@ -77,10 +74,10 @@ index 30d55c9a1744..34b9bbf4c556 100644
  void __init files_init(void)
  {
 diff --git a/fs/inode.c b/fs/inode.c
-index aaeacde398ee..5be87f2d3828 100644
+index 31796c1040d6..217169541ac4 100644
 --- a/fs/inode.c
 +++ b/fs/inode.c
-@@ -1682,6 +1682,7 @@ int update_time(struct inode *inode, struct timespec64 *time, int flags)
+@@ -1689,6 +1689,7 @@ int update_time(struct inode *inode, struct timespec64 *time, int flags)
  
  	return update_time(inode, time, flags);
  }
@@ -89,7 +86,7 @@ index aaeacde398ee..5be87f2d3828 100644
  /**
   *	touch_atime	-	update the access time
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 5575ea7f1361..5a37cc5b92f0 100644
+index c05ac2488abb..100b7839c8b0 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -431,6 +431,7 @@ void __mnt_drop_write(struct vfsmount *mnt)
@@ -141,7 +138,7 @@ index b62f5c0923a8..89af4b9c7319 100644
  long vfs_truncate(const struct path *path, loff_t length)
  {
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 3265bb84f152..5b2dbddb0efe 100644
+index fa9b3994b34c..eb0e2c6ebaff 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -468,6 +468,7 @@ ssize_t vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos)
@@ -154,7 +151,7 @@ index 3265bb84f152..5b2dbddb0efe 100644
  {
 @@ -508,6 +509,7 @@ vfs_readf_t vfs_readf(struct file *file)
  		return new_sync_read;
- 	return ERR_PTR(-ENOSYS);
+ 	return ERR_PTR(-ENOSYS); /* doesn't have ->read(|_iter)() op */
  }
 +EXPORT_SYMBOL_GPL(vfs_readf);
  
@@ -162,7 +159,7 @@ index 3265bb84f152..5b2dbddb0efe 100644
  {
 @@ -519,6 +521,7 @@ vfs_writef_t vfs_writef(struct file *file)
  		return new_sync_write;
- 	return ERR_PTR(-ENOSYS);
+ 	return ERR_PTR(-ENOSYS); /* doesn't have ->write(|_iter)() op */
  }
 +EXPORT_SYMBOL_GPL(vfs_writef);
  
@@ -309,6 +306,3 @@ index cd2d18d2d279..fbf716450399 100644
  
  int security_file_alloc(struct file *file)
  {
--- 
-2.24.0
-
