@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.4/older/patches-5.4.13-rt6.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.4/older/patches-5.4.13-rt7.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -484,7 +484,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2335,6 +2335,7 @@ tracing_generic_entry_update(struct trac
+@@ -2341,6 +2341,7 @@ tracing_generic_entry_update(struct trac
  	struct task_struct *tsk = current;
  
  	entry->preempt_count		= pc & 0xff;
@@ -492,7 +492,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	entry->pid			= (tsk) ? tsk->pid : 0;
  	entry->type			= type;
  	entry->flags =
-@@ -2346,7 +2347,8 @@ tracing_generic_entry_update(struct trac
+@@ -2352,7 +2353,8 @@ tracing_generic_entry_update(struct trac
  		((pc & NMI_MASK    ) ? TRACE_FLAG_NMI     : 0) |
  		((pc & HARDIRQ_MASK) ? TRACE_FLAG_HARDIRQ : 0) |
  		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
@@ -502,7 +502,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3575,15 +3577,17 @@ unsigned long trace_total_entries(struct
+@@ -3581,15 +3583,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -529,7 +529,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3619,11 +3623,12 @@ static void print_func_help_header_irq(s
+@@ -3625,11 +3629,12 @@ static void print_func_help_header_irq(s
  
  	seq_printf(m, "#                          %.*s  _-----=> irqs-off\n", prec, space);
  	seq_printf(m, "#                          %.*s / _----=> need-resched\n", prec, space);
