@@ -203,18 +203,29 @@ class Gencontrol(Base):
             packages_meta = self.process_packages(
                 self.templates['control.image.meta'], vars)
             assert len(packages_meta) == 1
+            packages_meta += self.process_packages(
+                self.templates['control.headers.meta'], vars)
+            assert len(packages_meta) == 2
 
             # Don't pretend to support build-profiles
-            del packages_meta[0]['Build-Profiles']
+            for package in packages_meta:
+                del package['Build-Profiles']
 
             packages_own.extend(packages_meta)
-            cmds_binary_arch += ["$(MAKE) -f debian/rules.real install-meta "
-                                 "PACKAGE_NAME='%s' %s" %
-                                 (packages_meta[0]['Package'], makeflags)]
+            cmds_binary_arch += [
+                "$(MAKE) -f debian/rules.real install-meta "
+                "PACKAGE_NAME='%s' LINK_DOC_PACKAGE_NAME='%s' %s" %
+                (package['Package'], package['Depends'][0][0].name, makeflags)
+                for package in packages_meta
+            ]
 
             self.substitute_debhelper_config(
                 'image.meta', vars,
                 'linux-image%(localversion)s' % vars,
+                output_dir=self.template_debian_dir)
+            self.substitute_debhelper_config(
+                'headers.meta', vars,
+                'linux-headers%(localversion)s' % vars,
                 output_dir=self.template_debian_dir)
 
         merge_packages(packages, packages_own, arch)
