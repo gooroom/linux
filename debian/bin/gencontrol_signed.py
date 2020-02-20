@@ -246,9 +246,9 @@ class Gencontrol(Base):
         self.write_files_json()
 
     def write_changelog(self):
-        # We need to insert a new version entry.
-        # Take the distribution and urgency from the linux changelog, and
-        # the base version from the changelog template.
+        # Copy the linux changelog, but:
+        # * Change the source package name and version
+        # * Insert a line to refer to refer to the linux source version
         vars = self.vars.copy()
         vars['source'] = self.changelog[0].source
         vars['distribution'] = self.changelog[0].distribution
