@@ -253,8 +253,9 @@ class Gencontrol(Base):
         vars['source'] = self.changelog[0].source
         vars['distribution'] = self.changelog[0].distribution
         vars['urgency'] = self.changelog[0].urgency
-        vars['signedsourceversion'] = (re.sub(r'-', r'+',
-                                              vars['imagebinaryversion']))
+        vars['signedsourceversion'] = \
+            re.sub(r'\+b(\d+)$', r'.b\1',
+                   re.sub(r'-', r'+', vars['imagebinaryversion']))
 
         with codecs.open(self.template_debian_dir + '/changelog', 'w',
                          'utf-8') as f:
