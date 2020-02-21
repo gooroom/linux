@@ -1,8 +1,8 @@
-From 6b96ba989ad06199b33100cf7469ebeae299a21e Mon Sep 17 00:00:00 2001
+From adff1f0eed6261cb8fac1f3d4db49d51021df637 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 206/290] irqwork: push most work into softirq context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
+Subject: [PATCH 206/319] irqwork: push most work into softirq context
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -235,10 +235,10 @@ index 74b694392f2f..fb4d11bab6b7 100644
  
  	init_dl_bw(&rd->dl_bw);
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 6482945f8ae8..da4a3f8feb56 100644
+index 2b0ddd50e879..4d31ec98e968 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -232,6 +232,7 @@ static void nohz_full_kick_func(struct irq_work *work)
+@@ -236,6 +236,7 @@ static void nohz_full_kick_func(struct irq_work *work)
  
  static DEFINE_PER_CPU(struct irq_work, nohz_full_kick_work) = {
  	.func = nohz_full_kick_func,
@@ -260,5 +260,5 @@ index 3fab1c50bf1b..2fcd56aa6092 100644
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
 -- 
-2.24.1
+2.25.0
 

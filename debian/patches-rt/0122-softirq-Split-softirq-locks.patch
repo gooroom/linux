@@ -1,8 +1,8 @@
-From e530715caf9839d15d550ed5ed57d4d928ca3806 Mon Sep 17 00:00:00 2001
+From d4f1824f0a5dd2cc42903658466ff80436616fc7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 122/290] softirq: Split softirq locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
+Subject: [PATCH 122/319] softirq: Split softirq locks
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -178,7 +178,7 @@ index 9984f2b75b73..27c3176d88d2 100644
  #define in_task()		(!(preempt_count() & \
  				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c073a3273beb..baa5fceea0ff 100644
+index f180bfadff33..f4ff928e6be3 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1198,6 +1198,8 @@ struct task_struct {
@@ -808,10 +808,10 @@ index 1d3a482246cc..fd89f8ab85ac 100644
  	.thread_fn		= run_ksoftirqd,
  	.thread_comm		= "ksoftirqd/%u",
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index c217af74dddf..6482945f8ae8 100644
+index 012bc81879bf..2b0ddd50e879 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -891,14 +891,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
+@@ -895,14 +895,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
  		return false;
  
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {
@@ -828,5 +828,5 @@ index c217af74dddf..6482945f8ae8 100644
  	}
  
 -- 
-2.24.1
+2.25.0
 

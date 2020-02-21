@@ -1,8 +1,8 @@
-From 64754a230b30e0beeda510f8a0dfcf82075166a7 Mon Sep 17 00:00:00 2001
+From f831a4cdf836e6ecd9d579c32b5cf7af54df9b89 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 106/290] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
+Subject: [PATCH 106/319] sched: Move task_struct cleanup to RCU
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index ba37d39d5c6b..a1ef00db6baa 100644
+index a90b6be626cd..0b8850b6093b 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1194,6 +1194,9 @@ struct task_struct {
@@ -58,10 +58,10 @@ index 44c6f15800ff..d2b33e57c636 100644
  
  #ifdef CONFIG_ARCH_WANTS_DYNAMIC_TASK_STRUCT
 diff --git a/kernel/fork.c b/kernel/fork.c
-index b3744a043f46..4b85282d9a07 100644
+index ccfcd44a370f..309f4a20d4ac 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -666,7 +666,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
+@@ -676,7 +676,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
  	if (atomic_dec_and_test(&sig->sigcnt))
  		free_signal_struct(sig);
  }
@@ -72,7 +72,7 @@ index b3744a043f46..4b85282d9a07 100644
  void __put_task_struct(struct task_struct *tsk)
  {
  	WARN_ON(!tsk->exit_state);
-@@ -683,7 +685,18 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -693,7 +695,18 @@ void __put_task_struct(struct task_struct *tsk)
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
  }
@@ -92,5 +92,5 @@ index b3744a043f46..4b85282d9a07 100644
  void __init __weak arch_task_cache_init(void) { }
  
 -- 
-2.24.1
+2.25.0
 

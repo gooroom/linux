@@ -1,8 +1,8 @@
-From 558647aa05135aa727be9198f29a041686e683af Mon Sep 17 00:00:00 2001
+From 0c8cd26ab04b1cb1503429536154336d3a92f1b5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 190/290] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.94-rt38.tar.xz
+Subject: [PATCH 190/319] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -98,10 +98,10 @@ index 6244345a5745..7ee10b7cc808 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 914178cdbe94..2a8c41bc227f 100644
+index c00a7e1da4c0..742e7935f777 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -1645,7 +1645,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1646,7 +1646,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  {
  	struct dentry *dentry, *old;
  	struct inode *inode = dir->d_inode;
@@ -110,7 +110,7 @@ index 914178cdbe94..2a8c41bc227f 100644
  
  	/* Don't go there if it's already dead */
  	if (unlikely(IS_DEADDIR(inode)))
-@@ -3135,7 +3135,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3136,7 +3136,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -120,10 +120,10 @@ index 914178cdbe94..2a8c41bc227f 100644
  	if (unlikely(IS_DEADDIR(dir_inode)))
  		return -ENOENT;
 diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index 17f8a9259971..6642f0c321ef 100644
+index c60b20884c45..7e653c14c7ed 100644
 --- a/fs/nfs/dir.c
 +++ b/fs/nfs/dir.c
-@@ -445,7 +445,7 @@ static
+@@ -457,7 +457,7 @@ static
  void nfs_prime_dcache(struct dentry *parent, struct nfs_entry *entry)
  {
  	struct qstr filename = QSTR_INIT(entry->name, entry->len);
@@ -132,7 +132,7 @@ index 17f8a9259971..6642f0c321ef 100644
  	struct dentry *dentry;
  	struct dentry *alias;
  	struct inode *dir = d_inode(parent);
-@@ -1495,7 +1495,7 @@ int nfs_atomic_open(struct inode *dir, struct dentry *dentry,
+@@ -1516,7 +1516,7 @@ int nfs_atomic_open(struct inode *dir, struct dentry *dentry,
  		    struct file *file, unsigned open_flags,
  		    umode_t mode)
  {
@@ -237,5 +237,5 @@ index c7cb30cdd1b7..119a56d7f739 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.24.1
+2.25.0
 
