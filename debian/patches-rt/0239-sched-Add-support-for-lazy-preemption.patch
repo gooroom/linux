@@ -1,8 +1,8 @@
-From 0ad958c36369da7e5c381970cd63af00b313454f Mon Sep 17 00:00:00 2001
+From b4aa63613da31452e5bf88d2a20f1349070b9c9e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 239/319] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -245,7 +245,7 @@ index 907d72b3ba95..306567f72a3e 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index c8631e699ce2..00dac381da2e 100644
+index 948fbcc4d63c..1541189f417b 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -304,11 +304,13 @@ void pin_current_cpu(void)

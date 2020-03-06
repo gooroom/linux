@@ -1,9 +1,9 @@
-From f4a30ca23f3c352dd834d9cd398022ece0fadd1e Mon Sep 17 00:00:00 2001
+From 11c94409951908175bc4fab549d79ee48bcbc102 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 101/319] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -220,10 +220,10 @@ index e774a49176cc..012bc81879bf 100644
  
  	/* Get the next period (per-CPU) */
 diff --git a/kernel/watchdog.c b/kernel/watchdog.c
-index bbc4940f21af..defd493ba967 100644
+index 6d60701dc636..328620fe85f6 100644
 --- a/kernel/watchdog.c
 +++ b/kernel/watchdog.c
-@@ -483,7 +483,7 @@ static void watchdog_enable(unsigned int cpu)
+@@ -485,7 +485,7 @@ static void watchdog_enable(unsigned int cpu)
  	 * Start the timer first to prevent the NMI watchdog triggering
  	 * before the timer has a chance to fire.
  	 */

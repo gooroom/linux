@@ -1,8 +1,8 @@
-From 42a1f80a938e51bf524f063180ef2bca3a4ed31b Mon Sep 17 00:00:00 2001
+From 56caa7a47c76572041391ca1b27a68b637539aa3 Mon Sep 17 00:00:00 2001
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
 Subject: [PATCH 312/319] sched: Lazy migrate_disable processing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -121,7 +121,7 @@ index 9e3362748214..4e5af4616dbd 100644
  	.active_mm	= &init_mm,
  	.restart_block	= {
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 7170fbd35a22..5366c8c69c2f 100644
+index 0d50ae262898..2834eed32b55 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -75,11 +75,6 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
@@ -194,7 +194,7 @@ index 7170fbd35a22..5366c8c69c2f 100644
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
  
  void cpus_read_lock(void)
-@@ -866,6 +810,15 @@ static int take_cpu_down(void *_param)
+@@ -865,6 +809,15 @@ static int take_cpu_down(void *_param)
  	int err, cpu = smp_processor_id();
  	int ret;
  
@@ -210,7 +210,7 @@ index 7170fbd35a22..5366c8c69c2f 100644
  	/* Ensure this CPU doesn't handle any more interrupts. */
  	err = __cpu_disable();
  	if (err < 0)
-@@ -893,11 +846,10 @@ static int take_cpu_down(void *_param)
+@@ -892,11 +845,10 @@ static int take_cpu_down(void *_param)
  	return 0;
  }
  
@@ -224,7 +224,7 @@ index 7170fbd35a22..5366c8c69c2f 100644
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -910,17 +862,38 @@ static int takedown_cpu(unsigned int cpu)
+@@ -909,17 +861,38 @@ static int takedown_cpu(unsigned int cpu)
  	 */
  	irq_lock_sparse();
  
@@ -267,7 +267,7 @@ index 7170fbd35a22..5366c8c69c2f 100644
  #endif
  		/* CPU refused to die */
  		irq_unlock_sparse();
-@@ -940,8 +913,8 @@ static int takedown_cpu(unsigned int cpu)
+@@ -939,8 +912,8 @@ static int takedown_cpu(unsigned int cpu)
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  

@@ -1,8 +1,8 @@
-From 1c0db07bc0ea85302c4b3868933f4042f470d19e Mon Sep 17 00:00:00 2001
+From 678bc8b1f66cac6073d0272788cb512333ae36a2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 4 Aug 2017 18:31:00 +0200
 Subject: [PATCH 231/319] hotplug: duct-tape RT-rwlock usage for non-RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 This type is only available on -RT. We need to craft something for
 non-RT. Since the only migrate_disable() user is -RT only, there is no
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index e6c2d814f7f9..c8631e699ce2 100644
+index e005e64ae30f..948fbcc4d63c 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -75,7 +75,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
@@ -58,7 +58,7 @@ index e6c2d814f7f9..c8631e699ce2 100644
  }
  
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
-@@ -887,7 +891,9 @@ static int take_cpu_down(void *_param)
+@@ -886,7 +890,9 @@ static int take_cpu_down(void *_param)
  
  static int takedown_cpu(unsigned int cpu)
  {
@@ -68,7 +68,7 @@ index e6c2d814f7f9..c8631e699ce2 100644
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -900,14 +906,18 @@ static int takedown_cpu(unsigned int cpu)
+@@ -899,14 +905,18 @@ static int takedown_cpu(unsigned int cpu)
  	 */
  	irq_lock_sparse();
  
@@ -87,7 +87,7 @@ index e6c2d814f7f9..c8631e699ce2 100644
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -926,7 +936,9 @@ static int takedown_cpu(unsigned int cpu)
+@@ -925,7 +935,9 @@ static int takedown_cpu(unsigned int cpu)
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  

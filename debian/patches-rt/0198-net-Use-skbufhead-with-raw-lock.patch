@@ -1,8 +1,8 @@
-From c2a100b10eef0a1804cbc466d4d900c5fa02b31c Mon Sep 17 00:00:00 2001
+From ac577d42ef159cea2e3512a52c9dbc43de1c7c5d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 198/319] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -53,7 +53,7 @@ index 25407c206e73..d4d7aea13cc6 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c9e199232f21..0e70f9a8dcc9 100644
+index b754adb14205..985d1f703383 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -218,14 +218,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)

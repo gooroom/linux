@@ -1,8 +1,8 @@
-From 4e1827d4c8a215eabba854198f63f395e9a86177 Mon Sep 17 00:00:00 2001
+From afeabb59361466c6e88b4e95603508d7375f4aeb Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Jun 2017 19:03:16 +0200
 Subject: [PATCH 123/319] net/core: use local_bh_disable() in netif_rx_ni()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 In 2004 netif_rx_ni() gained a preempt_disable() section around
 netif_rx() and its do_softirq() + testing for it. The do_softirq() part
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 77a757b363d1..c9e199232f21 100644
+index 45ff62d35a1f..b754adb14205 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -4529,11 +4529,9 @@ int netif_rx_ni(struct sk_buff *skb)

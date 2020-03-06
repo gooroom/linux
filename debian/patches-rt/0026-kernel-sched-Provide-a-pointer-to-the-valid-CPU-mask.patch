@@ -1,4 +1,4 @@
-From 489a86a9a99c1385e72e12322642def91e35cadb Mon Sep 17 00:00:00 2001
+From 4906d6c574d916416e92a9de0b959c4d0ed0bc17 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
 Subject: [PATCH 026/319] kernel: sched: Provide a pointer to the valid CPU
@@ -6,7 +6,7 @@ Subject: [PATCH 026/319] kernel: sched: Provide a pointer to the valid CPU
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.103-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.106-rt44.tar.xz
 
 In commit 4b53a3412d66 ("sched/core: Remove the tsk_nr_cpus_allowed()
 wrapper") the tsk_nr_cpus_allowed() wrapper was removed. There was not
@@ -179,10 +179,10 @@ index a999a58ca331..d6410d0740ea 100644
  		return -EINVAL;
  	}
 diff --git a/drivers/infiniband/hw/hfi1/affinity.c b/drivers/infiniband/hw/hfi1/affinity.c
-index bedd5fba33b0..3f4259f11a35 100644
+index 01ed0a667928..2c62de6b5bf1 100644
 --- a/drivers/infiniband/hw/hfi1/affinity.c
 +++ b/drivers/infiniband/hw/hfi1/affinity.c
-@@ -1037,7 +1037,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -1039,7 +1039,7 @@ int hfi1_get_proc_affinity(int node)
  	struct hfi1_affinity_node *entry;
  	cpumask_var_t diff, hw_thread_mask, available_mask, intrs_mask;
  	const struct cpumask *node_mask,
@@ -191,7 +191,7 @@ index bedd5fba33b0..3f4259f11a35 100644
  	struct hfi1_affinity_node_list *affinity = &node_affinity;
  	struct cpu_mask_set *set = &affinity->proc;
  
-@@ -1045,7 +1045,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -1047,7 +1047,7 @@ int hfi1_get_proc_affinity(int node)
  	 * check whether process/context affinity has already
  	 * been set
  	 */
@@ -200,7 +200,7 @@ index bedd5fba33b0..3f4259f11a35 100644
  		hfi1_cdbg(PROC, "PID %u %s affinity set to CPU %*pbl",
  			  current->pid, current->comm,
  			  cpumask_pr_args(proc_mask));
-@@ -1056,7 +1056,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -1058,7 +1058,7 @@ int hfi1_get_proc_affinity(int node)
  		cpu = cpumask_first(proc_mask);
  		cpumask_set_cpu(cpu, &set->used);
  		goto done;
