@@ -1,8 +1,8 @@
 From: "Jason A. Donenfeld" <Jason@zx2c4.com>
 Date: Sun, 5 Jan 2020 22:40:48 -0500
-Subject: [PATCH 05/10] crypto: x86/poly1305 - wire up faster implementations
- for kernel
-Origin: https://git.kernel.org/linus/d7d7b853566254648df59f7ea27ea05952a6cfa8
+Subject: [03/11] crypto: x86/poly1305 - wire up faster implementations for
+ kernel
+Origin: https://git.zx2c4.com/wireguard-linux/commit?id=c9f0601c4fc5ad4e5d2232acaaa0f1a465a033df
 Bug-Debian: https://bugs.debian.org/953569
 
 These x86_64 vectorized implementations support AVX, AVX-2, and AVX512F.
@@ -109,9 +109,9 @@ Signed-off-by: Jason A. Donenfeld <Jason@zx2c4.com>
 Signed-off-by: Samuel Neves <sneves@dei.uc.pt>
 Co-developed-by: Samuel Neves <sneves@dei.uc.pt>
 Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
-[fold in commit:
- f9e7fe32a792726186301423ff63a465d63386e1 crypto: x86/poly1305 - emit does base conversion itself
-]
+[bwh: commits d7d7b853566254648df59f7ea27ea05952a6cfa8 and
+ f9e7fe32a792726186301423ff63a465d63386e1 "crypto: x86/poly1305 - emit does base conversion itself"
+ upstream]
 ---
  arch/x86/crypto/.gitignore                    |   1 +
  arch/x86/crypto/Makefile                      |  11 +-
@@ -1363,7 +1363,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	xor	%rax,%rax
  	mov	%rax,0($ctx)		# initialize hash value
  	mov	%rax,8($ctx)
-@@ -175,11 +253,12 @@ poly1305_init:
+@@ -175,11 +253,12 @@ $code.=<<___;
  
  	cmp	\$0,$inp
  	je	.Lno_key
@@ -1425,7 +1425,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .cfi_startproc
  .Lblocks:
  	shr	\$4,$len
-@@ -231,8 +310,6 @@ poly1305_blocks:
+@@ -231,8 +310,6 @@ $code.=<<___;
  
  	push	%rbx
  .cfi_push	%rbx
@@ -1434,7 +1434,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	push	%r12
  .cfi_push	%r12
  	push	%r13
-@@ -241,6 +318,8 @@ poly1305_blocks:
+@@ -241,6 +318,8 @@ $code.=<<___;
  .cfi_push	%r14
  	push	%r15
  .cfi_push	%r15
@@ -1443,7 +1443,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .Lblocks_body:
  
  	mov	$len,%r15		# reassign $len
-@@ -265,26 +344,29 @@ poly1305_blocks:
+@@ -265,26 +344,29 @@ $code.=<<___;
  	lea	16($inp),$inp
  	adc	$padbit,$h2
  ___
@@ -1495,7 +1495,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .Lemit:
  	mov	0($ctx),%r8	# load hash value
  	mov	8($ctx),%r9
-@@ -318,10 +400,14 @@ poly1305_emit:
+@@ -318,10 +400,14 @@ $code.=<<___;
  	mov	%rcx,8($mac)
  
  	ret
@@ -1531,7 +1531,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	mov	$r0,$h0
  	mov	$r1,$h1
  	xor	$h2,$h2
-@@ -507,12 +597,13 @@ __poly1305_init_avx:
+@@ -507,12 +597,13 @@ $code.=<<___;
  	mov	$d1#d,`16*8+8-64`($ctx)
  
  	lea	-48-64($ctx),$ctx	# size [de-]optimization
@@ -1548,7 +1548,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .cfi_startproc
  	mov	20($ctx),%r8d		# is_base2_26
  	cmp	\$128,$len
-@@ -532,10 +623,11 @@ poly1305_blocks_avx:
+@@ -532,10 +623,11 @@ $code.=<<___;
  	test	\$31,$len
  	jz	.Leven_avx
  
@@ -1562,7 +1562,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	push	%r12
  .cfi_push	%r12
  	push	%r13
-@@ -645,20 +737,18 @@ poly1305_blocks_avx:
+@@ -645,20 +737,18 @@ $code.=<<___;
  	mov	$h2#d,16($ctx)
  .align	16
  .Ldone_avx:
@@ -1590,7 +1590,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .Lno_data_avx:
  .Lblocks_avx_epilogue:
  	ret
-@@ -667,10 +757,11 @@ poly1305_blocks_avx:
+@@ -667,10 +757,11 @@ $code.=<<___;
  .align	32
  .Lbase2_64_avx:
  .cfi_startproc
@@ -1604,7 +1604,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	push	%r12
  .cfi_push	%r12
  	push	%r13
-@@ -736,22 +827,18 @@ poly1305_blocks_avx:
+@@ -736,22 +827,18 @@ $code.=<<___;
  
  .Lproceed_avx:
  	mov	%r15,$len
@@ -1634,7 +1634,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  .Lbase2_64_avx_epilogue:
  	jmp	.Ldo_avx
  .cfi_endproc
-@@ -768,8 +855,11 @@ poly1305_blocks_avx:
+@@ -768,8 +855,11 @@ $code.=<<___;
  .Ldo_avx:
  ___
  $code.=<<___	if (!$win64);
@@ -1672,7 +1672,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	cmpl	\$0,20($ctx)	# is_base2_26?
  	je	.Lemit
  
-@@ -1423,41 +1513,51 @@ poly1305_emit_avx:
+@@ -1423,41 +1513,51 @@ $code.=<<___;
  	mov	%rcx,8($mac)
  
  	ret
@@ -1735,7 +1735,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	push	%r12
  .cfi_push	%r12
  	push	%r13
-@@ -1466,7 +1566,7 @@ poly1305_blocks_avx2:
+@@ -1466,7 +1566,7 @@ $code.=<<___;
  .cfi_push	%r14
  	push	%r15
  .cfi_push	%r15
@@ -1744,7 +1744,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  
  	mov	$len,%r15		# reassign $len
  
-@@ -1513,7 +1613,7 @@ poly1305_blocks_avx2:
+@@ -1513,7 +1613,7 @@ $code.=<<___;
  	shr	\$2,$s1
  	add	$r1,$s1			# s1 = r1 + (r1 >> 2)
  
@@ -1753,7 +1753,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	add	0($inp),$h0		# accumulate input
  	adc	8($inp),$h1
  	lea	16($inp),$inp
-@@ -1524,10 +1624,10 @@ poly1305_blocks_avx2:
+@@ -1524,10 +1624,10 @@ $code.=<<___;
  	mov	$r1,%rax
  
  	test	\$63,%r15
@@ -1766,7 +1766,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  
  	################################# base 2^64 -> base 2^26
  	mov	$h0,%rax
-@@ -1548,57 +1648,56 @@ poly1305_blocks_avx2:
+@@ -1548,57 +1648,56 @@ $code.=<<___;
  	or	$r1,$h2			# h[4]
  
  	test	%r15,%r15
@@ -1843,7 +1843,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	push	%r12
  .cfi_push	%r12
  	push	%r13
-@@ -1607,7 +1706,7 @@ poly1305_blocks_avx2:
+@@ -1607,7 +1706,7 @@ $code.=<<___;
  .cfi_push	%r14
  	push	%r15
  .cfi_push	%r15
@@ -1852,7 +1852,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  
  	mov	$len,%r15		# reassign $len
  
-@@ -1624,9 +1723,9 @@ poly1305_blocks_avx2:
+@@ -1624,9 +1723,9 @@ $code.=<<___;
  	add	$r1,$s1			# s1 = r1 + (r1 >> 2)
  
  	test	\$63,$len
@@ -1864,7 +1864,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	add	0($inp),$h0		# accumulate input
  	adc	8($inp),$h1
  	lea	16($inp),$inp
-@@ -1637,9 +1736,9 @@ poly1305_blocks_avx2:
+@@ -1637,9 +1736,9 @@ $code.=<<___;
  	mov	$r1,%rax
  
  	test	\$63,%r15
@@ -1876,7 +1876,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  	################################# base 2^64 -> base 2^26
  	mov	$h0,%rax
  	mov	$h0,%rdx
-@@ -1667,69 +1766,77 @@ poly1305_blocks_avx2:
+@@ -1667,69 +1766,77 @@ $code.=<<___;
  
  	call	__poly1305_init_avx
  
@@ -2203,7 +2203,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  ########################################################################
  # VPMADD52 version using 2^44 radix.
  #
-@@ -3753,45 +3881,9 @@ poly1305_emit_base2_44:
+@@ -3753,45 +3881,9 @@ $code.=<<___;
  .size	poly1305_emit_base2_44,.-poly1305_emit_base2_44
  ___
  }	}	}
@@ -2250,7 +2250,7 @@ index 342ad7f18aa7..7a6b5380a46f 100644
  {	# chacha20-poly1305 helpers
  my ($out,$inp,$otp,$len)=$win64 ? ("%rcx","%rdx","%r8", "%r9") :  # Win64 order
                                    ("%rdi","%rsi","%rdx","%rcx");  # Unix order
-@@ -4038,17 +4130,17 @@ avx_handler:
+@@ -4038,17 +4130,17 @@ $code.=<<___;
  
  .section	.pdata
  .align	4
@@ -2928,6 +2928,3 @@ index 0b2c4fce26d9..14c032de276e 100644
  	default 9 if ARM || ARM64
  	default 1
  
--- 
-2.25.1
-
