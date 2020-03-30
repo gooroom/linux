@@ -8,11 +8,9 @@ Origin: https://github.com/mjg59/linux/commit/02d999574936dd234a508c0112a0200c13
  arch/x86/boot/compressed/eboot.c | 22 ++++++++++++++++++++++
  1 file changed, 22 insertions(+)
 
-diff --git a/arch/x86/boot/compressed/eboot.c b/arch/x86/boot/compressed/eboot.c
-index 8b4c5e001157..0813490ca6e0 100644
 --- a/arch/x86/boot/compressed/eboot.c
 +++ b/arch/x86/boot/compressed/eboot.c
-@@ -371,6 +371,22 @@ void setup_graphics(struct boot_params *boot_params)
+@@ -343,6 +343,22 @@ void setup_graphics(struct boot_params *
  	}
  }
  
@@ -32,19 +30,19 @@ index 8b4c5e001157..0813490ca6e0 100644
 +			EFI_VARIABLE_RUNTIME_ACCESS, sizeof(val), val);
 +}
 +
- /*
-  * Because the x86 boot code expects to be passed a boot_params we
-  * need to create one ourselves (usually the bootloader would create
-@@ -765,6 +781,12 @@ efi_main(struct efi_config *c, struct boot_params *boot_params)
- 			 ((u64)boot_params->ext_cmd_line_ptr << 32));
+ void startup_32(struct boot_params *boot_params);
+ 
+ void __noreturn efi_stub_entry(efi_handle_t handle,
+@@ -734,6 +750,12 @@ struct boot_params *efi_main(efi_handle_
  	efi_parse_options((char *)cmdline_paddr);
  
-+	/*
+ 	/*
 +	 * Ask the firmware to clear memory if we don't have a clean
 +	 * shutdown
 +	 */
 +	enable_reset_attack_mitigation();
 +
- 	/*
++	/*
  	 * If the boot loader gave us a value for secure_boot then we use that,
  	 * otherwise we ask the BIOS.
+ 	 */
