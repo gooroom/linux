@@ -35,7 +35,8 @@ class Symbols(dict):
 
     def read(self, file):
         for line in file:
-            version, name, module, export, namespace = line.strip('\r\n').split('\t')
+            version, name, module, export, namespace = \
+                line.strip('\r\n').split('\t')
             self[name] = Symbol(name, namespace, module, version, export)
 
     def write(self, file):
