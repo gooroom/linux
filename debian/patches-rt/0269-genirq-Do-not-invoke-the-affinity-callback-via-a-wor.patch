@@ -19,8 +19,6 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  kernel/irq/manage.c       | 19 ++++---------------
  2 files changed, 6 insertions(+), 18 deletions(-)
 
-diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 72333899f043..a9321f6429f2 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -13,7 +13,7 @@
@@ -32,7 +30,7 @@ index 72333899f043..a9321f6429f2 100644
  
  #include <linux/atomic.h>
  #include <asm/ptrace.h>
-@@ -228,7 +228,6 @@ extern void resume_device_irqs(void);
+@@ -228,7 +228,6 @@
   * struct irq_affinity_notify - context for notification of IRQ affinity changes
   * @irq:		Interrupt to which notification applies
   * @kref:		Reference count, for internal use
@@ -40,7 +38,7 @@ index 72333899f043..a9321f6429f2 100644
   * @work:		Work item, for internal use
   * @notify:		Function to be called on change.  This will be
   *			called in process context.
-@@ -241,7 +240,7 @@ struct irq_affinity_notify {
+@@ -241,7 +240,7 @@
  	unsigned int irq;
  	struct kref kref;
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -49,20 +47,18 @@ index 72333899f043..a9321f6429f2 100644
  #else
  	struct work_struct work;
  #endif
-diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index ce86341a9e19..d5539e04e00a 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -287,7 +287,7 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
+@@ -287,7 +287,7 @@
  		kref_get(&desc->affinity_notify->kref);
  
  #ifdef CONFIG_PREEMPT_RT_BASE
--		swork_queue(&desc->affinity_notify->swork);
-+		kthread_schedule_work(&desc->affinity_notify->work);
+-		if (!swork_queue(&desc->affinity_notify->swork)) {
++		if (!kthread_schedule_work(&desc->affinity_notify->work)) {
  #else
- 		schedule_work(&desc->affinity_notify->work);
+ 		if (!schedule_work(&desc->affinity_notify->work)) {
  #endif
-@@ -352,21 +352,11 @@ static void _irq_affinity_notify(struct irq_affinity_notify *notify)
+@@ -356,21 +356,11 @@
  }
  
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -86,7 +82,7 @@ index ce86341a9e19..d5539e04e00a 100644
  	_irq_affinity_notify(notify);
  }
  
-@@ -409,8 +399,7 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+@@ -413,8 +403,7 @@
  		notify->irq = irq;
  		kref_init(&notify->kref);
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -96,6 +92,3 @@ index ce86341a9e19..d5539e04e00a 100644
  #else
  		INIT_WORK(&notify->work, irq_affinity_notify);
  #endif
--- 
-2.25.1
-
