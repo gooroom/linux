@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:49 +0100
 Subject: [PATCH 11/25] printk_safe: remove printk safe code
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.4/older/patches-5.4.17-rt9.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.4-rt3.tar.xz
 
 vprintk variants are now NMI-safe so there is no longer a need for
 the "safe" calls.
@@ -121,7 +121,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  extern int kptr_restrict;
 --- a/init/main.c
 +++ b/init/main.c
-@@ -694,7 +694,6 @@ asmlinkage __visible void __init start_k
+@@ -907,7 +907,6 @@ asmlinkage __visible void __init start_k
  	boot_init_stack_canary();
  
  	time_init();
@@ -131,7 +131,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	call_function_init();
 --- a/kernel/kexec_core.c
 +++ b/kernel/kexec_core.c
-@@ -972,7 +972,6 @@ void crash_kexec(struct pt_regs *regs)
+@@ -978,7 +978,6 @@ void crash_kexec(struct pt_regs *regs)
  	old_cpu = atomic_cmpxchg(&panic_cpu, PANIC_CPU_INVALID, this_cpu);
  	if (old_cpu == PANIC_CPU_INVALID) {
  		/* This is the 1st CPU which comes here, so go ahead. */
@@ -241,7 +241,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  asmlinkage int vprintk(const char *fmt, va_list args)
  {
  	return vprintk_func(fmt, args);
-@@ -3211,5 +3209,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
+@@ -3212,5 +3210,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
  	logbuf_unlock_irqrestore(flags);
  }
  EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
@@ -667,7 +667,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -8927,7 +8927,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9142,7 +9142,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -675,8 +675,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -9004,7 +9003,6 @@ void ftrace_dump(enum ftrace_dump_mode o
- 		atomic_dec(&per_cpu_ptr(iter.trace_buffer->data, cpu)->disabled);
+@@ -9219,7 +9218,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+ 		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);
 -	printk_nmi_direct_exit();
