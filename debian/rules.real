@@ -553,8 +553,7 @@ ifneq (,$(filter linux-image-$(ARCH)-signed-template,$(packages_enabled)))
 	rm -rf $(CODE_SIGNING_DIR)
 	mkdir -p $(CODE_SIGNING_DIR)
 	PYTHONHASHSEED=0 debian/bin/gencontrol_signed.py $(ARCH)
-	cp -R	debian/compat \
-		debian/copyright \
+	cp -R	debian/copyright \
 		debian/linux-image.NEWS \
 		debian/signing_templates/README.source \
 		debian/signing_templates/rules \
@@ -783,13 +782,12 @@ install-hyperv-daemons: build-hyperv-daemons
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	dh_installdocs
 endif
-	dh_systemd_enable
+	dh_installsystemd
 	for service in fcopy kvp vss; do \
 		dh_installinit --name hyperv-daemons.hv-$$service-daemon \
 			--onlyscripts \
 			|| break; \
 	done
-	dh_systemd_start
 	dh_lintian
 	dh_strip
 	dh_compress
