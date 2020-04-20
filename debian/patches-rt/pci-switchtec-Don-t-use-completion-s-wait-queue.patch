@@ -19,9 +19,11 @@ Cc: Kurt Schwemmer <kurt.schwemmer@microsemi.com>
 Cc: Logan Gunthorpe <logang@deltatee.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- drivers/pci/switch/switchtec.c |   22 +++++++++++++---------
+ drivers/pci/switch/switchtec.c | 22 +++++++++++++---------
  1 file changed, 13 insertions(+), 9 deletions(-)
 
+diff --git a/drivers/pci/switch/switchtec.c b/drivers/pci/switch/switchtec.c
+index 81dc7ac01381..d4c94e73f7d6 100644
 --- a/drivers/pci/switch/switchtec.c
 +++ b/drivers/pci/switch/switchtec.c
 @@ -52,10 +52,11 @@ struct switchtec_user {
@@ -37,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u32 cmd;
  	u32 status;
  	u32 return_code;
-@@ -77,7 +78,7 @@ static struct switchtec_user *stuser_cre
+@@ -77,7 +78,7 @@ static struct switchtec_user *stuser_create(struct switchtec_dev *stdev)
  	stuser->stdev = stdev;
  	kref_init(&stuser->kref);
  	INIT_LIST_HEAD(&stuser->list);
@@ -46,16 +48,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	stuser->event_cnt = atomic_read(&stdev->event_cnt);
  
  	dev_dbg(&stdev->dev, "%s: %p\n", __func__, stuser);
-@@ -175,7 +176,7 @@ static int mrpc_queue_cmd(struct switcht
+@@ -175,7 +176,7 @@ static int mrpc_queue_cmd(struct switchtec_user *stuser)
  	kref_get(&stuser->kref);
  	stuser->read_len = sizeof(stuser->data);
  	stuser_set_state(stuser, MRPC_QUEUED);
--	init_completion(&stuser->comp);
+-	reinit_completion(&stuser->comp);
 +	stuser->cmd_done = false;
  	list_add_tail(&stuser->list, &stdev->mrpc_queue);
  
  	mrpc_cmd_submit(stdev);
-@@ -222,7 +223,8 @@ static void mrpc_complete_cmd(struct swi
+@@ -222,7 +223,8 @@ static void mrpc_complete_cmd(struct switchtec_dev *stdev)
  		memcpy_fromio(stuser->data, &stdev->mmio_mrpc->output_data,
  			      stuser->read_len);
  out:
@@ -65,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	list_del_init(&stuser->list);
  	stuser_put(stuser);
  	stdev->mrpc_busy = 0;
-@@ -529,10 +531,11 @@ static ssize_t switchtec_dev_read(struct
+@@ -529,10 +531,11 @@ static ssize_t switchtec_dev_read(struct file *filp, char __user *data,
  	mutex_unlock(&stdev->mrpc_mutex);
  
  	if (filp->f_flags & O_NONBLOCK) {
@@ -79,7 +81,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (rc < 0)
  			return rc;
  	}
-@@ -580,7 +583,7 @@ static __poll_t switchtec_dev_poll(struc
+@@ -580,7 +583,7 @@ static __poll_t switchtec_dev_poll(struct file *filp, poll_table *wait)
  	struct switchtec_dev *stdev = stuser->stdev;
  	__poll_t ret = 0;
  
@@ -88,7 +90,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	poll_wait(filp, &stdev->event_wq, wait);
  
  	if (lock_mutex_and_test_alive(stdev))
-@@ -588,7 +591,7 @@ static __poll_t switchtec_dev_poll(struc
+@@ -588,7 +591,7 @@ static __poll_t switchtec_dev_poll(struct file *filp, poll_table *wait)
  
  	mutex_unlock(&stdev->mrpc_mutex);
  
@@ -97,7 +99,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		ret |= EPOLLIN | EPOLLRDNORM;
  
  	if (stuser->event_cnt != atomic_read(&stdev->event_cnt))
-@@ -1272,7 +1275,8 @@ static void stdev_kill(struct switchtec_
+@@ -1272,7 +1275,8 @@ static void stdev_kill(struct switchtec_dev *stdev)
  
  	/* Wake up and kill any users waiting on an MRPC request */
  	list_for_each_entry_safe(stuser, tmpuser, &stdev->mrpc_queue, list) {
