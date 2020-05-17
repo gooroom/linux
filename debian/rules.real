@@ -63,6 +63,7 @@ build-arch-arch: \
 	$(call if_package, linux-kbuild-$(VERSION),      build-kbuild) \
 	$(call if_package, linux-perf-$(VERSION),        build-perf) \
 	$(call if_package, linux-bootwrapper-$(ABINAME), build-bootwrapper) \
+	$(call if_package, bpftool,                      build-bpftool) \
 	$(call if_package, usbip,                        build-usbip) \
 	$(call if_package, linux-cpupower,               build-cpupower) \
 	$(call if_package, liblockdep-dev,               build-liblockdep) \
@@ -76,6 +77,7 @@ binary-arch-arch: \
 	$(if $(filter-out x-$(VERSION),x$(SOURCE_SUFFIX)), \
 	  $(call if_package, linux-perf$(SOURCE_SUFFIX), install-perf-meta)) \
 	$(call if_package, linux-bootwrapper-$(ABINAME), install-bootwrapper) \
+	$(call if_package, bpftool,                      install-bpftool) \
 	$(call if_package, usbip,                        install-usbip) \
 	$(call if_package, linux-cpupower,               install-cpupower) \
 	$(call if_package, liblockdep-dev,               install-liblockdep) \
@@ -619,6 +621,31 @@ $(STAMPS_DIR)/build-tools-headers:
 		INSTALL_HDR_PATH=$(CURDIR)/$(BUILD_DIR)/build-tools \
 		headers_install
 	@$(stamp)
+
+build-bpftool: $(STAMPS_DIR)/build-tools-headers
+	$(call make-tools,tools/bpf/bpftool)
+
+install-bpftool: PACKAGE_NAME = bpftool
+install-bpftool: DH_OPTIONS = -p$(PACKAGE_NAME)
+install-bpftool: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
+install-bpftool: build-bpftool
+	dh_testdir
+	dh_testroot
+	dh_prep
+	$(call make-tools,tools/bpf/bpftool) install DESTDIR=$(DIR)
+	dh_installchangelogs
+ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+	dh_installdocs
+endif
+	dh_lintian
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
 
 build-kbuild: $(STAMPS_DIR)/build-tools-headers
 	$(call make-tools,scripts)
