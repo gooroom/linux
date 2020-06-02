@@ -14,11 +14,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/amazon/ena/ena_netdev.c  | 20 ++++++++---------
  3 files changed, 24 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/net/ethernet/amazon/ena/ena_com.c b/drivers/net/ethernet/amazon/ena/ena_com.c
-index b5f9574e8493..e9651038bfea 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_com.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_com.c
-@@ -495,7 +495,7 @@ static int ena_com_comp_status_to_errno(u8 comp_status)
+@@ -500,7 +500,7 @@ static int ena_com_comp_status_to_errno(
  	case ENA_ADMIN_RESOURCE_ALLOCATION_FAILURE:
  		return -ENOMEM;
  	case ENA_ADMIN_UNSUPPORTED_OPCODE:
@@ -27,7 +25,7 @@ index b5f9574e8493..e9651038bfea 100644
  	case ENA_ADMIN_BAD_OPCODE:
  	case ENA_ADMIN_MALFORMED_REQUEST:
  	case ENA_ADMIN_ILLEGAL_PARAMETER:
-@@ -787,7 +787,7 @@ static int ena_com_get_feature_ex(struct ena_com_dev *ena_dev,
+@@ -792,7 +792,7 @@ static int ena_com_get_feature_ex(struct
  
  	if (!ena_com_check_supported_feature_id(ena_dev, feature_id)) {
  		pr_debug("Feature %d isn't supported\n", feature_id);
@@ -36,7 +34,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	memset(&get_cmd, 0x0, sizeof(get_cmd));
-@@ -1325,7 +1325,7 @@ int ena_com_set_aenq_config(struct ena_com_dev *ena_dev, u32 groups_flag)
+@@ -1348,7 +1348,7 @@ int ena_com_set_aenq_config(struct ena_c
  	if ((get_resp.u.aenq.supported_groups & groups_flag) != groups_flag) {
  		pr_warn("Trying to set unsupported aenq events. supported flag: %x asked flag: %x\n",
  			get_resp.u.aenq.supported_groups, groups_flag);
@@ -45,7 +43,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	memset(&cmd, 0x0, sizeof(cmd));
-@@ -1910,7 +1910,7 @@ int ena_com_set_dev_mtu(struct ena_com_dev *ena_dev, int mtu)
+@@ -1933,7 +1933,7 @@ int ena_com_set_dev_mtu(struct ena_com_d
  
  	if (!ena_com_check_supported_feature_id(ena_dev, ENA_ADMIN_MTU)) {
  		pr_debug("Feature %d isn't supported\n", ENA_ADMIN_MTU);
@@ -54,7 +52,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	memset(&cmd, 0x0, sizeof(cmd));
-@@ -1964,7 +1964,7 @@ int ena_com_set_hash_function(struct ena_com_dev *ena_dev)
+@@ -1987,7 +1987,7 @@ int ena_com_set_hash_function(struct ena
  						ENA_ADMIN_RSS_HASH_FUNCTION)) {
  		pr_debug("Feature %d isn't supported\n",
  			 ENA_ADMIN_RSS_HASH_FUNCTION);
@@ -63,8 +61,8 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	/* Validate hash function is supported */
-@@ -1976,7 +1976,7 @@ int ena_com_set_hash_function(struct ena_com_dev *ena_dev)
- 	if (get_resp.u.flow_hash_func.supported_func & (1 << rss->hash_func)) {
+@@ -1999,7 +1999,7 @@ int ena_com_set_hash_function(struct ena
+ 	if (!(get_resp.u.flow_hash_func.supported_func & BIT(rss->hash_func))) {
  		pr_err("Func hash %d isn't supported by device, abort\n",
  		       rss->hash_func);
 -		return -EPERM;
@@ -72,7 +70,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	memset(&cmd, 0x0, sizeof(cmd));
-@@ -2035,7 +2035,7 @@ int ena_com_fill_hash_function(struct ena_com_dev *ena_dev,
+@@ -2058,7 +2058,7 @@ int ena_com_fill_hash_function(struct en
  
  	if (!((1 << func) & get_resp.u.flow_hash_func.supported_func)) {
  		pr_err("Flow hash function %d isn't supported\n", func);
@@ -81,7 +79,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	switch (func) {
-@@ -2128,7 +2128,7 @@ int ena_com_set_hash_ctrl(struct ena_com_dev *ena_dev)
+@@ -2157,7 +2157,7 @@ int ena_com_set_hash_ctrl(struct ena_com
  						ENA_ADMIN_RSS_HASH_INPUT)) {
  		pr_debug("Feature %d isn't supported\n",
  			 ENA_ADMIN_RSS_HASH_INPUT);
@@ -90,7 +88,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	memset(&cmd, 0x0, sizeof(cmd));
-@@ -2209,7 +2209,7 @@ int ena_com_set_default_hash_ctrl(struct ena_com_dev *ena_dev)
+@@ -2238,7 +2238,7 @@ int ena_com_set_default_hash_ctrl(struct
  			pr_err("hash control doesn't support all the desire configuration. proto %x supported %x selected %x\n",
  			       i, hash_ctrl->supported_fields[i].fields,
  			       hash_ctrl->selected_fields[i].fields);
@@ -99,7 +97,7 @@ index b5f9574e8493..e9651038bfea 100644
  		}
  	}
  
-@@ -2287,7 +2287,7 @@ int ena_com_indirect_table_set(struct ena_com_dev *ena_dev)
+@@ -2316,7 +2316,7 @@ int ena_com_indirect_table_set(struct en
  		    ena_dev, ENA_ADMIN_RSS_REDIRECTION_TABLE_CONFIG)) {
  		pr_debug("Feature %d isn't supported\n",
  			 ENA_ADMIN_RSS_REDIRECTION_TABLE_CONFIG);
@@ -108,7 +106,7 @@ index b5f9574e8493..e9651038bfea 100644
  	}
  
  	ret = ena_com_ind_tbl_convert_to_device(ena_dev);
-@@ -2554,7 +2554,7 @@ int ena_com_init_interrupt_moderation(struct ena_com_dev *ena_dev)
+@@ -2585,7 +2585,7 @@ int ena_com_init_interrupt_moderation(st
  				 ENA_ADMIN_INTERRUPT_MODERATION);
  
  	if (rc) {
@@ -117,11 +115,9 @@ index b5f9574e8493..e9651038bfea 100644
  			pr_debug("Feature %d isn't supported\n",
  				 ENA_ADMIN_INTERRUPT_MODERATION);
  			rc = 0;
-diff --git a/drivers/net/ethernet/amazon/ena/ena_ethtool.c b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
-index 3ee55e2fd694..d51a67f4df02 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_ethtool.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_ethtool.c
-@@ -539,12 +539,8 @@ static int ena_get_rss_hash(struct ena_com_dev *ena_dev,
+@@ -539,12 +539,8 @@ static int ena_get_rss_hash(struct ena_c
  	}
  
  	rc = ena_com_get_hash_ctrl(ena_dev, proto, &hash_fields);
@@ -135,7 +131,7 @@ index 3ee55e2fd694..d51a67f4df02 100644
  
  	cmd->data = ena_flow_hash_to_flow_type(hash_fields);
  
-@@ -612,7 +608,7 @@ static int ena_set_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *info)
+@@ -612,7 +608,7 @@ static int ena_set_rxnfc(struct net_devi
  		rc = -EOPNOTSUPP;
  	}
  
@@ -144,7 +140,7 @@ index 3ee55e2fd694..d51a67f4df02 100644
  }
  
  static int ena_get_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *info,
-@@ -638,7 +634,7 @@ static int ena_get_rxnfc(struct net_device *netdev, struct ethtool_rxnfc *info,
+@@ -638,7 +634,7 @@ static int ena_get_rxnfc(struct net_devi
  		rc = -EOPNOTSUPP;
  	}
  
@@ -153,11 +149,9 @@ index 3ee55e2fd694..d51a67f4df02 100644
  }
  
  static u32 ena_get_rxfh_indir_size(struct net_device *netdev)
-diff --git a/drivers/net/ethernet/amazon/ena/ena_netdev.c b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-index e501e12c2554..d2534974bed8 100644
 --- a/drivers/net/ethernet/amazon/ena/ena_netdev.c
 +++ b/drivers/net/ethernet/amazon/ena/ena_netdev.c
-@@ -1453,7 +1453,7 @@ static int ena_rss_configure(struct ena_adapter *adapter)
+@@ -1457,7 +1457,7 @@ static int ena_rss_configure(struct ena_
  	/* In case the RSS table wasn't initialized by probe */
  	if (!ena_dev->rss.tbl_log_size) {
  		rc = ena_rss_init_default(adapter);
@@ -166,7 +160,7 @@ index e501e12c2554..d2534974bed8 100644
  			netif_err(adapter, ifup, adapter->netdev,
  				  "Failed to init RSS rc: %d\n", rc);
  			return rc;
-@@ -1462,17 +1462,17 @@ static int ena_rss_configure(struct ena_adapter *adapter)
+@@ -1466,17 +1466,17 @@ static int ena_rss_configure(struct ena_
  
  	/* Set indirect table */
  	rc = ena_com_indirect_table_set(ena_dev);
@@ -187,7 +181,7 @@ index e501e12c2554..d2534974bed8 100644
  		return rc;
  
  	return 0;
-@@ -2156,7 +2156,7 @@ static void ena_config_host_info(struct ena_com_dev *ena_dev)
+@@ -2161,7 +2161,7 @@ static void ena_config_host_info(struct
  
  	rc = ena_com_set_host_attributes(ena_dev);
  	if (rc) {
@@ -196,7 +190,7 @@ index e501e12c2554..d2534974bed8 100644
  			pr_warn("Cannot set host attributes\n");
  		else
  			pr_err("Cannot set host attributes\n");
-@@ -2193,7 +2193,7 @@ static void ena_config_debug_area(struct ena_adapter *adapter)
+@@ -2198,7 +2198,7 @@ static void ena_config_debug_area(struct
  
  	rc = ena_com_set_host_attributes(adapter->ena_dev);
  	if (rc) {
@@ -205,7 +199,7 @@ index e501e12c2554..d2534974bed8 100644
  			netif_warn(adapter, drv, adapter->netdev,
  				   "Cannot set host attributes\n");
  		else
-@@ -2898,7 +2898,7 @@ static int ena_rss_init_default(struct ena_adapter *adapter)
+@@ -2903,7 +2903,7 @@ static int ena_rss_init_default(struct e
  		val = ethtool_rxfh_indir_default(i, adapter->num_queues);
  		rc = ena_com_indirect_table_fill_entry(ena_dev, i,
  						       ENA_IO_RXQ_IDX(val));
@@ -214,7 +208,7 @@ index e501e12c2554..d2534974bed8 100644
  			dev_err(dev, "Cannot fill indirect table\n");
  			goto err_fill_indir;
  		}
-@@ -2906,13 +2906,13 @@ static int ena_rss_init_default(struct ena_adapter *adapter)
+@@ -2911,13 +2911,13 @@ static int ena_rss_init_default(struct e
  
  	rc = ena_com_fill_hash_function(ena_dev, ENA_ADMIN_CRC32, NULL,
  					ENA_HASH_KEY_SIZE, 0xFFFFFFFF);
@@ -230,7 +224,7 @@ index e501e12c2554..d2534974bed8 100644
  		dev_err(dev, "Cannot fill hash control\n");
  		goto err_fill_indir;
  	}
-@@ -3126,7 +3126,7 @@ static int ena_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -3131,7 +3131,7 @@ static int ena_probe(struct pci_dev *pde
  		goto err_worker_destroy;
  	}
  	rc = ena_rss_init_default(adapter);
@@ -239,6 +233,3 @@ index e501e12c2554..d2534974bed8 100644
  		dev_err(&pdev->dev, "Cannot init RSS rc: %d\n", rc);
  		goto err_free_msix;
  	}
--- 
-2.19.2
-
