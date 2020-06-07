@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 6 Mar 2020 15:59:06 +0100
 Subject: [PATCH] mm: Warn on memory allocation in non-preemptible context on
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.4-rt3.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
 
 The memory allocation via kmalloc(, GFP_ATOMIC) in atomic context
 (disabled preemption or interrupts) is not allowed on RT because the
@@ -22,7 +22,7 @@ Reviewed-by: Daniel Bristot de Oliveira <bristot@redhat.com>
 
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -2707,6 +2707,9 @@ static __always_inline void *slab_alloc_
+@@ -2767,6 +2767,9 @@ static __always_inline void *slab_alloc_
  	struct page *page;
  	unsigned long tid;
  
@@ -32,8 +32,8 @@ Reviewed-by: Daniel Bristot de Oliveira <bristot@redhat.com>
  	s = slab_pre_alloc_hook(s, gfpflags);
  	if (!s)
  		return NULL;
-@@ -3168,6 +3171,9 @@ int kmem_cache_alloc_bulk(struct kmem_ca
- 	struct kmem_cache_cpu *c;
+@@ -3229,6 +3232,9 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 	LIST_HEAD(to_free);
  	int i;
  
 +	if (IS_ENABLED(CONFIG_PREEMPT_RT) && IS_ENABLED(CONFIG_DEBUG_ATOMIC_SLEEP))

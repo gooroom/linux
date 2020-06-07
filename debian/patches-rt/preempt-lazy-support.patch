@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.4-rt3.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -283,7 +283,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void resched_cpu(int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -2998,6 +3040,9 @@ int sched_fork(unsigned long clone_flags
+@@ -2993,6 +3035,9 @@ int sched_fork(unsigned long clone_flags
  	p->on_cpu = 0;
  #endif
  	init_task_preempt_count(p);
@@ -293,7 +293,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_SMP
  	plist_node_init(&p->pushable_tasks, MAX_PRIO);
  	RB_CLEAR_NODE(&p->pushable_dl_tasks);
-@@ -4141,6 +4186,7 @@ static void __sched notrace __schedule(b
+@@ -4135,6 +4180,7 @@ static void __sched notrace __schedule(b
  
  	next = pick_next_task(rq, prev, &rf);
  	clear_tsk_need_resched(prev);
@@ -301,7 +301,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	clear_preempt_need_resched();
  
  	if (likely(prev != next)) {
-@@ -4335,6 +4381,30 @@ static void __sched notrace preempt_sche
+@@ -4329,6 +4375,30 @@ static void __sched notrace preempt_sche
  	} while (need_resched());
  }
  
@@ -332,7 +332,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_PREEMPTION
  /*
   * This is the entry point to schedule() from in-kernel preemption
-@@ -4348,7 +4418,8 @@ asmlinkage __visible void __sched notrac
+@@ -4342,7 +4412,8 @@ asmlinkage __visible void __sched notrac
  	 */
  	if (likely(!preemptible()))
  		return;
@@ -342,7 +342,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	preempt_schedule_common();
  }
  NOKPROBE_SYMBOL(preempt_schedule);
-@@ -4375,6 +4446,9 @@ asmlinkage __visible void __sched notrac
+@@ -4369,6 +4440,9 @@ asmlinkage __visible void __sched notrac
  	if (likely(!preemptible()))
  		return;
  
@@ -352,7 +352,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -6164,7 +6238,9 @@ void init_idle(struct task_struct *idle,
+@@ -6158,7 +6232,9 @@ void init_idle(struct task_struct *idle,
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -363,7 +363,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -8114,6 +8190,7 @@ void migrate_disable(void)
+@@ -8108,6 +8184,7 @@ void migrate_disable(void)
  
  	if (++current->migrate_disable == 1) {
  		this_rq()->nr_pinned++;
@@ -371,7 +371,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_SCHED_DEBUG
  		WARN_ON_ONCE(current->pinned_on_cpu >= 0);
  		current->pinned_on_cpu = smp_processor_id();
-@@ -8195,6 +8272,7 @@ void migrate_enable(void)
+@@ -8189,6 +8266,7 @@ void migrate_enable(void)
  	}
  
  out:
@@ -381,7 +381,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  EXPORT_SYMBOL(migrate_enable);
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4153,7 +4153,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+@@ -4160,7 +4160,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
  	ideal_runtime = sched_slice(cfs_rq, curr);
  	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
  	if (delta_exec > ideal_runtime) {
@@ -390,7 +390,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		/*
  		 * The current task ran long enough, ensure it doesn't get
  		 * re-elected due to buddy favours.
-@@ -4177,7 +4177,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+@@ -4184,7 +4184,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
  		return;
  
  	if (delta > ideal_runtime)
@@ -399,7 +399,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void
-@@ -4320,7 +4320,7 @@ entity_tick(struct cfs_rq *cfs_rq, struc
+@@ -4327,7 +4327,7 @@ entity_tick(struct cfs_rq *cfs_rq, struc
  	 * validating it and just reschedule.
  	 */
  	if (queued) {
@@ -408,7 +408,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		return;
  	}
  	/*
-@@ -4445,7 +4445,7 @@ static void __account_cfs_rq_runtime(str
+@@ -4452,7 +4452,7 @@ static void __account_cfs_rq_runtime(str
  	 * hierarchy can be throttled
  	 */
  	if (!assign_cfs_rq_runtime(cfs_rq) && likely(cfs_rq->curr))
@@ -417,7 +417,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static __always_inline
-@@ -5158,7 +5158,7 @@ static void hrtick_start_fair(struct rq
+@@ -5176,7 +5176,7 @@ static void hrtick_start_fair(struct rq
  
  		if (delta < 0) {
  			if (rq->curr == p)
@@ -426,7 +426,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6662,7 +6662,7 @@ static void check_preempt_wakeup(struct
+@@ -6680,7 +6680,7 @@ static void check_preempt_wakeup(struct
  	return;
  
  preempt:
@@ -435,7 +435,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -10360,7 +10360,7 @@ static void task_fork_fair(struct task_s
+@@ -10379,7 +10379,7 @@ static void task_fork_fair(struct task_s
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -444,7 +444,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -10387,7 +10387,7 @@ prio_changed_fair(struct rq *rq, struct
+@@ -10406,7 +10406,7 @@ prio_changed_fair(struct rq *rq, struct
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -467,7 +467,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1867,6 +1867,15 @@ extern void reweight_task(struct task_st
+@@ -1873,6 +1873,15 @@ extern void reweight_task(struct task_st
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  
