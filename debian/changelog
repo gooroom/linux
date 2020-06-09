@@ -830,7 +830,6 @@ linux (4.9.225-1) UNRELEASED; urgency=medium
       setting
     - net: phy: micrel: kszphy_resume(): add delay after genphy_resume() before
       accessing PHY registers
-    - random: always use batched entropy for get_random_u{32,64}
     - IB/hfi1: Call kobject_put() when kobject_init_and_add() fails
     - IB/hfi1: Fix memory leaks in sysfs registration and unregistration
     - ceph: remove the extra slashes in the server path
@@ -1026,7 +1025,6 @@ linux (4.9.225-1) UNRELEASED; urgency=medium
     - ext4: convert BUG_ON's to WARN_ON's in mballoc.c
     - hwmon: (jc42) Fix name to have no illegal characters
     - ext4: check for non-zero journal inum in ext4_calculate_overhead
-    - vfs: propagate_one(): mnt_set_mountpoint() needs mount_lock
     https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.222
     - ext4: fix special inode number checks in __ext4_iget()
     - drm/edid: Fix off-by-one in DispID DTD pixel clock
@@ -1197,7 +1195,7 @@ linux (4.9.225-1) UNRELEASED; urgency=medium
 
  -- Ben Hutchings <benh@debian.org>  Fri, 17 Apr 2020 01:29:37 +0100
 
-linux (4.9.210-1+deb9u1) UNRELEASED; urgency=medium
+linux (4.9.210-1+deb9u1) stretch-security; urgency=high
 
   [ Salvatore Bonaccorso ]
   * selinux: properly handle multiple messages in selinux_netlink_send()
@@ -1211,6 +1209,9 @@ linux (4.9.210-1+deb9u1) UNRELEASED; urgency=medium
   * netlabel: cope with NULL catmap (CVE-2020-10711)
   * fs/binfmt_elf.c: allocate initialized memory in fill_thread_core_info()
     (CVE-2020-10732)
+  * kernel/relay.c: handle alloc_percpu returning NULL in relay_open
+    (CVE-2019-19462)
+  * mm: Fix mremap not considering huge pmd devmap (CVE-2020-10757)
 
   [ Ben Hutchings ]
   * [arm64] Enforce BBM for huge IO/VMAP mappings (CVE-2019-2182):
@@ -1295,8 +1296,19 @@ linux (4.9.210-1+deb9u1) UNRELEASED; urgency=medium
     - net-sysfs: fix netdev_queue_add_kobject() breakage
     - net-sysfs: Call dev_hold always in netdev_queue_add_kobject
     - net-sysfs: Call dev_hold always in rx_queue_add_kobject
+  * propagate_one(): mnt_set_mountpoint() needs mount_lock
+  * [x86] Add support for mitigation of Special Register Buffer Data Sampling
+    (SRBDS) (CVE-2020-0543):
+    - x86/cpu: Add 'table' argument to cpu_matches()
+    - x86/speculation: Add Special Register Buffer Data Sampling (SRBDS)
+      mitigation
+    - x86/speculation: Add SRBDS vulnerability and mitigation documentation
+    - x86/speculation: Add Ivy Bridge to affected list
+  * [x86] speculation: Do not match steppings, to avoid an ABI change
+  * random: always use batched entropy for get_random_u{32,64}
+  * [rt] Refresh "random: avoid preempt_disable()ed section"
 
- -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 28 May 2020 23:21:44 +0200
+ -- Ben Hutchings <benh@debian.org>  Sun, 07 Jun 2020 22:34:10 +0100
 
 linux (4.9.210-1) stretch; urgency=medium
 
