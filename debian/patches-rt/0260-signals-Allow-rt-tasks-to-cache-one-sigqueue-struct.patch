@@ -1,8 +1,11 @@
-From 1bbb897c03f7cb3649001d6235621c4097871d52 Mon Sep 17 00:00:00 2001
+From 8f3b2b722f4a5d076cd798d0adffa16bfd554e48 Mon Sep 17 00:00:00 2001
+Message-Id: <8f3b2b722f4a5d076cd798d0adffa16bfd554e48.1588797587.git.zanussi@kernel.org>
+In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 260/325] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Subject: [PATCH 260/327] signals: Allow rt tasks to cache one sigqueue struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -17,7 +20,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 70 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index a8ebd49c4f96..854a6cb456af 100644
+index 852b1221cd40..bdae37091808 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -895,6 +895,8 @@ struct task_struct {
@@ -67,7 +70,7 @@ index ecec0f8bef7e..234e0ca9a74b 100644
  	p->utime = p->stime = p->gtime = 0;
  #ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
 diff --git a/kernel/signal.c b/kernel/signal.c
-index d1fa3c405784..5c04f2891487 100644
+index 6f7191a72103..45748993f777 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -19,6 +19,7 @@
@@ -209,5 +212,5 @@ index d1fa3c405784..5c04f2891487 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.25.1
+2.17.1
 

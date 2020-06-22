@@ -1,8 +1,11 @@
-From fb131ef07b6163f19997356ad5267dc46fbe0514 Mon Sep 17 00:00:00 2001
+From e36a324a0736f2cba48a43c5b326be8ec4de7062 Mon Sep 17 00:00:00 2001
+Message-Id: <e36a324a0736f2cba48a43c5b326be8ec4de7062.1588797587.git.zanussi@kernel.org>
+In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
 From: Julia Cartwright <julia@ni.com>
 Date: Fri, 28 Sep 2018 21:03:51 +0000
-Subject: [PATCH 251/325] watchdog: prevent deferral of watchdogd wakeup on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Subject: [PATCH 251/327] watchdog: prevent deferral of watchdogd wakeup on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
 
 When PREEMPT_RT_FULL is enabled, all hrtimer expiry functions are
 deferred for execution into the context of ktimersoftd unless otherwise
@@ -37,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/watchdog/watchdog_dev.c b/drivers/watchdog/watchdog_dev.c
-index e64aa88e99da..11ba2c3b187f 100644
+index 10b2090f3e5e..c04384aa94a5 100644
 --- a/drivers/watchdog/watchdog_dev.c
 +++ b/drivers/watchdog/watchdog_dev.c
 @@ -145,7 +145,7 @@ static inline void watchdog_update_worker(struct watchdog_device *wdd)
@@ -58,7 +61,7 @@ index e64aa88e99da..11ba2c3b187f 100644
  		return 0;
  	}
  
-@@ -947,7 +947,7 @@ static int watchdog_cdev_register(struct watchdog_device *wdd)
+@@ -948,7 +948,7 @@ static int watchdog_cdev_register(struct watchdog_device *wdd)
  		return -ENODEV;
  
  	kthread_init_work(&wd_data->work, watchdog_ping_work);
@@ -67,7 +70,7 @@ index e64aa88e99da..11ba2c3b187f 100644
  	wd_data->timer.function = watchdog_timer_expired;
  
  	if (wdd->id == 0) {
-@@ -1004,7 +1004,7 @@ static int watchdog_cdev_register(struct watchdog_device *wdd)
+@@ -1005,7 +1005,7 @@ static int watchdog_cdev_register(struct watchdog_device *wdd)
  		__module_get(wdd->ops->owner);
  		get_device(&wd_data->dev);
  		if (handle_boot_enabled)
@@ -77,5 +80,5 @@ index e64aa88e99da..11ba2c3b187f 100644
  			pr_info("watchdog%d running and kernel based pre-userspace handler disabled\n",
  				wdd->id);
 -- 
-2.25.1
+2.17.1
 
