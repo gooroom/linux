@@ -1,11 +1,11 @@
-From ef65750247e5e5b35efbaef6b363f3ded2d8cd06 Mon Sep 17 00:00:00 2001
-Message-Id: <ef65750247e5e5b35efbaef6b363f3ded2d8cd06.1590093525.git.zanussi@kernel.org>
-In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
-References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+From 6bfa6ae306b184b9a686976852d8503fdb364142 Mon Sep 17 00:00:00 2001
+Message-Id: <6bfa6ae306b184b9a686976852d8503fdb364142.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 243/327] arm: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
+Subject: [PATCH 243/330] arm: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
@@ -84,10 +84,10 @@ index 3968d6c22455..b35d373fc982 100644
    DEFINE(TI_TASK,		offsetof(struct thread_info, task));
    DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
 diff --git a/arch/arm/kernel/entry-armv.S b/arch/arm/kernel/entry-armv.S
-index e85a3af9ddeb..cc67c0a3ae7b 100644
+index 89e551eebff1..4fba92bcebfe 100644
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -216,11 +216,18 @@ __irq_svc:
+@@ -209,11 +209,18 @@ __irq_svc:
  
  #ifdef CONFIG_PREEMPT
  	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
@@ -108,7 +108,7 @@ index e85a3af9ddeb..cc67c0a3ae7b 100644
  #endif
  
  	svc_exit r5, irq = 1			@ return from exception
-@@ -235,8 +242,14 @@ svc_preempt:
+@@ -228,8 +235,14 @@ svc_preempt:
  1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
  	ldr	r0, [tsk, #TI_FLAGS]		@ get new tasks TI_FLAGS
  	tst	r0, #_TIF_NEED_RESCHED

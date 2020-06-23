@@ -1,11 +1,11 @@
-From 743f5eb2cd6b7d563feb7ec5059f0b7972c0b075 Mon Sep 17 00:00:00 2001
-Message-Id: <743f5eb2cd6b7d563feb7ec5059f0b7972c0b075.1590093525.git.zanussi@kernel.org>
-In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
-References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+From 75d43c972c266add8520e55baa9d3670edfeaf31 Mon Sep 17 00:00:00 2001
+Message-Id: <75d43c972c266add8520e55baa9d3670edfeaf31.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
-Subject: [PATCH 197/327] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
+Subject: [PATCH 197/330] net: Use skbufhead with raw lock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -56,7 +56,7 @@ index 25407c206e73..d4d7aea13cc6 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c5901d343d0a..fcc109d279e2 100644
+index d4b73961f54b..c0e089fde4b5 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -218,14 +218,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -76,7 +76,7 @@ index c5901d343d0a..fcc109d279e2 100644
  #endif
  }
  
-@@ -5249,7 +5249,7 @@ static void flush_backlog(struct work_struct *work)
+@@ -5259,7 +5259,7 @@ static void flush_backlog(struct work_struct *work)
  	skb_queue_walk_safe(&sd->input_pkt_queue, skb, tmp) {
  		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
  			__skb_unlink(skb, &sd->input_pkt_queue);
@@ -85,7 +85,7 @@ index c5901d343d0a..fcc109d279e2 100644
  			input_queue_head_incr(sd);
  		}
  	}
-@@ -5259,11 +5259,14 @@ static void flush_backlog(struct work_struct *work)
+@@ -5269,11 +5269,14 @@ static void flush_backlog(struct work_struct *work)
  	skb_queue_walk_safe(&sd->process_queue, skb, tmp) {
  		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
  			__skb_unlink(skb, &sd->process_queue);
@@ -101,7 +101,7 @@ index c5901d343d0a..fcc109d279e2 100644
  }
  
  static void flush_all_backlogs(void)
-@@ -5842,7 +5845,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
+@@ -5852,7 +5855,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
  	while (again) {
  		struct sk_buff *skb;
  
@@ -111,7 +111,7 @@ index c5901d343d0a..fcc109d279e2 100644
  			rcu_read_lock();
  			__netif_receive_skb(skb);
  			rcu_read_unlock();
-@@ -5850,9 +5855,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
+@@ -5860,9 +5865,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
  			if (++work >= quota)
  				return work;
  
@@ -122,7 +122,7 @@ index c5901d343d0a..fcc109d279e2 100644
  		rps_lock(sd);
  		if (skb_queue_empty(&sd->input_pkt_queue)) {
  			/*
-@@ -6317,13 +6322,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
+@@ -6327,13 +6332,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
  	unsigned long time_limit = jiffies +
  		usecs_to_jiffies(netdev_budget_usecs);
  	int budget = netdev_budget;
@@ -144,7 +144,7 @@ index c5901d343d0a..fcc109d279e2 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9509,10 +9522,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9519,10 +9532,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -159,7 +159,7 @@ index c5901d343d0a..fcc109d279e2 100644
  
  	return 0;
  }
-@@ -9823,8 +9839,9 @@ static int __init net_dev_init(void)
+@@ -9833,8 +9849,9 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  

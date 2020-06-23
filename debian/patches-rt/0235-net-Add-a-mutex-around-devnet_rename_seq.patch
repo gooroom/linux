@@ -1,11 +1,11 @@
-From 02c687a4d1b7748b9b8cdfd95abf2872b2cb084e Mon Sep 17 00:00:00 2001
-Message-Id: <02c687a4d1b7748b9b8cdfd95abf2872b2cb084e.1590093525.git.zanussi@kernel.org>
-In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
-References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+From ada1c576f528b64d47816a874a0bf71f0b70dff0 Mon Sep 17 00:00:00 2001
+Message-Id: <ada1c576f528b64d47816a874a0bf71f0b70dff0.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Mar 2013 18:06:20 +0100
-Subject: [PATCH 235/327] net: Add a mutex around devnet_rename_seq
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
+Subject: [PATCH 235/330] net: Add a mutex around devnet_rename_seq
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 On RT write_seqcount_begin() disables preemption and device_rename()
 allocates memory with GFP_KERNEL and grabs later the sysfs_mutex
@@ -25,7 +25,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 20 insertions(+), 14 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b91c2f0fa199..22ab7a06843f 100644
+index 528b89d2ff2e..a2a3625338d4 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -196,6 +196,7 @@ static unsigned int napi_gen_id = NR_CPUS;

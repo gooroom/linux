@@ -1,12 +1,12 @@
-From 6df082a0cf468f8d94cca18b80d3b87430ec6eed Mon Sep 17 00:00:00 2001
-Message-Id: <6df082a0cf468f8d94cca18b80d3b87430ec6eed.1590093525.git.zanussi@kernel.org>
-In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
-References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+From fa6ff7159c068d7a931643de17835309501964ab Mon Sep 17 00:00:00 2001
+Message-Id: <fa6ff7159c068d7a931643de17835309501964ab.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 11:39:36 +0200
-Subject: [PATCH 177/327] mm/vmalloc: Another preempt disable region which
+Subject: [PATCH 177/330] mm/vmalloc: Another preempt disable region which
  sucks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 Avoid the preempt disable version of get_cpu_var(). The inner-lock should
 provide enough serialisation.
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 8 insertions(+), 5 deletions(-)
 
 diff --git a/mm/vmalloc.c b/mm/vmalloc.c
-index 11d0f0b6ec79..c6dc3a96e8f3 100644
+index 1817871b0239..aa06badc76f4 100644
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
 @@ -853,7 +853,7 @@ static void *new_vmap_block(unsigned int order, gfp_t gfp_mask)
