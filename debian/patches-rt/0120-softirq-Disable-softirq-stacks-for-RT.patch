@@ -1,11 +1,11 @@
-From 9e86dd147e8ddd3b1ad01b287979c781e4583224 Mon Sep 17 00:00:00 2001
-Message-Id: <9e86dd147e8ddd3b1ad01b287979c781e4583224.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 767694c66ee6736de1aadbda3d762e54b2a6e7f5 Mon Sep 17 00:00:00 2001
+Message-Id: <767694c66ee6736de1aadbda3d762e54b2a6e7f5.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
 Subject: [PATCH 120/327] softirq: Disable softirq stacks for RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.
@@ -123,10 +123,10 @@ index 713670e6d13d..5dfc715343f9 100644
  #ifdef CONFIG_HOTPLUG_CPU
  void fixup_irqs(void)
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index ccb5e3486aee..7ffd83c57ef2 100644
+index dfe26f3cfffc..f53d995b1370 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -1083,6 +1083,7 @@ bad_gs:
+@@ -1084,6 +1084,7 @@ bad_gs:
  	jmp	2b
  	.previous
  
@@ -134,7 +134,7 @@ index ccb5e3486aee..7ffd83c57ef2 100644
  /* Call softirq on interrupt stack. Interrupts are off. */
  ENTRY(do_softirq_own_stack)
  	pushq	%rbp
-@@ -1093,6 +1094,7 @@ ENTRY(do_softirq_own_stack)
+@@ -1094,6 +1095,7 @@ ENTRY(do_softirq_own_stack)
  	leaveq
  	ret
  ENDPROC(do_softirq_own_stack)

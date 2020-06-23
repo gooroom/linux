@@ -1,12 +1,12 @@
-From 70454fd8a8f7c8caa65becb67bb179cfe4ebce8a Mon Sep 17 00:00:00 2001
-Message-Id: <70454fd8a8f7c8caa65becb67bb179cfe4ebce8a.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 3a3f3413b2b150857c43187c4181949a65c09d6b Mon Sep 17 00:00:00 2001
+Message-Id: <3a3f3413b2b150857c43187c4181949a65c09d6b.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 28 May 2018 15:24:20 +0200
 Subject: [PATCH 072/327] Split IRQ-off and zone->lock while freeing pages from
  PCP list #1
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 Split the IRQ-off section while accessing the PCP list from zone->lock
 while freeing pages.
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 52 insertions(+), 30 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 57888cedf244..b8138a5d6ef3 100644
+index d8c3051387d1..2a543a376a40 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -1095,7 +1095,7 @@ static inline void prefetch_buddy(struct page *page)
@@ -115,7 +115,7 @@ index 57888cedf244..b8138a5d6ef3 100644
  }
  
  static void free_one_page(struct zone *zone,
-@@ -2544,13 +2551,18 @@ void drain_zone_pages(struct zone *zone, struct per_cpu_pages *pcp)
+@@ -2545,13 +2552,18 @@ void drain_zone_pages(struct zone *zone, struct per_cpu_pages *pcp)
  {
  	unsigned long flags;
  	int to_drain, batch;
@@ -135,7 +135,7 @@ index 57888cedf244..b8138a5d6ef3 100644
  }
  #endif
  
-@@ -2566,14 +2578,21 @@ static void drain_pages_zone(unsigned int cpu, struct zone *zone)
+@@ -2567,14 +2579,21 @@ static void drain_pages_zone(unsigned int cpu, struct zone *zone)
  	unsigned long flags;
  	struct per_cpu_pageset *pset;
  	struct per_cpu_pages *pcp;
@@ -159,7 +159,7 @@ index 57888cedf244..b8138a5d6ef3 100644
  }
  
  /*
-@@ -2795,7 +2814,10 @@ static void free_unref_page_commit(struct page *page, unsigned long pfn)
+@@ -2796,7 +2815,10 @@ static void free_unref_page_commit(struct page *page, unsigned long pfn)
  	pcp->count++;
  	if (pcp->count >= pcp->high) {
  		unsigned long batch = READ_ONCE(pcp->batch);

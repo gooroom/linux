@@ -1,11 +1,11 @@
-From a68c49357d823798978eb8648ef51cdd4507aac0 Mon Sep 17 00:00:00 2001
-Message-Id: <a68c49357d823798978eb8648ef51cdd4507aac0.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 8ffd8ce2e4fdce3b034fd1110d20d79a111d5147 Mon Sep 17 00:00:00 2001
+Message-Id: <8ffd8ce2e4fdce3b034fd1110d20d79a111d5147.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
 Subject: [PATCH 240/327] x86: Support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 Implement the x86 pieces for lazy preempt.
 
@@ -85,10 +85,10 @@ index 37d9016d4768..324b7539eaab 100644
  	jz	restore_all_kernel
  	call	preempt_schedule_irq
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index 7ffd83c57ef2..663a99f6320f 100644
+index f53d995b1370..94fccaa04bfa 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -732,7 +732,23 @@ retint_kernel:
+@@ -733,7 +733,23 @@ retint_kernel:
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)

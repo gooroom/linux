@@ -1,11 +1,11 @@
-From 52fcf66c1b4f281bec1dbfd8daa9669cd67ab610 Mon Sep 17 00:00:00 2001
-Message-Id: <52fcf66c1b4f281bec1dbfd8daa9669cd67ab610.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 0fc87a2a7bfdb73b974a3db105408d6581816cd5 Mon Sep 17 00:00:00 2001
+Message-Id: <0fc87a2a7bfdb73b974a3db105408d6581816cd5.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 16 Dec 2010 14:25:18 +0100
 Subject: [PATCH 226/327] x86: stackprotector: Avoid random pool on rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 CPU bringup calls into the random pool to initialize the stack
 canary. During boot that works nicely even on RT as the might sleep
@@ -22,10 +22,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/include/asm/stackprotector.h b/arch/x86/include/asm/stackprotector.h
-index 8ec97a62c245..7bc85841fc56 100644
+index 9c556ea2eaa7..b136992beb1b 100644
 --- a/arch/x86/include/asm/stackprotector.h
 +++ b/arch/x86/include/asm/stackprotector.h
-@@ -60,7 +60,7 @@
+@@ -65,7 +65,7 @@
   */
  static __always_inline void boot_init_stack_canary(void)
  {
@@ -34,7 +34,7 @@ index 8ec97a62c245..7bc85841fc56 100644
  	u64 tsc;
  
  #ifdef CONFIG_X86_64
-@@ -71,8 +71,14 @@ static __always_inline void boot_init_stack_canary(void)
+@@ -76,8 +76,14 @@ static __always_inline void boot_init_stack_canary(void)
  	 * of randomness. The TSC only matters for very early init,
  	 * there it already has some randomness on most systems. Later
  	 * on during the bootup the random pool has true entropy too.

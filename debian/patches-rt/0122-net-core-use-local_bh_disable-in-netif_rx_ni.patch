@@ -1,11 +1,11 @@
-From dddf06fedee6ba0e9cc8d0190602fb8997b02d46 Mon Sep 17 00:00:00 2001
-Message-Id: <dddf06fedee6ba0e9cc8d0190602fb8997b02d46.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 9337b7f3c247191beaf253453652d4c026ec6e44 Mon Sep 17 00:00:00 2001
+Message-Id: <9337b7f3c247191beaf253453652d4c026ec6e44.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Jun 2017 19:03:16 +0200
 Subject: [PATCH 122/327] net/core: use local_bh_disable() in netif_rx_ni()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 In 2004 netif_rx_ni() gained a preempt_disable() section around
 netif_rx() and its do_softirq() + testing for it. The do_softirq() part
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index e1b0618e231e..0285ea11a788 100644
+index a109f1acd3a0..c5901d343d0a 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -4532,11 +4532,9 @@ int netif_rx_ni(struct sk_buff *skb)

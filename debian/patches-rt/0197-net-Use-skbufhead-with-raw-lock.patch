@@ -1,11 +1,11 @@
-From 649410da34cec1ddfcb05a58b0ddfe99a2580f21 Mon Sep 17 00:00:00 2001
-Message-Id: <649410da34cec1ddfcb05a58b0ddfe99a2580f21.1588797587.git.zanussi@kernel.org>
-In-Reply-To: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
-References: <94c546b56877133a33b6e344bfe3ee7f698d069a.1588797587.git.zanussi@kernel.org>
+From 743f5eb2cd6b7d563feb7ec5059f0b7972c0b075 Mon Sep 17 00:00:00 2001
+Message-Id: <743f5eb2cd6b7d563feb7ec5059f0b7972c0b075.1590093525.git.zanussi@kernel.org>
+In-Reply-To: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
+References: <4f310e18bbb62e33196484e72d1a7d0416189d63.1590093525.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 197/327] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.120-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.124-rt53.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -56,7 +56,7 @@ index 25407c206e73..d4d7aea13cc6 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 0285ea11a788..4c1ee6e8679d 100644
+index c5901d343d0a..fcc109d279e2 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -218,14 +218,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -144,7 +144,7 @@ index 0285ea11a788..4c1ee6e8679d 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9507,10 +9520,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9509,10 +9522,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -159,7 +159,7 @@ index 0285ea11a788..4c1ee6e8679d 100644
  
  	return 0;
  }
-@@ -9821,8 +9837,9 @@ static int __init net_dev_init(void)
+@@ -9823,8 +9839,9 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  
