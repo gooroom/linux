@@ -1,9 +1,8 @@
-From aa7d6b5b94ade6813b74ea793094cef445439be4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 17:16:44 +0200
-Subject: [PATCH 038/367] iommu/vt-d: don't disable preemption while accessing
+Subject: [PATCH 038/366] iommu/vt-d: don't disable preemption while accessing
  deferred_flush()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.201-rt134.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3e759333563633a0c6fb4a3b1f075a6ee6ae822d
 
 get_cpu() disables preemption and returns the current CPU number. The
 CPU number is later only used once while retrieving the address of the
@@ -27,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 25cc6ae87039..0e3826b39044 100644
+index 593a4bfcba42..fa7d78442ee7 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
 @@ -480,7 +480,7 @@ struct deferred_flush_data {
@@ -39,7 +38,7 @@ index 25cc6ae87039..0e3826b39044 100644
  
  /* bitmap for indexing intel_iommus */
  static int g_num_of_iommus;
-@@ -3739,10 +3739,8 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
+@@ -3742,10 +3742,8 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
  	struct intel_iommu *iommu;
  	struct deferred_flush_entry *entry;
  	struct deferred_flush_data *flush_data;
@@ -51,7 +50,7 @@ index 25cc6ae87039..0e3826b39044 100644
  
  	/* Flush all CPUs' entries to avoid deferring too much.  If
  	 * this becomes a bottleneck, can just flush us, and rely on
-@@ -3775,8 +3773,6 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
+@@ -3778,8 +3776,6 @@ static void add_unmap(struct dmar_domain *dom, unsigned long iova_pfn,
  	}
  	flush_data->size++;
  	spin_unlock_irqrestore(&flush_data->lock, flags);
@@ -60,6 +59,3 @@ index 25cc6ae87039..0e3826b39044 100644
  }
  
  static void intel_unmap(struct device *dev, dma_addr_t dev_addr, size_t size)
--- 
-2.24.0
-

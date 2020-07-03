@@ -1,8 +1,7 @@
-From 29dc839b611dbf28552e256500cc026ae8077816 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
-Subject: [PATCH 045/367] NFSv4: replace seqcount_t with a seqlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.201-rt134.tar.xz
+Subject: [PATCH 045/366] NFSv4: replace seqcount_t with a seqlock_t
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3814d31f95c867d9ea9eaf48b781cc9f327b96c6
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -19,8 +18,6 @@ block readers).
 
 Reported-by: kernel test robot <xiaolong.ye@intel.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[bwh: Adjust to apply after "NFSv4.x: fix lock recovery during delegation
- recall"]
 ---
  fs/nfs/delegation.c |  4 ++--
  fs/nfs/nfs4_fs.h    |  2 +-
@@ -28,9 +25,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  fs/nfs/nfs4state.c  | 22 ++++++++++++++++------
  4 files changed, 21 insertions(+), 11 deletions(-)
 
+diff --git a/fs/nfs/delegation.c b/fs/nfs/delegation.c
+index 014039618cff..d688f89c9bc8 100644
 --- a/fs/nfs/delegation.c
 +++ b/fs/nfs/delegation.c
-@@ -160,11 +160,11 @@ again:
+@@ -160,11 +160,11 @@ static int nfs_delegation_claim_opens(struct inode *inode,
  		sp = state->owner;
  		/* Block nfs4_proc_unlck */
  		mutex_lock(&sp->so_delegreturn_mutex);
@@ -44,6 +43,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			err = -EAGAIN;
  		mutex_unlock(&sp->so_delegreturn_mutex);
  		put_nfs_open_context(ctx);
+diff --git a/fs/nfs/nfs4_fs.h b/fs/nfs/nfs4_fs.h
+index c719389381dc..5dcaae387902 100644
 --- a/fs/nfs/nfs4_fs.h
 +++ b/fs/nfs/nfs4_fs.h
 @@ -111,7 +111,7 @@ struct nfs4_state_owner {
@@ -55,9 +56,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct mutex	     so_delegreturn_mutex;
  };
  
+diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
+index 632d3c3f8dfb..26eb6382bb1b 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
-@@ -2705,7 +2705,7 @@ static int _nfs4_open_and_get_state(stru
+@@ -2705,7 +2705,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  	unsigned int seq;
  	int ret;
  
@@ -66,7 +69,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	ret = _nfs4_proc_open(opendata);
  	if (ret != 0)
-@@ -2743,7 +2743,7 @@ static int _nfs4_open_and_get_state(stru
+@@ -2743,7 +2743,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  
  	if (d_inode(dentry) == state->inode) {
  		nfs_inode_attach_open_context(ctx);
@@ -75,9 +78,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			nfs4_schedule_stateid_recovery(server, state);
  	}
  out:
+diff --git a/fs/nfs/nfs4state.c b/fs/nfs/nfs4state.c
+index 4e63daeef633..57facf9519b8 100644
 --- a/fs/nfs/nfs4state.c
 +++ b/fs/nfs/nfs4state.c
-@@ -492,7 +492,7 @@ nfs4_alloc_state_owner(struct nfs_server
+@@ -492,7 +492,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
  	nfs4_init_seqid_counter(&sp->so_seqid);
  	atomic_set(&sp->so_count, 1);
  	INIT_LIST_HEAD(&sp->so_lru);
@@ -86,7 +91,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	mutex_init(&sp->so_delegreturn_mutex);
  	return sp;
  }
-@@ -1522,8 +1522,12 @@ static int nfs4_reclaim_open_state(struc
+@@ -1522,8 +1522,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  	 * recovering after a network partition or a reboot from a
  	 * server that doesn't support a grace period.
  	 */
@@ -100,7 +105,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  restart:
  	list_for_each_entry(state, &sp->so_states, open_states) {
  		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
-@@ -1592,14 +1596,20 @@ restart:
+@@ -1592,14 +1596,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  		spin_lock(&sp->so_lock);
  		goto restart;
  	}

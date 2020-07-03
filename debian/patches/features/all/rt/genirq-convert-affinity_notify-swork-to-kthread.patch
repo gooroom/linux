@@ -85,18 +85,17 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  		INIT_WORK(&notify->work, irq_affinity_notify);
  #endif
-@@ -372,7 +361,11 @@ irq_set_affinity_notifier(unsigned int i
+@@ -372,7 +361,9 @@ irq_set_affinity_notifier(unsigned int i
  	raw_spin_unlock_irqrestore(&desc->lock, flags);
  
  	if (old_notify) {
+-#ifndef CONFIG_PREEMPT_RT_BASE
 +#ifdef CONFIG_PREEMPT_RT_BASE
 +		kthread_cancel_work_sync(&old_notify->work);
 +#else
  		cancel_work_sync(&old_notify->work);
-+#endif
+ #endif
  		kref_put(&old_notify->kref, old_notify->release);
- 	}
- 
 --- a/drivers/scsi/qla2xxx/qla_isr.c
 +++ b/drivers/scsi/qla2xxx/qla_isr.c
 @@ -8,6 +8,7 @@
@@ -107,7 +106,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/slab.h>
  #include <scsi/scsi_tcq.h>
  #include <scsi/scsi_bsg_fc.h>
-@@ -3132,7 +3133,7 @@ qla24xx_enable_msix(struct qla_hw_data *
+@@ -3128,7 +3129,7 @@ qla24xx_enable_msix(struct qla_hw_data *
  		*/
  		kref_get(&qentry->irq_notify.kref);
  #ifdef CONFIG_PREEMPT_RT_BASE
