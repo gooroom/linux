@@ -1,0 +1,43 @@
+From: Martin Wilck <mwilck@suse.com>
+Date: Mon, 27 Nov 2017 23:47:34 +0100
+Subject: scsi: scsi_devinfo: handle non-terminated strings
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=ec0bdc2824e7358988dec46dedf01a851832ebcc
+
+commit ba69ead9e9e9bb3cec5faf03526c36764ac8942a upstream.
+
+devinfo->vendor and devinfo->model aren't necessarily
+zero-terminated.
+
+Fixes: b8018b973c7c "scsi_devinfo: fixup string compare"
+Signed-off-by: Martin Wilck <mwilck@suse.com>
+Reviewed-by: Bart Van Assche <bart.vanassche@wdc.com>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+Cc: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/scsi/scsi_devinfo.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/scsi/scsi_devinfo.c b/drivers/scsi/scsi_devinfo.c
+index d596b76eea64..aad9195b356a 100644
+--- a/drivers/scsi/scsi_devinfo.c
++++ b/drivers/scsi/scsi_devinfo.c
+@@ -451,7 +451,8 @@ static struct scsi_dev_info_list *scsi_dev_info_list_find(const char *vendor,
+ 			/*
+ 			 * vendor strings must be an exact match
+ 			 */
+-			if (vmax != strlen(devinfo->vendor) ||
++			if (vmax != strnlen(devinfo->vendor,
++					    sizeof(devinfo->vendor)) ||
+ 			    memcmp(devinfo->vendor, vskip, vmax))
+ 				continue;
+ 
+@@ -459,7 +460,7 @@ static struct scsi_dev_info_list *scsi_dev_info_list_find(const char *vendor,
+ 			 * @model specifies the full string, and
+ 			 * must be larger or equal to devinfo->model
+ 			 */
+-			mlen = strlen(devinfo->model);
++			mlen = strnlen(devinfo->model, sizeof(devinfo->model));
+ 			if (mmax < mlen || memcmp(devinfo->model, mskip, mlen))
+ 				continue;
+ 			return devinfo;
