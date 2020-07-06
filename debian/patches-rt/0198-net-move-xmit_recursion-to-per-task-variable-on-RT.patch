@@ -20,6 +20,12 @@ CPU number.
 
 Cc: stable-rt@vger.kernel.org
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[bwh: Forward-ported to 4.19.131:
+ - Define dev_xmit_recursion{,_inc,_dec}() instead of
+   xmit_rec_{read,inc,dec}(), matching the functions introduced by
+   "net: place xmit recursion in softnet data"
+ - Make softnet_data::xmit.recursion field, instead of the global
+   percpu variable xmit_recursion, dependent on !CONFIG_PREEMPT_RT_FULL]
 ---
  include/linux/netdevice.h | 95 ++++++++++++++++++++++++++++++++++++---
  include/linux/sched.h     |  3 ++
@@ -27,8 +33,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  net/core/filter.c         |  6 +--
  4 files changed, 104 insertions(+), 15 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index b816eb0bc1c4..5de4b66e11fe 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -587,7 +587,11 @@ struct netdev_queue {
@@ -43,62 +47,64 @@ index b816eb0bc1c4..5de4b66e11fe 100644
  	/*
  	 * Time (in jiffies) of last Tx
  	 */
-@@ -2620,14 +2624,53 @@ void netdev_freemem(struct net_device *dev);
- void synchronize_net(void);
- int init_dummy_netdev(struct net_device *dev);
+@@ -2961,7 +2965,9 @@ struct softnet_data {
+ #endif
+ 	/* written and read only by owning cpu: */
+ 	struct {
++#ifndef CONFIG_PREEMPT_RT_FULL
+ 		u16 recursion;
++#endif
+ 		u8  more;
+ 	} xmit;
+ #ifdef CONFIG_RPS
+@@ -3000,12 +3006,36 @@ static inline void input_queue_tail_incr
  
--DECLARE_PER_CPU(int, xmit_recursion);
- #define XMIT_RECURSION_LIMIT	10
+ DECLARE_PER_CPU_ALIGNED(struct softnet_data, softnet_data);
+ 
++#define XMIT_RECURSION_LIMIT	8
++
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +static inline int dev_recursion_level(void)
 +{
 +	return current->xmit_recursion;
 +}
 +
-+static inline int xmit_rec_read(void)
++static inline bool dev_xmit_recursion(void)
 +{
-+	return current->xmit_recursion;
++	return unlikely(current->xmit_recursion > XMIT_RECURSION_LIMIT);
 +}
 +
-+static inline void xmit_rec_inc(void)
++static inline void dev_xmit_recursion_inc(void)
 +{
 +	current->xmit_recursion++;
 +}
 +
-+static inline void xmit_rec_dec(void)
++static inline void dev_xmit_recursion_dec(void)
 +{
 +	current->xmit_recursion--;
 +}
 +
 +#else
 +
-+DECLARE_PER_CPU(int, xmit_recursion);
- 
  static inline int dev_recursion_level(void)
  {
- 	return this_cpu_read(xmit_recursion);
+ 	return this_cpu_read(softnet_data.xmit.recursion);
  }
  
-+static inline int xmit_rec_read(void)
-+{
-+	return __this_cpu_read(xmit_recursion);
-+}
-+
-+static inline void xmit_rec_inc(void)
-+{
-+	__this_cpu_inc(xmit_recursion);
-+}
-+
-+static inline void xmit_rec_dec(void)
-+{
-+	__this_cpu_dec(xmit_recursion);
-+}
+-#define XMIT_RECURSION_LIMIT	8
+ static inline bool dev_xmit_recursion(void)
+ {
+ 	return unlikely(__this_cpu_read(softnet_data.xmit.recursion) >
+@@ -3022,6 +3052,8 @@ static inline void dev_xmit_recursion_de
+ 	__this_cpu_dec(softnet_data.xmit.recursion);
+ }
+ 
 +#endif
 +
- struct net_device *dev_get_by_index(struct net *net, int ifindex);
- struct net_device *__dev_get_by_index(struct net *net, int ifindex);
- struct net_device *dev_get_by_index_rcu(struct net *net, int ifindex);
-@@ -3805,10 +3848,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+ void __netif_schedule(struct Qdisc *q);
+ void netif_schedule_queue(struct netdev_queue *txq);
+ 
+@@ -3824,10 +3856,48 @@ static inline u32 netif_msg_init(int deb
  	return (1U << debug_value) - 1;
  }
  
@@ -148,7 +154,7 @@ index b816eb0bc1c4..5de4b66e11fe 100644
  }
  
  static inline bool __netif_tx_acquire(struct netdev_queue *txq)
-@@ -3825,32 +3906,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
+@@ -3844,32 +3914,32 @@ static inline void __netif_tx_release(st
  static inline void __netif_tx_lock_bh(struct netdev_queue *txq)
  {
  	spin_lock_bh(&txq->_xmit_lock);
@@ -186,36 +192,21 @@ index b816eb0bc1c4..5de4b66e11fe 100644
  		txq->trans_start = jiffies;
  }
  
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4a4f03a8d8d4..37334ec1ab3e 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1216,6 +1216,9 @@ struct task_struct {
- #endif
+@@ -1217,6 +1217,9 @@ struct task_struct {
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  	unsigned long			task_state_change;
-+#endif
+ #endif
 +#ifdef CONFIG_PREEMPT_RT_FULL
 +	int				xmit_recursion;
- #endif
++#endif
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
-diff --git a/net/core/dev.c b/net/core/dev.c
-index c0e089fde4b5..b223a825affc 100644
+ 	struct task_struct		*oom_reaper_list;
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3540,8 +3540,10 @@ static void skb_update_prio(struct sk_buff *skb)
- #define skb_update_prio(skb)
- #endif
- 
-+#ifndef CONFIG_PREEMPT_RT_FULL
- DEFINE_PER_CPU(int, xmit_recursion);
- EXPORT_SYMBOL(xmit_recursion);
-+#endif
- 
- /**
-  *	dev_loopback_xmit - loop back @skb
-@@ -3832,9 +3834,12 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
+@@ -3825,7 +3825,11 @@ static int __dev_queue_xmit(struct sk_bu
  	if (dev->flags & IFF_UP) {
  		int cpu = smp_processor_id(); /* ok because BHs are off */
  
@@ -223,26 +214,11 @@ index c0e089fde4b5..b223a825affc 100644
 +		if (txq->xmit_lock_owner != current) {
 +#else
  		if (txq->xmit_lock_owner != cpu) {
--			if (unlikely(__this_cpu_read(xmit_recursion) >
--				     XMIT_RECURSION_LIMIT))
 +#endif
-+			if (unlikely(xmit_rec_read() > XMIT_RECURSION_LIMIT))
+ 			if (dev_xmit_recursion())
  				goto recursion_alert;
  
- 			skb = validate_xmit_skb(skb, dev, &again);
-@@ -3844,9 +3849,9 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
- 			HARD_TX_LOCK(dev, txq, cpu);
- 
- 			if (!netif_xmit_stopped(txq)) {
--				__this_cpu_inc(xmit_recursion);
-+				xmit_rec_inc();
- 				skb = dev_hard_start_xmit(skb, dev, txq, &rc);
--				__this_cpu_dec(xmit_recursion);
-+				xmit_rec_dec();
- 				if (dev_xmit_complete(rc)) {
- 					HARD_TX_UNLOCK(dev, txq);
- 					goto out;
-@@ -8578,7 +8583,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -8572,7 +8576,7 @@ static void netdev_init_one_queue(struct
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);
@@ -251,31 +227,3 @@ index c0e089fde4b5..b223a825affc 100644
  	netdev_queue_numa_node_write(queue, NUMA_NO_NODE);
  	queue->dev = dev;
  #ifdef CONFIG_BQL
-diff --git a/net/core/filter.c b/net/core/filter.c
-index 40b3af05c883..205cd1bb9bc2 100644
---- a/net/core/filter.c
-+++ b/net/core/filter.c
-@@ -2000,7 +2000,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
- {
- 	int ret;
- 
--	if (unlikely(__this_cpu_read(xmit_recursion) > XMIT_RECURSION_LIMIT)) {
-+	if (unlikely(xmit_rec_read() > XMIT_RECURSION_LIMIT)) {
- 		net_crit_ratelimited("bpf: recursion limit reached on datapath, buggy bpf program?\n");
- 		kfree_skb(skb);
- 		return -ENETDOWN;
-@@ -2009,9 +2009,9 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)
- 	skb->dev = dev;
- 	skb->tstamp = 0;
- 
--	__this_cpu_inc(xmit_recursion);
-+	xmit_rec_inc();
- 	ret = dev_queue_xmit(skb);
--	__this_cpu_dec(xmit_recursion);
-+	xmit_rec_dec();
- 
- 	return ret;
- }
--- 
-2.17.1
-
