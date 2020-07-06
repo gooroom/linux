@@ -1,9 +1,12 @@
-From af455cf90e7dc741d2f547f1b0920e355053a316 Mon Sep 17 00:00:00 2001
+From 44a1419ce83f9bae131640cc8ce0cedc3c1241d5 Mon Sep 17 00:00:00 2001
+Message-Id: <44a1419ce83f9bae131640cc8ce0cedc3c1241d5.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 15:39:05 +0100
-Subject: [PATCH 199/325] net: provide a way to delegate processing a softirq
+Subject: [PATCH 199/330] net: provide a way to delegate processing a softirq
  to ksoftirqd
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 If the NET_RX uses up all of his budget it moves the following NAPI
 invocations into the `ksoftirqd`. On -RT it does not do so. Instead it
@@ -72,10 +75,10 @@ index 27a4bb2303d0..25bcf2f2714b 100644
   * This function must run with irqs disabled!
   */
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 031079f6703b..f3c394d0037e 100644
+index b223a825affc..55891a994094 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -6370,7 +6370,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
+@@ -6381,7 +6381,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
  	list_splice_tail(&repoll, &list);
  	list_splice(&list, &sd->poll_list);
  	if (!list_empty(&sd->poll_list))
@@ -85,5 +88,5 @@ index 031079f6703b..f3c394d0037e 100644
  	net_rps_action_and_irq_enable(sd);
  out:
 -- 
-2.25.1
+2.17.1
 

@@ -1,9 +1,12 @@
-From 59729bf436bda277795b157fd494206ee00a0918 Mon Sep 17 00:00:00 2001
+From fbc8583b80053646d79cb11b49a44ac16f30a7f1 Mon Sep 17 00:00:00 2001
+Message-Id: <fbc8583b80053646d79cb11b49a44ac16f30a7f1.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 109/325] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 109/330] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -19,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 36 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 0b8850b6093b..f180bfadff33 100644
+index 9a0e01e48602..42846a65df9a 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -600,6 +600,8 @@ struct task_struct {
@@ -92,10 +95,10 @@ index 79e0d052e848..d1c564acff76 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 94bec97bd5e2..c79e32488940 100644
+index 5f0eb4565957..96823c632599 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1439,6 +1439,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
+@@ -1445,6 +1445,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
  #define WF_SYNC			0x01		/* Waker goes to sleep after wakeup */
  #define WF_FORK			0x02		/* Child wakeup after fork */
  #define WF_MIGRATED		0x4		/* Internal use, task got migrated */
@@ -104,5 +107,5 @@ index 94bec97bd5e2..c79e32488940 100644
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
 -- 
-2.25.1
+2.17.1
 

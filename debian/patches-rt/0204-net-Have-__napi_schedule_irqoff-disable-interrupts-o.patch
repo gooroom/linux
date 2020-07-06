@@ -1,9 +1,12 @@
-From 6d154a08a1e24d7e8cbb139a0b3d72fc211d45bd Mon Sep 17 00:00:00 2001
+From 590d25e7d72d525d63309d586bdb442818268a48 Mon Sep 17 00:00:00 2001
+Message-Id: <590d25e7d72d525d63309d586bdb442818268a48.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 204/325] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 204/330] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -53,10 +56,10 @@ index 5de4b66e11fe..1d6bb0ab437f 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index ddd65bbfcd3a..efebf78b57b2 100644
+index 52d44a4db2ff..c67056ad032b 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5940,6 +5940,7 @@ bool napi_schedule_prep(struct napi_struct *n)
+@@ -5951,6 +5951,7 @@ bool napi_schedule_prep(struct napi_struct *n)
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -64,7 +67,7 @@ index ddd65bbfcd3a..efebf78b57b2 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5951,6 +5952,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5962,6 +5963,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -73,5 +76,5 @@ index ddd65bbfcd3a..efebf78b57b2 100644
  bool napi_complete_done(struct napi_struct *n, int work_done)
  {
 -- 
-2.25.1
+2.17.1
 

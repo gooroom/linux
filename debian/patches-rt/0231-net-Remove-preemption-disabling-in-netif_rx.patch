@@ -1,8 +1,11 @@
-From 49d2a425ffed7592c3ab05c01653311d6f2dc878 Mon Sep 17 00:00:00 2001
+From 5eb268be9849842589d4af1bf2c7aa712de60914 Mon Sep 17 00:00:00 2001
+Message-Id: <5eb268be9849842589d4af1bf2c7aa712de60914.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Priyanka Jain <Priyanka.Jain@freescale.com>
 Date: Thu, 17 May 2012 09:35:11 +0530
-Subject: [PATCH 231/325] net: Remove preemption disabling in netif_rx()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Subject: [PATCH 231/330] net: Remove preemption disabling in netif_rx()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 1)enqueue_to_backlog() (called from netif_rx) should be
   bind to a particluar CPU. This can be achieved by
@@ -36,10 +39,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index efebf78b57b2..81174cf6bf9a 100644
+index c67056ad032b..528b89d2ff2e 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4489,7 +4489,7 @@ static int netif_rx_internal(struct sk_buff *skb)
+@@ -4490,7 +4490,7 @@ static int netif_rx_internal(struct sk_buff *skb)
  		struct rps_dev_flow voidflow, *rflow = &voidflow;
  		int cpu;
  
@@ -48,7 +51,7 @@ index efebf78b57b2..81174cf6bf9a 100644
  		rcu_read_lock();
  
  		cpu = get_rps_cpu(skb->dev, skb, &rflow);
-@@ -4499,14 +4499,14 @@ static int netif_rx_internal(struct sk_buff *skb)
+@@ -4500,14 +4500,14 @@ static int netif_rx_internal(struct sk_buff *skb)
  		ret = enqueue_to_backlog(skb, cpu, &rflow->last_qtail);
  
  		rcu_read_unlock();
@@ -67,5 +70,5 @@ index efebf78b57b2..81174cf6bf9a 100644
  	return ret;
  }
 -- 
-2.25.1
+2.17.1
 

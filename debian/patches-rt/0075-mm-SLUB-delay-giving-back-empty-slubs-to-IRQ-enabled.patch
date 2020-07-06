@@ -1,9 +1,12 @@
-From 6e725f0366939a0d83764cd8835200cb222bb1af Mon Sep 17 00:00:00 2001
+From 7b367dfb1943353fa3ba380009621330359ebb3e Mon Sep 17 00:00:00 2001
+Message-Id: <7b367dfb1943353fa3ba380009621330359ebb3e.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 21 Jun 2018 17:29:19 +0200
-Subject: [PATCH 075/325] mm/SLUB: delay giving back empty slubs to IRQ enabled
+Subject: [PATCH 075/330] mm/SLUB: delay giving back empty slubs to IRQ enabled
  regions
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 __free_slab() is invoked with disabled interrupts which increases the
 irq-off time while __free_pages() is doing the work.
@@ -18,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 69 insertions(+), 5 deletions(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index a3b4c5c04ffe..19bc021a2726 100644
+index 83ca3f1c0d86..7a0706ccdf30 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1330,6 +1330,12 @@ static inline void dec_slabs_node(struct kmem_cache *s, int node,
@@ -219,5 +222,5 @@ index a3b4c5c04ffe..19bc021a2726 100644
  	if (debug_guardpage_minorder())
  		slub_max_order = 0;
 -- 
-2.25.1
+2.17.1
 

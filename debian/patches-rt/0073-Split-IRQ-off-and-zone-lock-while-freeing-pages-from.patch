@@ -1,9 +1,12 @@
-From e2fc0821dfc12bc01f49756080b4563f0fc2c45c Mon Sep 17 00:00:00 2001
+From 377595cd119888aa39bd32ee3c2ae94341f8b596 Mon Sep 17 00:00:00 2001
+Message-Id: <377595cd119888aa39bd32ee3c2ae94341f8b596.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 28 May 2018 15:24:21 +0200
-Subject: [PATCH 073/325] Split IRQ-off and zone->lock while freeing pages from
+Subject: [PATCH 073/330] Split IRQ-off and zone->lock while freeing pages from
  PCP list #2
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 Split the IRQ-off section while accessing the PCP list from zone->lock
 while freeing pages.
@@ -18,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 50 insertions(+), 10 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 0cfcd42517a4..9a4d150ea5b7 100644
+index 2a543a376a40..62b39e3e5cea 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -1105,8 +1105,8 @@ static inline void prefetch_buddy(struct page *page)
@@ -60,7 +63,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  		__free_one_page(page, page_to_pfn(page), zone, 0, mt);
  		trace_mm_page_pcpu_drain(page, 0, mt);
  	}
-@@ -2562,7 +2577,7 @@ void drain_zone_pages(struct zone *zone, struct per_cpu_pages *pcp)
+@@ -2563,7 +2578,7 @@ void drain_zone_pages(struct zone *zone, struct per_cpu_pages *pcp)
  	local_irq_restore(flags);
  
  	if (to_drain > 0)
@@ -69,7 +72,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  }
  #endif
  
-@@ -2592,7 +2607,7 @@ static void drain_pages_zone(unsigned int cpu, struct zone *zone)
+@@ -2593,7 +2608,7 @@ static void drain_pages_zone(unsigned int cpu, struct zone *zone)
  	local_irq_restore(flags);
  
  	if (count)
@@ -78,7 +81,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  }
  
  /*
-@@ -2785,7 +2800,8 @@ static bool free_unref_page_prepare(struct page *page, unsigned long pfn)
+@@ -2786,7 +2801,8 @@ static bool free_unref_page_prepare(struct page *page, unsigned long pfn)
  	return true;
  }
  
@@ -88,7 +91,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  {
  	struct zone *zone = page_zone(page);
  	struct per_cpu_pages *pcp;
-@@ -2814,10 +2830,8 @@ static void free_unref_page_commit(struct page *page, unsigned long pfn)
+@@ -2815,10 +2831,8 @@ static void free_unref_page_commit(struct page *page, unsigned long pfn)
  	pcp->count++;
  	if (pcp->count >= pcp->high) {
  		unsigned long batch = READ_ONCE(pcp->batch);
@@ -100,7 +103,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  	}
  }
  
-@@ -2828,13 +2842,17 @@ void free_unref_page(struct page *page)
+@@ -2829,13 +2843,17 @@ void free_unref_page(struct page *page)
  {
  	unsigned long flags;
  	unsigned long pfn = page_to_pfn(page);
@@ -119,7 +122,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  }
  
  /*
-@@ -2845,6 +2863,11 @@ void free_unref_page_list(struct list_head *list)
+@@ -2846,6 +2864,11 @@ void free_unref_page_list(struct list_head *list)
  	struct page *page, *next;
  	unsigned long flags, pfn;
  	int batch_count = 0;
@@ -131,7 +134,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  
  	/* Prepare pages for freeing */
  	list_for_each_entry_safe(page, next, list, lru) {
-@@ -2857,10 +2880,12 @@ void free_unref_page_list(struct list_head *list)
+@@ -2858,10 +2881,12 @@ void free_unref_page_list(struct list_head *list)
  	local_irq_save(flags);
  	list_for_each_entry_safe(page, next, list, lru) {
  		unsigned long pfn = page_private(page);
@@ -145,7 +148,7 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  
  		/*
  		 * Guard against excessive IRQ disabled times when we get
-@@ -2873,6 +2898,21 @@ void free_unref_page_list(struct list_head *list)
+@@ -2874,6 +2899,21 @@ void free_unref_page_list(struct list_head *list)
  		}
  	}
  	local_irq_restore(flags);
@@ -168,5 +171,5 @@ index 0cfcd42517a4..9a4d150ea5b7 100644
  
  /*
 -- 
-2.25.1
+2.17.1
 

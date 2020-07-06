@@ -1,8 +1,11 @@
-From 74e387d61b063ceb45e370bc75b3f0d76bd51061 Mon Sep 17 00:00:00 2001
+From f52d8b9fda534cb6f083517fe283fa5e65410c7e Mon Sep 17 00:00:00 2001
+Message-Id: <f52d8b9fda534cb6f083517fe283fa5e65410c7e.1592846147.git.zanussi@kernel.org>
+In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
-Subject: [PATCH 309/325] sched: Lazy migrate_disable processing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Subject: [PATCH 309/330] sched: Lazy migrate_disable processing
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -67,7 +70,7 @@ index e67645924404..87347ccbba0c 100644
  #endif	/* !CONFIG_HOTPLUG_CPU */
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 854a6cb456af..60ac271472aa 100644
+index bdae37091808..729127d0e536 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -227,6 +227,8 @@ extern void io_schedule_finish(int token);
@@ -121,7 +124,7 @@ index 9e3362748214..4e5af4616dbd 100644
  	.active_mm	= &init_mm,
  	.restart_block	= {
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 0d50ae262898..2834eed32b55 100644
+index 27fe7c8185c9..cb446db5790c 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -75,11 +75,6 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
@@ -583,10 +586,10 @@ index 6fd3f7b4d7d8..e97ac751aad2 100644
 +}
  #endif
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index c90574112bca..78fa5911dd55 100644
+index 005874299b04..8b0c0b63ab22 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -913,6 +913,10 @@ struct rq {
+@@ -919,6 +919,10 @@ struct rq {
  	/* Must be inspected within a rcu lock section */
  	struct cpuidle_state	*idle_state;
  #endif
@@ -612,5 +615,5 @@ index b8a8a8db2d75..0c80992aa337 100644
  		goto out;
  
 -- 
-2.25.1
+2.17.1
 
