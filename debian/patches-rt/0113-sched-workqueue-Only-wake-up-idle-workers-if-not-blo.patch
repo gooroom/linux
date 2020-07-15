@@ -1,12 +1,12 @@
-From c6c2b9b244badb5d0cad014f0e5ff7db89e43ffb Mon Sep 17 00:00:00 2001
-Message-Id: <c6c2b9b244badb5d0cad014f0e5ff7db89e43ffb.1592846147.git.zanussi@kernel.org>
-In-Reply-To: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
-References: <07cd0dbc80b976663c80755496a03f288decfe5a.1592846146.git.zanussi@kernel.org>
+From 88ad37991950318c862016a9beba42af7bfa91d4 Mon Sep 17 00:00:00 2001
+Message-Id: <88ad37991950318c862016a9beba42af7bfa91d4.1594742966.git.zanussi@kernel.org>
+In-Reply-To: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
+References: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Mon, 18 Mar 2013 15:12:49 -0400
-Subject: [PATCH 113/330] sched/workqueue: Only wake up idle workers if not
+Subject: [PATCH 113/329] sched/workqueue: Only wake up idle workers if not
  blocked on sleeping spin lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.127-rt55.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.132-rt59.tar.xz
 
 In -rt, most spin_locks() turn into mutexes. One of these spin_lock
 conversions is performed on the workqueue gcwq->lock. When the idle
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 59d43c084023..e792543de8eb 100644
+index dec4822184bb..7071cbc98e01 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3539,8 +3539,10 @@ static void __sched notrace __schedule(bool preempt)
