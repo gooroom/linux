@@ -770,11 +770,12 @@ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	dh_installdocs
 endif
 	for service in fcopy kvp vss; do \
-		dh_installsystemd --name hv-$$service-daemon \
+		dh_installsystemd --name hv-$$service-daemon --no-enable --no-start \
 			|| break; \
 		dh_installinit --name hv-$$service-daemon \
 			|| break; \
 	done
+	dh_installudev
 	dh_lintian
 	dh_strip
 	dh_compress
