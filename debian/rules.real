@@ -765,21 +765,17 @@ install-hyperv-daemons: build-hyperv-daemons
 	dh_prep
 	$(call make-tools,tools/hv) install DESTDIR=$(DIR)
 	dh_install
-	for service in fcopy kvp vss; do \
-		install -D -m755 debian/hyperv-daemons.hv-$$service-daemon.init \
-			$(DIR)/etc/init.d/hyperv-daemons.hv-$$service-daemon \
-			|| break; \
-	done
 	dh_installchangelogs
 ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
 	dh_installdocs
 endif
-	dh_installsystemd
 	for service in fcopy kvp vss; do \
-		dh_installinit --name hyperv-daemons.hv-$$service-daemon \
-			--onlyscripts \
+		dh_installsystemd --name hv-$$service-daemon --no-enable --no-start \
+			|| break; \
+		dh_installinit --name hv-$$service-daemon \
 			|| break; \
 	done
+	dh_installudev
 	dh_lintian
 	dh_strip
 	dh_compress
