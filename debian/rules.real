@@ -440,7 +440,8 @@ ifeq ($(DEBUG),True)
 	fi
 endif
 	cp $(DIR)/.config $(PACKAGE_DIR)/boot/config-$(REAL_VERSION)
-	cp $(DIR)/System.map $(PACKAGE_DIR)/boot/System.map-$(REAL_VERSION)
+	echo "ffffffffffffffff B The real System.map is in the linux-image-<version>-dbg package" \
+		> $(PACKAGE_DIR)/boot/System.map-$(REAL_VERSION)
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/build
 	rm -f $(PACKAGE_DIR)/lib/modules/$(REAL_VERSION)/source
 	rm $(PACKAGE_DIR)/lib/firmware -rf
@@ -502,6 +503,7 @@ install-image-dbg_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/build_$(ARCH)_
 	dh_installdirs usr/lib/debug usr/lib/debug/boot usr/share/lintian/overrides/
 	dh_lintian
 	install -m644 $(DIR)/vmlinux $(DEBUG_DIR)/boot/vmlinux-$(REAL_VERSION)
+	install -m644 $(DIR)/System.map $(DEBUG_DIR)/boot/System.map-$(REAL_VERSION)
 	+$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH='$(CURDIR)'/$(DEBUG_DIR)
 	find $(DEBUG_DIR)/lib/modules/$(REAL_VERSION)/ -mindepth 1 -maxdepth 1 \! -name kernel -exec rm {} \+
 	rm $(DEBUG_DIR)/lib/firmware -rf
