@@ -1,0 +1,86 @@
+From: Paul Moore <paul@paul-moore.com>
+Date: Tue, 28 Jul 2020 15:33:21 -0400
+Subject: revert: 1320a4052ea1 ("audit: trigger accompanying records when no
+ rules present")
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=a5e79834a5cd304ba114fa4b05d75f10a4dce80e
+Bug-Debian: https://bugs.debian.org/966822
+
+commit 8ac68dc455d9d18241d44b96800d73229029ed34 upstream.
+
+Unfortunately the commit listed in the subject line above failed
+to ensure that the task's audit_context was properly initialized/set
+before enabling the "accompanying records".  Depending on the
+situation, the resulting audit_context could have invalid values in
+some of it's fields which could cause a kernel panic/oops when the
+task/syscall exists and the audit records are generated.
+
+We will revisit the original patch, with the necessary fixes, in a
+future kernel but right now we just want to fix the kernel panic
+with the least amount of added risk.
+
+Cc: stable@vger.kernel.org
+Fixes: 1320a4052ea1 ("audit: trigger accompanying records when no rules present")
+Reported-by: j2468h@googlemail.com
+Signed-off-by: Paul Moore <paul@paul-moore.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ kernel/audit.c   | 1 -
+ kernel/audit.h   | 8 --------
+ kernel/auditsc.c | 3 +++
+ 3 files changed, 3 insertions(+), 9 deletions(-)
+
+diff --git a/kernel/audit.c b/kernel/audit.c
+index f711f424a28a..0aa0e00e4f83 100644
+--- a/kernel/audit.c
++++ b/kernel/audit.c
+@@ -1811,7 +1811,6 @@ struct audit_buffer *audit_log_start(struct audit_context *ctx, gfp_t gfp_mask,
+ 	}
+ 
+ 	audit_get_stamp(ab->ctx, &t, &serial);
+-	audit_clear_dummy(ab->ctx);
+ 	audit_log_format(ab, "audit(%llu.%03lu:%u): ",
+ 			 (unsigned long long)t.tv_sec, t.tv_nsec/1000000, serial);
+ 
+diff --git a/kernel/audit.h b/kernel/audit.h
+index f0233dc40b17..ddc22878433d 100644
+--- a/kernel/audit.h
++++ b/kernel/audit.h
+@@ -290,13 +290,6 @@ extern int audit_signal_info_syscall(struct task_struct *t);
+ extern void audit_filter_inodes(struct task_struct *tsk,
+ 				struct audit_context *ctx);
+ extern struct list_head *audit_killed_trees(void);
+-
+-static inline void audit_clear_dummy(struct audit_context *ctx)
+-{
+-	if (ctx)
+-		ctx->dummy = 0;
+-}
+-
+ #else /* CONFIG_AUDITSYSCALL */
+ #define auditsc_get_stamp(c, t, s) 0
+ #define audit_put_watch(w) {}
+@@ -330,7 +323,6 @@ static inline int audit_signal_info_syscall(struct task_struct *t)
+ }
+ 
+ #define audit_filter_inodes(t, c) AUDIT_DISABLED
+-#define audit_clear_dummy(c) {}
+ #endif /* CONFIG_AUDITSYSCALL */
+ 
+ extern char *audit_unpack_string(void **bufp, size_t *remain, size_t len);
+diff --git a/kernel/auditsc.c b/kernel/auditsc.c
+index 814406a35db1..4effe01ebbe2 100644
+--- a/kernel/auditsc.c
++++ b/kernel/auditsc.c
+@@ -1406,6 +1406,9 @@ static void audit_log_proctitle(void)
+ 	struct audit_context *context = audit_context();
+ 	struct audit_buffer *ab;
+ 
++	if (!context || context->dummy)
++		return;
++
+ 	ab = audit_log_start(context, GFP_KERNEL, AUDIT_PROCTITLE);
+ 	if (!ab)
+ 		return;	/* audit_panic or being filtered */
+-- 
+2.28.0
+
