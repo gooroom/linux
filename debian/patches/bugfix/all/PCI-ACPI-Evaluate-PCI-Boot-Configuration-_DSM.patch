@@ -1,0 +1,80 @@
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Sat, 15 Jun 2019 10:23:57 +1000
+Subject: [PATCH 1/4] PCI/ACPI: Evaluate PCI Boot Configuration _DSM
+Origin: https://git.kernel.org/linus/a78cf9657ba5426f54aa93a067c10d097944c082
+
+Evaluate _DSM Function #5, the "PCI Boot Configuration" function.  If the
+result is 0, the OS should preserve any resource assignments made by the
+firmware.
+
+Link: https://lore.kernel.org/r/20190615002359.29577-2-benh@kernel.crashing.org
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+[bhelgaas: commit log]
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ drivers/acpi/pci_root.c  | 12 ++++++++++++
+ include/linux/pci-acpi.h |  7 ++++---
+ include/linux/pci.h      |  2 ++
+ 3 files changed, 18 insertions(+), 3 deletions(-)
+
+Index: linux/drivers/acpi/pci_root.c
+===================================================================
+--- linux.orig/drivers/acpi/pci_root.c
++++ linux/drivers/acpi/pci_root.c
+@@ -884,6 +884,7 @@ struct pci_bus *acpi_pci_root_create(str
+ 	int node = acpi_get_node(device->handle);
+ 	struct pci_bus *bus;
+ 	struct pci_host_bridge *host_bridge;
++	union acpi_object *obj;
+ 
+ 	info->root = root;
+ 	info->bridge = device;
+@@ -920,6 +921,17 @@ struct pci_bus *acpi_pci_root_create(str
+ 	if (!(root->osc_control_set & OSC_PCI_EXPRESS_LTR_CONTROL))
+ 		host_bridge->native_ltr = 0;
+ 
++	/*
++	 * Evaluate the "PCI Boot Configuration" _DSM Function.  If it
++	 * exists and returns 0, we must preserve any PCI resource
++	 * assignments made by firmware for this host bridge.
++	 */
++	obj = acpi_evaluate_dsm(ACPI_HANDLE(bus->bridge), &pci_acpi_dsm_guid, 1,
++	                        IGNORE_PCI_BOOT_CONFIG_DSM, NULL);
++	if (obj && obj->type == ACPI_TYPE_INTEGER && obj->integer.value == 0)
++		host_bridge->preserve_config = 1;
++	ACPI_FREE(obj);
++
+ 	pci_scan_child_bus(bus);
+ 	pci_set_host_bridge_release(host_bridge, acpi_pci_root_release_info,
+ 				    info);
+Index: linux/include/linux/pci-acpi.h
+===================================================================
+--- linux.orig/include/linux/pci-acpi.h
++++ linux/include/linux/pci-acpi.h
+@@ -107,9 +107,10 @@ static inline void acpiphp_check_host_br
+ #endif
+ 
+ extern const guid_t pci_acpi_dsm_guid;
+-#define DEVICE_LABEL_DSM	0x07
+-#define RESET_DELAY_DSM		0x08
+-#define FUNCTION_DELAY_DSM	0x09
++#define IGNORE_PCI_BOOT_CONFIG_DSM	0x05
++#define DEVICE_LABEL_DSM		0x07
++#define RESET_DELAY_DSM			0x08
++#define FUNCTION_DELAY_DSM		0x09
+ 
+ #else	/* CONFIG_ACPI */
+ static inline void acpi_pci_add_bus(struct pci_bus *bus) { }
+Index: linux/include/linux/pci.h
+===================================================================
+--- linux.orig/include/linux/pci.h
++++ linux/include/linux/pci.h
+@@ -486,6 +486,8 @@ struct pci_host_bridge {
+ 	unsigned int	native_shpc_hotplug:1;	/* OS may use SHPC hotplug */
+ 	unsigned int	native_pme:1;		/* OS may use PCIe PME */
+ 	unsigned int	native_ltr:1;		/* OS may use PCIe LTR */
++	unsigned int	preserve_config:1;	/* Preserve FW resource setup */
++
+ 	/* Resource alignment requirements */
+ 	resource_size_t (*align_resource)(struct pci_dev *dev,
+ 			const struct resource *res,
