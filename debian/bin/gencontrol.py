@@ -61,6 +61,7 @@ class Gencontrol(Base):
     env_flags = [
         ('DEBIAN_KERNEL_DISABLE_DEBUG', 'disable_debug', 'debug infos'),
         ('DEBIAN_KERNEL_DISABLE_INSTALLER', 'disable_installer', 'installer modules'),
+        ('DEBIAN_KERNEL_DISABLE_SIGNED', 'disable_signed', 'signed code'),
     ]
 
     def __init__(self, config_dirs=["debian/config"],
@@ -139,8 +140,11 @@ class Gencontrol(Base):
             # configuration errors before building linux-signed.
             build_signed = {}
             for arch in arches:
-                build_signed[arch] = self.config.merge('build', arch) \
-                                                .get('signed-code', False)
+                if not self.disable_signed:
+                    build_signed[arch] = self.config.merge('build', arch) \
+                                                    .get('signed-code', False)
+                else:
+                    build_signed[arch] = False
 
             for package in udeb_packages:
                 # kernel-wedge currently chokes on Build-Profiles so add it now
@@ -253,8 +257,11 @@ class Gencontrol(Base):
             makeflags['ABINAME'] = vars['abiname'] = \
                 self.abiname_version + abiname_part
 
-        build_signed = self.config.merge('build', arch) \
-                                  .get('signed-code', False)
+        if not self.disable_signed:
+            build_signed = self.config.merge('build', arch) \
+                                      .get('signed-code', False)
+        else:
+            build_signed = False
 
         # Some userland architectures require kernels from another
         # (Debian) architecture, e.g. x32/amd64.
@@ -464,7 +471,10 @@ class Gencontrol(Base):
 
         packages_own = []
 
-        build_signed = config_entry_build.get('signed-code')
+        if not self.disable_signed:
+            build_signed = config_entry_build.get('signed-code')
+        else:
+            build_signed = False
 
         image = self.templates[build_signed and "control.image-unsigned"
                                or "control.image"]
