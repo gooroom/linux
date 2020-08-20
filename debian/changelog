@@ -2,6 +2,29 @@ linux (5.8-1~exp1) UNRELEASED; urgency=medium
 
   * New upstream release: https://kernelnewbies.org/Linux_5.8
 
+  [ Jeremy Stanley ]
+  * [x86] PMIC operation region support (Closes: #925965)
+    - Enable CONFIG_PMIC_OPREGION for general ACPI support of operation
+      regions with Power Management Integrated Circuits. Turn on specific
+      opregion support for:
+      + CONFIG_BYTCRC_PMIC_OPREGION (Bay Trail Crystal Cove PMIC)
+      + CONFIG_CHTCRC_PMIC_OPREGION (Cherry Trail Crystal Cove PMIC)
+      + CONFIG_XPOWER_PMIC_OPREGION (XPower AXP288 PMIC)
+      + CONFIG_BXT_WC_PMIC_OPREGION (BXT WhiskeyCove PMIC)
+      + CONFIG_CHT_WC_PMIC_OPREGION (CHT Whiskey Cove PMIC)
+      + CONFIG_CHT_DC_TI_PMIC_OPREGION (Dollar Cove TI PMIC)
+      Additionally enable CONFIG_MFD_INTEL_PMC_BXT as a module (multi-function
+      device driver for Intel Broxton Whiskey Cove PMIC), along with
+      CONFIG_INTEL_SOC_PMIC (Crystal Cove PMIC) as a dependency for it.
+  * [x86] Fix Cherry Trail power management regression (Closes: #949886)
+    - Switch CONFIG_I2C_DESIGNWARE_PLATFORM from being compiled as a module to
+      compiled into the kernel directly, since as of kernel version 5.1 this
+      state became a dependency for CONFIG_INTEL_SOC_PMIC_CHTWC which is
+      already enabled.
+    - Enable CONFIG_USB_ROLES_INTEL_XHCI and CONFIG_TYPEC_MUX_PI3USB30532 as
+      modules, which became dependencies for the already enabled
+      CONFIG_INTEL_CHT_INT33FE as of kernel version 4.17.
+
   [ Romain Perier ]
   * Rebased patches onto 5.8.
 
