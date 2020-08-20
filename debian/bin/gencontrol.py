@@ -59,6 +59,7 @@ class Gencontrol(Base):
     }
 
     env_flags = [
+        ('DEBIAN_KERNEL_DISABLE_DEBUG', 'disable_debug', 'debug infos'),
         ('DEBIAN_KERNEL_DISABLE_INSTALLER', 'disable_installer', 'installer modules'),
     ]
 
@@ -512,18 +513,7 @@ class Gencontrol(Base):
 
         build_debug = config_entry_build.get('debug-info')
 
-        if os.getenv('DEBIAN_KERNEL_DISABLE_DEBUG'):
-            if self.changelog[0].distribution == 'UNRELEASED':
-                import warnings
-                warnings.warn('Disable debug infos on request '
-                              '(DEBIAN_KERNEL_DISABLE_DEBUG set)')
-                build_debug = False
-            else:
-                raise RuntimeError(
-                    'Unable to disable debug infos in release build '
-                    '(DEBIAN_KERNEL_DISABLE_DEBUG set)')
-
-        if build_debug:
+        if not self.disable_debug:
             makeflags['DEBUG'] = True
             packages_own.extend(self.process_packages(
                 self.templates['control.image-dbg'], vars))
