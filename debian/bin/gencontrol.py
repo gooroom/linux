@@ -58,6 +58,10 @@ class Gencontrol(Base):
         }
     }
 
+    env_flags = [
+        ('DEBIAN_KERNEL_DISABLE_INSTALLER', 'disable_installer', 'installer modules'),
+    ]
+
     def __init__(self, config_dirs=["debian/config"],
                  template_dirs=["debian/templates"]):
         super(Gencontrol, self).__init__(
@@ -66,6 +70,17 @@ class Gencontrol(Base):
             VersionLinux)
         self.process_changelog()
         self.config_dirs = config_dirs
+
+        for env, attr, desc in self.env_flags:
+            setattr(self, attr, False)
+            if os.getenv(env):
+                if self.changelog[0].distribution == 'UNRELEASED':
+                    import warnings
+                    warnings.warn(f'Disable {desc} on request ({env} set)')
+                    setattr(self, attr, True)
+                else:
+                    raise RuntimeError(
+                        'Unable to disable {desc} in release build ({env} set)')
 
     def _setup_makeflags(self, names, makeflags, data):
         for src, dst, optional in names:
@@ -93,16 +108,7 @@ class Gencontrol(Base):
 
         self.installer_packages = {}
 
-        if os.getenv('DEBIAN_KERNEL_DISABLE_INSTALLER'):
-            if self.changelog[0].distribution == 'UNRELEASED':
-                import warnings
-                warnings.warn('Disable installer modules on request '
-                              '(DEBIAN_KERNEL_DISABLE_INSTALLER set)')
-            else:
-                raise RuntimeError(
-                    'Unable to disable installer modules in release build '
-                    '(DEBIAN_KERNEL_DISABLE_INSTALLER set)')
-        elif self.config.merge('packages').get('installer', True):
+        if not self.disable_installer and self.config.merge('packages').get('installer', True):
             # Add udebs using kernel-wedge
             kw_env = os.environ.copy()
             kw_env['KW_DEFCONFIG_DIR'] = 'debian/installer'
