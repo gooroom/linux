@@ -12,7 +12,7 @@ from debian_linux import config
 from debian_linux.debian import PackageDescription, PackageRelation, \
     PackageRelationEntry, PackageRelationGroup, VersionLinux
 from debian_linux.gencontrol import Gencontrol as Base, merge_packages, \
-    iter_featuresets
+    iter_featuresets, iter_flavours
 from debian_linux.utils import Templates, read_control
 
 locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
@@ -334,6 +334,18 @@ class Gencontrol(Base):
         vars['localversion_headers'] = vars['localversion']
         makeflags['LOCALVERSION_HEADERS'] = vars['localversion_headers']
 
+        self.default_flavour = self.config.merge('base', arch, featureset) \
+                                          .get('default-flavour')
+        if self.default_flavour is not None:
+            if featureset != 'none':
+                raise RuntimeError("default-flavour set for %s %s,"
+                                   " but must only be set for featureset none"
+                                   % (arch, featureset))
+            if self.default_flavour \
+               not in iter_flavours(self.config, arch, featureset):
+                raise RuntimeError("default-flavour %s for %s %s does not exist"
+                                   % (self.default_flavour, arch, featureset))
+
     flavour_makeflags_base = (
         ('compiler', 'COMPILER', False),
         ('compiler-filename', 'COMPILER', True),
@@ -511,6 +523,13 @@ class Gencontrol(Base):
             packages_meta += self.process_packages(
                 self.templates['control.headers.meta'], vars)
             assert len(packages_meta) == 2
+
+            if flavour == self.default_flavour \
+               and not self.vars['source_suffix']:
+                packages_meta[0].setdefault('Provides', PackageRelation()) \
+                                .append('linux-image-generic')
+                packages_meta[1].setdefault('Provides', PackageRelation()) \
+                                .append('linux-headers-generic')
 
             packages_own.extend(packages_meta)
 
