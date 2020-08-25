@@ -5,6 +5,8 @@ MAKE_BPFTOOL += prefix=/usr
 MAKE_BPFTOOL += mandir=/usr/share/man
 MAKE_BPFTOOL += V=$(KBUILD_VERBOSE)
 MAKE_BPFTOOL += ARCH=$(KERNEL_ARCH)
+MAKE_BPFTOOL += EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)'
+MAKE_BPFTOOL += EXTRA_LDFLAGS='$(LDFLAGS)'
 
 # dynamically linking with libbfd is not allowed in Debian
 MAKE_BPFTOOL += feature-libbfd=0 feature-libbfd-liberty=0 feature-libbfd-liberty-z=0
