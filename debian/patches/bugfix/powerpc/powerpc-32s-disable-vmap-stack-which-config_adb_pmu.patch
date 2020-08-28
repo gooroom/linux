@@ -1,0 +1,33 @@
+From: Christophe Leroy <christophe.leroy@csgroup.eu>
+Subject: [PATCH v2] powerpc/32s: Disable VMAP stack which CONFIG_ADB_PMU
+Date: Thu, 27 Aug 2020 18:30:27 +0000 (UTC)
+Origin: https://patchwork.ozlabs.org/project/linuxppc-dev/patch/ec96c15bfa1a7415ab604ee1c98cd45779c08be0.1598553015.git.christophe.leroy@csgroup.eu/
+Bug-Debian: https://bugs.debian.org/963689
+
+low_sleep_handler() can't restore the context from virtual
+stack because the stack can hardly be accessed with MMU OFF.
+
+For now, disable VMAP stack when CONFIG_ADB_PMU is selected.
+
+Reported-by: Giuseppe Sacco <giuseppe@sguazz.it>
+Fixes: cd08f109e262 ("powerpc/32s: Enable CONFIG_VMAP_STACK")
+Signed-off-by: Christophe Leroy <christophe.leroy@csgroup.eu>
+---
+v2: Argh, went too quick. CONFIG_ADB_PMU ==> ADB_PMU
+---
+ arch/powerpc/platforms/Kconfig.cputype | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/platforms/Kconfig.cputype b/arch/powerpc/platforms/Kconfig.cputype
+index 87737ec86d39..1dc9d3c81872 100644
+--- a/arch/powerpc/platforms/Kconfig.cputype
++++ b/arch/powerpc/platforms/Kconfig.cputype
+@@ -36,7 +36,7 @@ config PPC_BOOK3S_6xx
+ 	select PPC_HAVE_PMU_SUPPORT
+ 	select PPC_HAVE_KUEP
+ 	select PPC_HAVE_KUAP
+-	select HAVE_ARCH_VMAP_STACK
++	select HAVE_ARCH_VMAP_STACK if !ADB_PMU
+ 
+ config PPC_BOOK3S_601
+ 	bool "PowerPC 601"
