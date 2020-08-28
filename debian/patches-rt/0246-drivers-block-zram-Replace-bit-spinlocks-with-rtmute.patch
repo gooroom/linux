@@ -1,12 +1,12 @@
-From ceeee0d5920e787c297fc85ca0f50d08b5e0c87e Mon Sep 17 00:00:00 2001
-Message-Id: <ceeee0d5920e787c297fc85ca0f50d08b5e0c87e.1594742966.git.zanussi@kernel.org>
-In-Reply-To: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
-References: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
+From ce6f30f35d4a32ddcea1038f5940d07dbebbab4c Mon Sep 17 00:00:00 2001
+Message-Id: <ce6f30f35d4a32ddcea1038f5940d07dbebbab4c.1596234184.git.zanussi@kernel.org>
+In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
 Subject: [PATCH 246/329] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.132-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
 OTOH, they're a lot less wasteful than an rtmutex per page.
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 41 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 76abe40bfa83..d6cf9508b80d 100644
+index 52850c10165e..95b28f842533 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -53,6 +53,40 @@ static size_t huge_class_size;

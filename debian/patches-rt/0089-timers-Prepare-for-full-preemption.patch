@@ -1,11 +1,11 @@
-From 77025c9c9fdf7f20ce09e36a49b8da02a23cc6c5 Mon Sep 17 00:00:00 2001
-Message-Id: <77025c9c9fdf7f20ce09e36a49b8da02a23cc6c5.1594742966.git.zanussi@kernel.org>
-In-Reply-To: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
-References: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
+From a3af87bbfafb04784c4c873c21c5aa1458ba7483 Mon Sep 17 00:00:00 2001
+Message-Id: <a3af87bbfafb04784c4c873c21c5aa1458ba7483.1596234183.git.zanussi@kernel.org>
+In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
 Subject: [PATCH 089/329] timers: Prepare for full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.132-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -33,7 +33,7 @@ index 7b066fd38248..54627d046b3a 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 183881fe4aab..626fb9904ed1 100644
+index 541c7222ffc2..c0058e62a3fc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -498,11 +498,14 @@ void resched_cpu(int cpu)
@@ -63,7 +63,7 @@ index 183881fe4aab..626fb9904ed1 100644
  }
  
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index ae64cb819a9a..9019c9caf146 100644
+index 6c54cf481fde..458fa0189514 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -44,6 +44,7 @@
@@ -84,7 +84,7 @@ index ae64cb819a9a..9019c9caf146 100644
  	unsigned long		clk;
  	unsigned long		next_expiry;
  	unsigned int		cpu;
-@@ -1178,6 +1182,33 @@ void add_timer_on(struct timer_list *timer, int cpu)
+@@ -1189,6 +1193,33 @@ void add_timer_on(struct timer_list *timer, int cpu)
  }
  EXPORT_SYMBOL_GPL(add_timer_on);
  
@@ -118,7 +118,7 @@ index ae64cb819a9a..9019c9caf146 100644
  /**
   * del_timer - deactivate a timer.
   * @timer: the timer to be deactivated
-@@ -1233,7 +1264,7 @@ int try_to_del_timer_sync(struct timer_list *timer)
+@@ -1244,7 +1275,7 @@ int try_to_del_timer_sync(struct timer_list *timer)
  }
  EXPORT_SYMBOL(try_to_del_timer_sync);
  
@@ -127,7 +127,7 @@ index ae64cb819a9a..9019c9caf146 100644
  /**
   * del_timer_sync - deactivate a timer and wait for the handler to finish.
   * @timer: the timer to be deactivated
-@@ -1293,7 +1324,7 @@ int del_timer_sync(struct timer_list *timer)
+@@ -1304,7 +1335,7 @@ int del_timer_sync(struct timer_list *timer)
  		int ret = try_to_del_timer_sync(timer);
  		if (ret >= 0)
  			return ret;
@@ -136,7 +136,7 @@ index ae64cb819a9a..9019c9caf146 100644
  	}
  }
  EXPORT_SYMBOL(del_timer_sync);
-@@ -1354,13 +1385,16 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
+@@ -1365,13 +1396,16 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
  
  		fn = timer->function;
  
@@ -154,7 +154,7 @@ index ae64cb819a9a..9019c9caf146 100644
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1683,8 +1717,8 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1694,8 +1728,8 @@ static inline void __run_timers(struct timer_base *base)
  		while (levels--)
  			expire_timers(base, heads + levels);
  	}
@@ -164,7 +164,7 @@ index ae64cb819a9a..9019c9caf146 100644
  }
  
  /*
-@@ -1929,6 +1963,9 @@ static void __init init_timer_cpu(int cpu)
+@@ -1940,6 +1974,9 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;
