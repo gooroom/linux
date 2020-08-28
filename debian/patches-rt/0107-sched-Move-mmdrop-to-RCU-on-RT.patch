@@ -1,11 +1,11 @@
-From d91e269d2b5e4934af93621c9b40c63bd78b7c4d Mon Sep 17 00:00:00 2001
-Message-Id: <d91e269d2b5e4934af93621c9b40c63bd78b7c4d.1594742966.git.zanussi@kernel.org>
-In-Reply-To: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
-References: <832f7d97d6b989a5b4860dd2dbec58ad6ad5ab81.1594742966.git.zanussi@kernel.org>
+From 7f1ff4cd6b39bf6153ba39335d5554d843345d68 Mon Sep 17 00:00:00 2001
+Message-Id: <7f1ff4cd6b39bf6153ba39335d5554d843345d68.1596234183.git.zanussi@kernel.org>
+In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 107/329] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.132-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -87,10 +87,10 @@ index 309f4a20d4ac..d4ec53c72577 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1fe932aac00f..fae976506632 100644
+index 87c04b6a78d2..ec979c93a488 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2729,9 +2729,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2731,9 +2731,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -105,7 +105,7 @@ index 1fe932aac00f..fae976506632 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -5602,6 +5606,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5604,6 +5608,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
