@@ -1,11 +1,11 @@
-From a3af87bbfafb04784c4c873c21c5aa1458ba7483 Mon Sep 17 00:00:00 2001
-Message-Id: <a3af87bbfafb04784c4c873c21c5aa1458ba7483.1596234183.git.zanussi@kernel.org>
-In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
-References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+From 1515fae666ef12f51f8f87243ca51cc4ee5590b3 Mon Sep 17 00:00:00 2001
+Message-Id: <1515fae666ef12f51f8f87243ca51cc4ee5590b3.1599166690.git.zanussi@kernel.org>
+In-Reply-To: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
+References: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 089/329] timers: Prepare for full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
+Subject: [PATCH 089/333] timers: Prepare for full preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.142-rt63.tar.xz
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -19,9 +19,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/time/timer.c   | 45 +++++++++++++++++++++++++++++++++++++++----
  3 files changed, 49 insertions(+), 7 deletions(-)
 
+diff --git a/include/linux/timer.h b/include/linux/timer.h
+index 7b066fd38248..54627d046b3a 100644
 --- a/include/linux/timer.h
 +++ b/include/linux/timer.h
-@@ -172,7 +172,7 @@
+@@ -172,7 +172,7 @@ extern void add_timer(struct timer_list *timer);
  
  extern int try_to_del_timer_sync(struct timer_list *timer);
  
@@ -30,9 +32,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
    extern int del_timer_sync(struct timer_list *timer);
  #else
  # define del_timer_sync(t)		del_timer(t)
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 541c7222ffc2..c0058e62a3fc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -498,11 +498,14 @@
+@@ -498,11 +498,14 @@ void resched_cpu(int cpu)
   */
  int get_nohz_timer_target(void)
  {
@@ -49,7 +53,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	rcu_read_lock();
  	for_each_domain(cpu, sd) {
-@@ -521,6 +524,8 @@
+@@ -521,6 +524,8 @@ int get_nohz_timer_target(void)
  		cpu = housekeeping_any_cpu(HK_FLAG_TIMER);
  unlock:
  	rcu_read_unlock();
@@ -58,6 +62,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	return cpu;
  }
  
+diff --git a/kernel/time/timer.c b/kernel/time/timer.c
+index 61e41ea3a96e..ecc23d2c21a9 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -45,6 +45,7 @@
@@ -68,7 +74,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  #include <linux/uaccess.h>
  #include <asm/unistd.h>
-@@ -198,6 +199,9 @@
+@@ -198,6 +199,9 @@ EXPORT_SYMBOL(jiffies_64);
  struct timer_base {
  	raw_spinlock_t		lock;
  	struct timer_list	*running_timer;
@@ -78,7 +84,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	unsigned long		clk;
  	unsigned long		next_expiry;
  	unsigned int		cpu;
-@@ -1190,6 +1194,33 @@
+@@ -1190,6 +1194,33 @@ void add_timer_on(struct timer_list *timer, int cpu)
  }
  EXPORT_SYMBOL_GPL(add_timer_on);
  
@@ -112,7 +118,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * del_timer - deactivate a timer.
   * @timer: the timer to be deactivated
-@@ -1245,7 +1276,7 @@
+@@ -1245,7 +1276,7 @@ int try_to_del_timer_sync(struct timer_list *timer)
  }
  EXPORT_SYMBOL(try_to_del_timer_sync);
  
@@ -121,7 +127,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /**
   * del_timer_sync - deactivate a timer and wait for the handler to finish.
   * @timer: the timer to be deactivated
-@@ -1305,7 +1336,7 @@
+@@ -1305,7 +1336,7 @@ int del_timer_sync(struct timer_list *timer)
  		int ret = try_to_del_timer_sync(timer);
  		if (ret >= 0)
  			return ret;
@@ -130,7 +136,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  EXPORT_SYMBOL(del_timer_sync);
-@@ -1366,13 +1397,16 @@
+@@ -1366,13 +1397,16 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
  
  		fn = timer->function;
  
@@ -148,7 +154,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1702,8 +1736,8 @@
+@@ -1702,8 +1736,8 @@ static inline void __run_timers(struct timer_base *base)
  		while (levels--)
  			expire_timers(base, heads + levels);
  	}
@@ -158,7 +164,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  /*
-@@ -1948,6 +1982,9 @@
+@@ -1948,6 +1982,9 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;
@@ -168,3 +174,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
+-- 
+2.17.1
+

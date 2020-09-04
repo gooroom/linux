@@ -1,12 +1,12 @@
-From 6c626da3237f042b61b9a0b31e7c73ac41842b08 Mon Sep 17 00:00:00 2001
-Message-Id: <6c626da3237f042b61b9a0b31e7c73ac41842b08.1596234183.git.zanussi@kernel.org>
-In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
-References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+From d285b697ccc1a44bb4508fa6144c36d3f3c8980e Mon Sep 17 00:00:00 2001
+Message-Id: <d285b697ccc1a44bb4508fa6144c36d3f3c8980e.1599166690.git.zanussi@kernel.org>
+In-Reply-To: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
+References: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/329] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/333] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.142-rt63.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -32,7 +32,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 8c6392534d14..d64ca45f5db6 100644
+index bba2f76c356d..790b5e90426d 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
 @@ -2261,7 +2261,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
@@ -117,7 +117,7 @@ index 311b3cf1270e..7d47c9b9726e 100644
  }
  
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 80289617ce3d..661b5d6d4197 100644
+index 2443f921b19f..22b8ce4bb107 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4951,9 +4951,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)

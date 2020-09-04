@@ -1,11 +1,11 @@
-From 2c07898b589abf34dde2538a5c56bedf99533dab Mon Sep 17 00:00:00 2001
-Message-Id: <2c07898b589abf34dde2538a5c56bedf99533dab.1596234184.git.zanussi@kernel.org>
-In-Reply-To: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
-References: <378ee68279f6a7631221f2670a9298620148690d.1596234183.git.zanussi@kernel.org>
+From 091492e9dcff0975b11d7a66e19b0fb44abe7963 Mon Sep 17 00:00:00 2001
+Message-Id: <091492e9dcff0975b11d7a66e19b0fb44abe7963.1599166691.git.zanussi@kernel.org>
+In-Reply-To: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
+References: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 237/329] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.135-rt60.tar.xz
+Subject: [PATCH 237/333] sched: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.142-rt63.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -423,7 +423,7 @@ index 297934719db9..64edaf6fe151 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 80289617ce3d..627cd3961268 100644
+index 2443f921b19f..304a36c029cc 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4104,7 +4104,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -480,7 +480,7 @@ index 80289617ce3d..627cd3961268 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9834,7 +9834,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -9839,7 +9839,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -489,7 +489,7 @@ index 80289617ce3d..627cd3961268 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9858,7 +9858,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -9863,7 +9863,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
