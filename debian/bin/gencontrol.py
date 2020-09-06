@@ -491,16 +491,6 @@ class Gencontrol(Base):
         packages_own.append(image_main)
         makeflags['IMAGE_PACKAGE_NAME'] = image_main['Package']
 
-        # The image meta-packages will depend on signed linux-image
-        # packages where applicable, so should be built from the
-        # signed source packages
-        if do_meta and not build_signed:
-            packages_own.extend(self.process_packages(
-                self.templates["control.image.meta"], vars))
-            self.substitute_debhelper_config(
-                "image.meta", vars,
-                "linux-image%(localversion)s" % vars)
-
         package_headers = self.process_package(headers[0], vars)
         package_headers['Depends'].extend(relations_compiler_headers)
         packages_own.append(package_headers)
@@ -508,12 +498,25 @@ class Gencontrol(Base):
             extra['headers_arch_depends'].append('%s (= ${binary:Version})' %
                                                  packages_own[-1]['Package'])
 
-        # The header meta-packages will be built along with the signed
-        # packages, to create a dependency relationship that ensures
-        # src:linux and src:linux-signed-* transition to testing together.
+        # The image meta-packages will depend on signed linux-image
+        # packages where applicable, so should be built from the
+        # signed source packages The header meta-packages will also be
+        # built along with the signed packages, to create a dependency
+        # relationship that ensures src:linux and src:linux-signed-*
+        # transition to testing together.
         if do_meta and not build_signed:
-            packages_own.extend(self.process_packages(
-                self.templates["control.headers.meta"], vars))
+            packages_meta = self.process_packages(
+                self.templates['control.image.meta'], vars)
+            assert len(packages_meta) == 1
+            packages_meta += self.process_packages(
+                self.templates['control.headers.meta'], vars)
+            assert len(packages_meta) == 2
+
+            packages_own.extend(packages_meta)
+
+            self.substitute_debhelper_config(
+                "image.meta", vars,
+                "linux-image%(localversion)s" % vars)
             self.substitute_debhelper_config(
                 'headers.meta', vars,
                 'linux-headers%(localversion)s' % vars)
