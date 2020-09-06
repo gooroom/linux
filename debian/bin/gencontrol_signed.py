@@ -36,13 +36,16 @@ class Gencontrol(Base):
             'template': 'linux-image-%s-signed-template' % arch,
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
-            'source_suffix': '',
+            'source_basename': re.sub(r'-[\d.]+$', '',
+                                      self.changelog[0].source),
             'source_upstream': self.version.upstream,
             'abiname': self.abiname,
             'imagebinaryversion': image_binary_version,
             'imagesourceversion': self.version.complete,
             'arch': arch,
         }
+        self.vars['source_suffix'] = \
+            self.changelog[0].source[len(self.vars['source_basename']):]
 
         self.package_dir = 'debian/%(template)s' % self.vars
         self.template_top_dir = (self.package_dir
