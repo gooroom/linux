@@ -1,7 +1,7 @@
 Subject: rt: Introduce cpu_chill()
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 07 Mar 2012 20:51:03 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Add cpu_chill() to replace cpu_relax(). cpu_chill()
@@ -62,8 +62,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/delay.h
 +++ b/include/linux/delay.h
-@@ -65,4 +65,10 @@ static inline void ssleep(unsigned int s
- 	msleep(seconds * 1000);
+@@ -76,4 +76,10 @@ static inline void fsleep(unsigned long
+ 		msleep(DIV_ROUND_UP(usecs, 1000));
  }
  
 +#ifdef CONFIG_PREEMPT_RT
@@ -75,7 +75,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* defined(_LINUX_DELAY_H) */
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1984,6 +1984,38 @@ SYSCALL_DEFINE2(nanosleep_time32, struct
+@@ -1993,6 +1993,38 @@ SYSCALL_DEFINE2(nanosleep_time32, struct
  }
  #endif
  

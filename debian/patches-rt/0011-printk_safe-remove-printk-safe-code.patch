@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:49 +0100
 Subject: [PATCH 11/25] printk_safe: remove printk safe code
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 vprintk variants are now NMI-safe so there is no longer a need for
 the "safe" calls.
@@ -20,15 +20,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/printk/Makefile         |    1 
  kernel/printk/internal.h       |   35 ---
  kernel/printk/printk.c         |   47 ----
- kernel/printk/printk_safe.c    |  406 -----------------------------------------
+ kernel/printk/printk_safe.c    |  414 -----------------------------------------
  kernel/trace/trace.c           |    2 
  lib/nmi_backtrace.c            |    6 
- 12 files changed, 7 insertions(+), 523 deletions(-)
+ 12 files changed, 7 insertions(+), 531 deletions(-)
  delete mode 100644 kernel/printk/printk_safe.c
 
 --- a/arch/powerpc/kernel/traps.c
 +++ b/arch/powerpc/kernel/traps.c
-@@ -171,7 +171,6 @@ extern void panic_flush_kmsg_start(void)
+@@ -170,7 +170,6 @@ extern void panic_flush_kmsg_start(void)
  
  extern void panic_flush_kmsg_end(void)
  {
@@ -52,25 +52,25 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/include/linux/hardirq.h
 +++ b/include/linux/hardirq.h
-@@ -68,7 +68,6 @@ extern void irq_exit(void);
- #define nmi_enter()						\
+@@ -115,7 +115,6 @@ extern void rcu_nmi_exit(void);
  	do {							\
+ 		lockdep_off();					\
  		arch_nmi_enter();				\
 -		printk_nmi_enter();				\
- 		lockdep_off();					\
- 		ftrace_nmi_enter();				\
- 		BUG_ON(in_nmi());				\
-@@ -85,7 +84,6 @@ extern void irq_exit(void);
- 		preempt_count_sub(NMI_OFFSET + HARDIRQ_OFFSET);	\
- 		ftrace_nmi_exit();				\
- 		lockdep_on();					\
+ 		BUG_ON(in_nmi() == NMI_MASK);			\
+ 		__preempt_count_add(NMI_OFFSET + HARDIRQ_OFFSET);	\
+ 	} while (0)
+@@ -134,7 +133,6 @@ extern void rcu_nmi_exit(void);
+ 	do {							\
+ 		BUG_ON(!in_nmi());				\
+ 		__preempt_count_sub(NMI_OFFSET + HARDIRQ_OFFSET);	\
 -		printk_nmi_exit();				\
  		arch_nmi_exit();				\
+ 		lockdep_on();					\
  	} while (0)
- 
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -146,18 +146,6 @@ static inline __printf(1, 2) __cold
+@@ -147,18 +147,6 @@ static inline __printf(1, 2) __cold
  void early_printk(const char *s, ...) { }
  #endif
  
@@ -89,7 +89,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_PRINTK
  asmlinkage __printf(5, 0)
  int vprintk_emit(int facility, int level,
-@@ -202,8 +190,6 @@ void __init setup_log_buf(int early);
+@@ -203,8 +191,6 @@ void __init setup_log_buf(int early);
  void dump_stack_print_info(const char *log_lvl);
  void show_regs_print_info(const char *log_lvl);
  extern asmlinkage void dump_stack(void) __cold;
@@ -98,7 +98,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  static inline __printf(1, 0)
  int vprintk(const char *s, va_list args)
-@@ -268,13 +254,6 @@ static inline void dump_stack(void)
+@@ -269,13 +255,6 @@ static inline void dump_stack(void)
  {
  }
  
@@ -124,7 +124,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/*
 --- a/kernel/panic.c
 +++ b/kernel/panic.c
-@@ -237,7 +237,6 @@ void panic(const char *fmt, ...)
+@@ -247,7 +247,6 @@ void panic(const char *fmt, ...)
  	 * Bypass the panic_cpu check and call __crash_kexec directly.
  	 */
  	if (!_crash_kexec_post_notifiers) {
@@ -132,7 +132,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		__crash_kexec(NULL);
  
  		/*
-@@ -261,8 +260,6 @@ void panic(const char *fmt, ...)
+@@ -271,8 +270,6 @@ void panic(const char *fmt, ...)
  	 */
  	atomic_notifier_call_chain(&panic_notifier_list, 0, buf);
  
@@ -150,7 +150,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  obj-$(CONFIG_A11Y_BRAILLE_CONSOLE)	+= braille.o
 --- a/kernel/printk/internal.h
 +++ b/kernel/printk/internal.h
-@@ -20,35 +20,6 @@ int vprintk_store(int facility, int leve
+@@ -22,35 +22,6 @@ int vprintk_store(int facility, int leve
  __printf(1, 0) int vprintk_default(const char *fmt, va_list args);
  __printf(1, 0) int vprintk_deferred(const char *fmt, va_list args);
  __printf(1, 0) int vprintk_func(const char *fmt, va_list args);
@@ -186,7 +186,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  void defer_console_output(void);
  
-@@ -61,12 +32,10 @@ void defer_console_output(void);
+@@ -63,12 +34,10 @@ void defer_console_output(void);
   * semaphore and some of console functions (console_unlock()/etc.), so
   * printk-safe must preserve the existing local IRQ guarantees.
   */
@@ -222,7 +222,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* Return log buffer address */
  char *log_buf_addr_get(void)
  {
-@@ -1061,28 +1049,12 @@ static void __init log_buf_add_cpu(void)
+@@ -1069,28 +1057,12 @@ static void __init log_buf_add_cpu(void)
  static inline void log_buf_add_cpu(void) {}
  #endif /* CONFIG_SMP */
  
@@ -251,7 +251,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (log_buf != __log_buf)
  		return;
  
-@@ -1764,13 +1736,6 @@ static bool cont_add(u32 caller_id, int
+@@ -1769,13 +1741,6 @@ static bool cont_add(u32 caller_id, int
  }
  #endif /* 0 */
  
@@ -265,7 +265,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* ring buffer used as memory allocator for temporary sprint buffers */
  DECLARE_STATIC_PRINTKRB(sprint_rb,
  			ilog2(PRINTK_RECORD_MAX + sizeof(struct prb_entry) +
-@@ -1839,6 +1804,11 @@ asmlinkage int vprintk_emit(int facility
+@@ -1844,6 +1809,11 @@ asmlinkage int vprintk_emit(int facility
  }
  EXPORT_SYMBOL(vprintk_emit);
  
@@ -277,7 +277,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  asmlinkage int vprintk(const char *fmt, va_list args)
  {
  	return vprintk_func(fmt, args);
-@@ -2788,9 +2758,6 @@ static DEFINE_PER_CPU(struct irq_work, w
+@@ -2830,9 +2800,6 @@ static DEFINE_PER_CPU(struct irq_work, w
  
  void wake_up_klogd(void)
  {
@@ -287,7 +287,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	preempt_disable();
  	if (waitqueue_active(&log_wait)) {
  		this_cpu_or(printk_pending, PRINTK_PENDING_WAKEUP);
-@@ -2868,9 +2835,6 @@ late_initcall(init_printk_kthread);
+@@ -2910,9 +2877,6 @@ late_initcall(init_printk_kthread);
  
  void defer_console_output(void)
  {
@@ -297,7 +297,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	preempt_disable();
  	__this_cpu_or(printk_pending, PRINTK_PENDING_OUTPUT);
  	irq_work_queue(this_cpu_ptr(&wake_up_klogd_work));
-@@ -3246,5 +3210,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
+@@ -3312,5 +3276,4 @@ void kmsg_dump_rewind(struct kmsg_dumper
  	logbuf_unlock_irqrestore(flags);
  }
  EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
@@ -305,7 +305,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
 --- a/kernel/printk/printk_safe.c
 +++ /dev/null
-@@ -1,406 +0,0 @@
+@@ -1,414 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0-or-later
 -/*
 - * printk_safe.c - Safe printk for printk-deadlock-prone contexts
@@ -314,10 +314,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -#include <linux/preempt.h>
 -#include <linux/spinlock.h>
 -#include <linux/debug_locks.h>
+-#include <linux/kdb.h>
 -#include <linux/smp.h>
 -#include <linux/cpumask.h>
 -#include <linux/irq_work.h>
 -#include <linux/printk.h>
+-#include <linux/kprobes.h>
 -
 -#include "internal.h"
 -
@@ -601,14 +603,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	return printk_safe_log_store(s, fmt, args);
 -}
 -
--void notrace printk_nmi_enter(void)
+-void noinstr printk_nmi_enter(void)
 -{
--	this_cpu_or(printk_context, PRINTK_NMI_CONTEXT_MASK);
+-	this_cpu_add(printk_context, PRINTK_NMI_CONTEXT_OFFSET);
 -}
 -
--void notrace printk_nmi_exit(void)
+-void noinstr printk_nmi_exit(void)
 -{
--	this_cpu_and(printk_context, ~PRINTK_NMI_CONTEXT_MASK);
+-	this_cpu_sub(printk_context, PRINTK_NMI_CONTEXT_OFFSET);
 -}
 -
 -/*
@@ -667,6 +669,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -
 -__printf(1, 0) int vprintk_func(const char *fmt, va_list args)
 -{
+-#ifdef CONFIG_KGDB_KDB
+-	/* Allow to pass printk() to kdb but avoid a recursion. */
+-	if (unlikely(kdb_trap_printk && kdb_printf_cpu < 0))
+-		return vkdb_printf(KDB_MSGSRC_PRINTK, fmt, args);
+-#endif
+-
 -	/*
 -	 * Try to use the main logbuf even in NMI. But avoid calling console
 -	 * drivers that might have their own locks.
@@ -714,7 +722,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -9142,7 +9142,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9247,7 +9247,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -722,7 +730,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -9219,7 +9218,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9327,7 +9326,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);

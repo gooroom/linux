@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:50 +0100
 Subject: [PATCH 12/25] printk: minimize console locking implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Since printing of the printk buffer is now handled by the printk
 kthread, minimize the console locking functions to just handle
@@ -12,12 +12,12 @@ NOTE: With this console_flush_on_panic will no longer flush.
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/printk/printk.c |  255 -------------------------------------------------
- 1 file changed, 1 insertion(+), 254 deletions(-)
+ kernel/printk/printk.c |  254 -------------------------------------------------
+ 1 file changed, 1 insertion(+), 253 deletions(-)
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -227,19 +227,7 @@ static int nr_ext_console_drivers;
+@@ -226,19 +226,7 @@ static int nr_ext_console_drivers;
  
  static int __down_trylock_console_sem(unsigned long ip)
  {
@@ -38,7 +38,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return 1;
  	mutex_acquire(&console_lock_dep_map, 0, 1, ip);
  	return 0;
-@@ -248,13 +236,9 @@ static int __down_trylock_console_sem(un
+@@ -247,13 +235,9 @@ static int __down_trylock_console_sem(un
  
  static void __up_console_sem(unsigned long ip)
  {
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  #define up_console_sem() __up_console_sem(_RET_IP_)
  
-@@ -1552,82 +1536,6 @@ static void format_text(struct printk_lo
+@@ -1560,82 +1544,6 @@ static void format_text(struct printk_lo
  }
  
  /*
@@ -135,7 +135,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * Call the console drivers, asking them to write out
   * log_buf[start] to log_buf[end - 1].
   * The console_lock must be held.
-@@ -1889,8 +1797,6 @@ static ssize_t msg_print_ext_header(char
+@@ -1883,8 +1791,6 @@ static ssize_t msg_print_ext_header(char
  static ssize_t msg_print_ext_body(char *buf, size_t size,
  				  char *dict, size_t dict_len,
  				  char *text, size_t text_len) { return 0; }
@@ -180,7 +180,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /**
   * console_unlock - unlock the console system
-@@ -2161,147 +2038,17 @@ static inline int can_use_console(void)
+@@ -2161,147 +2038,18 @@ static inline int can_use_console(void)
   * Releases the console_lock which the caller holds on the console system
   * and the console driver list.
   *
@@ -241,9 +241,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -		printk_safe_enter_irqsave(flags);
 -		raw_spin_lock(&logbuf_lock);
 -		if (console_seq < log_first_seq) {
--			len = sprintf(text,
--				      "** %llu printk messages dropped **\n",
--				      log_first_seq - console_seq);
+-			len = snprintf(text, sizeof(text),
+-				       "** %llu printk messages dropped **\n",
+-				       log_first_seq - console_seq);
 -
 -			/* messages are gone, move to first one */
 -			console_seq = log_first_seq;
@@ -307,7 +307,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	}
 -
  	console_locked = 0;
--
+ 
 -	raw_spin_unlock(&logbuf_lock);
 -
  	up_console_sem();

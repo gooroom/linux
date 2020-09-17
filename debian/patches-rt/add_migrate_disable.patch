@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
 Subject: kernel/sched/core: add migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 [bristot@redhat.com: rt: Increase/decrease the nr of migratory tasks when enabling/disabling migration
  Link: https://lkml.kernel.org/r/e981d271cbeca975bca710e2fbcc6078c09741b0.1498482127.git.bristot@redhat.com
@@ -64,7 +64,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* __LINUX_PREEMPT_H */
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -233,6 +233,8 @@ extern void io_schedule_finish(int token
+@@ -232,6 +232,8 @@ extern void io_schedule_finish(int token
  extern long io_schedule_timeout(long timeout);
  extern void io_schedule(void);
  
@@ -73,7 +73,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /**
   * struct prev_cputime - snapshot of system and user cputime
   * @utime: time spent in user mode
-@@ -710,6 +712,20 @@ struct task_struct {
+@@ -718,6 +720,20 @@ struct task_struct {
  	int				nr_cpus_allowed;
  	const cpumask_t			*cpus_ptr;
  	cpumask_t			cpus_mask;
@@ -94,7 +94,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
-@@ -1879,6 +1895,23 @@ static __always_inline bool need_resched
+@@ -1923,6 +1939,23 @@ static __always_inline bool need_resched
  	return unlikely(tif_need_resched());
  }
  
@@ -118,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Wrappers for p->thread_info->cpu access. No-op on UP.
   */
-@@ -2070,4 +2103,6 @@ int sched_trace_rq_cpu(struct rq *rq);
+@@ -2107,4 +2140,6 @@ int sched_trace_rq_nr_running(struct rq
  
  const struct cpumask *sched_trace_rd_span(struct root_domain *rd);
  
@@ -127,7 +127,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
 --- a/include/linux/smp.h
 +++ b/include/linux/smp.h
-@@ -221,6 +221,9 @@ static inline int get_boot_cpu_id(void)
+@@ -236,6 +236,9 @@ static inline int get_boot_cpu_id(void)
  #define get_cpu()		({ preempt_disable(); __smp_processor_id(); })
  #define put_cpu()		preempt_enable()
  
@@ -139,7 +139,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * boot command line:
 --- a/init/init_task.c
 +++ b/init/init_task.c
-@@ -73,6 +73,10 @@ struct task_struct init_task
+@@ -82,6 +82,10 @@ struct task_struct init_task
  	.cpus_ptr	= &init_task.cpus_mask,
  	.cpus_mask	= CPU_MASK_ALL,
  	.nr_cpus_allowed= NR_CPUS,
@@ -152,7 +152,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	.restart_block	= {
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -848,6 +848,15 @@ static int take_cpu_down(void *_param)
+@@ -864,6 +864,15 @@ static int take_cpu_down(void *_param)
  	int err, cpu = smp_processor_id();
  	int ret;
  
@@ -168,7 +168,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* Ensure this CPU doesn't handle any more interrupts. */
  	err = __cpu_disable();
  	if (err < 0)
-@@ -877,6 +886,10 @@ static int take_cpu_down(void *_param)
+@@ -893,6 +902,10 @@ static int take_cpu_down(void *_param)
  	return 0;
  }
  
@@ -179,7 +179,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static int takedown_cpu(unsigned int cpu)
  {
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
-@@ -891,11 +904,39 @@ static int takedown_cpu(unsigned int cpu
+@@ -907,11 +920,39 @@ static int takedown_cpu(unsigned int cpu
  	 */
  	irq_lock_sparse();
  
@@ -219,7 +219,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -914,6 +955,9 @@ static int takedown_cpu(unsigned int cpu
+@@ -930,6 +971,9 @@ static int takedown_cpu(unsigned int cpu
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  
@@ -231,7 +231,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1140,6 +1140,7 @@ void __sched rt_spin_lock_slowunlock(str
+@@ -1138,6 +1138,7 @@ void __sched rt_spin_lock_slowunlock(str
  
  void __lockfunc rt_spin_lock(spinlock_t *lock)
  {
@@ -239,7 +239,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1154,6 +1155,7 @@ void __lockfunc __rt_spin_lock(struct rt
+@@ -1152,6 +1153,7 @@ void __lockfunc __rt_spin_lock(struct rt
  #ifdef CONFIG_DEBUG_LOCK_ALLOC
  void __lockfunc rt_spin_lock_nested(spinlock_t *lock, int subclass)
  {
@@ -247,7 +247,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1167,6 +1169,7 @@ void __lockfunc rt_spin_unlock(spinlock_
+@@ -1165,6 +1167,7 @@ void __lockfunc rt_spin_unlock(spinlock_
  	spin_release(&lock->dep_map, _RET_IP_);
  	rt_spin_lock_fastunlock(&lock->lock, rt_spin_lock_slowunlock);
  	migrate_enable();
@@ -255,7 +255,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL(rt_spin_unlock);
  
-@@ -1192,12 +1195,15 @@ int __lockfunc rt_spin_trylock(spinlock_
+@@ -1190,12 +1193,15 @@ int __lockfunc rt_spin_trylock(spinlock_
  {
  	int ret;
  
@@ -273,7 +273,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return ret;
  }
  EXPORT_SYMBOL(rt_spin_trylock);
-@@ -1209,6 +1215,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
+@@ -1207,6 +1213,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
  	local_bh_disable();
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
@@ -281,7 +281,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		migrate_disable();
  		spin_acquire(&lock->dep_map, 0, 1, _RET_IP_);
  	} else
-@@ -1224,6 +1231,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
+@@ -1222,6 +1229,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
  	*flags = 0;
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
@@ -360,7 +360,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
-@@ -287,10 +287,14 @@ void rcu_note_context_switch(bool preemp
+@@ -289,10 +289,14 @@ void rcu_note_context_switch(bool preemp
  	struct task_struct *t = current;
  	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
  	struct rcu_node *rnp;
@@ -378,7 +378,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1478,7 +1478,7 @@ static inline bool is_cpu_allowed(struct
+@@ -1736,7 +1736,7 @@ static inline bool is_cpu_allowed(struct
  	if (!cpumask_test_cpu(cpu, p->cpus_ptr))
  		return false;
  
@@ -387,7 +387,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return cpu_online(cpu);
  
  	return cpu_active(cpu);
-@@ -1602,9 +1602,18 @@ static int migration_cpu_stop(void *data
+@@ -1858,9 +1858,18 @@ static int migration_cpu_stop(void *data
  void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask)
  {
  	cpumask_copy(&p->cpus_mask, new_mask);
@@ -407,7 +407,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  {
  	struct rq *rq = task_rq(p);
-@@ -1693,7 +1702,8 @@ static int __set_cpus_allowed_ptr(struct
+@@ -1954,7 +1963,8 @@ static int __set_cpus_allowed_ptr(struct
  	}
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -417,7 +417,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		goto out;
  
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
-@@ -4023,6 +4033,8 @@ pick_next_task(struct rq *rq, struct tas
+@@ -4432,6 +4442,8 @@ pick_next_task(struct rq *rq, struct tas
  	BUG();
  }
  
@@ -426,7 +426,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * __schedule() is the main scheduler function.
   *
-@@ -4093,6 +4105,9 @@ static void __sched notrace __schedule(b
+@@ -4510,6 +4522,9 @@ static void __sched notrace __schedule(b
  	rq_lock(rq, &rf);
  	smp_mb__after_spinlock();
  
@@ -436,7 +436,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* Promote REQ to ACT */
  	rq->clock_update_flags <<= 1;
  	update_rq_clock(rq);
-@@ -6341,6 +6356,7 @@ static void migrate_tasks(struct rq *dea
+@@ -6830,6 +6845,7 @@ static void migrate_tasks(struct rq *dea
  			break;
  
  		next = __pick_migrate_task(rq);
@@ -444,10 +444,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		/*
  		 * Rules for changing task_struct::cpus_mask are holding
-@@ -8043,3 +8059,164 @@ const u32 sched_prio_to_wmult[40] = {
- };
- 
- #undef CREATE_TRACE_POINTS
+@@ -8548,3 +8564,164 @@ void call_trace_sched_update_nr_running(
+ {
+         trace_sched_update_nr_running_tp(rq, count);
+ }
 +
 +#if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT)
 +
@@ -611,7 +611,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#endif
 --- a/kernel/sched/debug.c
 +++ b/kernel/sched/debug.c
-@@ -965,6 +965,10 @@ void proc_sched_show_task(struct task_st
+@@ -958,6 +958,10 @@ void proc_sched_show_task(struct task_st
  		P(dl.runtime);
  		P(dl.deadline);
  	}
@@ -620,11 +620,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#endif
 +	P(nr_cpus_allowed);
  #undef PN_SCHEDSTAT
- #undef PN
- #undef __PN
+ #undef P_SCHEDSTAT
+ 
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1005,6 +1005,10 @@ struct rq {
+@@ -1048,6 +1048,10 @@ struct rq {
  	/* Must be inspected within a rcu lock section */
  	struct cpuidle_state	*idle_state;
  #endif

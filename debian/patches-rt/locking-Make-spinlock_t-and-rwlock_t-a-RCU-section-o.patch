@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 19 Nov 2019 09:25:04 +0100
 Subject: [PATCH] locking: Make spinlock_t and rwlock_t a RCU section on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 On !RT a locked spinlock_t and rwlock_t disables preemption which
 implies a RCU read section. There is code that relies on that behaviour.
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1141,6 +1141,7 @@ void __sched rt_spin_lock_slowunlock(str
+@@ -1139,6 +1139,7 @@ void __sched rt_spin_lock_slowunlock(str
  void __lockfunc rt_spin_lock(spinlock_t *lock)
  {
  	sleeping_lock_inc();
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, 0, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1156,6 +1157,7 @@ void __lockfunc __rt_spin_lock(struct rt
+@@ -1154,6 +1155,7 @@ void __lockfunc __rt_spin_lock(struct rt
  void __lockfunc rt_spin_lock_nested(spinlock_t *lock, int subclass)
  {
  	sleeping_lock_inc();
@@ -33,7 +33,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	migrate_disable();
  	spin_acquire(&lock->dep_map, subclass, 0, _RET_IP_);
  	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
-@@ -1169,6 +1171,7 @@ void __lockfunc rt_spin_unlock(spinlock_
+@@ -1167,6 +1169,7 @@ void __lockfunc rt_spin_unlock(spinlock_
  	spin_release(&lock->dep_map, _RET_IP_);
  	rt_spin_lock_fastunlock(&lock->lock, rt_spin_lock_slowunlock);
  	migrate_enable();
@@ -41,7 +41,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	sleeping_lock_dec();
  }
  EXPORT_SYMBOL(rt_spin_unlock);
-@@ -1200,6 +1203,7 @@ int __lockfunc rt_spin_trylock(spinlock_
+@@ -1198,6 +1201,7 @@ int __lockfunc rt_spin_trylock(spinlock_
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
  		spin_acquire(&lock->dep_map, 0, 1, _RET_IP_);
@@ -49,7 +49,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	} else {
  		migrate_enable();
  		sleeping_lock_dec();
-@@ -1216,6 +1220,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
+@@ -1214,6 +1218,7 @@ int __lockfunc rt_spin_trylock_bh(spinlo
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
  		sleeping_lock_inc();
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		migrate_disable();
  		spin_acquire(&lock->dep_map, 0, 1, _RET_IP_);
  	} else
-@@ -1232,6 +1237,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
+@@ -1230,6 +1235,7 @@ int __lockfunc rt_spin_trylock_irqsave(s
  	ret = __rt_mutex_trylock(&lock->lock);
  	if (ret) {
  		sleeping_lock_inc();

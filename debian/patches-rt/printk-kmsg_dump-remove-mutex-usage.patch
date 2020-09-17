@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Wed, 24 Apr 2019 16:36:04 +0200
 Subject: [PATCH] printk: kmsg_dump: remove mutex usage
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 The kmsg dumper can be called from any context, but the dumping
 helpers were using a mutex to synchronize the iterator against
@@ -29,16 +29,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* the next printk record to read after the last 'clear' command */
  static u64 clear_seq;
  
-@@ -2878,6 +2876,7 @@ module_param_named(always_kmsg_dump, alw
+@@ -2938,6 +2936,7 @@ EXPORT_SYMBOL_GPL(kmsg_dump_reason_str);
   */
  void kmsg_dump(enum kmsg_dump_reason reason)
  {
 +	struct kmsg_dumper dumper_local;
  	struct kmsg_dumper *dumper;
  
- 	if ((reason > KMSG_DUMP_OOPS) && !always_kmsg_dump)
-@@ -2888,16 +2887,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
- 		if (dumper->max_reason && reason > dumper->max_reason)
+ 	rcu_read_lock();
+@@ -2955,16 +2954,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
+ 		if (reason > max_reason)
  			continue;
  
 -		/* initialize iterator with data about the stored records */
@@ -63,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  	rcu_read_unlock();
  }
-@@ -3009,9 +3010,7 @@ bool kmsg_dump_get_line(struct kmsg_dump
+@@ -3076,9 +3077,7 @@ bool kmsg_dump_get_line(struct kmsg_dump
  {
  	bool ret;
  
@@ -73,7 +73,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return ret;
  }
-@@ -3163,9 +3162,7 @@ void kmsg_dump_rewind_nolock(struct kmsg
+@@ -3230,9 +3229,7 @@ void kmsg_dump_rewind_nolock(struct kmsg
   */
  void kmsg_dump_rewind(struct kmsg_dumper *dumper)
  {

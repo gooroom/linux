@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Fri, 10 Jan 2020 16:45:32 +0106
 Subject: [PATCH] serial: 8250: fsl/ingenic/mtk: fix atomic console
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 A few 8250 implementations have their own IER access. If the port
 is a console, wrap the accesses with console_atomic_lock.
@@ -61,7 +61,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			value |= UART_MCR_MDCE | UART_MCR_FCM;
 --- a/drivers/tty/serial/8250/8250_mtk.c
 +++ b/drivers/tty/serial/8250/8250_mtk.c
-@@ -212,12 +212,37 @@ static void mtk8250_shutdown(struct uart
+@@ -213,12 +213,37 @@ static void mtk8250_shutdown(struct uart
  
  static void mtk8250_disable_intrs(struct uart_8250_port *up, int mask)
  {

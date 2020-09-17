@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:47 +0100
 Subject: [PATCH 09/25] printk: remove exclusive console hack
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 In order to support printing the printk log history when new
 consoles are registered, a global exclusive_console variable is
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -269,11 +269,6 @@ static void __up_console_sem(unsigned lo
+@@ -268,11 +268,6 @@ static void __up_console_sem(unsigned lo
  static int console_locked, console_suspended;
  
  /*
@@ -41,8 +41,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /* the next printk record to read after the last 'clear' command */
  static u64 clear_seq;
-@@ -1843,8 +1837,6 @@ static void call_console_drivers(const c
- 		return;
+@@ -1848,8 +1842,6 @@ static void call_console_drivers(const c
+ 	trace_console_rcuidle(text, len);
  
  	for_each_console(con) {
 -		if (exclusive_console && con != exclusive_console)
@@ -50,7 +50,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (!(con->flags & CON_ENABLED))
  			continue;
  		if (!con->write)
-@@ -2137,7 +2129,6 @@ static u64 syslog_seq;
+@@ -2131,7 +2123,6 @@ static u64 syslog_seq;
  static u32 syslog_idx;
  static u64 console_seq;
  static u32 console_idx;
@@ -71,7 +71,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		len += msg_print_text(msg,
  				console_msg_format & MSG_FORMAT_SYSLOG,
  				printk_time, text + len, sizeof(text) - len);
-@@ -2837,17 +2822,6 @@ void register_console(struct console *ne
+@@ -2865,17 +2850,6 @@ void register_console(struct console *ne
  		 * for us.
  		 */
  		logbuf_lock_irqsave(flags);
@@ -89,7 +89,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		console_seq = syslog_seq;
  		console_idx = syslog_idx;
  		logbuf_unlock_irqrestore(flags);
-@@ -2861,6 +2835,10 @@ void register_console(struct console *ne
+@@ -2889,6 +2863,10 @@ void register_console(struct console *ne
  	 * boot consoles, real consoles, etc - this is to ensure that end
  	 * users know there might be something in the kernel's log buffer that
  	 * went to the bootconsole (that they do not see on the real console)

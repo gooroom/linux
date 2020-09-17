@@ -1,12 +1,12 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:31:14 +0200
 Subject: rtmutex: wire up RT's locking
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/mutex.h            |   20 +++++++++++++-------
+ include/linux/mutex.h            |   26 ++++++++++++++++----------
  include/linux/rwsem.h            |   12 ++++++++++++
  include/linux/spinlock.h         |   12 +++++++++++-
  include/linux/spinlock_api_smp.h |    4 +++-
@@ -15,17 +15,20 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/locking/rwsem.c           |    7 +++++++
  kernel/locking/spinlock.c        |    7 +++++++
  kernel/locking/spinlock_debug.c  |    5 +++++
- 9 files changed, 73 insertions(+), 15 deletions(-)
+ 9 files changed, 76 insertions(+), 18 deletions(-)
 
 --- a/include/linux/mutex.h
 +++ b/include/linux/mutex.h
-@@ -22,6 +22,17 @@
+@@ -22,6 +22,20 @@
  
  struct ww_acquire_ctx;
  
 +#ifdef CONFIG_DEBUG_LOCK_ALLOC
-+# define __DEP_MAP_MUTEX_INITIALIZER(lockname) \
-+		, .dep_map = { .name = #lockname }
++# define __DEP_MAP_MUTEX_INITIALIZER(lockname)			\
++		, .dep_map = {					\
++			.name = #lockname,			\
++			.wait_type_inner = LD_WAIT_SLEEP,	\
++		}
 +#else
 +# define __DEP_MAP_MUTEX_INITIALIZER(lockname)
 +#endif
@@ -37,13 +40,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Simple, straightforward mutexes with strict semantics:
   *
-@@ -108,13 +119,6 @@ do {									\
+@@ -119,16 +133,6 @@ do {									\
  	__mutex_init((mutex), #mutex, &__key);				\
  } while (0)
  
 -#ifdef CONFIG_DEBUG_LOCK_ALLOC
--# define __DEP_MAP_MUTEX_INITIALIZER(lockname) \
--		, .dep_map = { .name = #lockname }
+-# define __DEP_MAP_MUTEX_INITIALIZER(lockname)			\
+-		, .dep_map = {					\
+-			.name = #lockname,			\
+-			.wait_type_inner = LD_WAIT_SLEEP,	\
+-		}
 -#else
 -# define __DEP_MAP_MUTEX_INITIALIZER(lockname)
 -#endif
@@ -51,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define __MUTEX_INITIALIZER(lockname) \
  		{ .owner = ATOMIC_LONG_INIT(0) \
  		, .wait_lock = __SPIN_LOCK_UNLOCKED(lockname.wait_lock) \
-@@ -210,4 +214,6 @@ enum mutex_trylock_recursive_enum {
+@@ -224,4 +228,6 @@ enum mutex_trylock_recursive_enum {
  extern /* __deprecated */ __must_check enum mutex_trylock_recursive_enum
  mutex_trylock_recursive(struct mutex *lock);
  
@@ -72,7 +78,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #ifdef CONFIG_RWSEM_SPIN_ON_OWNER
  #include <linux/osq_lock.h>
  #endif
-@@ -115,6 +120,13 @@ static inline int rwsem_is_contended(str
+@@ -119,6 +124,13 @@ static inline int rwsem_is_contended(str
  	return !list_empty(&sem->wait_list);
  }
  
@@ -88,7 +94,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   */
 --- a/include/linux/spinlock.h
 +++ b/include/linux/spinlock.h
-@@ -307,7 +307,11 @@ static inline void do_raw_spin_unlock(ra
+@@ -309,7 +309,11 @@ static inline void do_raw_spin_unlock(ra
  })
  
  /* Include rwlock functions */
@@ -101,7 +107,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * Pull the _spin_*()/_read_*()/_write_*() functions/declarations:
-@@ -318,6 +322,10 @@ static inline void do_raw_spin_unlock(ra
+@@ -320,6 +324,10 @@ static inline void do_raw_spin_unlock(ra
  # include <linux/spinlock_api_up.h>
  #endif
  
@@ -112,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Map the spin_lock functions to the raw variants for PREEMPT_RT=n
   */
-@@ -438,6 +446,8 @@ static __always_inline int spin_is_conte
+@@ -454,6 +462,8 @@ static __always_inline int spin_is_conte
  
  #define assert_spin_locked(lock)	assert_raw_spin_locked(&(lock)->rlock)
  
@@ -161,9 +167,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -obj-y += mutex.o semaphore.o rwsem.o percpu-rwsem.o
 +obj-y += semaphore.o rwsem.o percpu-rwsem.o
  
- ifdef CONFIG_FUNCTION_TRACER
- CFLAGS_REMOVE_lockdep.o = $(CC_FLAGS_FTRACE)
-@@ -12,19 +12,23 @@ CFLAGS_REMOVE_mutex-debug.o = $(CC_FLAGS
+ # Avoid recursion lockdep -> KCSAN -> ... -> lockdep.
+ KCSAN_SANITIZE_lockdep.o := n
+@@ -15,19 +15,23 @@ CFLAGS_REMOVE_mutex-debug.o = $(CC_FLAGS
  CFLAGS_REMOVE_rtmutex-debug.o = $(CC_FLAGS_FTRACE)
  endif
  

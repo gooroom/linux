@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:30:01 +0100
 Subject: [PATCH 23/25] printk: implement syslog
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Since printk messages are now logged to a new ring buffer, update
 the syslog functions to pull the messages from there.
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static size_t syslog_partial;
  static bool syslog_time;
  
-@@ -1303,30 +1305,42 @@ static size_t msg_print_text(const struc
+@@ -1311,30 +1313,42 @@ static size_t msg_print_text(const struc
  	return len;
  }
  
@@ -85,7 +85,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		}
  
  		/*
-@@ -1336,131 +1350,212 @@ static int syslog_print(char __user *buf
+@@ -1344,131 +1358,212 @@ static int syslog_print(char __user *buf
  		if (!syslog_partial)
  			syslog_time = printk_time;
  
@@ -360,7 +360,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	error = check_syslog_permissions(type, source);
  	if (error)
-@@ -1478,11 +1573,49 @@ int do_syslog(int type, char __user *buf
+@@ -1486,11 +1581,49 @@ int do_syslog(int type, char __user *buf
  			return 0;
  		if (!access_ok(buf, len))
  			return -EFAULT;
@@ -414,7 +414,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		break;
  	/* Read/clear last kernel messages */
  	case SYSLOG_ACTION_READ_CLEAR:
-@@ -1527,47 +1660,45 @@ int do_syslog(int type, char __user *buf
+@@ -1535,47 +1668,45 @@ int do_syslog(int type, char __user *buf
  		break;
  	/* Number of chars in the log buffer */
  	case SYSLOG_ACTION_SIZE_UNREAD:
@@ -484,7 +484,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return error;
  }
  
-@@ -1989,7 +2120,6 @@ EXPORT_SYMBOL(printk);
+@@ -1983,7 +2114,6 @@ EXPORT_SYMBOL(printk);
  #define printk_time		false
  
  static u64 syslog_seq;

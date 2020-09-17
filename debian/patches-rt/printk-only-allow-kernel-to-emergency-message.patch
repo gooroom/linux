@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Sun, 17 Feb 2019 03:11:20 +0100
 Subject: [PATCH] printk: only allow kernel to emergency message
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Emergency messages exist as a mechanism for the kernel to
 communicate critical information to users. It is not meant for
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1754,7 +1754,8 @@ static void printk_write_history(struct
+@@ -1762,7 +1762,8 @@ static void printk_write_history(struct
   * The console_lock must be held.
   */
  static void call_console_drivers(u64 seq, const char *ext_text, size_t ext_len,
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct console *con;
  
-@@ -1774,13 +1775,14 @@ static void call_console_drivers(u64 seq
+@@ -1779,13 +1780,14 @@ static void call_console_drivers(u64 seq
  			con->wrote_history = 1;
  			con->printk_seq = seq - 1;
  		}
@@ -43,7 +43,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			/* skip emergency messages, already printed */
  			if (con->printk_seq < seq)
  				con->printk_seq = seq;
-@@ -1951,7 +1953,10 @@ asmlinkage int vprintk_emit(int facility
+@@ -1956,7 +1958,10 @@ asmlinkage int vprintk_emit(int facility
  	 * - text points to beginning of text
  	 * - there is room before text for prefix
  	 */
@@ -55,7 +55,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if ((lflags & LOG_CONT) || !(lflags & LOG_NEWLINE)) {
  		 cont_add(ctx, cpu, caller_id, facility, level, lflags, text, text_len);
-@@ -2716,8 +2721,8 @@ static int printk_kthread_func(void *dat
+@@ -2759,8 +2764,8 @@ static int printk_kthread_func(void *dat
  
  		console_lock();
  		console_may_schedule = 0;

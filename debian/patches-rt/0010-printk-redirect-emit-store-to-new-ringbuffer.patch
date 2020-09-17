@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 12 Feb 2019 15:29:48 +0100
 Subject: [PATCH 10/25] printk: redirect emit/store to new ringbuffer
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 vprintk_emit and vprintk_store are the main functions that all printk
 variants eventually go through. Change these to store the message in
@@ -188,7 +188,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return msg->text_len;
  }
-@@ -1757,70 +1655,6 @@ static int console_lock_spinning_disable
+@@ -1765,70 +1663,6 @@ static int console_lock_spinning_disable
  	return 1;
  }
  
@@ -259,7 +259,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Call the console drivers, asking them to write out
   * log_buf[start] to log_buf[end - 1].
-@@ -1841,7 +1675,7 @@ static void call_console_drivers(const c
+@@ -1846,7 +1680,7 @@ static void call_console_drivers(const c
  			continue;
  		if (!con->write)
  			continue;
@@ -268,7 +268,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		    !(con->flags & CON_ANYTIME))
  			continue;
  		if (con->flags & CON_EXTENDED)
-@@ -1871,6 +1705,8 @@ static inline u32 printk_caller_id(void)
+@@ -1876,6 +1710,8 @@ static inline u32 printk_caller_id(void)
  		0x80000000 + raw_smp_processor_id();
  }
  
@@ -277,7 +277,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Continuation lines are buffered, and not committed to the record buffer
   * until the line is complete, or a race forces it. The line fragments
-@@ -1926,56 +1762,45 @@ static bool cont_add(u32 caller_id, int
+@@ -1931,56 +1767,45 @@ static bool cont_add(u32 caller_id, int
  
  	return true;
  }
@@ -365,7 +365,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (text_len && text[text_len-1] == '\n') {
  		text_len--;
  		lflags |= LOG_NEWLINE;
-@@ -2006,58 +1831,10 @@ int vprintk_store(int facility, int leve
+@@ -2011,58 +1836,10 @@ int vprintk_store(int facility, int leve
  	if (dict)
  		lflags |= LOG_NEWLINE;
  

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 20 May 2019 13:09:08 +0200
 Subject: [PATCH] softirq: Add preemptible softirq
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.6/older/patches-5.6.10-rt5.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
 
 Add preemptible softirq for RT's needs. By removing the softirq count
 from the preempt counter, the softirq becomes preemptible. A per-CPU
@@ -19,9 +19,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  include/linux/preempt.h     |   17 ++-
  include/linux/rcupdate.h    |    3 
  include/linux/sched.h       |    3 
- kernel/softirq.c            |  228 +++++++++++++++++++++++++++++++++++++++++++-
+ kernel/softirq.c            |  235 +++++++++++++++++++++++++++++++++++++++++++-
  kernel/time/tick-sched.c    |    9 -
- 7 files changed, 252 insertions(+), 14 deletions(-)
+ 7 files changed, 259 insertions(+), 14 deletions(-)
 
 --- a/include/linux/bottom_half.h
 +++ b/include/linux/bottom_half.h
@@ -46,7 +46,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
-@@ -573,6 +573,7 @@ extern void __raise_softirq_irqoff(unsig
+@@ -575,6 +575,7 @@ extern void __raise_softirq_irqoff(unsig
  
  extern void raise_softirq_irqoff(unsigned int nr);
  extern void raise_softirq(unsigned int nr);
@@ -95,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * The preempt_count offset after preempt_disable();
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
-@@ -279,7 +279,8 @@ static inline void rcu_preempt_sleep_che
+@@ -312,7 +312,8 @@ static inline void rcu_preempt_sleep_che
  #define rcu_sleep_check()						\
  	do {								\
  		rcu_preempt_sleep_check();				\
@@ -107,9 +107,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				 "Illegal context switch in RCU-sched read-side critical section"); \
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -983,6 +983,9 @@ struct task_struct {
- 	int				softirqs_enabled;
+@@ -999,6 +999,9 @@ struct task_struct {
  	int				softirq_context;
+ 	int				irq_config;
  #endif
 +#ifdef CONFIG_PREEMPT_RT
 +	int				softirq_count;
@@ -124,17 +124,25 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/tick.h>
  #include <linux/irq.h>
 +#ifdef CONFIG_PREEMPT_RT
-+#include <linux/locallock.h>
++#include <linux/local_lock.h>
 +#endif
  
  #define CREATE_TRACE_POINTS
  #include <trace/events/irq.h>
-@@ -102,6 +105,104 @@ static bool ksoftirqd_running(unsigned l
+@@ -101,6 +104,111 @@ static bool ksoftirqd_running(unsigned l
+  * This lets us distinguish between whether we are currently processing
   * softirq and whether we just have bh disabled.
   */
- 
 +#ifdef CONFIG_PREEMPT_RT
-+static DEFINE_LOCAL_IRQ_LOCK(bh_lock);
++
++struct bh_lock {
++	local_lock_t l;
++};
++
++static DEFINE_PER_CPU(struct bh_lock, bh_lock) = {
++	.l      = INIT_LOCAL_LOCK(l),
++};
++
 +static DEFINE_PER_CPU(long, softirq_counter);
 +
 +void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
@@ -144,7 +152,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +	WARN_ON_ONCE(in_irq());
 +	if (!in_atomic()) {
-+		local_lock(bh_lock);
++		local_lock(&bh_lock.l);
 +		rcu_read_lock();
 +	}
 +	soft_cnt = this_cpu_inc_return(softirq_counter);
@@ -154,7 +162,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#ifdef CONFIG_TRACE_IRQFLAGS
 +	local_irq_save(flags);
 +	if (soft_cnt == 1)
-+		trace_softirqs_off(ip);
++		lockdep_softirqs_off(ip);
 +	local_irq_restore(flags);
 +#endif
 +}
@@ -176,14 +184,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#ifdef CONFIG_TRACE_IRQFLAGS
 +	local_irq_save(flags);
 +	if (soft_cnt == 0)
-+		trace_softirqs_on(_RET_IP_);
++		lockdep_softirqs_on(_RET_IP_);
 +	local_irq_restore(flags);
 +#endif
 +
 +	current->softirq_count -= SOFTIRQ_DISABLE_OFFSET;
 +	if (!in_atomic()) {
 +		rcu_read_unlock();
-+		local_unlock(bh_lock);
++		local_unlock(&bh_lock.l);
 +	}
 +}
 +
@@ -211,7 +219,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +			else
 +				wakeup_softirqd();
 +		}
-+		trace_softirqs_on(ip);
++		lockdep_softirqs_on(ip);
 +	}
 +	count = this_cpu_dec_return(softirq_counter);
 +	WARN_ON_ONCE(count < 0);
@@ -219,7 +227,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +
 +	if (!in_atomic()) {
 +		rcu_read_unlock();
-+		local_unlock(bh_lock);
++		local_unlock(&bh_lock.l);
 +	}
 +
 +	current->softirq_count -= SOFTIRQ_DISABLE_OFFSET;
@@ -230,11 +238,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#else
 +static void local_bh_disable_rt(void) { }
 +static void _local_bh_enable_rt(void) { }
-+
+ 
  /*
   * This one is for softirq.c-internal use,
-  * where hardirqs are disabled legitimately:
-@@ -196,6 +297,7 @@ void __local_bh_enable_ip(unsigned long
+@@ -202,6 +310,7 @@ void __local_bh_enable_ip(unsigned long
  	preempt_check_resched();
  }
  EXPORT_SYMBOL(__local_bh_enable_ip);
@@ -242,7 +249,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
-@@ -266,7 +368,11 @@ asmlinkage __visible void __softirq_entr
+@@ -272,7 +381,11 @@ asmlinkage __visible void __softirq_entr
  	pending = local_softirq_pending();
  	account_irq_enter_time(current);
  
@@ -254,7 +261,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	in_hardirq = lockdep_softirq_start();
  
  restart:
-@@ -300,9 +406,10 @@ asmlinkage __visible void __softirq_entr
+@@ -306,9 +419,10 @@ asmlinkage __visible void __softirq_entr
  		h++;
  		pending >>= softirq_bit;
  	}
@@ -266,7 +273,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	local_irq_disable();
  
  	pending = local_softirq_pending();
-@@ -316,11 +423,16 @@ asmlinkage __visible void __softirq_entr
+@@ -322,11 +436,16 @@ asmlinkage __visible void __softirq_entr
  
  	lockdep_softirq_end(in_hardirq);
  	account_irq_exit_time(current);
@@ -283,16 +290,16 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  asmlinkage __visible void do_softirq(void)
  {
  	__u32 pending;
-@@ -338,6 +450,7 @@ asmlinkage __visible void do_softirq(voi
+@@ -344,6 +463,7 @@ asmlinkage __visible void do_softirq(voi
  
  	local_irq_restore(flags);
  }
 +#endif
  
- /*
-  * Enter an interrupt context.
-@@ -358,6 +471,16 @@ void irq_enter(void)
- 	__irq_enter();
+ /**
+  * irq_enter_rcu - Enter an interrupt context with RCU watching
+@@ -371,6 +491,16 @@ void irq_enter(void)
+ 	irq_enter_rcu();
  }
  
 +#ifdef CONFIG_PREEMPT_RT
@@ -308,7 +315,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static inline void invoke_softirq(void)
  {
  	if (ksoftirqd_running(local_softirq_pending()))
-@@ -383,6 +506,7 @@ static inline void invoke_softirq(void)
+@@ -396,6 +526,7 @@ static inline void invoke_softirq(void)
  		wakeup_softirqd();
  	}
  }
@@ -316,7 +323,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static inline void tick_irq_exit(void)
  {
-@@ -420,6 +544,27 @@ void irq_exit(void)
+@@ -453,6 +584,27 @@ void irq_exit(void)
  /*
   * This function must run with irqs disabled!
   */
@@ -344,7 +351,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  inline void raise_softirq_irqoff(unsigned int nr)
  {
  	__raise_softirq_irqoff(nr);
-@@ -437,6 +582,8 @@ inline void raise_softirq_irqoff(unsigne
+@@ -470,6 +622,8 @@ inline void raise_softirq_irqoff(unsigne
  		wakeup_softirqd();
  }
  
@@ -353,7 +360,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void raise_softirq(unsigned int nr)
  {
  	unsigned long flags;
-@@ -594,6 +741,7 @@ static int ksoftirqd_should_run(unsigned
+@@ -643,6 +797,7 @@ static int ksoftirqd_should_run(unsigned
  
  static void run_ksoftirqd(unsigned int cpu)
  {
@@ -361,7 +368,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	local_irq_disable();
  	if (local_softirq_pending()) {
  		/*
-@@ -602,10 +750,12 @@ static void run_ksoftirqd(unsigned int c
+@@ -651,10 +806,12 @@ static void run_ksoftirqd(unsigned int c
  		 */
  		__do_softirq();
  		local_irq_enable();
@@ -374,7 +381,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  #ifdef CONFIG_HOTPLUG_CPU
-@@ -679,6 +829,13 @@ static struct smp_hotplug_thread softirq
+@@ -728,6 +885,13 @@ static struct smp_hotplug_thread softirq
  
  static __init int spawn_ksoftirqd(void)
  {
@@ -382,13 +389,13 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	int cpu;
 +
 +	for_each_possible_cpu(cpu)
-+		lockdep_set_novalidate_class(per_cpu_ptr(&bh_lock.lock, cpu));
++		lockdep_set_novalidate_class(per_cpu_ptr(&bh_lock.l.lock, cpu));
 +#endif
 +
  	cpuhp_setup_state_nocalls(CPUHP_SOFTIRQ_DEAD, "softirq:dead", NULL,
  				  takeover_tasklets);
  	BUG_ON(smpboot_register_percpu_thread(&softirq_threads));
-@@ -687,6 +844,75 @@ static __init int spawn_ksoftirqd(void)
+@@ -736,6 +900,75 @@ static __init int spawn_ksoftirqd(void)
  }
  early_initcall(spawn_ksoftirqd);
  
@@ -466,7 +473,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *   GCC does not inline them incorrectly. ]
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -914,14 +914,7 @@ static bool can_stop_idle_tick(int cpu,
+@@ -923,14 +923,7 @@ static bool can_stop_idle_tick(int cpu,
  		return false;
  
  	if (unlikely(local_softirq_pending())) {
