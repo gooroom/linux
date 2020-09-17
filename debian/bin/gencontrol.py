@@ -496,9 +496,12 @@ class Gencontrol(Base):
         if config_entry_build.get('vdso', False):
             makeflags['VDSO'] = True
 
-        build_debug = config_entry_build.get('debug-info')
-
         if not self.disable_debug:
+            build_debug = config_entry_build.get('debug-info')
+        else:
+            build_debug = False
+
+        if build_debug:
             makeflags['DEBUG'] = True
             packages_own.extend(self.process_packages(
                 self.templates['control.image-dbg'], vars))
