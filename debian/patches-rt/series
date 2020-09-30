@@ -67,9 +67,6 @@ mm-fix-exec-activate_mm-vs-TLB-shootdown-and-lazy-tl.patch
 # 20191015191821.11479-1-bigeasy@linutronix.de
 Use-CONFIG_PREEMPTION.patch
 
-#20200629201529.1017485-1-bigeasy@linutronix.de
-lockdep-Do-no-validate-wait-context-for-novalidate-c.patch
-
 # 20200701083553.fuy42cllxvx3bkzp@linutronix.de
 x86-entry-Use-should_resched-in-idtentry_exit_cond_r.patch
 
@@ -107,6 +104,16 @@ tpm-remove-tpm_dev_wq_lock.patch
 # Almost ready, needs final polishing
 ############################################################
 shmem-Use-raw_spinlock_t-for-stat_lock.patch
+net--Move-lockdep-where-it-belongs.patch
+
+# SoftIRQ
+x86-fpu--Do-not-disable-BH-on-RT.patch
+softirq--Add-RT-variant.patch
+tick-sched--Prevent-false-positive-softirq-pending-warnings-on-RT.patch
+rcu--Prevent-false-positive-softirq-warning-on-RT.patch
+softirq--Replace-barrier---with-cpu_relax---in-tasklet_unlock_wait--.patch
+tasklets--Avoid-cancel-kill-deadlock-on-RT.patch
+tasklets-Use-static-line-for-functions.patch
 
 ###############################################################
 # Stuff broken upstream and upstream wants something different
@@ -124,26 +131,6 @@ signal-revert-ptrace-preempt-magic.patch
 # PREEMPT NORT
 preempt-nort-rt-variants.patch
 mm-make-vmstat-rt-aware.patch
-
-## # SEQCOUNT related
-## # XXX, rework
-## dma-buf-Use-seqlock_t-instread-disabling-preemption.patch
-## seqlock-prevent-rt-starvation.patch
-## NFSv4-replace-seqcount_t-with-a-seqlock_t.patch
-## net-make-devnet_rename_seq-a-mutex.patch
-## userfaultfd-Use-a-seqlock-instead-of-seqcount.patch
-##
-## # Revisit and add to the other NFS crap
-## fs-nfs-turn-rmdir_sem-into-a-semaphore.patch
-##
-## # Revisit
-##
-## # Revisit - check HCH reply. Check all use cases
-## list_bl.h-make-list-head-locking-RT-safe.patch
-## # Check .... (these are needed due to the previous list_bl change)
-## fscache-initialize-cookie-hash-table-raw-spinlocks.patch
-## fs-dcache-bring-back-explicit-INIT_HLIST_BL_HEAD-in.patch
-## ############################################################
 
 # seqcount
 # https://lkml.kernel.org/r/20200817000200.20993-1-rdunlap@infradead.org
@@ -199,8 +186,6 @@ efi-Allow-efi-runtime.patch
 rt-local-irq-lock.patch
 
 # Move post local lock
-softirq-Add-preemptible-softirq.patch
-softirq-Move-the-per-CPU-hardirq-definition.patch
 
 # Sigh
 # Check proper again. Crap....
@@ -256,9 +241,6 @@ sched-rt-mutex-wakeup.patch
 sched-might-sleep-do-not-account-rcu-depth.patch
 sched-disable-ttwu-queue.patch
 
-# SOFTIRQ
-softirq-Avoid-a-cancel-dead-lock-in-tasklet-handling.patch
-
 # A few of those will also just schedule ksoftirqd and schedule at some random
 # point. They may hold a spinlock_t so it is not always random, recheck all.
 softirq-preempt-fix-3-re.patch
@@ -267,6 +249,7 @@ softirq-preempt-fix-3-re.patch
 softirq-disable-softirq-stacks-for-rt.patch
 
 # Rewrite changelog and repost
+# 20170620.130840.472295224655944129.davem@davemloft.net
 net-core-use-local_bh_disable-in-netif_rx_ni.patch
 
 # FUTEX/RTMUTEX
@@ -338,6 +321,7 @@ debugobjects-rt.patch
 # NETWORKING
 # Revisit
 skbufhead-raw-lock.patch
+net-Dequeue-in-dev_cpu_dead-without-the-lock.patch
 net-dev-always-take-qdisc-s-busylock-in-__dev_xmit_s.patch
 
 # irqwork

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc7-rt10.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -14,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  include/linux/spinlock_types_rt.h |   48 ++++
  kernel/fork.c                     |    1 
  kernel/futex.c                    |   11 
- kernel/locking/rtmutex.c          |  444 ++++++++++++++++++++++++++++++++++----
+ kernel/locking/rtmutex.c          |  439 ++++++++++++++++++++++++++++++++++----
  kernel/locking/rtmutex_common.h   |   14 -
  kernel/sched/core.c               |   39 ++-
- 11 files changed, 699 insertions(+), 57 deletions(-)
+ 11 files changed, 694 insertions(+), 57 deletions(-)
  create mode 100644 include/linux/spinlock_rt.h
  create mode 100644 include/linux/spinlock_types_rt.h
 
@@ -175,8 +175,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +} while (0)
 +
 +extern void __lockfunc rt_spin_lock(spinlock_t *lock);
-+extern unsigned long __lockfunc rt_spin_lock_trace_flags(spinlock_t *lock);
 +extern void __lockfunc rt_spin_lock_nested(spinlock_t *lock, int subclass);
++extern void __lockfunc rt_spin_lock_nest_lock(spinlock_t *lock, struct lockdep_map *nest_lock);
 +extern void __lockfunc rt_spin_unlock(spinlock_t *lock);
 +extern void __lockfunc rt_spin_lock_unlock(spinlock_t *lock);
 +extern int __lockfunc rt_spin_trylock_irqsave(spinlock_t *lock, unsigned long *flags);
@@ -224,6 +224,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		rt_spin_lock_nested(lock, subclass);	\
 +	} while (0)
 +
++# define spin_lock_nest_lock(lock, nest_lock)		\
++	do {                                                           \
++		typecheck(struct lockdep_map *, &(nest_lock)->dep_map);	\
++		rt_spin_lock_nest_lock(lock, &(nest_lock)->dep_map);	\
++	} while (0)
++
 +# define spin_lock_irqsave_nested(lock, flags, subclass) \
 +	do {						 \
 +		typecheck(unsigned long, flags);	 \
@@ -232,6 +238,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	} while (0)
 +#else
 +# define spin_lock_nested(lock, subclass)	spin_lock(lock)
++# define spin_lock_nest_lock(lock, nest_lock)	spin_lock(lock)
 +# define spin_lock_bh_nested(lock, subclass)	spin_lock_bh(lock)
 +
 +# define spin_lock_irqsave_nested(lock, flags, subclass) \
@@ -248,20 +255,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		flags = 0;				 \
 +		spin_lock(lock);			 \
 +	} while (0)
-+
-+static inline unsigned long spin_lock_trace_flags(spinlock_t *lock)
-+{
-+	unsigned long flags = 0;
-+#ifdef CONFIG_TRACE_IRQFLAGS
-+	flags = rt_spin_lock_trace_flags(lock);
-+#else
-+	spin_lock(lock); /* lock_local */
-+#endif
-+	return flags;
-+}
-+
-+/* FIXME: we need rt_spin_lock_nest_lock */
-+#define spin_lock_nest_lock(lock, nest_lock) spin_lock_nested(lock, 0)
 +
 +#define spin_unlock(lock)			rt_spin_unlock(lock)
 +
@@ -283,8 +276,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +#define spin_trylock_bh(lock)	__cond_lock(lock, rt_spin_trylock_bh(lock))
 +#define spin_trylock_irq(lock)	spin_trylock(lock)
 +
-+#define spin_trylock_irqsave(lock, flags)	\
-+	rt_spin_trylock_irqsave(lock, &(flags))
++#define spin_trylock_irqsave(lock, flags)		\
++({							\
++	int __locked;					\
++							\
++	typecheck(unsigned long, flags);		\
++	flags = 0;					\
++	__locked = spin_trylock(lock);			\
++	__locked;					\
++})
 +
 +#ifdef CONFIG_GENERIC_LOCKBREAK
 +# define spin_is_contended(lock)	((lock)->break_lock)
@@ -548,7 +548,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -923,6 +959,296 @@ static int try_to_take_rt_mutex(struct r
+@@ -923,6 +959,291 @@ static int try_to_take_rt_mutex(struct r
  	return 1;
  }
  
@@ -748,6 +748,15 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
 +}
 +EXPORT_SYMBOL(rt_spin_lock_nested);
++
++void __lockfunc rt_spin_lock_nest_lock(spinlock_t *lock,
++				       struct lockdep_map *nest_lock)
++{
++	migrate_disable();
++	spin_acquire_nest(&lock->dep_map, 0, 0, nest_lock, _RET_IP_);
++	rt_spin_lock_fastlock(&lock->lock, rt_spin_lock_slowlock);
++}
++EXPORT_SYMBOL(rt_spin_lock_nest_lock);
 +#endif
 +
 +void __lockfunc rt_spin_unlock(spinlock_t *lock)
@@ -806,20 +815,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +}
 +EXPORT_SYMBOL(rt_spin_trylock_bh);
 +
-+int __lockfunc rt_spin_trylock_irqsave(spinlock_t *lock, unsigned long *flags)
-+{
-+	int ret;
-+
-+	*flags = 0;
-+	ret = __rt_mutex_trylock(&lock->lock);
-+	if (ret) {
-+		migrate_disable();
-+		spin_acquire(&lock->dep_map, 0, 1, _RET_IP_);
-+	}
-+	return ret;
-+}
-+EXPORT_SYMBOL(rt_spin_trylock_irqsave);
-+
 +void
 +__rt_spin_lock_init(spinlock_t *lock, const char *name, struct lock_class_key *key)
 +{
@@ -845,7 +840,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Task blocks on lock.
   *
-@@ -1036,6 +1362,7 @@ static int task_blocks_on_rt_mutex(struc
+@@ -1036,6 +1357,7 @@ static int task_blocks_on_rt_mutex(struc
   * Called with lock->wait_lock held and interrupts disabled.
   */
  static void mark_wakeup_next_waiter(struct wake_q_head *wake_q,
@@ -853,7 +848,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				    struct rt_mutex *lock)
  {
  	struct rt_mutex_waiter *waiter;
-@@ -1075,7 +1402,10 @@ static void mark_wakeup_next_waiter(stru
+@@ -1075,7 +1397,10 @@ static void mark_wakeup_next_waiter(stru
  	 * Pairs with preempt_enable() in rt_mutex_postunlock();
  	 */
  	preempt_disable();
@@ -865,7 +860,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	raw_spin_unlock(&current->pi_lock);
  }
  
-@@ -1159,21 +1489,22 @@ void rt_mutex_adjust_pi(struct task_stru
+@@ -1159,21 +1484,22 @@ void rt_mutex_adjust_pi(struct task_stru
  		return;
  	}
  	next_lock = waiter->lock;
@@ -890,7 +885,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /**
-@@ -1290,7 +1621,7 @@ rt_mutex_slowlock(struct rt_mutex *lock,
+@@ -1290,7 +1616,7 @@ rt_mutex_slowlock(struct rt_mutex *lock,
  	unsigned long flags;
  	int ret = 0;
  
@@ -899,7 +894,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * Technically we could use raw_spin_[un]lock_irq() here, but this can
-@@ -1363,7 +1694,8 @@ static inline int rt_mutex_slowtrylock(s
+@@ -1363,7 +1689,8 @@ static inline int rt_mutex_slowtrylock(s
   * Return whether the current task needs to call rt_mutex_postunlock().
   */
  static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
@@ -909,7 +904,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	unsigned long flags;
  
-@@ -1417,7 +1749,7 @@ static bool __sched rt_mutex_slowunlock(
+@@ -1417,7 +1744,7 @@ static bool __sched rt_mutex_slowunlock(
  	 *
  	 * Queue the next waiter for wakeup once we release the wait_lock.
  	 */
@@ -918,7 +913,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
  
  	return true; /* call rt_mutex_postunlock() */
-@@ -1469,9 +1801,11 @@ rt_mutex_fasttrylock(struct rt_mutex *lo
+@@ -1469,9 +1796,11 @@ rt_mutex_fasttrylock(struct rt_mutex *lo
  /*
   * Performs the wakeup of the the top-waiter and re-enables preemption.
   */
@@ -931,7 +926,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Pairs with preempt_disable() in rt_mutex_slowunlock() */
  	preempt_enable();
-@@ -1480,15 +1814,17 @@ void rt_mutex_postunlock(struct wake_q_h
+@@ -1480,15 +1809,17 @@ void rt_mutex_postunlock(struct wake_q_h
  static inline void
  rt_mutex_fastunlock(struct rt_mutex *lock,
  		    bool (*slowfn)(struct rt_mutex *lock,
@@ -952,7 +947,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  int __sched __rt_mutex_lock_state(struct rt_mutex *lock, int state)
-@@ -1666,16 +2002,13 @@ void __sched __rt_mutex_unlock(struct rt
+@@ -1666,16 +1997,13 @@ void __sched __rt_mutex_unlock(struct rt
  void __sched rt_mutex_unlock(struct rt_mutex *lock)
  {
  	mutex_release(&lock->dep_map, _RET_IP_);
@@ -973,7 +968,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	lockdep_assert_held(&lock->wait_lock);
  
-@@ -1692,23 +2025,35 @@ bool __sched __rt_mutex_futex_unlock(str
+@@ -1692,23 +2020,35 @@ bool __sched __rt_mutex_futex_unlock(str
  	 * avoid inversion prior to the wakeup.  preempt_disable()
  	 * therein pairs with rt_mutex_postunlock().
  	 */
@@ -1012,7 +1007,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /**
-@@ -1747,7 +2092,7 @@ void __rt_mutex_init(struct rt_mutex *lo
+@@ -1747,7 +2087,7 @@ void __rt_mutex_init(struct rt_mutex *lo
  	if (name && key)
  		debug_rt_mutex_init(lock, name, key);
  }
@@ -1021,7 +1016,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /**
   * rt_mutex_init_proxy_locked - initialize and lock a rt_mutex on behalf of a
-@@ -1767,6 +2112,14 @@ void rt_mutex_init_proxy_locked(struct r
+@@ -1767,6 +2107,14 @@ void rt_mutex_init_proxy_locked(struct r
  				struct task_struct *proxy_owner)
  {
  	__rt_mutex_init(lock, NULL, NULL);
@@ -1036,7 +1031,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	debug_rt_mutex_proxy_lock(lock, proxy_owner);
  	rt_mutex_set_owner(lock, proxy_owner);
  }
-@@ -1942,6 +2295,7 @@ int rt_mutex_wait_proxy_lock(struct rt_m
+@@ -1942,6 +2290,7 @@ int rt_mutex_wait_proxy_lock(struct rt_m
  			       struct hrtimer_sleeper *to,
  			       struct rt_mutex_waiter *waiter)
  {
@@ -1044,7 +1039,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	int ret;
  
  	raw_spin_lock_irq(&lock->wait_lock);
-@@ -1953,6 +2307,24 @@ int rt_mutex_wait_proxy_lock(struct rt_m
+@@ -1953,6 +2302,24 @@ int rt_mutex_wait_proxy_lock(struct rt_m
  	 * have to fix that up.
  	 */
  	fixup_rt_mutex_waiters(lock);

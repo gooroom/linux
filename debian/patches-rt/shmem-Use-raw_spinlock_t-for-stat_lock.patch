@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 14 Aug 2020 18:53:34 +0200
 Subject: [PATCH] shmem: Use raw_spinlock_t for ->stat_lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc5-rt7.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc7-rt10.tar.xz
 
 Each CPU has SHMEM_INO_BATCH inodes available in `->ino_batch' which is
 per-CPU. Access here is serialized by disabling preemption. If the pool is
@@ -15,7 +15,6 @@ sections are short. The mpol_put() should be moved outside of the critical
 section to avoid invoking the destrutor with disabled preemption.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[bwh: Adjust to apply on top of 5.9-rc6]
 ---
  include/linux/shmem_fs.h |    2 +-
  mm/shmem.c               |   31 +++++++++++++++++--------------
