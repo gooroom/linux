@@ -1,7 +1,8 @@
+From 402af399366fc6942d56ec3fb1a866a4fc72d9ae Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 21 Aug 2009 11:56:45 +0200
-Subject: [PATCH 119/366] timer: delay waking softirqs from the jiffy tick
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4b6011dd3b84f563ff336f9cb33b20829304ced9
+Subject: [PATCH 119/365] timer: delay waking softirqs from the jiffy tick
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 People were complaining about broken balancing with the recent -rt
 series.
@@ -57,10 +58,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index fdd7be830904..019a332d9487 100644
+index 494065b1b246..ac9c4b3f686d 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1660,13 +1660,13 @@ void update_process_times(int user_tick)
+@@ -1661,13 +1661,13 @@ void update_process_times(int user_tick)
  
  	/* Note: this timer irq context must be accounted for as well. */
  	account_process_tick(p, user_tick);
@@ -73,5 +74,8 @@ index fdd7be830904..019a332d9487 100644
  #endif
 -	scheduler_tick();
  	run_posix_cpu_timers(p);
- }
  
+ 	/* The current CPU might make use of net randoms without receiving IRQs
+-- 
+2.26.2
+

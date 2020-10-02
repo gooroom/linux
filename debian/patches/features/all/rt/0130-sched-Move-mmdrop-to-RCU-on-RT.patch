@@ -1,7 +1,8 @@
+From e9febfcc0886cd31dccaead21622b63b860bedf6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 130/366] sched: Move mmdrop to RCU on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=20915700f1fc5e15cd61908fd9a9b3b52b3f977e
+Subject: [PATCH 130/365] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -83,7 +84,7 @@ index 01920ddc9065..083ce7448a98 100644
  {
  	VM_BUG_ON(atomic_read(&mm->mm_users));
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 05dff8a485cd..ee3ef93491c5 100644
+index 47918fa0c6fc..8e63ad79d736 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2787,8 +2787,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -100,7 +101,7 @@ index 05dff8a485cd..ee3ef93491c5 100644
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
  			prev->sched_class->task_dead(prev);
-@@ -5590,6 +5594,8 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5591,6 +5595,8 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -109,7 +110,7 @@ index 05dff8a485cd..ee3ef93491c5 100644
  /*
   * Ensures that the idle task is using init_mm right before its cpu goes
   * offline.
-@@ -5604,7 +5610,12 @@ void idle_task_exit(void)
+@@ -5605,7 +5611,12 @@ void idle_task_exit(void)
  		switch_mm(mm, &init_mm, current);
  		finish_arch_post_lock_switch();
  	}
@@ -123,7 +124,7 @@ index 05dff8a485cd..ee3ef93491c5 100644
  }
  
  /*
-@@ -7603,6 +7614,10 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7604,6 +7615,10 @@ int sched_cpu_dying(unsigned int cpu)
  	update_max_interval();
  	nohz_balance_exit_idle(cpu);
  	hrtick_clear(rq);
@@ -134,3 +135,6 @@ index 05dff8a485cd..ee3ef93491c5 100644
  	return 0;
  }
  #endif
+-- 
+2.26.2
+

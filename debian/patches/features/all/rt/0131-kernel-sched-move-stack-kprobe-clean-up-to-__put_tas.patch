@@ -1,8 +1,9 @@
+From 58e8dd6ad78bd2415629acc653ef62e64d2fcd6c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
-Subject: [PATCH 131/366] kernel/sched: move stack + kprobe clean up to
+Subject: [PATCH 131/365] kernel/sched: move stack + kprobe clean up to
  __put_task_struct()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cdf15258b6c8ec5baba1ac57063d5b52b02d4121
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 There is no need to free the stack before the task struct. This also
 comes handy on -RT because we can't free memory in preempt disabled
@@ -44,7 +45,7 @@ index 083ce7448a98..e22ddbcfd627 100644
  	task_numa_free(tsk, true);
  	security_task_free(tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ee3ef93491c5..83e07a33f731 100644
+index 8e63ad79d736..87e0238b6026 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2797,15 +2797,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -63,3 +64,6 @@ index ee3ef93491c5..83e07a33f731 100644
  		put_task_struct(prev);
  	}
  
+-- 
+2.26.2
+

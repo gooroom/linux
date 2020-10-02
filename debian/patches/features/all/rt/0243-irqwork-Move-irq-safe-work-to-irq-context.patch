@@ -1,7 +1,8 @@
+From 0cd9ec6380ed2282da4048205d0cd70fb2cd61e9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 15 Nov 2015 18:40:17 +0100
-Subject: [PATCH 243/366] irqwork: Move irq safe work to irq context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6e5ba5228e77d68792771660dc36620320d88854
+Subject: [PATCH 243/365] irqwork: Move irq safe work to irq context
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 On architectures where arch_irq_work_has_interrupt() returns false, we
 end up running the irq safe work from the softirq context. That
@@ -59,10 +60,10 @@ index 0ddaf1e66d8c..2899ba0d23d1 100644
  /*
   * Synchronize against the irq_work @entry, ensures the entry is not
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 5ea51b6382b3..119bc00d6a8c 100644
+index da0c66f4e170..db7bf5996e8b 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1663,7 +1663,7 @@ void update_process_times(int user_tick)
+@@ -1664,7 +1664,7 @@ void update_process_times(int user_tick)
  	scheduler_tick();
  	run_local_timers();
  	rcu_check_callbacks(user_tick);
@@ -71,7 +72,7 @@ index 5ea51b6382b3..119bc00d6a8c 100644
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1719,9 +1719,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
+@@ -1727,9 +1727,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  {
  	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
@@ -82,3 +83,6 @@ index 5ea51b6382b3..119bc00d6a8c 100644
  
  	__run_timers(base);
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
+-- 
+2.26.2
+

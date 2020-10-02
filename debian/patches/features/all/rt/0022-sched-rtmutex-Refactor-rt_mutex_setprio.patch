@@ -1,7 +1,8 @@
+From 6a94ffb8a566ef769206f50f80e8736629ed7a58 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 23 Mar 2017 15:56:11 +0100
-Subject: [PATCH 022/366] sched/rtmutex: Refactor rt_mutex_setprio()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cba9aca15003449b142b7383168cacf75831b193
+Subject: [PATCH 022/365] sched/rtmutex: Refactor rt_mutex_setprio()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 Upstream commit acd58620e415aee4a43a808d7d2fd87259ee0001
 
@@ -269,7 +270,7 @@ index 9f55d7a7bc57..e275b8148db9 100644
  
  	return true; /* call rt_mutex_postunlock() */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index cee9b9c8064f..fff5a3d496de 100644
+index 91fb8331f72e..a9c400d96c7a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3631,10 +3631,25 @@ EXPORT_SYMBOL(default_wake_function);
@@ -361,9 +362,9 @@ index cee9b9c8064f..fff5a3d496de 100644
  	if (dl_prio(prio)) {
 -		struct task_struct *pi_task = rt_mutex_get_top_task(p);
  		if (!dl_prio(p->normal_prio) ||
- 		    (pi_task && dl_entity_preempt(&pi_task->dl, &p->dl))) {
- 			p->dl.dl_boosted = 1;
-@@ -3734,6 +3770,11 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
+ 		    (pi_task && dl_prio(pi_task->prio) &&
+ 		     dl_entity_preempt(&pi_task->dl, &p->dl))) {
+@@ -3735,6 +3771,11 @@ void rt_mutex_setprio(struct task_struct *p, int prio)
  	balance_callback(rq);
  	preempt_enable();
  }
@@ -375,7 +376,7 @@ index cee9b9c8064f..fff5a3d496de 100644
  #endif
  
  void set_user_nice(struct task_struct *p, long nice)
-@@ -3979,10 +4020,9 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
+@@ -3980,10 +4021,9 @@ static void __setscheduler(struct rq *rq, struct task_struct *p,
  	 * Keep a potential priority boosting if called from
  	 * sched_setscheduler().
  	 */
@@ -388,7 +389,7 @@ index cee9b9c8064f..fff5a3d496de 100644
  
  	if (dl_prio(p->prio))
  		p->sched_class = &dl_sched_class;
-@@ -4269,7 +4309,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -4270,7 +4310,7 @@ static int __sched_setscheduler(struct task_struct *p,
  		 * the runqueue. This will be done when the task deboost
  		 * itself.
  		 */
@@ -397,3 +398,6 @@ index cee9b9c8064f..fff5a3d496de 100644
  		if (new_effective_prio == oldprio)
  			queue_flags &= ~DEQUEUE_MOVE;
  	}
+-- 
+2.26.2
+

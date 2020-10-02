@@ -1,8 +1,9 @@
+From ebaa2328808abc552b0f4a1d2516c63e6f16765e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 7 Jun 2011 09:19:06 +0200
-Subject: [PATCH 135/366] sched: Do not account rcu_preempt_depth on RT in
+Subject: [PATCH 135/365] sched: Do not account rcu_preempt_depth on RT in
  might_sleep()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7ad49302adeced8429ac4c4635b9c8546ea964ad
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 RT changes the rcu_preempt_depth semantics, so we cannot check for it
 in might_sleep().
@@ -39,10 +40,10 @@ index 96037ba940ee..67e67ea896a5 100644
  
  /* Internal to kernel */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 2e4891d0bdb7..73c5fd773ffe 100644
+index 9174e282ea11..1ed2c7839499 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7899,7 +7899,7 @@ void __init sched_init(void)
+@@ -7900,7 +7900,7 @@ void __init sched_init(void)
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  static inline int preempt_count_equals(int preempt_offset)
  {
@@ -51,3 +52,6 @@ index 2e4891d0bdb7..73c5fd773ffe 100644
  
  	return (nested == preempt_offset);
  }
+-- 
+2.26.2
+

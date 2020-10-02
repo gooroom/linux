@@ -1,10 +1,11 @@
+From fa9fe29ef9d8fb1f240ab219387907c7d5eb99c7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Jun 2017 17:53:34 +0200
-Subject: [PATCH 176/366] kernel/locking: use an exclusive wait_q for sleepers
+Subject: [PATCH 176/365] kernel/locking: use an exclusive wait_q for sleepers
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3d2dce90220a4cfd05ab15345e5472b1aa31f8d6
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 If a task is queued as a sleeper for a wakeup and never goes to
 schedule() (because it just obtained the lock) then it will receive a
@@ -103,7 +104,7 @@ index 3fca4892ec51..f909d47c43d1 100644
  		wake_q_add(wake_q, waiter->task);
  	raw_spin_unlock(&current->pi_lock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 8646c3ad3a65..7913f6461334 100644
+index c6327064c5c2..99da62df3be5 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -430,9 +430,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -144,3 +145,6 @@ index 8646c3ad3a65..7913f6461334 100644
  
  		/*
  		 * wake_up_process() implies a wmb() to pair with the queueing
+-- 
+2.26.2
+

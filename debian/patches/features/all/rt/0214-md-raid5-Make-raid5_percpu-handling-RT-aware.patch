@@ -1,7 +1,8 @@
+From f5a5eb1fa3ed7af58c42eb177d6dfc6830ee24b6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 6 Apr 2010 16:51:31 +0200
-Subject: [PATCH 214/366] md: raid5: Make raid5_percpu handling RT aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=51dbc5d9d20d0ef76f04d9a507def4963758101a
+Subject: [PATCH 214/365] md: raid5: Make raid5_percpu handling RT aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 __raid_run_ops() disables preemption with get_cpu() around the access
 to the raid5_percpu variables. That causes scheduling while atomic
@@ -19,7 +20,7 @@ Tested-by: Udo van den Heuvel <udovdh@xs4all.nl>
  2 files changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
-index 1143860f0028..67259c507ca9 100644
+index 30a853b18780..33f4711e985f 100644
 --- a/drivers/md/raid5.c
 +++ b/drivers/md/raid5.c
 @@ -1934,8 +1934,9 @@ static void raid_run_ops(struct stripe_head *sh, unsigned long ops_request)
@@ -43,7 +44,7 @@ index 1143860f0028..67259c507ca9 100644
  }
  
  static struct stripe_head *alloc_stripe(struct kmem_cache *sc, gfp_t gfp,
-@@ -6435,6 +6437,7 @@ static int raid456_cpu_up_prepare(unsigned int cpu, struct hlist_node *node)
+@@ -6436,6 +6438,7 @@ static int raid456_cpu_up_prepare(unsigned int cpu, struct hlist_node *node)
  		       __func__, cpu);
  		return -ENOMEM;
  	}
@@ -51,7 +52,7 @@ index 1143860f0028..67259c507ca9 100644
  	return 0;
  }
  
-@@ -6445,7 +6448,6 @@ static int raid5_alloc_percpu(struct r5conf *conf)
+@@ -6446,7 +6449,6 @@ static int raid5_alloc_percpu(struct r5conf *conf)
  	conf->percpu = alloc_percpu(struct raid5_percpu);
  	if (!conf->percpu)
  		return -ENOMEM;
@@ -71,3 +72,6 @@ index 57ec49f0839e..0739604990b7 100644
  		struct page	*spare_page; /* Used when checking P/Q in raid6 */
  		struct flex_array *scribble;   /* space for constructing buffer
  					      * lists and performing address
+-- 
+2.26.2
+

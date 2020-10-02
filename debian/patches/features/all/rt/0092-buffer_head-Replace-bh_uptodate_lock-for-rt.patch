@@ -1,7 +1,8 @@
+From cb686865bdac70dcc992f0ddf85660b519875188 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
-Subject: [PATCH 092/366] buffer_head: Replace bh_uptodate_lock for -rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7c3662e4e76a082b3b425418b4a97d94280126a5
+Subject: [PATCH 092/365] buffer_head: Replace bh_uptodate_lock for -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -14,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 44 insertions(+), 21 deletions(-)
 
 diff --git a/fs/buffer.c b/fs/buffer.c
-index a89be9741d12..7da89d52d88f 100644
+index 52f1a60417d1..7534bbea2e4a 100644
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
 @@ -302,8 +302,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
@@ -76,7 +77,7 @@ index a89be9741d12..7da89d52d88f 100644
  }
  EXPORT_SYMBOL(end_buffer_async_write);
  
-@@ -3391,6 +3383,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
+@@ -3400,6 +3392,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
  	struct buffer_head *ret = kmem_cache_zalloc(bh_cachep, gfp_flags);
  	if (ret) {
  		INIT_LIST_HEAD(&ret->b_assoc_buffers);
@@ -166,3 +167,6 @@ index 4431ea2c8802..87c4ed37ee77 100644
  /*
   * macro tricks to expand the set_buffer_foo(), clear_buffer_foo()
   * and buffer_foo() functions.
+-- 
+2.26.2
+

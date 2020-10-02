@@ -1,8 +1,9 @@
+From c46a8b5f0beb5f4c7cfe34835f9aa21239c0c05d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 132/366] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 132/365] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=69a82d10509ac8f0805f6292e7414f13bb21970d
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -38,7 +39,7 @@ index 2e96f7e709f0..8d85515ae401 100644
  #ifdef CONFIG_SMP
   extern void kick_process(struct task_struct *tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 83e07a33f731..b0320a10bfaf 100644
+index 87e0238b6026..c11a582aeabd 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2034,8 +2034,25 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -99,3 +100,6 @@ index 819bd5fb0264..72e161f6b9b8 100644
  
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
+-- 
+2.26.2
+

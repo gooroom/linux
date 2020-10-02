@@ -1,8 +1,9 @@
+From f7f12ea69ad856e8ca6657e66137f899ab5d7fdc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 15:39:05 +0100
-Subject: [PATCH 235/366] net: provide a way to delegate processing a softirq
+Subject: [PATCH 235/365] net: provide a way to delegate processing a softirq
  to ksoftirqd
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=48b46773f2592ac58482fabad9ac951da98bf9e5
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 If the NET_RX uses up all of his budget it moves the following NAPI
 invocations into the `ksoftirqd`. On -RT it does not do so. Instead it
@@ -71,10 +72,10 @@ index b5f185b89857..d1c9bf11645a 100644
   * This function must run with irqs disabled!
   */
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 7a834fec135e..f86e2eec4f67 100644
+index 56ea4b78e75a..09c4709d1a2e 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5356,7 +5356,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
+@@ -5353,7 +5353,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
  	list_splice_tail(&repoll, &list);
  	list_splice(&list, &sd->poll_list);
  	if (!list_empty(&sd->poll_list))
@@ -83,3 +84,6 @@ index 7a834fec135e..f86e2eec4f67 100644
  
  	net_rps_action_and_irq_enable(sd);
  }
+-- 
+2.26.2
+

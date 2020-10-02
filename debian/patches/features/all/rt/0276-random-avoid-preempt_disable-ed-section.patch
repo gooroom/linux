@@ -1,7 +1,8 @@
+From 8edcf86ce164cc9fcf1237d57dca9bec56854594 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 12 May 2017 15:46:17 +0200
-Subject: [PATCH 276/366] random: avoid preempt_disable()ed section
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=594814e4e58364ea785442b3e480cc9c5d79d8f0
+Subject: [PATCH 276/365] random: avoid preempt_disable()ed section
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 extract_crng() will use sleeping locks while in a preempt_disable()
 section due to get_cpu_var().
@@ -14,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 15 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 3777a8ff637e..c033135f2a67 100644
+index d18e82b490fa..2c0fb096ec8e 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -263,6 +263,7 @@
@@ -25,7 +26,7 @@ index 3777a8ff637e..c033135f2a67 100644
  #include <crypto/chacha20.h>
  
  #include <asm/processor.h>
-@@ -1664,7 +1665,7 @@ void get_random_bytes_arch(void *buf, int nbytes)
+@@ -1665,7 +1666,7 @@ void get_random_bytes_arch(void *buf, int nbytes)
  
  		if (!arch_get_random_long(&v))
  			break;
@@ -34,7 +35,7 @@ index 3777a8ff637e..c033135f2a67 100644
  		memcpy(p, &v, chunk);
  		p += chunk;
  		nbytes -= chunk;
-@@ -2118,18 +2119,22 @@ struct batched_entropy {
+@@ -2119,18 +2120,22 @@ struct batched_entropy {
   * the goal of being quite fast and not depleting entropy.
   */
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_long);
@@ -59,7 +60,7 @@ index 3777a8ff637e..c033135f2a67 100644
  	return ret;
  }
  EXPORT_SYMBOL(get_random_long);
-@@ -2141,18 +2146,23 @@ unsigned int get_random_int(void)
+@@ -2142,18 +2147,23 @@ unsigned int get_random_int(void)
  }
  #else
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_int);
@@ -85,3 +86,6 @@ index 3777a8ff637e..c033135f2a67 100644
  	return ret;
  }
  #endif
+-- 
+2.26.2
+

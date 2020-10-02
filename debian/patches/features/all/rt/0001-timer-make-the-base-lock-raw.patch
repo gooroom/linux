@@ -1,7 +1,8 @@
+From 0e7c078a035101c2d8a7c10850402500c865d11e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jul 2016 18:22:23 +0200
-Subject: [PATCH 001/366] timer: make the base lock raw
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4714837140b16a3278a1f3d528d1217a6bee335b
+Subject: [PATCH 001/365] timer: make the base lock raw
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 The part where the base lock is held got more predictable / shorter after the
 timer rework. One reason is the lack of re-cascading.
@@ -13,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index b5603248d841..c68f96af0aed 100644
+index d2e4698d43fe..7b60b398dc97 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -193,7 +193,7 @@ EXPORT_SYMBOL(jiffies_64);
+@@ -194,7 +194,7 @@ EXPORT_SYMBOL(jiffies_64);
  #endif
  
  struct timer_base {
@@ -25,7 +26,7 @@ index b5603248d841..c68f96af0aed 100644
  	struct timer_list	*running_timer;
  	unsigned long		clk;
  	unsigned long		next_expiry;
-@@ -953,10 +953,10 @@ static struct timer_base *lock_timer_base(struct timer_list *timer,
+@@ -954,10 +954,10 @@ static struct timer_base *lock_timer_base(struct timer_list *timer,
  
  		if (!(tf & TIMER_MIGRATING)) {
  			base = get_timer_base(tf);
@@ -38,7 +39,7 @@ index b5603248d841..c68f96af0aed 100644
  		}
  		cpu_relax();
  	}
-@@ -1033,9 +1033,9 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
+@@ -1034,9 +1034,9 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
  			/* See the comment in lock_timer_base() */
  			timer->flags |= TIMER_MIGRATING;
  
@@ -50,7 +51,7 @@ index b5603248d841..c68f96af0aed 100644
  			WRITE_ONCE(timer->flags,
  				   (timer->flags & ~TIMER_BASEMASK) | base->cpu);
  			forward_timer_base(base);
-@@ -1060,7 +1060,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
+@@ -1061,7 +1061,7 @@ __mod_timer(struct timer_list *timer, unsigned long expires, bool pending_only)
  	}
  
  out_unlock:
@@ -59,7 +60,7 @@ index b5603248d841..c68f96af0aed 100644
  
  	return ret;
  }
-@@ -1154,9 +1154,9 @@ void add_timer_on(struct timer_list *timer, int cpu)
+@@ -1155,9 +1155,9 @@ void add_timer_on(struct timer_list *timer, int cpu)
  	if (base != new_base) {
  		timer->flags |= TIMER_MIGRATING;
  
@@ -71,7 +72,7 @@ index b5603248d841..c68f96af0aed 100644
  		WRITE_ONCE(timer->flags,
  			   (timer->flags & ~TIMER_BASEMASK) | cpu);
  	}
-@@ -1164,7 +1164,7 @@ void add_timer_on(struct timer_list *timer, int cpu)
+@@ -1165,7 +1165,7 @@ void add_timer_on(struct timer_list *timer, int cpu)
  
  	debug_activate(timer, timer->expires);
  	internal_add_timer(base, timer);
@@ -80,7 +81,7 @@ index b5603248d841..c68f96af0aed 100644
  }
  EXPORT_SYMBOL_GPL(add_timer_on);
  
-@@ -1191,7 +1191,7 @@ int del_timer(struct timer_list *timer)
+@@ -1192,7 +1192,7 @@ int del_timer(struct timer_list *timer)
  	if (timer_pending(timer)) {
  		base = lock_timer_base(timer, &flags);
  		ret = detach_if_pending(timer, base, true);
@@ -89,7 +90,7 @@ index b5603248d841..c68f96af0aed 100644
  	}
  
  	return ret;
-@@ -1219,7 +1219,7 @@ int try_to_del_timer_sync(struct timer_list *timer)
+@@ -1220,7 +1220,7 @@ int try_to_del_timer_sync(struct timer_list *timer)
  		timer_stats_timer_clear_start_info(timer);
  		ret = detach_if_pending(timer, base, true);
  	}
@@ -98,7 +99,7 @@ index b5603248d841..c68f96af0aed 100644
  
  	return ret;
  }
-@@ -1351,13 +1351,13 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
+@@ -1352,13 +1352,13 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
  		data = timer->data;
  
  		if (timer->flags & TIMER_IRQSAFE) {
@@ -116,7 +117,7 @@ index b5603248d841..c68f96af0aed 100644
  		}
  	}
  }
-@@ -1526,7 +1526,7 @@ u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
+@@ -1527,7 +1527,7 @@ u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
  	if (cpu_is_offline(smp_processor_id()))
  		return expires;
  
@@ -125,7 +126,7 @@ index b5603248d841..c68f96af0aed 100644
  	nextevt = __next_timer_interrupt(base);
  	is_max_delta = (nextevt == base->clk + NEXT_TIMER_MAX_DELTA);
  	base->next_expiry = nextevt;
-@@ -1560,7 +1560,7 @@ u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
+@@ -1561,7 +1561,7 @@ u64 get_next_timer_interrupt(unsigned long basej, u64 basem)
  			base->is_idle = true;
  		}
  	}
@@ -134,7 +135,7 @@ index b5603248d841..c68f96af0aed 100644
  
  	return cmp_next_hrtimer_event(basem, expires);
  }
-@@ -1649,7 +1649,7 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1657,7 +1657,7 @@ static inline void __run_timers(struct timer_base *base)
  	if (!time_after_eq(jiffies, base->clk))
  		return;
  
@@ -143,7 +144,7 @@ index b5603248d841..c68f96af0aed 100644
  
  	/*
  	 * timer_base::must_forward_clk must be cleared before running
-@@ -1676,7 +1676,7 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1684,7 +1684,7 @@ static inline void __run_timers(struct timer_base *base)
  			expire_timers(base, heads + levels);
  	}
  	base->running_timer = NULL;
@@ -152,7 +153,7 @@ index b5603248d841..c68f96af0aed 100644
  }
  
  /*
-@@ -1886,8 +1886,8 @@ int timers_dead_cpu(unsigned int cpu)
+@@ -1894,8 +1894,8 @@ int timers_dead_cpu(unsigned int cpu)
  		 * The caller is globally serialized and nobody else
  		 * takes two locks at once, deadlock is not possible.
  		 */
@@ -163,7 +164,7 @@ index b5603248d841..c68f96af0aed 100644
  
  		/*
  		 * The current CPUs base clock might be stale. Update it
-@@ -1900,8 +1900,8 @@ int timers_dead_cpu(unsigned int cpu)
+@@ -1908,8 +1908,8 @@ int timers_dead_cpu(unsigned int cpu)
  		for (i = 0; i < WHEEL_SIZE; i++)
  			migrate_timer_list(new_base, old_base->vectors + i);
  
@@ -174,7 +175,7 @@ index b5603248d841..c68f96af0aed 100644
  		put_cpu_ptr(&timer_bases);
  	}
  	return 0;
-@@ -1917,7 +1917,7 @@ static void __init init_timer_cpu(int cpu)
+@@ -1925,7 +1925,7 @@ static void __init init_timer_cpu(int cpu)
  	for (i = 0; i < NR_BASES; i++) {
  		base = per_cpu_ptr(&timer_bases[i], cpu);
  		base->cpu = cpu;
@@ -183,3 +184,6 @@ index b5603248d841..c68f96af0aed 100644
  		base->clk = jiffies;
  	}
  }
+-- 
+2.26.2
+

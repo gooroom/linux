@@ -1,7 +1,8 @@
+From 64e79db40220630a0253fffb36ad65878f3a2dd1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
-Subject: [PATCH 275/366] random: Make it work on rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=24369f73957426ab0c4485f9f9c2cb2888186acb
+Subject: [PATCH 275/365] random: Make it work on rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -19,7 +20,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  6 files changed, 24 insertions(+), 9 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index f1fb82b3e66c..3777a8ff637e 100644
+index 23b06e8fc0b3..d18e82b490fa 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -1183,28 +1183,27 @@ static __u32 get_reg(struct fast_pool *f, struct pt_regs *regs)
@@ -99,7 +100,7 @@ index bb5547a83daf..529da7ef55e3 100644
  	struct cpumask		*percpu_enabled;
  	const struct cpumask	*percpu_affinity;
 diff --git a/include/linux/random.h b/include/linux/random.h
-index 16ab429735a7..9d0fecb5b6c2 100644
+index 15cd75454468..a50fcce24354 100644
 --- a/include/linux/random.h
 +++ b/include/linux/random.h
 @@ -31,7 +31,7 @@ static inline void add_latent_entropy(void) {}
@@ -150,3 +151,6 @@ index 491ceca98798..5a217c230dee 100644
  		wake_threads_waitq(desc);
  	}
  
+-- 
+2.26.2
+

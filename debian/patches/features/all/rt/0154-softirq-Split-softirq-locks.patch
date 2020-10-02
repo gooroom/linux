@@ -1,7 +1,8 @@
+From c9050d444e399927a06616ec83c95b816d472976 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 154/366] softirq: Split softirq locks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=898bc152dc6b6c6f50fdbffc20c59cb3a51ba7ea
+Subject: [PATCH 154/365] softirq: Split softirq locks
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -199,7 +200,7 @@ index fd513672718c..6e62b9579839 100644
  #define PF_EXITPIDONE	0x00000008	/* pi exit done on shut down */
  #define PF_VCPU		0x00000010	/* I'm a virtual CPU */
 diff --git a/init/main.c b/init/main.c
-index d47860dbe896..6d19561b5d53 100644
+index 7ad08957dd18..cb7116682308 100644
 --- a/init/main.c
 +++ b/init/main.c
 @@ -509,6 +509,7 @@ asmlinkage __visible void __init start_kernel(void)
@@ -830,10 +831,10 @@ index daa796993174..586c3bcc3e01 100644
  	}
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 0defc3c6d0e4..3cbb635e6508 100644
+index 122368549acc..1864b75415b2 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3916,11 +3916,9 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -3912,11 +3912,9 @@ int netif_rx_ni(struct sk_buff *skb)
  
  	trace_netif_rx_ni_entry(skb);
  
@@ -847,3 +848,6 @@ index 0defc3c6d0e4..3cbb635e6508 100644
  
  	return err;
  }
+-- 
+2.26.2
+

@@ -1,8 +1,9 @@
+From 3ae275ca447cdf0ac64a76ee3512c39e303679c7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 122/366] hrtimer: Fixup hrtimer callback changes for
+Subject: [PATCH 122/365] hrtimer: Fixup hrtimer callback changes for
  preempt-rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=57363be748a382399e8ad029f7bc981e8813948f
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 In preempt-rt we can not call the callbacks which take sleeping locks
 from the timer interrupt context.
@@ -68,7 +69,7 @@ index b9a14f3ad98d..74532c59d066 100644
  	unsigned int			active_bases;
  	unsigned int			clock_was_set_seq;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d34d3e7b62e3..9664c34bc5f0 100644
+index 09873b6a9961..b75031cd033b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -345,6 +345,7 @@ static void init_rq_hrtick(struct rq *rq)
@@ -80,10 +81,10 @@ index d34d3e7b62e3..9664c34bc5f0 100644
  #else	/* CONFIG_SCHED_HRTICK */
  static inline void hrtick_clear(struct rq *rq)
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index 9ab4d73e9cc9..a941b0739d11 100644
+index 5034c41a5313..e9ad9c601d22 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
-@@ -47,6 +47,7 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
+@@ -48,6 +48,7 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
  
  	hrtimer_init(&rt_b->rt_period_timer,
  			CLOCK_MONOTONIC, HRTIMER_MODE_REL);
@@ -351,3 +352,6 @@ index 63177be0159e..59fe007ad496 100644
  
  	/* Enable the perf event */
  	watchdog_nmi_enable(cpu);
+-- 
+2.26.2
+

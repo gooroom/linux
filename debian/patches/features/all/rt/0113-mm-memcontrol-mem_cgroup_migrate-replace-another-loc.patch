@@ -1,8 +1,9 @@
+From 5b1032181b04ccc759400f97f8d5583eb52b19cb Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 5 Jun 2016 08:11:13 +0200
-Subject: [PATCH 113/366] mm/memcontrol: mem_cgroup_migrate() - replace another
+Subject: [PATCH 113/365] mm/memcontrol: mem_cgroup_migrate() - replace another
  local_irq_disable() w. local_lock_irq()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a1d979b05f4e660a949ac02a136f26bc4a7704c1
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 v4.6 grew a local_irq_disable() in mm/memcontrol.c::mem_cgroup_migrate().
 Convert it to use the existing local lock (event_lock) like the others.
@@ -14,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 90bf9feb4b22..88c02d2d20a5 100644
+index 20b454937c28..c4703399cfa8 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
 @@ -5704,10 +5704,10 @@ void mem_cgroup_migrate(struct page *oldpage, struct page *newpage)
@@ -30,3 +31,6 @@ index 90bf9feb4b22..88c02d2d20a5 100644
  }
  
  DEFINE_STATIC_KEY_FALSE(memcg_sockets_enabled_key);
+-- 
+2.26.2
+

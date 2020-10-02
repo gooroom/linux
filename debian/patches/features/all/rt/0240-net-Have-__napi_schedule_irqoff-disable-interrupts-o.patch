@@ -1,8 +1,9 @@
+From 25dd6d498d967d46fe42e0de33664c68b352f367 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 240/366] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 240/365] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2bacd3afc2422008c1672c5a258be623f5ca4b7c
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -52,10 +53,10 @@ index c08d3be754fe..f91549292fdc 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b9622cbb2761..67c5247cc5ad 100644
+index f1cc73c3cd48..2cb186ecf570 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5012,6 +5012,7 @@ void __napi_schedule(struct napi_struct *n)
+@@ -5008,6 +5008,7 @@ void __napi_schedule(struct napi_struct *n)
  }
  EXPORT_SYMBOL(__napi_schedule);
  
@@ -63,7 +64,7 @@ index b9622cbb2761..67c5247cc5ad 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5023,6 +5024,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5019,6 +5020,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -71,3 +72,6 @@ index b9622cbb2761..67c5247cc5ad 100644
  
  void __napi_complete(struct napi_struct *n)
  {
+-- 
+2.26.2
+

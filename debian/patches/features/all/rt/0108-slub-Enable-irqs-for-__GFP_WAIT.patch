@@ -1,7 +1,8 @@
+From 27d213920c55cee4dfb0d587600a80c3f3e8a03e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:08:15 +0100
-Subject: [PATCH 108/366] slub: Enable irqs for __GFP_WAIT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b80ebea25b4526331c38c3dfdfd11c9738cd5c7d
+Subject: [PATCH 108/365] slub: Enable irqs for __GFP_WAIT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
 
 SYSTEM_RUNNING might be too late for enabling interrupts. Allocations
 with GFP_WAIT can happen before that. So use this as an indicator.
@@ -12,10 +13,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 7 deletions(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index 467d82623481..ffe72cb83b92 100644
+index aab5c7a0615b..c22f4431184d 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -1536,14 +1536,17 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1555,14 +1555,17 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	void *start, *p;
  	int idx, order;
  	bool shuffle;
@@ -35,7 +36,7 @@ index 467d82623481..ffe72cb83b92 100644
  		local_irq_enable();
  
  	flags |= s->allocflags;
-@@ -1618,11 +1621,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1637,11 +1640,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	page->frozen = 1;
  
  out:
@@ -48,3 +49,6 @@ index 467d82623481..ffe72cb83b92 100644
  		local_irq_disable();
  	if (!page)
  		return NULL;
+-- 
+2.26.2
+
