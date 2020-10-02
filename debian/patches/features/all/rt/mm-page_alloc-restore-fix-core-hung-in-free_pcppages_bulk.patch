@@ -1,0 +1,24 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Fri, 02 Oct 2020 21:52:39 +0100
+Subject: mm, page_alloc: Restore "fix core hung in free_pcppages_bulk()"
+
+The stable backport of commit 88e8ac11d2ea was effectively reverted as
+part of a merge into the v4.9-rt and v4.14-rt branches.  Apply the same
+change in the isolate_pcp_pages() function.
+
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -1168,6 +1168,11 @@ static void isolate_pcp_pages(int count,
+ 	int migratetype = 0;
+ 	int batch_free = 0;
+ 
++	/*
++	 * Ensure proper count is passed which otherwise would stuck in the
++	 * below while (list_empty(list)) loop.
++	 */
++	count = min(src->count, count);
+ 	while (count) {
+ 		struct page *page;
+ 		struct list_head *list;
