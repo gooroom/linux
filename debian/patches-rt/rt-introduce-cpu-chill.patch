@@ -1,7 +1,7 @@
 Subject: rt: Introduce cpu_chill()
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 07 Mar 2012 20:51:03 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc8-rt12.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt15.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Add cpu_chill() to replace cpu_relax(). cpu_chill()
@@ -57,8 +57,8 @@ Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/delay.h |    6 ++++++
- kernel/time/hrtimer.c |   32 ++++++++++++++++++++++++++++++++
- 2 files changed, 38 insertions(+)
+ kernel/time/hrtimer.c |   30 ++++++++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+)
 
 --- a/include/linux/delay.h
 +++ b/include/linux/delay.h
@@ -75,7 +75,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* defined(_LINUX_DELAY_H) */
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1993,6 +1993,38 @@ SYSCALL_DEFINE2(nanosleep_time32, struct
+@@ -1993,6 +1993,36 @@ SYSCALL_DEFINE2(nanosleep_time32, struct
  }
  #endif
  
@@ -97,9 +97,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	chill_time = ktime_set(0, NSEC_PER_MSEC);
 +
 +	current->flags |= PF_NOFREEZE;
-+	sleeping_lock_inc();
 +	schedule_hrtimeout(&chill_time, HRTIMER_MODE_REL_HARD);
-+	sleeping_lock_dec();
 +	if (!freeze_flag)
 +		current->flags &= ~PF_NOFREEZE;
 +

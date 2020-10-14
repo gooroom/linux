@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rc8-rt12.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt15.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -142,7 +142,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1849,6 +1849,44 @@ static inline int test_tsk_need_resched(
+@@ -1837,6 +1837,44 @@ static inline int test_tsk_need_resched(
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -283,7 +283,23 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void resched_cpu(int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -3381,6 +3423,9 @@ int sched_fork(unsigned long clone_flags
+@@ -1764,6 +1806,7 @@ void migrate_disable(void)
+ 	preempt_disable();
+ 	this_rq()->nr_pinned++;
+ 	p->migration_disabled = 1;
++	preempt_lazy_disable();
+ 	preempt_enable();
+ }
+ EXPORT_SYMBOL_GPL(migrate_disable);
+@@ -1792,6 +1835,7 @@ void migrate_enable(void)
+ 	barrier();
+ 	p->migration_disabled = 0;
+ 	this_rq()->nr_pinned--;
++	preempt_lazy_enable();
+ 	preempt_enable();
+ 
+ 	trace_sched_migrate_enable_tp(p);
+@@ -3671,6 +3715,9 @@ int sched_fork(unsigned long clone_flags
  	p->on_cpu = 0;
  #endif
  	init_task_preempt_count(p);
@@ -293,7 +309,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_SMP
  	plist_node_init(&p->pushable_tasks, MAX_PRIO);
  	RB_CLEAR_NODE(&p->pushable_dl_tasks);
-@@ -4580,6 +4625,7 @@ static void __sched notrace __schedule(b
+@@ -4913,6 +4960,7 @@ static void __sched notrace __schedule(b
  
  	next = pick_next_task(rq, prev, &rf);
  	clear_tsk_need_resched(prev);
@@ -301,7 +317,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	clear_preempt_need_resched();
  
  	if (likely(prev != next)) {
-@@ -4777,6 +4823,30 @@ static void __sched notrace preempt_sche
+@@ -5109,6 +5157,30 @@ static void __sched notrace preempt_sche
  	} while (need_resched());
  }
  
@@ -332,7 +348,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_PREEMPTION
  /*
   * This is the entry point to schedule() from in-kernel preemption
-@@ -4790,7 +4860,8 @@ asmlinkage __visible void __sched notrac
+@@ -5122,7 +5194,8 @@ asmlinkage __visible void __sched notrac
  	 */
  	if (likely(!preemptible()))
  		return;
@@ -342,7 +358,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	preempt_schedule_common();
  }
  NOKPROBE_SYMBOL(preempt_schedule);
-@@ -4817,6 +4888,9 @@ asmlinkage __visible void __sched notrac
+@@ -5162,6 +5235,9 @@ asmlinkage __visible void __sched notrac
  	if (likely(!preemptible()))
  		return;
  
@@ -352,7 +368,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -6651,7 +6725,9 @@ void init_idle(struct task_struct *idle,
+@@ -7000,7 +7076,9 @@ void init_idle(struct task_struct *idle,
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -363,22 +379,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -8613,6 +8689,7 @@ void migrate_disable(void)
- 
- 	if (++current->migrate_disable == 1) {
- 		this_rq()->nr_pinned++;
-+		preempt_lazy_disable();
- #ifdef CONFIG_SCHED_DEBUG
- 		WARN_ON_ONCE(current->pinned_on_cpu >= 0);
- 		current->pinned_on_cpu = smp_processor_id();
-@@ -8694,6 +8771,7 @@ void migrate_enable(void)
- 	}
- 
- out:
-+	preempt_lazy_enable();
- 	preempt_enable();
- }
- EXPORT_SYMBOL(migrate_enable);
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4357,7 +4357,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
@@ -467,7 +467,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1937,6 +1937,15 @@ extern void reweight_task(struct task_st
+@@ -1986,6 +1986,15 @@ extern void reweight_task(struct task_st
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  
@@ -502,7 +502,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		(need_resched_lazy() ? TRACE_FLAG_NEED_RESCHED_LAZY : 0) |
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
- 	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
+ 	entry->migrate_disable = (tsk) ? tsk->migration_disabled & 0xFF : 0;
 @@ -3786,15 +3788,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)

@@ -62,6 +62,26 @@ printk-fix-ifnullfree.cocci-warnings.patch
 # https://lkml.kernel.org/r/20200828100022.1099682-2-npiggin@gmail.com
 mm-fix-exec-activate_mm-vs-TLB-shootdown-and-lazy-tl.patch
 
+# 2020-10-05 16:57 Peter Zijlstra [PATCH -v2 00/17] sched: Migrate disable support
+# 20201005145717.346020688@infradead.org
+0001-stop_machine-Add-function-and-caller-debug-info.patch
+0002-sched-Fix-balance_callback.patch
+0003-sched-hotplug-Ensure-only-per-cpu-kthreads-run-durin.patch
+0004-sched-core-Wait-for-tasks-being-pushed-away-on-hotpl.patch
+0005-workqueue-Manually-break-affinity-on-hotplug.patch
+0006-sched-hotplug-Consolidate-task-migration-on-CPU-unpl.patch
+0007-sched-Fix-hotplug-vs-CPU-bandwidth-control.patch
+0008-sched-Massage-set_cpus_allowed.patch
+0009-sched-Add-migrate_disable.patch
+0010-sched-Fix-migrate_disable-vs-set_cpus_allowed_ptr.patch
+0011-sched-core-Make-migrate-disable-and-CPU-hotplug-coop.patch
+0012-sched-rt-Use-cpumask_any-_distribute.patch
+0013-sched-rt-Use-the-full-cpumask-for-balancing.patch
+0014-sched-lockdep-Annotate-pi_lock-recursion.patch
+0015-sched-Fix-migrate_disable-vs-rt-dl-balancing.patch
+0016-sched-proc-Print-accurate-cpumask-vs-migrate_disable.patch
+0017-sched-Add-migrate_disable-tracepoints.patch
+
 ############################################################
 # POSTED
 ############################################################
@@ -115,6 +135,31 @@ rcu--Prevent-false-positive-softirq-warning-on-RT.patch
 softirq--Replace-barrier---with-cpu_relax---in-tasklet_unlock_wait--.patch
 tasklets--Avoid-cancel-kill-deadlock-on-RT.patch
 tasklets-Use-static-line-for-functions.patch
+
+# RT-MUTEX
+0001-locking-rtmutex-Remove-cruft.patch
+0002-locking-rtmutex-Remove-output-from-deadlock-detector.patch
+0003-locking-rtmutex-Move-rt_mutex_init-outside-of-CONFIG.patch
+0004-locking-rtmutex-Remove-rt_mutex_timed_lock.patch
+0005-locking-rtmutex-Handle-the-various-new-futex-race-co.patch
+0006-futex-Fix-bug-on-when-a-requeued-RT-task-times-out.patch
+0007-locking-rtmutex-Add-rtmutex_lock_killable.patch
+0008-locking-rtmutex-Make-lock_killable-work.patch
+0009-locking-spinlock-Split-the-lock-types-header.patch
+0010-locking-rtmutex-Avoid-include-hell.patch
+0011-lockdep-Reduce-header-files-in-debug_locks.h.patch
+0012-locking-split-out-the-rbtree-definition.patch
+0013-locking-rtmutex-Provide-rt_mutex_slowlock_locked.patch
+0014-locking-rtmutex-export-lockdep-less-version-of-rt_mu.patch
+0015-sched-Add-saved_state-for-tasks-blocked-on-sleeping-.patch
+0016-locking-rtmutex-add-sleeping-lock-implementation.patch
+0017-locking-rtmutex-Allow-rt_mutex_trylock-on-PREEMPT_RT.patch
+0018-locking-rtmutex-add-mutex-implementation-based-on-rt.patch
+0019-locking-rtmutex-add-rwsem-implementation-based-on-rt.patch
+0020-locking-rtmutex-add-rwlock-implementation-based-on-r.patch
+0021-locking-rtmutex-wire-up-RT-s-locking.patch
+0022-locking-rtmutex-add-ww_mutex-addon-for-mutex-rt.patch
+0023-locking-rtmutex-Use-custom-scheduling-function-for-s.patch
 
 ###############################################################
 # Stuff broken upstream and upstream wants something different
@@ -238,7 +283,6 @@ sched-mmdrop-delayed.patch
 kernel-sched-move-stack-kprobe-clean-up-to-__put_tas.patch
 
 # RT bulk - Revisit
-sched-rt-mutex-wakeup.patch
 sched-might-sleep-do-not-account-rcu-depth.patch
 sched-disable-ttwu-queue.patch
 
@@ -253,46 +297,14 @@ softirq-disable-softirq-stacks-for-rt.patch
 # 20170620.130840.472295224655944129.davem@davemloft.net
 net-core-use-local_bh_disable-in-netif_rx_ni.patch
 
-# FUTEX/RTMUTEX
-rtmutex-futex-prepare-rt.patch
-futex-requeue-pi-fix.patch
-futex-Ensure-lock-unlock-symetry-versus-pi_lock-and-.patch
-
 # RTMUTEX
 pid.h-include-atomic.h.patch
-rtmutex-lock-killable.patch
-rtmutex-Make-lock_killable-work.patch
-spinlock-types-separate-raw.patch
-rtmutex-avoid-include-hell.patch
-locking-split-out-the-rbtree-definition.patch
-rtmutex-Provide-rt_mutex_slowlock_locked.patch
-rtmutex-export-lockdep-less-version-of-rt_mutex-s-lo.patch
-rtmutex-add-sleeping-lock-implementation.patch
-cond-resched-lock-rt-tweak.patch
-locking-rtmutex-Clean-pi_blocked_on-in-the-error-cas.patch
-rtmutex-trylock-is-okay-on-RT.patch
-rtmutex-add-mutex-implementation-based-on-rtmutex.patch
-rtmutex-add-rwsem-implementation-based-on-rtmutex.patch
-rtmutex-add-rwlock-implementation-based-on-rtmutex.patch
-rtmutex-wire-up-RT-s-locking.patch
-rwsem-Provide-down_read_non_owner-and-up_read_non_ow.patch
-rtmutex-add-ww_mutex-addon-for-mutex-rt.patch
-mutex-Move-the-ww_mutext-definition-back-to-ww_mutex.patch
-
-# Allow to enable RT-FULL after sleeping spinlocks are wired up
-# XXX move flush_plug to slowpath's schedule()
-locking-rt-mutex-fix-deadlock-in-device-mapper-block.patch
-locking-rt-mutex-Flush-block-plug-on-__down_read.patch
 ptrace-fix-ptrace-vs-tasklist_lock-race.patch
 
 # MIGRATE DISABLE AND PER CPU
 # Revisit
-add_migrate_disable.patch
-sched-migrate_enable-Use-stop_one_cpu_nowait.patch
-sched-migrate_enable-Use-per-cpu-cpu_stop_work.patch
-sched-migrate_enable-Remove-__schedule-call.patch
+add_cpu_light.patch
 ftrace-migrate-disable-tracing.patch
-futex-workaround-migrate_disable-enable-in-different.patch
 locking-don-t-check-for-__LINUX_SPINLOCK_TYPES_H-on-.patch
 
 # RCU
@@ -352,7 +364,6 @@ upstream-net-rt-remove-preemption-disabling-in-netif_rx.patch
 lockdep-no-softirq-accounting-on-rt.patch
 lockdep-selftest-only-do-hardirq-context-test-for-raw-spinlock.patch
 lockdep-selftest-fix-warnings-due-to-missing-PREEMPT.patch
-lockdep-Reduce-header-files-in-debug_locks.h.patch
 # Fix lockdep selftest - talk to Peter - including lockdep branch
 lockdep-disable-self-test.patch
 
