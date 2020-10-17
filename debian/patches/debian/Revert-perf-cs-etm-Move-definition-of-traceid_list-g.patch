@@ -1,0 +1,46 @@
+From 14ee286ede5c2534a1c8b7ce465cf4b7df4cde7e Mon Sep 17 00:00:00 2001
+From: Salvatore Bonaccorso <carnil@debian.org>
+Date: Sat, 17 Oct 2020 11:42:06 +0200
+Subject: [PATCH] Revert "perf cs-etm: Move definition of 'traceid_list' global
+ variable from header file"
+
+This reverts commit b801d568c7d85f816f1afb6e869f069c3ebe8b66 from
+upstream in 4.19.152. It causes FTBFS for the perf tools.
+
+Link: https://lore.kernel.org/stable/CA+G9fYsZh9L_1RsH+LipyzOzEYFunSU=b_bZeuzMi6-SQxRMKw@mail.gmail.com/T/#md2f4aad2ebe0c0b7f8e318259127c72c3cfff5b0
+---
+ tools/perf/util/cs-etm.c | 3 ---
+ tools/perf/util/cs-etm.h | 3 +++
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tools/perf/util/cs-etm.c b/tools/perf/util/cs-etm.c
+index ad33b99f5d21..7b5e15cc6b71 100644
+--- a/tools/perf/util/cs-etm.c
++++ b/tools/perf/util/cs-etm.c
+@@ -87,9 +87,6 @@ struct cs_etm_queue {
+ 	struct cs_etm_packet *packet;
+ };
+ 
+-/* RB tree for quick conversion between traceID and metadata pointers */
+-static struct intlist *traceid_list;
+-
+ static int cs_etm__update_queues(struct cs_etm_auxtrace *etm);
+ static int cs_etm__process_timeless_queues(struct cs_etm_auxtrace *etm,
+ 					   pid_t tid, u64 time_);
+diff --git a/tools/perf/util/cs-etm.h b/tools/perf/util/cs-etm.h
+index c7ef97b198c7..37f8d48179ca 100644
+--- a/tools/perf/util/cs-etm.h
++++ b/tools/perf/util/cs-etm.h
+@@ -53,6 +53,9 @@ enum {
+ 	CS_ETMV4_PRIV_MAX,
+ };
+ 
++/* RB tree for quick conversion between traceID and CPUs */
++struct intlist *traceid_list;
++
+ #define KiB(x) ((x) * 1024)
+ #define MiB(x) ((x) * 1024 * 1024)
+ 
+-- 
+2.28.0
+
