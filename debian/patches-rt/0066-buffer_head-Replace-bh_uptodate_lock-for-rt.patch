@@ -1,11 +1,11 @@
-From e50f5996603fbf4fa4e225165ffbb898630ce917 Mon Sep 17 00:00:00 2001
-Message-Id: <e50f5996603fbf4fa4e225165ffbb898630ce917.1599166690.git.zanussi@kernel.org>
-In-Reply-To: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
-References: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
+From 0234ffb83adb4ab4ccc78264e5c22edaa67bb110 Mon Sep 17 00:00:00 2001
+Message-Id: <0234ffb83adb4ab4ccc78264e5c22edaa67bb110.1601675151.git.zanussi@kernel.org>
+In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
 Subject: [PATCH 066/333] buffer_head: Replace bh_uptodate_lock for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.142-rt63.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 46 insertions(+), 25 deletions(-)
 
 diff --git a/fs/buffer.c b/fs/buffer.c
-index c49fdab5cb36..b649c4d58637 100644
+index 362a86876459..87e38a32306f 100644
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
 @@ -274,8 +274,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
@@ -81,7 +81,7 @@ index c49fdab5cb36..b649c4d58637 100644
  }
  EXPORT_SYMBOL(end_buffer_async_write);
  
-@@ -3379,6 +3371,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
+@@ -3388,6 +3380,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
  	struct buffer_head *ret = kmem_cache_zalloc(bh_cachep, gfp_flags);
  	if (ret) {
  		INIT_LIST_HEAD(&ret->b_assoc_buffers);

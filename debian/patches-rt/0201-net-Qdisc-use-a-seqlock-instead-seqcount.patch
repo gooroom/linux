@@ -1,11 +1,11 @@
-From 97ee56713bd357e7cfc9560148236a0fef713377 Mon Sep 17 00:00:00 2001
-Message-Id: <97ee56713bd357e7cfc9560148236a0fef713377.1599166691.git.zanussi@kernel.org>
-In-Reply-To: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
-References: <56457dc415803c8abc5acb513ada877a79596f05.1599166690.git.zanussi@kernel.org>
+From 4e5189dc9a6f1bbd366639b099b5ebc9b3226587 Mon Sep 17 00:00:00 2001
+Message-Id: <4e5189dc9a6f1bbd366639b099b5ebc9b3226587.1601675152.git.zanussi@kernel.org>
+In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 201/333] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.142-rt63.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -258,7 +258,7 @@ index 39e319d04bb8..fe99928aff78 100644
  		err = -EOPNOTSUPP;
  		if (sch->flags & TCQ_F_MQROOT) {
 diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index 49d60ae006ed..c2ee9d1c3770 100644
+index 06681749e736..f1762079365e 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
 @@ -576,7 +576,11 @@ struct Qdisc noop_qdisc = {
