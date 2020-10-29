@@ -1,9 +1,9 @@
-From 490b812832b95928843672cec1ab621d29cf69c2 Mon Sep 17 00:00:00 2001
+From c16bf12bfcacc8ce6dd7e19f932f7d56a2362d50 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 16:05:28 +0100
 Subject: [PATCH 231/365] sunrpc: Make svc_xprt_do_enqueue() use
  get_cpu_light()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
 |in_atomic(): 1, irqs_disabled(): 0, pid: 3194, name: rpc.nfsd
@@ -35,10 +35,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/net/sunrpc/svc_xprt.c b/net/sunrpc/svc_xprt.c
-index 42ce3ed21637..81bb5fcc89d8 100644
+index 56e4ac8e2e99..bac86b275a79 100644
 --- a/net/sunrpc/svc_xprt.c
 +++ b/net/sunrpc/svc_xprt.c
-@@ -396,7 +396,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
+@@ -405,7 +405,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
  		goto out;
  	}
  
@@ -47,7 +47,7 @@ index 42ce3ed21637..81bb5fcc89d8 100644
  	pool = svc_pool_for_cpu(xprt->xpt_server, cpu);
  
  	atomic_long_inc(&pool->sp_stats.packets);
-@@ -432,7 +432,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
+@@ -441,7 +441,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
  
  		atomic_long_inc(&pool->sp_stats.threads_woken);
  		wake_up_process(rqstp->rq_task);
@@ -56,7 +56,7 @@ index 42ce3ed21637..81bb5fcc89d8 100644
  		goto out;
  	}
  	rcu_read_unlock();
-@@ -453,7 +453,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
+@@ -462,7 +462,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
  		goto redo_search;
  	}
  	rqstp = NULL;
@@ -66,5 +66,5 @@ index 42ce3ed21637..81bb5fcc89d8 100644
  	trace_svc_xprt_do_enqueue(xprt, rqstp);
  }
 -- 
-2.26.2
+2.28.0
 

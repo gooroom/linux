@@ -1,8 +1,8 @@
-From 62292759bac9ab6071f09eb36125613c0e210c12 Mon Sep 17 00:00:00 2001
+From 8d8e3e8f18baafe7d9a995d62984558cc9b0cf6f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 299/365] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -479,7 +479,7 @@ index 72e161f6b9b8..2a1da77b9989 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 847e05989182..ecc5f4ce5911 100644
+index 90387cbb7908..fc478c7d046e 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -1906,6 +1906,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -500,7 +500,7 @@ index 847e05989182..ecc5f4ce5911 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -2914,15 +2916,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -2917,15 +2919,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -527,7 +527,7 @@ index 847e05989182..ecc5f4ce5911 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -2948,11 +2952,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -2951,11 +2955,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  	print_event_info(buf, m);
  	seq_puts(m, "#                              _-----=> irqs-off\n"
  		    "#                             / _----=> need-resched\n"
@@ -613,5 +613,5 @@ index badf130635f1..65a6dde71a7d 100644
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
 -- 
-2.26.2
+2.28.0
 

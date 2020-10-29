@@ -1,8 +1,8 @@
-From c90115fcc390978301008e3270b0c70bbf4ba14b Mon Sep 17 00:00:00 2001
+From 7417d3b92eaa2bbb191d79329234efd456433a46 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 232/365] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.236-rt154.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -28,7 +28,7 @@ index 4d1b1056ac97..6108dd6baaec 100644
  };
  
 diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index e37112ac332f..b9a54b02f63d 100644
+index 67b798b7115d..4e78fd08cc61 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -284,6 +284,7 @@ struct sk_buff_head {
@@ -39,7 +39,7 @@ index e37112ac332f..b9a54b02f63d 100644
  };
  
  struct sk_buff;
-@@ -1579,6 +1580,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
+@@ -1591,6 +1592,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
  	__skb_queue_head_init(list);
  }
  
@@ -155,5 +155,5 @@ index 1864b75415b2..cc62279c2e1a 100644
  		sd->output_queue_tailp = &sd->output_queue;
  #ifdef CONFIG_RPS
 -- 
-2.26.2
+2.28.0
 
