@@ -1,8 +1,11 @@
-From a84add7d6794ad6184fc6c5c6fbf63c20c733dac Mon Sep 17 00:00:00 2001
+From 28b059934bf7e456de1f9388d3bb08544243ac57 Mon Sep 17 00:00:00 2001
+Message-Id: <28b059934bf7e456de1f9388d3bb08544243ac57.1601675151.git.zanussi@kernel.org>
+In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:08:15 +0100
-Subject: [PATCH 082/325] slub: Enable irqs for __GFP_WAIT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.115-rt48.tar.xz
+Subject: [PATCH 082/333] slub: Enable irqs for __GFP_WAIT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
 
 SYSTEM_RUNNING might be too late for enabling interrupts. Allocations
 with GFP_WAIT can happen before that. So use this as an indicator.
@@ -13,10 +16,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index 181b2cb6ffbb..555adbd96356 100644
+index b1201a491169..362ec0e00f89 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -1570,10 +1570,17 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1589,10 +1589,17 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	void *start, *p;
  	int idx, order;
  	bool shuffle;
@@ -34,7 +37,7 @@ index 181b2cb6ffbb..555adbd96356 100644
  		local_irq_enable();
  
  	flags |= s->allocflags;
-@@ -1632,7 +1639,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1651,7 +1658,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	page->frozen = 1;
  
  out:
@@ -44,5 +47,5 @@ index 181b2cb6ffbb..555adbd96356 100644
  	if (!page)
  		return NULL;
 -- 
-2.25.1
+2.17.1
 
