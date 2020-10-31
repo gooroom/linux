@@ -1,11 +1,11 @@
-From e55bc3b0e8dd9e6a902ab14916f8e4f142ef1c49 Mon Sep 17 00:00:00 2001
-Message-Id: <e55bc3b0e8dd9e6a902ab14916f8e4f142ef1c49.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 8f60732ef94f72772f606b8e6ff7d5f55df97e20 Mon Sep 17 00:00:00 2001
+Message-Id: <8f60732ef94f72772f606b8e6ff7d5f55df97e20.1604089291.git.zanussi@kernel.org>
+In-Reply-To: <d0fc635a2f7132e977af42eb2a0646b87f598722.1604089290.git.zanussi@kernel.org>
+References: <d0fc635a2f7132e977af42eb2a0646b87f598722.1604089290.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 197/333] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.152-rt65.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -31,7 +31,7 @@ index 4e14926433ed..8fff010fff6e 100644
  };
  
 diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index cbc0294f3989..1054741c9233 100644
+index 703ce71caeac..9d6dfbfafcc2 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -287,6 +287,7 @@ struct sk_buff_head {
@@ -42,7 +42,7 @@ index cbc0294f3989..1054741c9233 100644
  };
  
  struct sk_buff;
-@@ -1718,6 +1719,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
+@@ -1730,6 +1731,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
  	__skb_queue_head_init(list);
  }
  
