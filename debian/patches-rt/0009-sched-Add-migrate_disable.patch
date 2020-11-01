@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
-Date: Mon, 5 Oct 2020 16:57:26 +0200
-Subject: [PATCH 09/17] sched: Add migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt16.tar.xz
+Date: Fri, 23 Oct 2020 12:12:07 +0200
+Subject: [PATCH 09/19] sched: Add migrate_disable()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
 
 Add the base migrate_disable() support (under protest).
 
@@ -15,16 +15,16 @@ ease of review.
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/preempt.h |   60 +++++++++++++++++++++++++
+ include/linux/preempt.h |   65 +++++++++++++++++++++++++++
  include/linux/sched.h   |    3 +
  kernel/sched/core.c     |  112 +++++++++++++++++++++++++++++++++++++++++++++---
  kernel/sched/sched.h    |    6 +-
  lib/smp_processor_id.c  |    5 ++
- 5 files changed, 178 insertions(+), 8 deletions(-)
+ 5 files changed, 183 insertions(+), 8 deletions(-)
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -322,6 +322,64 @@ static inline void preempt_notifier_init
+@@ -322,6 +322,69 @@ static inline void preempt_notifier_init
  
  #endif
  
@@ -84,12 +84,17 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +extern void migrate_disable(void);
 +extern void migrate_enable(void);
 +
-+#else /* !(CONFIG_SMP && CONFIG_PREEMPT_RT) */
++#elif defined(CONFIG_PREEMPT_RT)
++
++static inline void migrate_disable(void) { }
++static inline void migrate_enable(void) { }
++
++#else /* !CONFIG_PREEMPT_RT */
 +
  /**
   * migrate_disable - Prevent migration of the current task
   *
-@@ -352,4 +410,6 @@ static __always_inline void migrate_enab
+@@ -352,4 +415,6 @@ static __always_inline void migrate_enab
  	preempt_enable();
  }
  
@@ -292,7 +297,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
  {
-@@ -4575,6 +4674,7 @@ static void __sched notrace __schedule(b
+@@ -4574,6 +4673,7 @@ static void __sched notrace __schedule(b
  		 */
  		++*switch_count;
  
