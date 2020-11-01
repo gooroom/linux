@@ -1,7 +1,7 @@
 Subject: softirq: Check preemption after reenabling interrupts
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100 (CET)
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -15,30 +15,11 @@ Reported-by: Carsten Emde <cbe@osadl.org>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
- block/blk-mq.c          |    2 ++
  include/linux/preempt.h |    3 +++
  lib/irq_poll.c          |    5 +++++
  net/core/dev.c          |    7 +++++++
- 4 files changed, 17 insertions(+)
+ 3 files changed, 15 insertions(+)
 
---- a/block/blk-mq.c
-+++ b/block/blk-mq.c
-@@ -604,6 +604,7 @@ static void blk_mq_trigger_softirq(struc
- 	if (list->next == &rq->ipi_list)
- 		raise_softirq_irqoff(BLOCK_SOFTIRQ);
- 	local_irq_restore(flags);
-+	preempt_check_resched_rt();
- }
- 
- static int blk_softirq_cpu_dead(unsigned int cpu)
-@@ -617,6 +618,7 @@ static int blk_softirq_cpu_dead(unsigned
- 			 this_cpu_ptr(&blk_cpu_done));
- 	raise_softirq_irqoff(BLOCK_SOFTIRQ);
- 	local_irq_enable();
-+	preempt_check_resched_rt();
- 
- 	return 0;
- }
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -187,8 +187,10 @@ do { \
@@ -151,7 +132,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  EXPORT_SYMBOL(__napi_schedule);
  
-@@ -10631,6 +10637,7 @@ static int dev_cpu_dead(unsigned int old
+@@ -10711,6 +10717,7 @@ static int dev_cpu_dead(unsigned int old
  
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();
