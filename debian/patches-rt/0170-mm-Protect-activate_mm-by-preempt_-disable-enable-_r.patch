@@ -40,30 +40,27 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  mm/mmu_context.c | 2 ++
  2 files changed, 4 insertions(+)
 
-diff --git a/fs/exec.c b/fs/exec.c
-index cece8c14f377..1941f39a3453 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -1028,12 +1028,14 @@ static int exec_mmap(struct mm_struct *mm)
+@@ -1029,6 +1029,7 @@
  		}
  	}
  	task_lock(tsk);
 +	preempt_disable_rt();
+ 
+ 	local_irq_disable();
  	active_mm = tsk->active_mm;
- 	tsk->mm = mm;
- 	tsk->active_mm = mm;
- 	activate_mm(active_mm, mm);
+@@ -1048,6 +1049,7 @@
+ 		local_irq_enable();
  	tsk->mm->vmacache_seqnum = 0;
  	vmacache_flush(tsk);
 +	preempt_enable_rt();
  	task_unlock(tsk);
  	if (old_mm) {
  		up_read(&old_mm->mmap_sem);
-diff --git a/mm/mmu_context.c b/mm/mmu_context.c
-index 3e612ae748e9..d0ccc070979f 100644
 --- a/mm/mmu_context.c
 +++ b/mm/mmu_context.c
-@@ -25,6 +25,7 @@ void use_mm(struct mm_struct *mm)
+@@ -25,6 +25,7 @@
  	struct task_struct *tsk = current;
  
  	task_lock(tsk);
@@ -71,7 +68,7 @@ index 3e612ae748e9..d0ccc070979f 100644
  	active_mm = tsk->active_mm;
  	if (active_mm != mm) {
  		mmgrab(mm);
-@@ -32,6 +33,7 @@ void use_mm(struct mm_struct *mm)
+@@ -32,6 +33,7 @@
  	}
  	tsk->mm = mm;
  	switch_mm(active_mm, mm, tsk);
@@ -79,6 +76,3 @@ index 3e612ae748e9..d0ccc070979f 100644
  	task_unlock(tsk);
  #ifdef finish_arch_post_lock_switch
  	finish_arch_post_lock_switch();
--- 
-2.17.1
-
