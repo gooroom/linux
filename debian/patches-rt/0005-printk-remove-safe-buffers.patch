@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Wed, 14 Oct 2020 20:00:11 +0200
 Subject: [PATCH 05/15] printk: remove safe buffers
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc2-rt4.tar.xz
 
 With @logbuf_lock removed, the high level printk functions for
 storing messages are lockless. Messages can be stored from any
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -205,8 +205,6 @@ void __init setup_log_buf(int early);
+@@ -207,8 +207,6 @@ void __init setup_log_buf(int early);
  void dump_stack_print_info(const char *log_lvl);
  void show_regs_print_info(const char *log_lvl);
  extern asmlinkage void dump_stack(void) __cold;
@@ -60,7 +60,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  static inline __printf(1, 0)
  int vprintk(const char *s, va_list args)
-@@ -270,14 +268,6 @@ static inline void show_regs_print_info(
+@@ -272,14 +270,6 @@ static inline void show_regs_print_info(
  static inline void dump_stack(void)
  {
  }
@@ -146,7 +146,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 - * is later flushed into the main ring buffer via IRQ work.
 - *
 - * The alternative implementation is chosen transparently
-- * by examinig current printk() context mask stored in @printk_context
+- * by examining current printk() context mask stored in @printk_context
 - * per-CPU variable.
 - *
 - * The implementation allows to flush the strings also from another CPU.

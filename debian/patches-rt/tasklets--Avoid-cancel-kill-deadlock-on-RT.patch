@@ -1,7 +1,7 @@
 Subject: tasklets: Avoid cancel/kill deadlock on RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 21 Sep 2020 17:47:34 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc2-rt4.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -36,7 +36,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define tasklet_unlock_wait(t) do { } while (0)
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -850,6 +850,29 @@ void tasklet_init(struct tasklet_struct
+@@ -851,6 +851,29 @@ void tasklet_init(struct tasklet_struct
  }
  EXPORT_SYMBOL(tasklet_init);
  
@@ -66,7 +66,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void tasklet_kill(struct tasklet_struct *t)
  {
  	if (in_interrupt())
-@@ -857,7 +880,20 @@ void tasklet_kill(struct tasklet_struct
+@@ -858,7 +881,20 @@ void tasklet_kill(struct tasklet_struct
  
  	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
  		do {

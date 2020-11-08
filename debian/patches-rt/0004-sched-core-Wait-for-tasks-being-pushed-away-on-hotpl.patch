@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:02 +0200
 Subject: [PATCH 04/19] sched/core: Wait for tasks being pushed away on hotplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc2-rt4.tar.xz
 
 RT kernels need to ensure that all tasks which are not per CPU kthreads
 have left the outgoing CPU to guarantee that no tasks are force migrated
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6896,8 +6896,21 @@ static void balance_push(struct rq *rq)
+@@ -6895,8 +6895,21 @@ static void balance_push(struct rq *rq)
  	 * Both the cpu-hotplug and stop task are in this case and are
  	 * required to complete the hotplug process.
  	 */
@@ -47,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	get_task_struct(push_task);
  	/*
-@@ -6928,6 +6941,20 @@ static void balance_push_set(int cpu, bo
+@@ -6927,6 +6940,20 @@ static void balance_push_set(int cpu, bo
  	rq_unlock_irqrestore(rq, &rf);
  }
  
@@ -68,7 +68,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  
  static inline void balance_push(struct rq *rq)
-@@ -6938,6 +6965,10 @@ static inline void balance_push_set(int
+@@ -6937,6 +6964,10 @@ static inline void balance_push_set(int
  {
  }
  
@@ -79,7 +79,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* CONFIG_HOTPLUG_CPU */
  
  void set_rq_online(struct rq *rq)
-@@ -7092,6 +7123,10 @@ int sched_cpu_deactivate(unsigned int cp
+@@ -7091,6 +7122,10 @@ int sched_cpu_deactivate(unsigned int cp
  		return ret;
  	}
  	sched_domains_numa_masks_clear(cpu);
@@ -90,7 +90,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return 0;
  }
  
-@@ -7332,6 +7367,9 @@ void __init sched_init(void)
+@@ -7331,6 +7366,9 @@ void __init sched_init(void)
  
  		rq_csd_init(rq, &rq->nohz_csd, nohz_csd_func);
  #endif
