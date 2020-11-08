@@ -2,7 +2,7 @@ From: "Ahmed S. Darwish" <a.darwish@linutronix.de>
 Date: Fri, 4 Sep 2020 17:32:27 +0200
 Subject: [PATCH 09/13] seqlock: seqcount_LOCKNAME_t: Standardize naming
  convention
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
 
 At seqlock.h, sequence counters with associated locks are either called
 seqcount_LOCKNAME_t, seqcount_LOCKTYPE_t, or seqcount_locktype_t.
@@ -14,6 +14,7 @@ Signed-off-by: Ahmed S. Darwish <a.darwish@linutronix.de>
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 Link: https://lkml.kernel.org/r/20200904153231.11994-2-a.darwish@linutronix.de
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[bwh: Adjust context to apply on top of 5.9.6]
 ---
  include/linux/seqlock.h |   79 ++++++++++++++++++++++++------------------------
  1 file changed, 40 insertions(+), 39 deletions(-)
@@ -38,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * A sequence counter which associates the lock used for writer
   * serialization at initialization time. This enables lockdep to validate
-@@ -138,30 +138,32 @@ static inline void seqcount_lockdep_read
+@@ -138,20 +138,22 @@ static inline void seqcount_lockdep_read
  #endif
  
  /**
@@ -65,6 +66,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 + * @lock:	Pointer to the associated lock
   */
  
+ #define seqcount_LOCKNAME_init(s, _lock, lockname)			\
+@@ -168,13 +170,13 @@ static inline void seqcount_lockdep_read
+ #define seqcount_ww_mutex_init(s, lock)		seqcount_LOCKNAME_init(s, lock, ww_mutex);
+ 
  /*
 - * SEQCOUNT_LOCKTYPE() - Instantiate seqcount_LOCKNAME_t and helpers
 - * @locktype:		actual typename
@@ -81,7 +86,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  typedef struct seqcount_##lockname {					\
  	seqcount_t		seqcount;				\
  	__SEQ_LOCK(locktype	*lock);					\
-@@ -211,29 +213,28 @@ static inline void __seqcount_assert(seq
+@@ -217,28 +219,28 @@ static inline void __seqcount_assert(seq
  	lockdep_assert_preemption_disabled();
  }
  
@@ -109,21 +114,20 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	__SEQ_LOCK(.lock	= (assoc_lock))				\
  }
  
--#define SEQCNT_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKTYPE_ZERO(name, lock)
 -#define SEQCNT_RAW_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKTYPE_ZERO(name, lock)
+-#define SEQCNT_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKTYPE_ZERO(name, lock)
 -#define SEQCNT_RWLOCK_ZERO(name, lock)		SEQCOUNT_LOCKTYPE_ZERO(name, lock)
 -#define SEQCNT_MUTEX_ZERO(name, lock)		SEQCOUNT_LOCKTYPE_ZERO(name, lock)
 -#define SEQCNT_WW_MUTEX_ZERO(name, lock) 	SEQCOUNT_LOCKTYPE_ZERO(name, lock)
--
-+#define SEQCNT_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKNAME_ZERO(name, lock)
 +#define SEQCNT_RAW_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKNAME_ZERO(name, lock)
++#define SEQCNT_SPINLOCK_ZERO(name, lock)	SEQCOUNT_LOCKNAME_ZERO(name, lock)
 +#define SEQCNT_RWLOCK_ZERO(name, lock)		SEQCOUNT_LOCKNAME_ZERO(name, lock)
 +#define SEQCNT_MUTEX_ZERO(name, lock)		SEQCOUNT_LOCKNAME_ZERO(name, lock)
 +#define SEQCNT_WW_MUTEX_ZERO(name, lock) 	SEQCOUNT_LOCKNAME_ZERO(name, lock)
  
  #define __seqprop_case(s, lockname, prop)				\
  	seqcount_##lockname##_t: __seqcount_##lockname##_##prop((void *)(s))
-@@ -252,7 +253,7 @@ SEQCOUNT_LOCKTYPE(struct ww_mutex,	ww_mu
+@@ -257,7 +259,7 @@ SEQCOUNT_LOCKTYPE(struct ww_mutex,	ww_mu
  
  /**
   * __read_seqcount_begin() - begin a seqcount_t read section w/o barrier
@@ -132,7 +136,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * __read_seqcount_begin is like read_seqcount_begin, but has no smp_rmb()
   * barrier. Callers should ensure that smp_rmb() or equivalent ordering is
-@@ -283,7 +284,7 @@ static inline unsigned __read_seqcount_t
+@@ -288,7 +290,7 @@ repeat:
  
  /**
   * raw_read_seqcount_begin() - begin a seqcount_t read section w/o lockdep
@@ -141,7 +145,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * Return: count to be passed to read_seqcount_retry()
   */
-@@ -299,7 +300,7 @@ static inline unsigned raw_read_seqcount
+@@ -304,7 +306,7 @@ static inline unsigned raw_read_seqcount
  
  /**
   * read_seqcount_begin() - begin a seqcount_t read critical section
@@ -150,7 +154,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * Return: count to be passed to read_seqcount_retry()
   */
-@@ -314,7 +315,7 @@ static inline unsigned read_seqcount_t_b
+@@ -319,7 +321,7 @@ static inline unsigned read_seqcount_t_b
  
  /**
   * raw_read_seqcount() - read the raw seqcount_t counter value
@@ -159,7 +163,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * raw_read_seqcount opens a read critical section of the given
   * seqcount_t, without any lockdep checking, and without checking or
-@@ -337,7 +338,7 @@ static inline unsigned raw_read_seqcount
+@@ -342,7 +344,7 @@ static inline unsigned raw_read_seqcount
  /**
   * raw_seqcount_begin() - begin a seqcount_t read critical section w/o
   *                        lockdep and w/o counter stabilization
@@ -168,7 +172,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * raw_seqcount_begin opens a read critical section of the given
   * seqcount_t. Unlike read_seqcount_begin(), this function will not wait
-@@ -365,7 +366,7 @@ static inline unsigned raw_seqcount_t_be
+@@ -370,7 +372,7 @@ static inline unsigned raw_seqcount_t_be
  
  /**
   * __read_seqcount_retry() - end a seqcount_t read section w/o barrier
@@ -177,7 +181,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * @start: count, from read_seqcount_begin()
   *
   * __read_seqcount_retry is like read_seqcount_retry, but has no smp_rmb()
-@@ -389,7 +390,7 @@ static inline int __read_seqcount_t_retr
+@@ -394,7 +396,7 @@ static inline int __read_seqcount_t_retr
  
  /**
   * read_seqcount_retry() - end a seqcount_t read critical section
@@ -186,7 +190,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * @start: count, from read_seqcount_begin()
   *
   * read_seqcount_retry closes the read critical section of given
-@@ -409,7 +410,7 @@ static inline int read_seqcount_t_retry(
+@@ -414,7 +416,7 @@ static inline int read_seqcount_t_retry(
  
  /**
   * raw_write_seqcount_begin() - start a seqcount_t write section w/o lockdep
@@ -195,7 +199,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   */
  #define raw_write_seqcount_begin(s)					\
  do {									\
-@@ -428,7 +429,7 @@ static inline void raw_write_seqcount_t_
+@@ -433,7 +435,7 @@ static inline void raw_write_seqcount_t_
  
  /**
   * raw_write_seqcount_end() - end a seqcount_t write section w/o lockdep
@@ -204,7 +208,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   */
  #define raw_write_seqcount_end(s)					\
  do {									\
-@@ -448,7 +449,7 @@ static inline void raw_write_seqcount_t_
+@@ -453,7 +455,7 @@ static inline void raw_write_seqcount_t_
  /**
   * write_seqcount_begin_nested() - start a seqcount_t write section with
   *                                 custom lockdep nesting level
@@ -213,7 +217,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * @subclass: lockdep nesting level
   *
   * See Documentation/locking/lockdep-design.rst
-@@ -471,7 +472,7 @@ static inline void write_seqcount_t_begi
+@@ -476,7 +478,7 @@ static inline void write_seqcount_t_begi
  
  /**
   * write_seqcount_begin() - start a seqcount_t write side critical section
@@ -222,7 +226,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * write_seqcount_begin opens a write side critical section of the given
   * seqcount_t.
-@@ -497,7 +498,7 @@ static inline void write_seqcount_t_begi
+@@ -502,7 +504,7 @@ static inline void write_seqcount_t_begi
  
  /**
   * write_seqcount_end() - end a seqcount_t write side critical section
@@ -231,7 +235,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * The write section must've been opened with write_seqcount_begin().
   */
-@@ -517,7 +518,7 @@ static inline void write_seqcount_t_end(
+@@ -522,7 +524,7 @@ static inline void write_seqcount_t_end(
  
  /**
   * raw_write_seqcount_barrier() - do a seqcount_t write barrier
@@ -240,7 +244,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *
   * This can be used to provide an ordering guarantee instead of the usual
   * consistency guarantee. It is one wmb cheaper, because it can collapse
-@@ -571,7 +572,7 @@ static inline void raw_write_seqcount_t_
+@@ -576,7 +578,7 @@ static inline void raw_write_seqcount_t_
  /**
   * write_seqcount_invalidate() - invalidate in-progress seqcount_t read
   *                               side operations

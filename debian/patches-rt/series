@@ -5,65 +5,39 @@
 ############################################################
 # UPSTREAM merged
 ############################################################
+# John's printk series. Bits from the v5.10 merge window.
+# d594d8f411d47bf7b583ec3474b11fec348c88bb
+0001-crash-add-VMCOREINFO-macro-to-define-offset-in-a-str.patch
+0002-printk-add-lockless-ringbuffer.patch
+0003-Revert-printk-lock-unlock-console-only-for-new-logbu.patch
+0004-printk-use-the-lockless-ringbuffer.patch
+0005-MAINTAIERS-Add-John-Ogness-as-printk-reviewer.patch
+0006-printk-ringbuffer-support-dataless-records.patch
+0008-docs-vmcoreinfo-add-lockless-printk-ringbuffer-vmcor.patch
+0009-scripts-gdb-add-utils.read_ulong.patch
+0010-scripts-gdb-update-for-lockless-printk-ringbuffer.patch
+0011-printk-ringbuffer-fix-setting-state-in-desc_read.patch
+0012-printk-ringbuffer-avoid-memcpy-on-state_var.patch
+0013-printk-ringbuffer-relocate-get_data.patch
+0014-printk-ringbuffer-add-BLK_DATALESS-macro.patch
+0015-printk-ringbuffer-clear-initial-reserved-fields.patch
+0016-printk-ringbuffer-change-representation-of-states.patch
+0017-printk-ringbuffer-add-finalization-extension-support.patch
+0018-printk-reimplement-log_cont-using-record-extension.patch
+0019-printk-move-printk_info-into-separate-array.patch
+0020-printk-move-dictionary-keys-to-dev_printk_info.patch
+0021-printk-remove-dict-ring.patch
+0022-printk-avoid-and-or-handle-record-truncation.patch
+0023-printk-reduce-setup_text_buf-size-to-LOG_LINE_MAX.patch
+0024-printk-Use-fallthrough-pseudo-keyword.patch
+# eac48eb6ce10c1dc6fd3366608f4d3ca2430166c
+0025-printk-ringbuffer-Wrong-data-pointer-when-appending-.patch
 
 ############################################################
 # POSTED by others
 ############################################################
-
-# John's printk series
-# [RFC PATCH v1 00/25] printk: new implementation
-# Date: Tue, 12 Feb 2019 15:29:38 +0100
-# Plus build fixes merged
-0001-printk-rb-add-printk-ring-buffer-documentation.patch
-0002-printk-rb-add-prb-locking-functions.patch
-0003-printk-rb-define-ring-buffer-struct-and-initializer.patch
-0004-printk-rb-add-writer-interface.patch
-0005-printk-rb-add-basic-non-blocking-reading-interface.patch
-0006-printk-rb-add-blocking-reader-support.patch
-0007-printk-rb-add-functionality-required-by-printk.patch
-0008-printk-add-ring-buffer-and-kthread.patch
-0009-printk-remove-exclusive-console-hack.patch
-printk-console-must-not-schedule-for-drivers.patch
-0010-printk-redirect-emit-store-to-new-ringbuffer.patch
-0011-printk_safe-remove-printk-safe-code.patch
-0012-printk-minimize-console-locking-implementation.patch
-0013-printk-track-seq-per-console.patch
-0014-printk-do-boot_delay_msec-inside-printk_delay.patch
-0015-printk-print-history-for-new-consoles.patch
-0016-printk-implement-CON_PRINTBUFFER.patch
-0017-printk-add-processor-number-to-output.patch
-0018-console-add-write_atomic-interface.patch
-0019-printk-introduce-emergency-messages.patch
-0020-serial-8250-implement-write_atomic.patch
-0021-printk-implement-KERN_CONT.patch
-0022-printk-implement-dev-kmsg.patch
-0023-printk-implement-syslog.patch
-0024-printk-implement-kmsg_dump.patch
-0025-printk-remove-unused-code.patch
-printk-set-deferred-to-default-loglevel-enforce-mask.patch
-serial-8250-remove-that-trylock-in-serial8250_consol.patch
-serial-8250-export-symbols-which-are-used-by-symbols.patch
-arm-remove-printk_nmi_.patch
-powerpc-remove-printk_nmi_.patch
-printk-only-allow-kernel-to-emergency-message.patch
-printk-devkmsg-llseek-reset-clear-if-it-is-lost.patch
-printk-print-rate-limitted-message-as-info.patch
-printk-kmsg_dump-remove-mutex-usage.patch
-printk-devkmsg-read-Return-EPIPE-when-the-first-mess.patch
-printk-handle-iterating-while-buffer-changing.patch
-printk-hack-out-emergency-loglevel-usage.patch
-printk-Force-a-line-break-on-pr_cont-n.patch
-serial-8250-only-atomic-lock-for-console.patch
-serial-8250-fsl-ingenic-mtk-fix-atomic-console.patch
-printk-fix-ifnullfree.cocci-warnings.patch
-
-# Part of [PATCH 0/4] more mm switching vs TLB shootdown and lazy tlb
-# Date: Fri, 28 Aug 2020 20:00:18 +1000
-# https://lkml.kernel.org/r/20200828100022.1099682-2-npiggin@gmail.com
-mm-fix-exec-activate_mm-vs-TLB-shootdown-and-lazy-tl.patch
-
-# 2020-10-05 16:57 Peter Zijlstra [PATCH -v2 00/17] sched: Migrate disable support
-# 20201005145717.346020688@infradead.org
+# 2020-10-23 12:11 Peter Zijlstra [PATCH v4 00/19] sched: Migrate disable support
+# 20201023101158.088940906@infradead.org
 0001-stop_machine-Add-function-and-caller-debug-info.patch
 0002-sched-Fix-balance_callback.patch
 0003-sched-hotplug-Ensure-only-per-cpu-kthreads-run-durin.patch
@@ -81,6 +55,8 @@ mm-fix-exec-activate_mm-vs-TLB-shootdown-and-lazy-tl.patch
 0015-sched-Fix-migrate_disable-vs-rt-dl-balancing.patch
 0016-sched-proc-Print-accurate-cpumask-vs-migrate_disable.patch
 0017-sched-Add-migrate_disable-tracepoints.patch
+0018-sched-Deny-self-issued-__set_cpus_allowed_ptr-when-m.patch
+0019-sched-Comment-affine_move_task.patch
 
 ############################################################
 # POSTED
@@ -91,15 +67,37 @@ Use-CONFIG_PREEMPTION.patch
 # 20200701083553.fuy42cllxvx3bkzp@linutronix.de
 x86-entry-Use-should_resched-in-idtentry_exit_cond_r.patch
 
-# 20200819194443.eabkhlkocvkgifyh@linutronix.de
-io_wq-Make-io_wqe-lock-a-raw_spinlock_t.patch
-
 # 20200915074816.52zphpywj4zidspk@linutronix.de
 bus-mhi-Remove-include-of-rwlock_types.h.patch
+
+# 20201028141251.3608598-1-bigeasy@linutronix.de
+0001-blk-mq-Don-t-complete-on-a-remote-CPU-in-force-threa.patch
+0002-blk-mq-Always-complete-remote-completions-requests-i.patch
+0003-blk-mq-Use-llist_head-for-blk_cpu_done.patch
+
+# 20201028181041.xyeothhkouc3p4md@linutronix.de
+lib-test_lockup-Minimum-fix-to-get-it-compiled-on-PR.patch
 
 ############################################################
 # Ready for posting
 ############################################################
+
+# John's printk series.
+0001-printk-refactor-kmsg_dump_get_buffer.patch
+0002-printk-use-buffer-pools-for-sprint-buffers.patch
+0003-printk-change-clear_seq-to-atomic64_t.patch
+0004-printk-remove-logbuf_lock-add-syslog_lock.patch
+0005-printk-remove-safe-buffers.patch
+0006-console-add-write_atomic-interface.patch
+0007-serial-8250-implement-write_atomic.patch
+0008-printk-inline-log_output-log_store-in-vprintk_store.patch
+0009-printk-relocate-printk_delay-and-vprintk_default.patch
+0010-printk-combine-boot_delay_msec-into-printk_delay.patch
+0011-printk-introduce-kernel-sync-mode.patch
+0012-printk-move-console-printing-to-kthreads.patch
+0013-printk-remove-deferred-printing.patch
+0014-printk-add-console-handover.patch
+printk-Tiny-cleanup.patch
 
 ############################################################
 # Needs to address review feedback
@@ -144,23 +142,22 @@ tasklets-Use-static-line-for-functions.patch
 0004-locking-rtmutex-Remove-rt_mutex_timed_lock.patch
 0005-locking-rtmutex-Handle-the-various-new-futex-race-co.patch
 0006-futex-Fix-bug-on-when-a-requeued-RT-task-times-out.patch
-0007-locking-rtmutex-Add-rtmutex_lock_killable.patch
-0008-locking-rtmutex-Make-lock_killable-work.patch
-0009-locking-spinlock-Split-the-lock-types-header.patch
-0010-locking-rtmutex-Avoid-include-hell.patch
-0011-lockdep-Reduce-header-files-in-debug_locks.h.patch
-0012-locking-split-out-the-rbtree-definition.patch
-0013-locking-rtmutex-Provide-rt_mutex_slowlock_locked.patch
-0014-locking-rtmutex-export-lockdep-less-version-of-rt_mu.patch
-0015-sched-Add-saved_state-for-tasks-blocked-on-sleeping-.patch
-0016-locking-rtmutex-add-sleeping-lock-implementation.patch
-0017-locking-rtmutex-Allow-rt_mutex_trylock-on-PREEMPT_RT.patch
-0018-locking-rtmutex-add-mutex-implementation-based-on-rt.patch
-0019-locking-rtmutex-add-rwsem-implementation-based-on-rt.patch
-0020-locking-rtmutex-add-rwlock-implementation-based-on-r.patch
-0021-locking-rtmutex-wire-up-RT-s-locking.patch
-0022-locking-rtmutex-add-ww_mutex-addon-for-mutex-rt.patch
-0023-locking-rtmutex-Use-custom-scheduling-function-for-s.patch
+0007-locking-rtmutex-Make-lock_killable-work.patch
+0008-locking-spinlock-Split-the-lock-types-header.patch
+0009-locking-rtmutex-Avoid-include-hell.patch
+0010-lockdep-Reduce-header-files-in-debug_locks.h.patch
+0011-locking-split-out-the-rbtree-definition.patch
+0012-locking-rtmutex-Provide-rt_mutex_slowlock_locked.patch
+0013-locking-rtmutex-export-lockdep-less-version-of-rt_mu.patch
+0014-sched-Add-saved_state-for-tasks-blocked-on-sleeping-.patch
+0015-locking-rtmutex-add-sleeping-lock-implementation.patch
+0016-locking-rtmutex-Allow-rt_mutex_trylock-on-PREEMPT_RT.patch
+0017-locking-rtmutex-add-mutex-implementation-based-on-rt.patch
+0018-locking-rtmutex-add-rwsem-implementation-based-on-rt.patch
+0019-locking-rtmutex-add-rwlock-implementation-based-on-r.patch
+0020-locking-rtmutex-wire-up-RT-s-locking.patch
+0021-locking-rtmutex-add-ww_mutex-addon-for-mutex-rt.patch
+0022-locking-rtmutex-Use-custom-scheduling-function-for-s.patch
 
 ###############################################################
 # Stuff broken upstream and upstream wants something different
@@ -178,6 +175,7 @@ signal-revert-ptrace-preempt-magic.patch
 # PREEMPT NORT
 preempt-nort-rt-variants.patch
 mm-make-vmstat-rt-aware.patch
+mm-memcontrol-Disable-preemption-in-__mod_memcg_lruv.patch
 
 # seqcount
 # https://lkml.kernel.org/r/20200817000200.20993-1-rdunlap@infradead.org

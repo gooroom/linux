@@ -2,7 +2,7 @@ From: "Ahmed S. Darwish" <a.darwish@linutronix.de>
 Date: Fri, 4 Sep 2020 17:32:28 +0200
 Subject: [PATCH 10/13] seqlock: Use unique prefix for seqcount_t property
  accessors
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9-rt16.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.9/older/patches-5.9.1-rt20.tar.xz
 
 At seqlock.h, the following set of functions:
 
@@ -40,8 +40,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/seqlock.h
 +++ b/include/linux/seqlock.h
-@@ -157,7 +157,9 @@ static inline void seqcount_lockdep_read
-  */
+@@ -170,7 +170,9 @@ static inline void seqcount_lockdep_read
+ #define seqcount_ww_mutex_init(s, lock)		seqcount_LOCKNAME_init(s, lock, ww_mutex);
  
  /*
 - * SEQCOUNT_LOCKNAME() - Instantiate seqcount_LOCKNAME_t and helpers
@@ -51,8 +51,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * @lockname:		"LOCKNAME" part of seqcount_LOCKNAME_t
   * @locktype:		LOCKNAME canonical C data type
   * @preemptible:	preemptibility of above lockname
-@@ -177,19 +179,19 @@ seqcount_##lockname##_init(seqcount_##lo
- }									\
+@@ -183,19 +185,19 @@ typedef struct seqcount_##lockname {
+ } seqcount_##lockname##_t;						\
  									\
  static __always_inline seqcount_t *					\
 -__seqcount_##lockname##_ptr(seqcount_##lockname##_t *s)			\
@@ -74,7 +74,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {									\
  	__SEQ_LOCK(lockdep_assert_held(lockmember));			\
  }
-@@ -198,17 +200,17 @@ static __always_inline void						\
+@@ -204,17 +206,17 @@ __seqcount_##lockname##_assert(seqcount_
   * __seqprop() for seqcount_t
   */
  
@@ -95,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	lockdep_assert_preemption_disabled();
  }
-@@ -237,10 +239,10 @@ SEQCOUNT_LOCKNAME(ww_mutex,	struct ww_mu
+@@ -243,10 +245,10 @@ SEQCOUNT_LOCKNAME(ww_mutex,	struct ww_mu
  #define SEQCNT_WW_MUTEX_ZERO(name, lock) 	SEQCOUNT_LOCKNAME_ZERO(name, lock)
  
  #define __seqprop_case(s, lockname, prop)				\
