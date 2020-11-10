@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
 Subject: [PATCH 24/37] sched: highmem: Store local kmaps in task struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc2-rt4.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt6.tar.xz
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -110,7 +110,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	tsk->fail_nth = 0;
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4053,6 +4053,22 @@ static inline void finish_lock_switch(st
+@@ -4055,6 +4055,22 @@ static inline void finish_lock_switch(st
  # define finish_arch_post_lock_switch()	do { } while (0)
  #endif
  
@@ -133,7 +133,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /**
   * prepare_task_switch - prepare to switch tasks
   * @rq: the runqueue preparing to switch
-@@ -4075,6 +4091,7 @@ prepare_task_switch(struct rq *rq, struc
+@@ -4077,6 +4093,7 @@ prepare_task_switch(struct rq *rq, struc
  	perf_event_task_sched_out(prev, next);
  	rseq_preempt(prev);
  	fire_sched_out_preempt_notifiers(prev, next);
@@ -141,7 +141,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	prepare_task(next);
  	prepare_arch_switch(next);
  }
-@@ -4141,6 +4158,7 @@ static struct rq *finish_task_switch(str
+@@ -4143,6 +4160,7 @@ static struct rq *finish_task_switch(str
  	finish_lock_switch(rq);
  	finish_arch_post_lock_switch();
  	kcov_finish_switch(current);

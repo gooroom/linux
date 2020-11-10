@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 12 Oct 2020 17:33:54 +0200
 Subject: [PATCH] tcp: Remove superfluous BH-disable around listening_hash
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc2-rt4.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt6.tar.xz
 
 Commit
    9652dc2eb9e40 ("tcp: relax listening_hash operations")
@@ -14,7 +14,9 @@ Drop local_bh_disable() around __inet_hash() which acquires
 listening_hash->lock, invoke inet_ehash_nolisten() with disabled BH.
 inet_unhash() conditionally acquires listening_hash->lock.
 
+Reported-by: Mike Galbraith <efault@gmx.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Link: https://lore.kernel.org/linux-rt-users/12d6f9879a97cd56c09fb53dee343cbb14f7f1f7.camel@gmx.de/
 ---
  net/ipv4/inet_hashtables.c  |   19 ++++++++++++-------
  net/ipv6/inet6_hashtables.c |    5 +----
