@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt6.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt7.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -70,7 +70,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -171,6 +171,20 @@ extern void preempt_count_sub(int val);
+@@ -174,6 +174,20 @@ extern void preempt_count_sub(int val);
  #define preempt_count_inc() preempt_count_add(1)
  #define preempt_count_dec() preempt_count_sub(1)
  
@@ -91,7 +91,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #ifdef CONFIG_PREEMPT_COUNT
  
  #define preempt_disable() \
-@@ -179,6 +193,12 @@ do { \
+@@ -182,6 +196,12 @@ do { \
  	barrier(); \
  } while (0)
  
@@ -104,7 +104,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define sched_preempt_enable_no_resched() \
  do { \
  	barrier(); \
-@@ -216,6 +236,18 @@ do { \
+@@ -219,6 +239,18 @@ do { \
  		__preempt_schedule(); \
  } while (0)
  
@@ -123,7 +123,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #else /* !CONFIG_PREEMPTION */
  #define preempt_enable() \
  do { \
-@@ -223,6 +255,12 @@ do { \
+@@ -226,6 +258,12 @@ do { \
  	preempt_count_dec(); \
  } while (0)
  
@@ -136,7 +136,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define preempt_enable_notrace() \
  do { \
  	barrier(); \
-@@ -264,6 +302,9 @@ do { \
+@@ -267,6 +305,9 @@ do { \
  #define preempt_check_resched_rt()		barrier()
  #define preemptible()				0
  
@@ -146,7 +146,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif /* CONFIG_PREEMPT_COUNT */
  
  #ifdef MODULE
-@@ -282,7 +323,7 @@ do { \
+@@ -285,7 +326,7 @@ do { \
  } while (0)
  #define preempt_fold_need_resched() \
  do { \
@@ -155,7 +155,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		set_preempt_need_resched(); \
  } while (0)
  
-@@ -410,8 +451,15 @@ extern void migrate_enable(void);
+@@ -413,8 +454,15 @@ extern void migrate_enable(void);
  
  #else
  

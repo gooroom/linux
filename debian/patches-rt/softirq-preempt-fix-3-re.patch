@@ -1,7 +1,7 @@
 Subject: softirq: Check preemption after reenabling interrupts
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100 (CET)
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt6.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc3-rt7.tar.xz
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -22,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -187,8 +187,10 @@ do { \
+@@ -190,8 +190,10 @@ do { \
  
  #ifdef CONFIG_PREEMPT_RT
  # define preempt_enable_no_resched() sched_preempt_enable_no_resched()
@@ -33,7 +33,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
  
  #define preemptible()	(preempt_count() == 0 && !irqs_disabled())
-@@ -259,6 +261,7 @@ do { \
+@@ -262,6 +264,7 @@ do { \
  #define preempt_disable_notrace()		barrier()
  #define preempt_enable_no_resched_notrace()	barrier()
  #define preempt_enable_notrace()		barrier()
