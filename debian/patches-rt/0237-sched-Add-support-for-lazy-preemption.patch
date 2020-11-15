@@ -1,11 +1,11 @@
-From 46c13ac5bf3e07408071eeac823042e5e887530f Mon Sep 17 00:00:00 2001
-Message-Id: <46c13ac5bf3e07408071eeac823042e5e887530f.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 093afacab14af3f71e2fb9e230548f1b0eca6153 Mon Sep 17 00:00:00 2001
+Message-Id: <093afacab14af3f71e2fb9e230548f1b0eca6153.1604089291.git.zanussi@kernel.org>
+In-Reply-To: <d0fc635a2f7132e977af42eb2a0646b87f598722.1604089290.git.zanussi@kernel.org>
+References: <d0fc635a2f7132e977af42eb2a0646b87f598722.1604089290.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 237/333] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.152-rt65.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -533,7 +533,7 @@ index 96823c632599..005874299b04 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index a7b187f74f34..e46347b3d061 100644
+index 121ced1269b1..8fdd611ecd90 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2139,6 +2139,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -554,7 +554,7 @@ index a7b187f74f34..e46347b3d061 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3351,15 +3353,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -3354,15 +3356,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -581,7 +581,7 @@ index a7b187f74f34..e46347b3d061 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3397,15 +3401,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -3400,15 +3404,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  		   tgid ? tgid_space : space);
  	seq_printf(m, "#                          %s / _----=> need-resched\n",
  		   tgid ? tgid_space : space);
