@@ -1,0 +1,47 @@
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Sat, 15 Jun 2019 10:23:56 +1000
+Subject: [PATCH 3/4] arm64: PCI: Allow resource reallocation if necessary
+Origin: https://git.kernel.org/linus/3e8ba9686600e5f77e692126bf0293edf162989a
+
+Call pci_assign_unassigned_root_bus_resources() instead of the simpler:
+
+  pci_bus_size_bridges(bus);
+  pci_bus_assign_resources(bus);
+
+pci_assign_unassigned_root_bus_resources() calls:
+
+  __pci_bus_size_bridges(bus, add_list);
+  __pci_bus_assign_resources(bus, add_list, &fail_head);
+
+so this should be equivalent as long as we're able to assign everything.
+If we were unable to assign something, previously we did nothing and left
+it unassigned, but after this patch, we will attempt to do some
+reallocation.
+
+Once we start honoring FW resource allocations, this will bring up the
+"reallocation" feature which can help making room for SR-IOV when
+necessary.
+
+Link: https://lore.kernel.org/r/20190615002359.29577-1-benh@kernel.crashing.org
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+[bhelgaas: commit log]
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Acked-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+---
+ arch/arm64/kernel/pci.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+Index: linux/arch/arm64/kernel/pci.c
+===================================================================
+--- linux.orig/arch/arm64/kernel/pci.c
++++ linux/arch/arm64/kernel/pci.c
+@@ -194,8 +194,7 @@ struct pci_bus *pci_acpi_scan_root(struc
+ 	if (!bus)
+ 		return NULL;
+ 
+-	pci_bus_size_bridges(bus);
+-	pci_bus_assign_resources(bus);
++	pci_assign_unassigned_root_bus_resources(bus);
+ 
+ 	list_for_each_entry(child, &bus->children, node)
+ 		pcie_bus_configure_settings(child);

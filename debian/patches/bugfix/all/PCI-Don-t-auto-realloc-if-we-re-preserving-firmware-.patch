@@ -1,0 +1,35 @@
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Sat, 15 Jun 2019 10:23:58 +1000
+Subject: [PATCH 2/4] PCI: Don't auto-realloc if we're preserving firmware config
+Origin: https://git.kernel.org/linus/7ac0d094fbe95bf7cc96b3066a97e1090ddc734a
+
+Prevent auto-enabling of bridges reallocation when the FW tells us that the
+initial configuration must be preserved for a given host bridge.
+
+Link: https://lore.kernel.org/r/20190615002359.29577-3-benh@kernel.crashing.org
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+---
+ drivers/pci/setup-bus.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+Index: linux/drivers/pci/setup-bus.c
+===================================================================
+--- linux.orig/drivers/pci/setup-bus.c
++++ linux/drivers/pci/setup-bus.c
+@@ -1724,10 +1724,15 @@ static enum enable_type pci_realloc_dete
+ 			 enum enable_type enable_local)
+ {
+ 	bool unassigned = false;
++	struct pci_host_bridge *host;
+ 
+ 	if (enable_local != undefined)
+ 		return enable_local;
+ 
++	host = pci_find_host_bridge(bus);
++	if (host->preserve_config)
++		return auto_disabled;
++
+ 	pci_walk_bus(bus, iov_resources_unassigned, &unassigned);
+ 	if (unassigned)
+ 		return auto_enabled;

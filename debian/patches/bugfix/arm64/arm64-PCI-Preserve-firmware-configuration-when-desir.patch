@@ -1,0 +1,46 @@
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Sat, 15 Jun 2019 10:23:59 +1000
+Subject: [PATCH 4/4] arm64: PCI: Preserve firmware configuration when desired
+Origin: https://git.kernel.org/linus/85dc04136e86680378546afb808357a58c06061c
+
+If we must preserve the firmware resource assignments, claim the existing
+resources rather than reassigning everything.
+
+Link: https://lore.kernel.org/r/20190615002359.29577-4-benh@kernel.crashing.org
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+[bhelgaas: commit log]
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Acked-by: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Acked-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+---
+ arch/arm64/kernel/pci.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+Index: linux/arch/arm64/kernel/pci.c
+===================================================================
+--- linux.orig/arch/arm64/kernel/pci.c
++++ linux/arch/arm64/kernel/pci.c
+@@ -169,6 +169,7 @@ struct pci_bus *pci_acpi_scan_root(struc
+ 	struct acpi_pci_generic_root_info *ri;
+ 	struct pci_bus *bus, *child;
+ 	struct acpi_pci_root_ops *root_ops;
++	struct pci_host_bridge *host;
+ 
+ 	ri = kzalloc_node(sizeof(*ri), GFP_KERNEL, node);
+ 	if (!ri)
+@@ -194,6 +195,15 @@ struct pci_bus *pci_acpi_scan_root(struc
+ 	if (!bus)
+ 		return NULL;
+ 
++	/* If we must preserve the resource configuration, claim now */
++	host = pci_find_host_bridge(bus);
++	if (host->preserve_config)
++		pci_bus_claim_resources(bus);
++
++	/*
++	 * Assign whatever was left unassigned. If we didn't claim above,
++	 * this will reassign everything.
++	 */
+ 	pci_assign_unassigned_root_bus_resources(bus);
+ 
+ 	list_for_each_entry(child, &bus->children, node)
