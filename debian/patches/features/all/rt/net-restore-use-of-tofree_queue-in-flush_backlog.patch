@@ -1,0 +1,26 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Fri, 02 Oct 2020 22:01:07 +0100
+Subject: net: Restore use of tofree_queue in flush_backlog()
+
+Commit 7df5cb75cfb8 "dev: Defer free of skbs in flush_backlog" changed
+a kfree_skb() call to dev_kfree_skb_irq().  This was backported to
+stable branches, and conflicted with changes in v4.14-rt and earlier
+branches that replaced the kfree_skb() call with use of tofree_queue.
+
+In the v4.9-rt and v4.14-rt branches, this conflict was resolved in
+favour of dev_kfree_skb_irq(), but I think it should be resolved in
+favour of tofree_queue.
+
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4402,7 +4402,7 @@ static void flush_backlog(struct work_st
+ 	skb_queue_walk_safe(&sd->input_pkt_queue, skb, tmp) {
+ 		if (skb->dev->reg_state == NETREG_UNREGISTERING) {
+ 			__skb_unlink(skb, &sd->input_pkt_queue);
+-			dev_kfree_skb_irq(skb);
++			__skb_queue_tail(&sd->tofree_queue, skb);
+ 			input_queue_head_incr(sd);
+ 		}
+ 	}
