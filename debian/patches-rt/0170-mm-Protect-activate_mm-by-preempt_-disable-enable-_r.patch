@@ -1,12 +1,12 @@
-From c846796b0ed78a6b37165d8227392198a93e1f68 Mon Sep 17 00:00:00 2001
-Message-Id: <c846796b0ed78a6b37165d8227392198a93e1f68.1605897048.git.zanussi@kernel.org>
-In-Reply-To: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
-References: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
+From 73cd90f6505de2d144c5f3e3288b9652828bfc21 Mon Sep 17 00:00:00 2001
+Message-Id: <73cd90f6505de2d144c5f3e3288b9652828bfc21.1606340619.git.zanussi@kernel.org>
+In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
 From: Yong Zhang <yong.zhang0@gmail.com>
 Date: Tue, 15 May 2012 13:53:56 +0800
 Subject: [PATCH 170/335] mm: Protect activate_mm() by
  preempt_[disable&enable]_rt()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.152-rt66.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
 
 User preempt_*_rt instead of local_irq_*_rt or otherwise there will be
 warning on ARM like below:
@@ -40,9 +40,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  mm/mmu_context.c | 2 ++
  2 files changed, 4 insertions(+)
 
+diff --git a/fs/exec.c b/fs/exec.c
+index 52788644c4af..5d5e96b27fff 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -1029,6 +1029,7 @@
+@@ -1028,6 +1028,7 @@ static int exec_mmap(struct mm_struct *mm)
  		}
  	}
  	task_lock(tsk);
@@ -50,7 +52,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	local_irq_disable();
  	active_mm = tsk->active_mm;
-@@ -1048,6 +1049,7 @@
+@@ -1047,6 +1048,7 @@ static int exec_mmap(struct mm_struct *mm)
  		local_irq_enable();
  	tsk->mm->vmacache_seqnum = 0;
  	vmacache_flush(tsk);
@@ -58,9 +60,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	task_unlock(tsk);
  	if (old_mm) {
  		up_read(&old_mm->mmap_sem);
+diff --git a/mm/mmu_context.c b/mm/mmu_context.c
+index 3e612ae748e9..d0ccc070979f 100644
 --- a/mm/mmu_context.c
 +++ b/mm/mmu_context.c
-@@ -25,6 +25,7 @@
+@@ -25,6 +25,7 @@ void use_mm(struct mm_struct *mm)
  	struct task_struct *tsk = current;
  
  	task_lock(tsk);
@@ -68,7 +72,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	active_mm = tsk->active_mm;
  	if (active_mm != mm) {
  		mmgrab(mm);
-@@ -32,6 +33,7 @@
+@@ -32,6 +33,7 @@ void use_mm(struct mm_struct *mm)
  	}
  	tsk->mm = mm;
  	switch_mm(active_mm, mm, tsk);
@@ -76,3 +80,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	task_unlock(tsk);
  #ifdef finish_arch_post_lock_switch
  	finish_arch_post_lock_switch();
+-- 
+2.17.1
+

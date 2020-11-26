@@ -1,11 +1,11 @@
-From 03d0141fc3b485682d1b460626681fec82e58afb Mon Sep 17 00:00:00 2001
-Message-Id: <03d0141fc3b485682d1b460626681fec82e58afb.1605897048.git.zanussi@kernel.org>
-In-Reply-To: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
-References: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
+From d551cdc959152ea5a72b81cb8d5c2306c6e33bae Mon Sep 17 00:00:00 2001
+Message-Id: <d551cdc959152ea5a72b81cb8d5c2306c6e33bae.1606340619.git.zanussi@kernel.org>
+In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
 Subject: [PATCH 193/335] sched: Distangle worker accounting from rqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.152-rt66.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -37,7 +37,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 47 insertions(+), 100 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 453e1a45dcbf..f13cc0073bbc 100644
+index ad6ee5015095..be37b0c9e09a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1704,10 +1704,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl

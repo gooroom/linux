@@ -1,11 +1,11 @@
-From 636dc2a3d3f95fea49449d21dd5c9aa49304e185 Mon Sep 17 00:00:00 2001
-Message-Id: <636dc2a3d3f95fea49449d21dd5c9aa49304e185.1605897048.git.zanussi@kernel.org>
-In-Reply-To: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
-References: <d0fc635a2f7132e977af42eb2a0646b87f598722.1605897047.git.zanussi@kernel.org>
+From e3aeaa6f5bc77a71091e2024fa4db507e50aaa24 Mon Sep 17 00:00:00 2001
+Message-Id: <e3aeaa6f5bc77a71091e2024fa4db507e50aaa24.1606340620.git.zanussi@kernel.org>
+In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
 Subject: [PATCH 259/335] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.152-rt66.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -19,9 +19,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/signal.c        | 69 +++++++++++++++++++++++++++++++++++++++---
  5 files changed, 70 insertions(+), 5 deletions(-)
 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 852b1221cd40..bdae37091808 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -895,6 +895,8 @@
+@@ -895,6 +895,8 @@ struct task_struct {
  	/* Signal handlers: */
  	struct signal_struct		*signal;
  	struct sighand_struct		*sighand;
@@ -30,9 +32,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	sigset_t			blocked;
  	sigset_t			real_blocked;
  	/* Restored if set_restore_sigmask() was used: */
+diff --git a/include/linux/signal.h b/include/linux/signal.h
+index 0be5ce2375cb..6495fda18c2c 100644
 --- a/include/linux/signal.h
 +++ b/include/linux/signal.h
-@@ -245,6 +245,7 @@
+@@ -245,6 +245,7 @@ static inline void init_sigpending(struct sigpending *sig)
  }
  
  extern void flush_sigqueue(struct sigpending *queue);
@@ -40,9 +44,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
+diff --git a/kernel/exit.c b/kernel/exit.c
+index 65133ebddfad..58458edd4e97 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -160,7 +160,7 @@
+@@ -160,7 +160,7 @@ static void __exit_signal(struct task_struct *tsk)
  	 * Do this under ->siglock, we can race with another thread
  	 * doing sigqueue_free() if we have SIGQUEUE_PREALLOC signals.
  	 */
@@ -51,9 +57,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	tsk->sighand = NULL;
  	spin_unlock(&sighand->siglock);
  
+diff --git a/kernel/fork.c b/kernel/fork.c
+index d056b140385a..6474f7904bbf 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1861,6 +1861,7 @@
+@@ -1851,6 +1851,7 @@ static __latent_entropy struct task_struct *copy_process(
  	spin_lock_init(&p->alloc_lock);
  
  	init_sigpending(&p->pending);
@@ -61,6 +69,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	p->utime = p->stime = p->gtime = 0;
  #ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 2801e2ba4d84..947731042b7c 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -19,6 +19,7 @@
@@ -71,7 +81,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/fs.h>
  #include <linux/tty.h>
  #include <linux/binfmts.h>
-@@ -398,13 +399,30 @@
+@@ -398,13 +399,30 @@ void task_join_group_stop(struct task_struct *task)
  	task_set_jobctl_pending(task, mask | JOBCTL_STOP_PENDING);
  }
  
@@ -103,7 +113,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  {
  	struct sigqueue *q = NULL;
  	struct user_struct *user;
-@@ -426,7 +444,10 @@
+@@ -426,7 +444,10 @@ __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimi
  	rcu_read_unlock();
  
  	if (override_rlimit || likely(sigpending <= task_rlimit(t, RLIMIT_SIGPENDING))) {
@@ -115,7 +125,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	} else {
  		print_dropped_signal(sig);
  	}
-@@ -443,6 +464,13 @@
+@@ -443,6 +464,13 @@ __sigqueue_alloc(int sig, struct task_struct *t, gfp_t flags, int override_rlimi
  	return q;
  }
  
@@ -129,7 +139,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static void __sigqueue_free(struct sigqueue *q)
  {
  	if (q->flags & SIGQUEUE_PREALLOC)
-@@ -452,6 +480,21 @@
+@@ -452,6 +480,21 @@ static void __sigqueue_free(struct sigqueue *q)
  	kmem_cache_free(sigqueue_cachep, q);
  }
  
@@ -151,10 +161,11 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  void flush_sigqueue(struct sigpending *queue)
  {
  	struct sigqueue *q;
-@@ -465,6 +508,21 @@
+@@ -464,6 +507,21 @@ void flush_sigqueue(struct sigpending *queue)
+ 	}
  }
  
- /*
++/*
 + * Called from __exit_signal. Flush tsk->pending and
 + * tsk->sigqueue_cache
 + */
@@ -169,11 +180,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		kmem_cache_free(sigqueue_cachep, q);
 +}
 +
-+/*
+ /*
   * Flush all pending signals for this kthread.
   */
- void flush_signals(struct task_struct *t)
-@@ -587,7 +645,7 @@
+@@ -587,7 +645,7 @@ static void collect_signal(int sig, struct sigpending *list, siginfo_t *info,
  			(info->si_code == SI_TIMER) &&
  			(info->si_sys_private);
  
@@ -182,7 +192,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	} else {
  		/*
  		 * Ok, it wasn't in the queue.  This must be
-@@ -624,6 +682,8 @@
+@@ -624,6 +682,8 @@ int dequeue_signal(struct task_struct *tsk, sigset_t *mask, siginfo_t *info)
  	bool resched_timer = false;
  	int signr;
  
@@ -191,7 +201,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/* We only dequeue private signals from ourselves, we don't let
  	 * signalfd steal them
  	 */
-@@ -1763,7 +1823,8 @@
+@@ -1762,7 +1822,8 @@ EXPORT_SYMBOL(kill_pid);
   */
  struct sigqueue *sigqueue_alloc(void)
  {
@@ -201,3 +211,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
+-- 
+2.17.1
+
