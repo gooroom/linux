@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Mon, 19 Oct 2020 22:30:38 +0206
-Subject: [PATCH 12/15] printk: move console printing to kthreads
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Date: Mon, 30 Nov 2020 01:42:07 +0106
+Subject: [PATCH 12/16] printk: move console printing to kthreads
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 Create a kthread for each console to perform console printing. Now
 all console printing is fully asynchronous except for the boot
@@ -15,15 +15,15 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/console.h |    2 
- kernel/printk/printk.c  |  586 +++++++++++++++---------------------------------
- 2 files changed, 190 insertions(+), 398 deletions(-)
+ kernel/printk/printk.c  |  635 ++++++++++++++----------------------------------
+ 2 files changed, 192 insertions(+), 445 deletions(-)
 
 --- a/include/linux/console.h
 +++ b/include/linux/console.h
-@@ -151,6 +151,8 @@ struct console {
- 	short	flags;
- 	short	index;
- 	int	cflag;
+@@ -155,6 +155,8 @@ struct console {
+ #ifdef CONFIG_PRINTK
+ 	char	sync_buf[CONSOLE_LOG_MAX];
+ #endif
 +	atomic64_t printk_seq;
 +	struct task_struct *thread;
  	void	*data;
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/clocksource.h>
  #include <linux/sched/clock.h>
  #include <linux/sched/debug.h>
-@@ -271,11 +272,6 @@ static void __up_console_sem(unsigned lo
+@@ -268,11 +269,6 @@ static void __up_console_sem(unsigned lo
  static int console_locked, console_suspended;
  
  /*
@@ -51,7 +51,19 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   *	Array of consoles built from command line options (console=)
   */
  
-@@ -374,13 +370,6 @@ static u64 syslog_seq;
+@@ -356,10 +352,10 @@ enum log_flags {
+ 	LOG_CONT	= 8,	/* text is a fragment of a continuation line */
+ };
+ 
++#ifdef CONFIG_PRINTK
+ /* The syslog_lock protects syslog_* variables. */
+ static DEFINE_SPINLOCK(syslog_lock);
+ 
+-#ifdef CONFIG_PRINTK
+ /* Set to enable sync mode. Once set, it is never cleared. */
+ static bool sync_mode;
+ 
+@@ -370,13 +366,6 @@ static u64 syslog_seq;
  static size_t syslog_partial;
  static bool syslog_time;
  
@@ -65,7 +77,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* the next printk record to read after the last 'clear' command */
  static atomic64_t clear_seq = ATOMIC64_INIT(0);
  
-@@ -1783,6 +1772,8 @@ static bool console_can_sync(struct cons
+@@ -1656,6 +1645,8 @@ static bool console_can_sync(struct cons
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		return true;
@@ -74,7 +86,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return false;
  }
  
-@@ -1792,6 +1783,8 @@ static bool call_sync_console_driver(str
+@@ -1665,6 +1656,8 @@ static bool call_sync_console_driver(str
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		con->write_atomic(con, text, text_len);
@@ -83,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	else
  		return false;
  
-@@ -1866,202 +1859,16 @@ static void print_sync_until(u64 seq, st
+@@ -1739,202 +1732,16 @@ static void print_sync_until(struct cons
  
  	console_atomic_lock(&flags);
  	for (;;) {
@@ -91,7 +103,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		printk_seq = atomic64_read(&con->printk_seq);
  		if (printk_seq >= seq)
  			break;
- 		if (!print_sync(con, buf, buf_size, &printk_seq))
+ 		if (!print_sync(con, &printk_seq))
  			break;
 -		atomic64_set(&console_seq, printk_seq + 1);
 +		atomic64_set(&con->printk_seq, printk_seq + 1);
@@ -285,10 +297,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	}
 -}
 -
- static inline u32 printk_caller_id(void)
- {
- 	return in_task() ? task_pid_nr(current) :
-@@ -2199,40 +2006,16 @@ asmlinkage int vprintk_emit(int facility
+ #ifdef CONFIG_PRINTK_NMI
+ #define NUM_RECURSION_CTX 2
+ #else
+@@ -2158,40 +1965,16 @@ asmlinkage int vprintk_emit(int facility
  			    const char *fmt, va_list args)
  {
  	int printed_len;
@@ -303,9 +315,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		level = LOGLEVEL_DEFAULT;
 -		in_sched = true;
 -	}
--
--	printk_delay(level);
  
+-	printk_delay(level);
+-
 -	/* This stops the holder of console_sem just where we want him */
  	printed_len = vprintk_store(facility, level, dev_info, fmt, args);
  
@@ -330,35 +342,233 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	wake_up_klogd();
  	return printed_len;
  }
-@@ -2294,9 +2077,6 @@ EXPORT_SYMBOL(printk);
- #define prb_first_valid_seq(rb)		0
+@@ -2243,6 +2026,153 @@ asmlinkage __visible int printk(const ch
+ }
+ EXPORT_SYMBOL(printk);
  
- static u64 syslog_seq;
--static atomic64_t console_seq = ATOMI64_INIT(0);
++static int printk_kthread_func(void *data)
++{
++	struct console *con = data;
++	unsigned long dropped = 0;
++	char *dropped_text = NULL;
++	struct printk_info info;
++	struct printk_record r;
++	char *ext_text = NULL;
++	size_t dropped_len;
++	int ret = -ENOMEM;
++	char *text = NULL;
++	char *write_text;
++	u64 printk_seq;
++	size_t len;
++	int error;
++	u64 seq;
++
++	if (con->flags & CON_EXTENDED) {
++		ext_text = kmalloc(CONSOLE_EXT_LOG_MAX, GFP_KERNEL);
++		if (!ext_text)
++			goto out;
++	}
++	text = kmalloc(LOG_LINE_MAX + PREFIX_MAX, GFP_KERNEL);
++	dropped_text = kmalloc(64, GFP_KERNEL);
++	if (!text || !dropped_text)
++		goto out;
++
++	if (con->flags & CON_EXTENDED)
++		write_text = ext_text;
++	else
++		write_text = text;
++
++	seq = atomic64_read(&con->printk_seq);
++
++	prb_rec_init_rd(&r, &info, text, LOG_LINE_MAX + PREFIX_MAX);
++
++	for (;;) {
++		error = wait_event_interruptible(log_wait,
++				prb_read_valid(prb, seq, &r) || kthread_should_stop());
++
++		if (kthread_should_stop())
++			break;
++
++		if (error)
++			continue;
++
++		if (seq != r.info->seq) {
++			dropped += r.info->seq - seq;
++			seq = r.info->seq;
++		}
++
++		seq++;
++
++		if (!(con->flags & CON_ENABLED))
++			continue;
++
++		if (suppress_message_printing(r.info->level))
++			continue;
++
++		if (con->flags & CON_EXTENDED) {
++			len = info_print_ext_header(ext_text,
++				CONSOLE_EXT_LOG_MAX,
++				r.info);
++			len += msg_print_ext_body(ext_text + len,
++				CONSOLE_EXT_LOG_MAX - len,
++				&r.text_buf[0], r.info->text_len,
++				&r.info->dev_info);
++		} else {
++			len = record_print_text(&r,
++				console_msg_format & MSG_FORMAT_SYSLOG,
++				printk_time);
++		}
++
++		printk_seq = atomic64_read(&con->printk_seq);
++
++		console_lock();
++		console_may_schedule = 0;
++
++		if (kernel_sync_mode() && con->write_atomic) {
++			console_unlock();
++			break;
++		}
++
++		if (!(con->flags & CON_EXTENDED) && dropped) {
++			dropped_len = snprintf(dropped_text, 64,
++					       "** %lu printk messages dropped **\n",
++					       dropped);
++			dropped = 0;
++
++			con->write(con, dropped_text, dropped_len);
++			printk_delay(r.info->level);
++		}
++
++		con->write(con, write_text, len);
++		if (len)
++			printk_delay(r.info->level);
++
++		atomic64_cmpxchg_relaxed(&con->printk_seq, printk_seq, seq);
++
++		console_unlock();
++	}
++out:
++	kfree(dropped_text);
++	kfree(text);
++	kfree(ext_text);
++	pr_info("%sconsole [%s%d]: printing thread stopped\n",
++		(con->flags & CON_BOOT) ? "boot" : "",
++		con->name, con->index);
++	return ret;
++}
++
++/* Must be called within console_lock(). */
++static void start_printk_kthread(struct console *con)
++{
++	con->thread = kthread_run(printk_kthread_func, con,
++				  "pr/%s%d", con->name, con->index);
++	if (IS_ERR(con->thread)) {
++		pr_err("%sconsole [%s%d]: unable to start printing thread\n",
++			(con->flags & CON_BOOT) ? "boot" : "",
++			con->name, con->index);
++		return;
++	}
++	pr_info("%sconsole [%s%d]: printing thread started\n",
++		(con->flags & CON_BOOT) ? "boot" : "",
++		con->name, con->index);
++}
++
++/* protected by console_lock */
++static bool kthreads_started;
++
++/* Must be called within console_lock(). */
++static void console_try_thread(struct console *con)
++{
++	if (kthreads_started) {
++		start_printk_kthread(con);
++		return;
++	}
++
++	/*
++	 * The printing threads have not been started yet. If this console
++	 * can print synchronously, print all unprinted messages.
++	 */
++
++	if (console_can_sync(con))
++		print_sync_until(con, prb_next_seq(prb));
++}
++
+ #else /* CONFIG_PRINTK */
+ 
+ #define LOG_LINE_MAX		0
+@@ -2251,32 +2181,11 @@ EXPORT_SYMBOL(printk);
+ 
+ #define prb_read_valid(rb, seq, r)	false
+ #define prb_first_valid_seq(rb)		0
++#define prb_next_seq(rb)		0
+ 
+ #define kernel_sync_mode()	false
+ 
+-static u64 syslog_seq;
+-static atomic64_t console_seq = ATOMIC64_INIT(0);
 -static u64 exclusive_console_stop_seq;
 -static unsigned long console_dropped;
- 
- static size_t record_print_text(const struct printk_record *r,
- 				bool syslog, bool time)
-@@ -2311,8 +2091,6 @@ static ssize_t info_print_ext_header(cha
- static ssize_t msg_print_ext_body(char *buf, size_t size,
- 				  char *text, size_t text_len,
- 				  struct dev_printk_info *dev_info) { return 0; }
+-
+-static size_t record_print_text(const struct printk_record *r,
+-				bool syslog, bool time)
+-{
+-	return 0;
+-}
+-static ssize_t info_print_ext_header(char *buf, size_t size,
+-				     struct printk_info *info)
+-{
+-	return 0;
+-}
+-static ssize_t msg_print_ext_body(char *buf, size_t size,
+-				  char *text, size_t text_len,
+-				  struct dev_printk_info *dev_info) { return 0; }
 -static void console_lock_spinning_enable(void) { }
 -static int console_lock_spinning_disable_and_check(void) { return 0; }
- static void call_console_drivers(const char *ext_text, size_t ext_len,
- 				 const char *text, size_t len) {}
- static bool suppress_message_printing(int level) { return false; }
-@@ -2578,8 +2356,6 @@ static int have_callable_console(void)
-  */
- static inline int can_use_console(void)
- {
+-static void call_console_drivers(const char *ext_text, size_t ext_len,
+-				 const char *text, size_t len) {}
+-static bool suppress_message_printing(int level) { return false; }
++#define console_try_thread(con)
+ 
+ #endif /* CONFIG_PRINTK */
+ 
+@@ -2514,36 +2423,6 @@ int is_console_locked(void)
+ }
+ EXPORT_SYMBOL(is_console_locked);
+ 
+-/*
+- * Check if we have any console that is capable of printing while cpu is
+- * booting or shutting down. Requires console_sem.
+- */
+-static int have_callable_console(void)
+-{
+-	struct console *con;
+-
+-	for_each_console(con)
+-		if ((con->flags & CON_ENABLED) &&
+-				(con->flags & CON_ANYTIME))
+-			return 1;
+-
+-	return 0;
+-}
+-
+-/*
+- * Can we actually use the console at this time on this cpu?
+- *
+- * Console drivers may assume that per-cpu resources have been allocated. So
+- * unless they're explicitly marked as being able to cope (CON_ANYTIME) don't
+- * call them until this CPU is officially up.
+- */
+-static inline int can_use_console(void)
+-{
 -	if (kernel_sync_mode())
 -		return false;
- 	return cpu_online(raw_smp_processor_id()) || have_callable_console();
- }
- 
-@@ -2599,139 +2375,14 @@ static inline int can_use_console(void)
+-	return cpu_online(raw_smp_processor_id()) || have_callable_console();
+-}
+-
+ /**
+  * console_unlock - unlock the console system
+  *
+@@ -2560,139 +2439,14 @@ static inline int can_use_console(void)
   */
  void console_unlock(void)
  {
@@ -498,7 +708,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL(console_unlock);
  
-@@ -2781,18 +2432,20 @@ void console_unblank(void)
+@@ -2742,18 +2496,20 @@ void console_unblank(void)
   */
  void console_flush_on_panic(enum con_flush_mode mode)
  {
@@ -529,16 +739,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	console_unlock();
  }
  
-@@ -2906,6 +2559,8 @@ static int try_enable_new_console(struct
- 	return -ENOENT;
- }
- 
-+static void console_try_thread(struct console *con);
-+
- /*
-  * The console driver calls this routine during kernel initialization
-  * to register the console printing procedure with printk() and to
-@@ -2927,7 +2582,6 @@ static int try_enable_new_console(struct
+@@ -2888,7 +2644,6 @@ static int try_enable_new_console(struct
   */
  void register_console(struct console *newcon)
  {
@@ -546,7 +747,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct console *bcon = NULL;
  	int err;
  
-@@ -2951,6 +2605,8 @@ void register_console(struct console *ne
+@@ -2912,6 +2667,8 @@ void register_console(struct console *ne
  		}
  	}
  
@@ -555,12 +756,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (console_drivers && console_drivers->flags & CON_BOOT)
  		bcon = console_drivers;
  
-@@ -3015,22 +2671,12 @@ void register_console(struct console *ne
+@@ -2976,22 +2733,12 @@ void register_console(struct console *ne
  	if (newcon->flags & CON_EXTENDED)
  		nr_ext_console_drivers++;
  
 -	if (newcon->flags & CON_PRINTBUFFER) {
--		syslog_lock_irqsave(flags);
+-		spin_lock_irqsave(&syslog_lock, flags);
 -		/*
 -		 * We're about to replay the log buffer.  Only do this to the
 -		 * just-registered console to avoid excessive message spam to
@@ -573,7 +774,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -		exclusive_console = newcon;
 -		exclusive_console_stop_seq = atomic64_read(&console_seq);
 -		atomic64_set(&console_seq, syslog_seq);
--		syslog_unlock_irqrestore(flags);
+-		spin_unlock_irqrestore(&syslog_lock, flags);
 -	}
 +	if (newcon->flags & CON_PRINTBUFFER)
 +		atomic64_set(&newcon->printk_seq, 0);
@@ -584,7 +785,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	console_unlock();
  	console_sysfs_notify();
  
-@@ -3104,6 +2750,9 @@ int unregister_console(struct console *c
+@@ -3065,6 +2812,9 @@ int unregister_console(struct console *c
  	console_unlock();
  	console_sysfs_notify();
  
@@ -594,176 +795,23 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (console->exit)
  		res = console->exit(console);
  
-@@ -3147,6 +2796,154 @@ void __init console_init(void)
- 	}
- }
- 
-+static int printk_kthread_func(void *data)
-+{
-+	struct console *con = data;
-+	unsigned long dropped = 0;
-+	struct printk_info info;
-+	struct printk_record r;
-+	char *ext_text = NULL;
-+	size_t dropped_len;
-+	char *dropped_text;
-+	int ret = -ENOMEM;
-+	char *write_text;
-+	u64 printk_seq;
-+	size_t len;
-+	char *text;
-+	int error;
-+	u64 seq;
-+
-+	if (con->flags & CON_EXTENDED) {
-+		ext_text = kmalloc(CONSOLE_EXT_LOG_MAX, GFP_KERNEL);
-+		if (!ext_text)
-+			return ret;
-+	}
-+	text = kmalloc(LOG_LINE_MAX + PREFIX_MAX, GFP_KERNEL);
-+	dropped_text = kmalloc(64, GFP_KERNEL);
-+	if (!text || !dropped_text)
-+		goto out;
-+
-+	if (con->flags & CON_EXTENDED)
-+		write_text = ext_text;
-+	else
-+		write_text = text;
-+
-+	seq = atomic64_read(&con->printk_seq);
-+
-+	prb_rec_init_rd(&r, &info, text, LOG_LINE_MAX + PREFIX_MAX);
-+
-+	for (;;) {
-+		error = wait_event_interruptible(log_wait,
-+				prb_read_valid(prb, seq, &r) || kthread_should_stop());
-+
-+		if (kthread_should_stop())
-+			break;
-+
-+		if (error)
-+			continue;
-+
-+		if (seq != r.info->seq) {
-+			dropped += r.info->seq - seq;
-+			seq = r.info->seq;
-+		}
-+
-+		seq++;
-+
-+		if (!(con->flags & CON_ENABLED))
-+			continue;
-+
-+		if (suppress_message_printing(r.info->level))
-+			continue;
-+
-+		if (con->flags & CON_EXTENDED) {
-+			len = info_print_ext_header(ext_text,
-+				CONSOLE_EXT_LOG_MAX,
-+				r.info);
-+			len += msg_print_ext_body(ext_text + len,
-+				CONSOLE_EXT_LOG_MAX - len,
-+				&r.text_buf[0], r.info->text_len,
-+				&r.info->dev_info);
-+		} else {
-+			len = record_print_text(&r,
-+				console_msg_format & MSG_FORMAT_SYSLOG,
-+				printk_time);
-+		}
-+
-+		printk_seq = atomic64_read(&con->printk_seq);
-+
-+		console_lock();
-+		console_may_schedule = 0;
-+
-+		if (kernel_sync_mode() && con->write_atomic) {
-+			console_unlock();
-+			break;
-+		}
-+
-+		if (!(con->flags & CON_EXTENDED) && dropped) {
-+			dropped_len = snprintf(dropped_text, 64,
-+					       "** %lu printk messages dropped **\n",
-+					       dropped);
-+			dropped = 0;
-+
-+			con->write(con, dropped_text, dropped_len);
-+			printk_delay(r.info->level);
-+		}
-+
-+		con->write(con, write_text, len);
-+		if (len)
-+			printk_delay(r.info->level);
-+
-+		atomic64_cmpxchg_relaxed(&con->printk_seq, printk_seq, seq);
-+
-+		console_unlock();
-+	}
-+out:
-+	kfree(dropped_text);
-+	kfree(text);
-+	kfree(ext_text);
-+	pr_info("%sconsole [%s%d]: printing thread stopped\n",
-+		(con->flags & CON_BOOT) ? "boot" : "" ,
-+		con->name, con->index);
-+	return ret;
-+}
-+
-+static void start_printk_kthread(struct console *con)
-+{
-+	con->thread = kthread_run(printk_kthread_func, con,
-+				  "pr/%s%d", con->name, con->index);
-+	if (IS_ERR(con->thread)) {
-+		pr_err("%sconsole [%s%d]: unable to start printing thread\n",
-+			(con->flags & CON_BOOT) ? "boot" : "" ,
-+			con->name, con->index);
-+		return;
-+	}
-+	pr_info("%sconsole [%s%d]: printing thread started\n",
-+		(con->flags & CON_BOOT) ? "boot" : "" ,
-+		con->name, con->index);
-+}
-+
-+static bool kthreads_started;
-+
-+static void console_try_thread(struct console *con)
-+{
-+	unsigned long irqflags;
-+	int sprint_id;
-+	char *buf;
-+
-+	if (kthreads_started) {
-+		start_printk_kthread(con);
-+		return;
-+	}
-+
-+	buf = get_sprint_buf(&sprint_id, &irqflags);
-+	if (!buf)
-+		return;
-+
-+	print_sync_until(prb_next_seq(prb), con, buf, PREFIX_MAX + LOG_LINE_MAX);
-+
-+	put_sprint_buf(sprint_id, irqflags);
-+}
-+
- /*
-  * Some boot consoles access data that is in the init section and which will
-  * be discarded after the initcalls have been run. To make sure that no code
-@@ -3186,6 +2983,13 @@ static int __init printk_late_init(void)
+@@ -3147,6 +2897,15 @@ static int __init printk_late_init(void)
  			unregister_console(con);
  		}
  	}
 +
++#ifdef CONFIG_PRINTK
 +	console_lock();
 +	for_each_console(con)
 +		start_printk_kthread(con);
 +	kthreads_started = true;
 +	console_unlock();
++#endif
 +
  	ret = cpuhp_setup_state_nocalls(CPUHP_PRINTK_DEAD, "printk:dead", NULL,
  					console_cpu_notify);
  	WARN_ON(ret < 0);
-@@ -3201,7 +3005,6 @@ late_initcall(printk_late_init);
+@@ -3162,7 +2921,6 @@ late_initcall(printk_late_init);
   * Delayed printk version, for scheduler-internal messages:
   */
  #define PRINTK_PENDING_WAKEUP	0x01
@@ -771,7 +819,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static DEFINE_PER_CPU(int, printk_pending);
  
-@@ -3209,12 +3012,6 @@ static void wake_up_klogd_work_func(stru
+@@ -3170,12 +2928,6 @@ static void wake_up_klogd_work_func(stru
  {
  	int pending = __this_cpu_xchg(printk_pending, 0);
  
@@ -784,7 +832,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (pending & PRINTK_PENDING_WAKEUP)
  		wake_up_interruptible(&log_wait);
  }
-@@ -3239,13 +3036,6 @@ void wake_up_klogd(void)
+@@ -3200,13 +2952,6 @@ void wake_up_klogd(void)
  
  void defer_console_output(void)
  {

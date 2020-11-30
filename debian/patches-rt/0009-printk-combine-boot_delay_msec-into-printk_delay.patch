@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Mon, 19 Oct 2020 22:11:31 +0206
-Subject: [PATCH 10/15] printk: combine boot_delay_msec() into printk_delay()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Date: Mon, 30 Nov 2020 01:42:04 +0106
+Subject: [PATCH 09/16] printk: combine boot_delay_msec() into printk_delay()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 boot_delay_msec() is always called immediately before printk_delay()
 so just combine the two.
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1753,8 +1753,10 @@ static void put_sprint_buf(int id, unsig
+@@ -1626,8 +1626,10 @@ SYSCALL_DEFINE3(syslog, int, type, char
  
  int printk_delay_msec __read_mostly;
  
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(printk_delay_msec)) {
  		int m = printk_delay_msec;
  
-@@ -2090,8 +2092,7 @@ asmlinkage int vprintk_emit(int facility
+@@ -2044,8 +2046,7 @@ asmlinkage int vprintk_emit(int facility
  		in_sched = true;
  	}
  

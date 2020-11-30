@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Wed, 14 Oct 2020 20:00:11 +0200
-Subject: [PATCH 05/15] printk: remove safe buffers
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Date: Mon, 30 Nov 2020 01:42:00 +0106
+Subject: [PATCH 05/16] printk: remove safe buffers
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 With @logbuf_lock removed, the high level printk functions for
 storing messages are lockless. Messages can be stored from any
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -207,8 +207,6 @@ void __init setup_log_buf(int early);
+@@ -208,8 +208,6 @@ void __init setup_log_buf(int early);
  void dump_stack_print_info(const char *log_lvl);
  void show_regs_print_info(const char *log_lvl);
  extern asmlinkage void dump_stack(void) __cold;
@@ -60,7 +60,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #else
  static inline __printf(1, 0)
  int vprintk(const char *s, va_list args)
-@@ -272,14 +270,6 @@ static inline void show_regs_print_info(
+@@ -273,14 +271,6 @@ static inline void show_regs_print_info(
  static inline void dump_stack(void)
  {
  }
@@ -123,7 +123,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* CONFIG_PRINTK */
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1037,9 +1037,6 @@ static inline void log_buf_add_cpu(void)
+@@ -987,9 +987,6 @@ static inline void log_buf_add_cpu(void)
  
  static void __init set_percpu_data_ready(void)
  {
