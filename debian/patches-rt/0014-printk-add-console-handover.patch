@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Mon, 19 Oct 2020 23:03:44 +0206
-Subject: [PATCH 14/15] printk: add console handover
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Date: Mon, 30 Nov 2020 01:42:09 +0106
+Subject: [PATCH 14/16] printk: add console handover
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 If earlyprintk is used, a boot console will print directly to the
 console immediately. The boot console will unregister itself as soon
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/include/linux/console.h
 +++ b/include/linux/console.h
-@@ -137,6 +137,7 @@ static inline int con_debug_leave(void)
+@@ -138,6 +138,7 @@ static inline int con_debug_leave(void)
  #define CON_ANYTIME	(16) /* Safe to call when cpu is offline */
  #define CON_BRL		(32) /* Used for a braille device */
  #define CON_EXTENDED	(64) /* Use the extended output format a la /dev/kmsg */
@@ -36,7 +36,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	char	name[16];
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1755,6 +1755,8 @@ static bool console_can_sync(struct cons
+@@ -1629,6 +1629,8 @@ static bool console_can_sync(struct cons
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		return true;
@@ -45,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (con->write && (con->flags & CON_BOOT) && !con->thread)
  		return true;
  	return false;
-@@ -1766,6 +1768,8 @@ static bool call_sync_console_driver(str
+@@ -1640,6 +1642,8 @@ static bool call_sync_console_driver(str
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		con->write_atomic(con, text, text_len);
@@ -54,7 +54,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	else if (con->write && (con->flags & CON_BOOT) && !con->thread)
  		con->write(con, text, text_len);
  	else
-@@ -2641,8 +2645,10 @@ void register_console(struct console *ne
+@@ -2705,8 +2709,10 @@ void register_console(struct console *ne
  	 * the real console are the same physical device, it's annoying to
  	 * see the beginning boot messages twice
  	 */

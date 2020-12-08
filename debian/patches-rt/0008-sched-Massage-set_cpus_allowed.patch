@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
 Subject: [PATCH 08/19] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -101,7 +101,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	return set_cpus_allowed_ptr(p, new_mask);
  }
-@@ -6006,7 +6014,7 @@ long sched_setaffinity(pid_t pid, const
+@@ -6012,7 +6020,7 @@ long sched_setaffinity(pid_t pid, const
  	}
  #endif
  again:
@@ -110,7 +110,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6589,7 +6597,7 @@ void init_idle(struct task_struct *idle,
+@@ -6595,7 +6603,7 @@ void init_idle(struct task_struct *idle,
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -121,7 +121,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	 * We're having a chicken and egg problem, even though we are
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2301,7 +2301,8 @@ static void task_woken_dl(struct rq *rq,
+@@ -2307,7 +2307,8 @@ static void task_woken_dl(struct rq *rq,
  }
  
  static void set_cpus_allowed_dl(struct task_struct *p,
@@ -131,7 +131,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct root_domain *src_rd;
  	struct rq *rq;
-@@ -2330,7 +2331,7 @@ static void set_cpus_allowed_dl(struct t
+@@ -2336,7 +2337,7 @@ static void set_cpus_allowed_dl(struct t
  		raw_spin_unlock(&src_dl_b->lock);
  	}
  

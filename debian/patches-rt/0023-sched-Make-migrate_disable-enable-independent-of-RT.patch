@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:35 +0100
 Subject: [PATCH 23/37] sched: Make migrate_disable/enable() independent of RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 Now that the scheduler can deal with migrate disable properly, there is no
 real compelling reason to make it only available for RT.
@@ -145,7 +145,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* __LINUX_PREEMPT_H */
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -715,7 +715,7 @@ struct task_struct {
+@@ -723,7 +723,7 @@ struct task_struct {
  	const cpumask_t			*cpus_ptr;
  	cpumask_t			cpus_mask;
  	void				*migration_pending;
@@ -174,7 +174,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Per-CPU kthreads are allowed to run on !active && online CPUs, see
   * __set_cpus_allowed_ptr() and select_fallback_rq().
-@@ -2843,7 +2839,7 @@ void sched_set_stop_task(int cpu, struct
+@@ -2854,7 +2850,7 @@ void sched_set_stop_task(int cpu, struct
  	}
  }
  
@@ -183,7 +183,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static inline int __set_cpus_allowed_ptr(struct task_struct *p,
  					 const struct cpumask *new_mask,
-@@ -2852,10 +2848,6 @@ static inline int __set_cpus_allowed_ptr
+@@ -2863,10 +2859,6 @@ static inline int __set_cpus_allowed_ptr
  	return set_cpus_allowed_ptr(p, new_mask);
  }
  
@@ -194,7 +194,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static inline void migrate_disable_switch(struct rq *rq, struct task_struct *p) { }
  
  static inline bool rq_has_pinned_tasks(struct rq *rq)
-@@ -2863,7 +2855,7 @@ static inline bool rq_has_pinned_tasks(s
+@@ -2874,7 +2866,7 @@ static inline bool rq_has_pinned_tasks(s
  	return false;
  }
  
@@ -203,7 +203,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
-@@ -7888,6 +7880,39 @@ void __cant_sleep(const char *file, int
+@@ -7905,6 +7897,39 @@ void __cant_sleep(const char *file, int
  	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
  }
  EXPORT_SYMBOL_GPL(__cant_sleep);

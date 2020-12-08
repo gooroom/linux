@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Wed, 14 Oct 2020 20:26:35 +0200
-Subject: [PATCH 06/15] console: add write_atomic interface
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc4-rt8.tar.xz
+Date: Mon, 30 Nov 2020 01:42:01 +0106
+Subject: [PATCH 06/16] console: add write_atomic interface
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
 
 Add a write_atomic() callback to the console. This is an optional
 function for console drivers. The function must be atomic (including
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  struct console {
  	char	name[16];
  	void	(*write)(struct console *, const char *, unsigned);
-+	void	(*write_atomic)(struct console *, const char *, unsigned);
++	void	(*write_atomic)(struct console *co, const char *s, unsigned int count);
  	int	(*read)(struct console *, char *, unsigned);
  	struct tty_driver *(*device)(struct console *, int *);
  	void	(*unblank)(void);
@@ -49,7 +49,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* _LINUX_CONSOLE_H */
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3516,3 +3516,103 @@ void kmsg_dump_rewind(struct kmsg_dumper
+@@ -3455,3 +3455,103 @@ void kmsg_dump_rewind(struct kmsg_dumper
  EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
  
  #endif
@@ -106,7 +106,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 + *
 + * It is safe to call this function from any context and state.
 + */
-+void prb_lock(struct prb_cpulock *cpu_lock, unsigned int *cpu_store)
++static void prb_lock(struct prb_cpulock *cpu_lock, unsigned int *cpu_store)
 +{
 +	for (;;) {
 +		if (__prb_trylock(cpu_lock, cpu_store))
@@ -124,7 +124,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 + *
 + * It is safe to call this function from any context and state.
 + */
-+void prb_unlock(struct prb_cpulock *cpu_lock, unsigned int cpu_store)
++static void prb_unlock(struct prb_cpulock *cpu_lock, unsigned int cpu_store)
 +{
 +	unsigned long *flags;
 +	unsigned int cpu;
