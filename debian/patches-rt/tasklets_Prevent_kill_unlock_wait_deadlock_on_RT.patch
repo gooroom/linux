@@ -1,7 +1,9 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Mon, 21 Sep 2020 17:47:34 +0200
-Subject: [PATCH 19/19] tasklets: Prevent kill/unlock_wait deadlock on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
+Subject: tasklets: Prevent kill/unlock_wait deadlock on RT
+Date: Fri, 13 Nov 2020 15:02:26 +0100
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc7-rt16.tar.xz
+
+From: Thomas Gleixner <tglx@linutronix.de>
 
 tasklet_kill() and tasklet_unlock_wait() spin and wait for the
 TASKLET_STATE_SCHED resp. TASKLET_STATE_RUN bit in the tasklet state to be
@@ -9,15 +11,16 @@ cleared. This works on !RT nicely because the corresponding execution can
 only happen on a different CPU.
 
 On RT softirq processing is preemptible, therefore a task preempting the
-softirq processing thread can spin forever. Prevent this by invoking
-local_bh_disable()/enable() inside the loop. In case that the softirq
-processing thread was preempted by the current task, current will block on
-the local lock which yields the CPU to the preempted softirq processing
-thread. If the tasklet is processed on a different CPU then the
-local_bh_disable()/enable() pair is just a waste of processor cycles.
+softirq processing thread can spin forever.
+
+Prevent this by invoking local_bh_disable()/enable() inside the loop. In
+case that the softirq processing thread was preempted by the current task,
+current will block on the local lock which yields the CPU to the preempted
+softirq processing thread. If the tasklet is processed on a different CPU
+then the local_bh_disable()/enable() pair is just a waste of processor
+cycles.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/interrupt.h |    8 ++------
  kernel/softirq.c          |   38 +++++++++++++++++++++++++++++++++++++-
@@ -49,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static inline void tasklet_unlock(struct tasklet_struct *t) { }
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -851,6 +851,29 @@ void tasklet_init(struct tasklet_struct
+@@ -818,6 +818,29 @@ void tasklet_init(struct tasklet_struct
  }
  EXPORT_SYMBOL(tasklet_init);
  
@@ -79,7 +82,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void tasklet_kill(struct tasklet_struct *t)
  {
  	if (in_interrupt())
-@@ -858,7 +881,20 @@ void tasklet_kill(struct tasklet_struct
+@@ -825,7 +848,20 @@ void tasklet_kill(struct tasklet_struct
  
  	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
  		do {

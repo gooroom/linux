@@ -1,7 +1,7 @@
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: arch/arm64: Add lazy preempt support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc7-rt16.tar.xz
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -22,7 +22,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
 
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -173,6 +173,7 @@
+@@ -173,6 +173,7 @@ config ARM64
  	select HAVE_PERF_EVENTS
  	select HAVE_PERF_REGS
  	select HAVE_PERF_USER_STACK_DUMP
@@ -32,7 +32,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  	select HAVE_FUTEX_CMPXCHG if FUTEX
 --- a/arch/arm64/include/asm/preempt.h
 +++ b/arch/arm64/include/asm/preempt.h
-@@ -70,13 +70,36 @@
+@@ -70,13 +70,36 @@ static inline bool __preempt_count_dec_a
  	 * interrupt occurring between the non-atomic READ_ONCE/WRITE_ONCE
  	 * pair.
  	 */
@@ -72,7 +72,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  #ifdef CONFIG_PREEMPTION
 --- a/arch/arm64/include/asm/thread_info.h
 +++ b/arch/arm64/include/asm/thread_info.h
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ struct thread_info {
  #ifdef CONFIG_ARM64_SW_TTBR0_PAN
  	u64			ttbr0;		/* saved TTBR0_EL1 */
  #endif
@@ -80,7 +80,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  	union {
  		u64		preempt_count;	/* 0 => preemptible, <0 => bug */
  		struct {
-@@ -68,6 +69,7 @@
+@@ -68,6 +69,7 @@ void arch_release_task_struct(struct tas
  #define TIF_UPROBE		4	/* uprobe breakpoint or singlestep */
  #define TIF_FSCHECK		5	/* Check FS is USER_DS on return */
  #define TIF_MTE_ASYNC_FAULT	6	/* MTE Asynchronous Tag Check Fault */
@@ -88,7 +88,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  #define TIF_SYSCALL_TRACE	8	/* syscall trace active */
  #define TIF_SYSCALL_AUDIT	9	/* syscall auditing */
  #define TIF_SYSCALL_TRACEPOINT	10	/* syscall tracepoint for ftrace */
-@@ -98,11 +100,14 @@
+@@ -98,11 +100,14 @@ void arch_release_task_struct(struct tas
  #define _TIF_32BIT		(1 << TIF_32BIT)
  #define _TIF_SVE		(1 << TIF_SVE)
  #define _TIF_MTE_ASYNC_FAULT	(1 << TIF_MTE_ASYNC_FAULT)
@@ -106,7 +106,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  				 _TIF_SYSCALL_EMU)
 --- a/arch/arm64/kernel/asm-offsets.c
 +++ b/arch/arm64/kernel/asm-offsets.c
-@@ -30,6 +30,7 @@
+@@ -30,6 +30,7 @@ int main(void)
    BLANK();
    DEFINE(TSK_TI_FLAGS,		offsetof(struct task_struct, thread_info.flags));
    DEFINE(TSK_TI_PREEMPT,	offsetof(struct task_struct, thread_info.preempt_count));
@@ -116,7 +116,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
    DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
-@@ -649,9 +649,18 @@
+@@ -649,9 +649,18 @@ alternative_if ARM64_HAS_IRQ_PRIO_MASKIN
  	mrs	x0, daif
  	orr	x24, x24, x0
  alternative_else_nop_endif
@@ -139,7 +139,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  	mov	x0, sp
 --- a/arch/arm64/kernel/signal.c
 +++ b/arch/arm64/kernel/signal.c
-@@ -925,7 +925,7 @@
+@@ -925,7 +925,7 @@ asmlinkage void do_notify_resume(struct
  		/* Check valid user FS if needed */
  		addr_limit_user_check();
  

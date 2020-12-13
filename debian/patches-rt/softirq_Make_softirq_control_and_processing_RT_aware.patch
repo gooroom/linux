@@ -1,7 +1,9 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Mon, 21 Sep 2020 17:26:19 +0200
-Subject: [PATCH 14/19] softirq: Make softirq control and processing RT aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
+Subject: softirq: Make softirq control and processing RT aware
+Date: Fri, 13 Nov 2020 15:02:21 +0100
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc7-rt16.tar.xz
+
+From: Thomas Gleixner <tglx@linutronix.de>
 
 Provide a local lock based serialization for soft interrupts on RT which
 allows the local_bh_disabled() sections and servicing soft interrupts to be
@@ -11,11 +13,12 @@ Provide the necessary inline helpers which allow to reuse the bulk of the
 softirq processing code.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+V2: Adjusted to Frederic's changes
 ---
  include/linux/bottom_half.h |    2 
- kernel/softirq.c            |  207 ++++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 201 insertions(+), 8 deletions(-)
+ kernel/softirq.c            |  188 ++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 182 insertions(+), 8 deletions(-)
 
 --- a/include/linux/bottom_half.h
 +++ b/include/linux/bottom_half.h
@@ -38,7 +41,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/mm.h>
  #include <linux/notifier.h>
  #include <linux/percpu.h>
-@@ -100,20 +101,208 @@ EXPORT_PER_CPU_SYMBOL_GPL(hardirq_contex
+@@ -100,20 +101,189 @@ EXPORT_PER_CPU_SYMBOL_GPL(hardirq_contex
  #endif
  
  /*
@@ -61,10 +64,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   * softirq and whether we just have bh disabled.
   */
 +#ifdef CONFIG_PREEMPT_RT
- 
--#ifdef CONFIG_TRACE_IRQFLAGS
- /*
-- * This is for softirq.c-internal use, where hardirqs are disabled
++
++/*
 + * RT accounts for BH disabled sections in task::softirqs_disabled_cnt and
 + * also in per CPU softirq_ctrl::cnt. This is necessary to allow tasks in a
 + * softirq disabled section to be preempted.
@@ -96,18 +97,18 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	if (!current->softirq_disable_cnt) {
 +		if (preemptible()) {
 +			local_lock(&softirq_ctrl.lock);
++			/* Required to meet the RCU bottomhalf requirements. */
 +			rcu_read_lock();
 +		} else {
 +			DEBUG_LOCKS_WARN_ON(this_cpu_read(softirq_ctrl.cnt));
 +		}
 +	}
 +
-+	preempt_disable();
 +	/*
 +	 * Track the per CPU softirq disabled state. On RT this is per CPU
 +	 * state to allow preemption of bottom half disabled sections.
 +	 */
-+	newcnt = this_cpu_add_return(softirq_ctrl.cnt, cnt);
++	newcnt = __this_cpu_add_return(softirq_ctrl.cnt, cnt);
 +	/*
 +	 * Reflect the result in the task state to prevent recursion on the
 +	 * local lock and to make softirq_count() & al work.
@@ -119,7 +120,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		lockdep_softirqs_off(ip);
 +		raw_local_irq_restore(flags);
 +	}
-+	preempt_enable();
 +}
 +EXPORT_SYMBOL(__local_bh_disable_ip);
 +
@@ -131,16 +131,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	DEBUG_LOCKS_WARN_ON(current->softirq_disable_cnt !=
 +			    this_cpu_read(softirq_ctrl.cnt));
 +
-+	preempt_disable();
 +	if (IS_ENABLED(CONFIG_TRACE_IRQFLAGS) && softirq_count() == cnt) {
 +		raw_local_irq_save(flags);
 +		lockdep_softirqs_on(_RET_IP_);
 +		raw_local_irq_restore(flags);
 +	}
 +
-+	newcnt = this_cpu_sub_return(softirq_ctrl.cnt, cnt);
++	newcnt = __this_cpu_sub_return(softirq_ctrl.cnt, cnt);
 +	current->softirq_disable_cnt = newcnt;
-+	preempt_enable();
 +
 +	if (!newcnt && unlock) {
 +		rcu_read_unlock();
@@ -196,22 +194,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +EXPORT_SYMBOL(__local_bh_enable_ip);
 +
 +/*
-+ * Invoked from irq_enter_rcu() to prevent that tick_irq_enter()
-+ * pointlessly wakes the softirq daemon. That's handled in __irq_exit_rcu().
-+ * None of the above logic in the regular bh_disable/enable functions is
-+ * required here.
-+ */
-+static inline void local_bh_disable_irq_enter(void)
-+{
-+	this_cpu_add(softirq_ctrl.cnt, SOFTIRQ_DISABLE_OFFSET);
-+}
-+
-+static inline void local_bh_enable_irq_enter(void)
-+{
-+	this_cpu_sub(softirq_ctrl.cnt, SOFTIRQ_DISABLE_OFFSET);
-+}
-+
-+/*
 + * Invoked from ksoftirqd_run() outside of the interrupt disabled section
 + * to acquire the per CPU local lock for reentrancy protection.
 + */
@@ -232,20 +214,22 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +static inline void softirq_handle_begin(void) { }
 +static inline void softirq_handle_end(void) { }
 +
-+static inline void invoke_softirq(void)
-+{
-+	if (!this_cpu_read(softirq_ctrl.cnt))
-+		wakeup_softirqd();
-+}
-+
 +static inline bool should_wake_ksoftirqd(void)
 +{
 +	return !this_cpu_read(softirq_ctrl.cnt);
 +}
 +
-+#else /* CONFIG_PREEMPT_RT */
++static inline void invoke_softirq(void)
++{
++	if (should_wake_ksoftirqd())
++		wakeup_softirqd();
++}
 +
-+/*
++#else /* CONFIG_PREEMPT_RT */
+ 
+-#ifdef CONFIG_TRACE_IRQFLAGS
+ /*
+- * This is for softirq.c-internal use, where hardirqs are disabled
 + * This one is for softirq.c-internal use, where hardirqs are disabled
   * legitimately:
   */
@@ -253,7 +237,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
  {
  	unsigned long flags;
-@@ -284,6 +473,8 @@ asmlinkage __visible void do_softirq(voi
+@@ -274,6 +444,8 @@ asmlinkage __visible void do_softirq(voi
  	local_irq_restore(flags);
  }
  
@@ -262,7 +246,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
   * but break the loop if need_resched() is set or after 2 ms.
-@@ -388,8 +579,10 @@ asmlinkage __visible void __softirq_entr
+@@ -378,8 +550,10 @@ asmlinkage __visible void __softirq_entr
  		pending >>= softirq_bit;
  	}
  

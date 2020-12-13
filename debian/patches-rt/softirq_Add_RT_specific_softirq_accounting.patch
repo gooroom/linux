@@ -1,17 +1,26 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Mon, 9 Nov 2020 15:46:23 +0100
-Subject: [PATCH 12/19] softirq: Add RT specific softirq accounting
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc6-rt13.tar.xz
+Subject: softirq: Add RT specific softirq accounting
+Date: Fri, 13 Nov 2020 15:02:19 +0100
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rc7-rt16.tar.xz
 
-RT requires the softirq to be preemptible and uses a per CPU local lock to
-protect BH disabled sections and softirq processing. Therefore RT cannot
-use the preempt counter to keep track of BH disabled/serving.
+From: Thomas Gleixner <tglx@linutronix.de>
+
+RT requires the softirq processing and local bottomhalf disabled regions to
+be preemptible. Using the normal preempt count based serialization is
+therefore not possible because this implicitely disables preemption.
+
+RT kernels use a per CPU local lock to serialize bottomhalfs. As
+local_bh_disable() can nest the lock can only be acquired on the outermost
+invocation of local_bh_disable() and released when the nest count becomes
+zero. Tasks which hold the local lock can be preempted so its required to
+keep track of the nest count per task.
 
 Add a RT only counter to task struct and adjust the relevant macros in
 preempt.h.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+V2: Rewrote changelog.
 ---
  include/linux/hardirq.h |    1 +
  include/linux/preempt.h |    6 +++++-
