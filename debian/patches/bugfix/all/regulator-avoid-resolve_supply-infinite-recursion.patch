@@ -1,0 +1,46 @@
+From: =?UTF-8?q?Micha=C5=82=20Miros=C5=82aw?= <mirq-linux@rere.qmqm.pl>
+Date: Fri, 13 Nov 2020 01:20:28 +0100
+Subject: regulator: avoid resolve_supply() infinite recursion
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=14eb75c74b9c086cbedcf5fd87a4fe79e08cbdb5
+
+commit 4b639e254d3d4f15ee4ff2b890a447204cfbeea9 upstream
+
+When a regulator's name equals its supply's name the
+regulator_resolve_supply() recurses indefinitely. Add a check
+so that debugging the problem is easier. The "fixed" commit
+just exposed the problem.
+
+Fixes: aea6cb99703e ("regulator: resolve supply after creating regulator")
+Cc: stable@vger.kernel.org
+Reported-by: Ahmad Fatoum <a.fatoum@pengutronix.de>
+Signed-off-by: Michał Mirosław <mirq-linux@rere.qmqm.pl>
+Tested-by: Ahmad Fatoum <a.fatoum@pengutronix.de> # stpmic1
+Link: https://lore.kernel.org/r/c6171057cfc0896f950c4d8cb82df0f9f1b89ad9.1605226675.git.mirq-linux@rere.qmqm.pl
+Signed-off-by: Mark Brown <broonie@kernel.org>
+[sudip: adjust context]
+Signed-off-by: Sudip Mukherjee <sudipm.mukherjee@gmail.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/regulator/core.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index 0a0dd0aac047..89f14e301b4c 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -1550,6 +1550,12 @@ static int regulator_resolve_supply(struct regulator_dev *rdev)
+ 		}
+ 	}
+ 
++	if (r == rdev) {
++		dev_err(dev, "Supply for %s (%s) resolved to itself\n",
++			rdev->desc->name, rdev->supply_name);
++		return -EINVAL;
++	}
++
+ 	/* Recursively resolve the supply of the supply */
+ 	ret = regulator_resolve_supply(r);
+ 	if (ret < 0) {

@@ -1,0 +1,36 @@
+From: Suravee Suthikulpanit <suravee.suthikulpanit@amd.com>
+Date: Mon, 7 Dec 2020 03:19:20 -0600
+Subject: iommu/amd: Set DTE[IntTabLen] to represent 512 IRTEs
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit?id=2b8d8c968b495c3a4cb1edb5a43a4bbf9ee9587f
+
+commit 4165bf015ba9454f45beaad621d16c516d5c5afe upstream.
+
+According to the AMD IOMMU spec, the commit 73db2fc595f3
+("iommu/amd: Increase interrupt remapping table limit to 512 entries")
+also requires the interrupt table length (IntTabLen) to be set to 9
+(power of 2) in the device table mapping entry (DTE).
+
+Fixes: 73db2fc595f3 ("iommu/amd: Increase interrupt remapping table limit to 512 entries")
+Reported-by: Jerry Snitselaar <jsnitsel@redhat.com>
+Signed-off-by: Suravee Suthikulpanit <suravee.suthikulpanit@amd.com>
+Reviewed-by: Jerry Snitselaar <jsnitsel@redhat.com>
+Link: https://lore.kernel.org/r/20201207091920.3052-1-suravee.suthikulpanit@amd.com
+Signed-off-by: Will Deacon <will@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/iommu/amd_iommu.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
+index bb0448c91f67..f4a15d9f2bbb 100644
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -3661,7 +3661,7 @@ static struct irq_chip amd_ir_chip;
+ 
+ #define DTE_IRQ_PHYS_ADDR_MASK	(((1ULL << 45)-1) << 6)
+ #define DTE_IRQ_REMAP_INTCTL    (2ULL << 60)
+-#define DTE_IRQ_TABLE_LEN       (8ULL << 1)
++#define DTE_IRQ_TABLE_LEN       (9ULL << 1)
+ #define DTE_IRQ_REMAP_ENABLE    1ULL
+ 
+ static void set_dte_irq_entry(u16 devid, struct irq_remap_table *table)
