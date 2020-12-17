@@ -1,0 +1,36 @@
+From: Robin Murphy <robin.murphy@arm.com>
+Date: Fri, 12 May 2017 13:48:41 +0100
+Subject: arm64: Remove redundant mov from LL/SC cmpxchg
+Origin: https://git.kernel.org/linus/8df728e1ae614f592961e51f65d3e3212ede5a75
+
+The cmpxchg implementation introduced by commit c342f78217e8 ("arm64:
+cmpxchg: patch in lse instructions when supported by the CPU") performs
+an apparently redundant register move of [old] to [oldval] in the
+success case - it always uses the same register width as [oldval] was
+originally loaded with, and is only executed when [old] and [oldval] are
+known to be equal anyway.
+
+The only effect it seemingly does have is to take up a surprising amount
+of space in the kernel text, as removing it reveals:
+
+   text	   data	    bss	    dec	    hex	filename
+12426658	1348614	4499749	18275021	116dacd	vmlinux.o.new
+12429238	1348614	4499749	18277601	116e4e1	vmlinux.o.old
+
+Reviewed-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Robin Murphy <robin.murphy@arm.com>
+Signed-off-by: Catalin Marinas <catalin.marinas@arm.com>
+---
+ arch/arm64/include/asm/atomic_ll_sc.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/arm64/include/asm/atomic_ll_sc.h
++++ b/arch/arm64/include/asm/atomic_ll_sc.h
+@@ -264,7 +264,6 @@ __LL_SC_PREFIX(__cmpxchg_case_##name(vol
+ 	"	st" #rel "xr" #sz "\t%w[tmp], %" #w "[new], %[v]\n"	\
+ 	"	cbnz	%w[tmp], 1b\n"					\
+ 	"	" #mb "\n"						\
+-	"	mov	%" #w "[oldval], %" #w "[old]\n"		\
+ 	"2:"								\
+ 	: [tmp] "=&r" (tmp), [oldval] "=&r" (oldval),			\
+ 	  [v] "+Q" (*(unsigned long *)ptr)				\
