@@ -5,6 +5,10 @@
 ############################################################
 # UPSTREAM merged
 ############################################################
+# z3fold, fc5488651c7d840c9cad9b0f273f2f31bd03413a+
+0001-z3fold-simplify-freeing-slots.patch
+0002-z3fold-stricter-locking-and-more-careful-reclaim.patch
+0003-z3fold-remove-preempt-disabled-sections-for-RT.patch
 
 ############################################################
 # POSTED by others
@@ -87,9 +91,6 @@ timers-Move-clearing-of-base-timer_running-under-bas.patch
 ############################################################
 # POSTED
 ############################################################
-# 20191015191821.11479-1-bigeasy@linutronix.de
-Use-CONFIG_PREEMPTION.patch
-
 # 20201028141251.3608598-1-bigeasy@linutronix.de
 0001-blk-mq-Don-t-complete-on-a-remote-CPU-in-force-threa.patch
 0002-blk-mq-Always-complete-remote-completions-requests-i.patch
@@ -109,27 +110,44 @@ timers-Don-t-block-on-expiry_lock-for-TIMER_IRQSAFE.patch
 # 20201122201904.30940-1-valentin.schneider@arm.com
 notifier-Make-atomic_notifiers-use-raw_spinlock.patch
 
+# RCU
+# 20201215141649.796472-1-bigeasy@linutronix.de
+# rcu/dev 1edaf2221f8f193e78206dec914d15bf0932bb81+
+0001-rcu-Make-RCU_BOOST-default-on-CONFIG_PREEMPT_RT.patch
+0002-rcu-Unconditionally-use-rcuc-threads-on-PREEMPT_RT.patch
+0003-rcu-Enable-rcu_normal_after_boot-unconditionally-for.patch
+0004-doc-Update-RCU-s-requirements-page-about-the-PREEMPT.patch
+0005-doc-Use-CONFIG_PREEMPTION.patch
+
+# 20201216172205.gvpizdw4kzpn326q@linutronix.de
+tracing-Merge-irqflags-preemt-counter-add-RT-bits.patch
+
 ############################################################
 # Ready for posting
 ############################################################
 
 # John's printk series.
-0001-printk-refactor-kmsg_dump_get_buffer.patch
-0002-printk-inline-log_output-log_store-in-vprintk_store.patch
-0003-printk-change-clear_seq-to-atomic64_t.patch
-0004-printk-remove-logbuf_lock-add-syslog_lock.patch
-0005-printk-remove-safe-buffers.patch
-0006-console-add-write_atomic-interface.patch
-0007-serial-8250-implement-write_atomic.patch
-0008-printk-relocate-printk_delay-and-vprintk_default.patch
-0009-printk-combine-boot_delay_msec-into-printk_delay.patch
-0010-printk-change-console_seq-to-atomic64_t.patch
-0011-printk-introduce-kernel-sync-mode.patch
-0012-printk-move-console-printing-to-kthreads.patch
-0013-printk-remove-deferred-printing.patch
-0014-printk-add-console-handover.patch
-0015-printk-add-pr_flush.patch
-0016-printk-kmsg_dump-do_mounts-wait-for-printers.patch
+0001-printk-inline-log_output-log_store-in-vprintk_store.patch
+0002-printk-remove-logbuf_lock-writer-protection-of-ringb.patch
+0003-printk-use-seqcount_latch-for-clear_seq.patch
+0004-printk-use-atomic64_t-for-devkmsg_user.seq.patch
+0005-printk-add-syslog_lock.patch
+0006-define-CONSOLE_LOG_MAX-in-printk.h.patch
+0007-printk-track-limit-recursion.patch
+0008-printk-invoke-dumper-using-a-copy-of-the-iterator.patch
+0009-printk-remove-logbuf_lock.patch
+0010-printk-remove-safe-buffers.patch
+0011-printk-refactor-kmsg_dump_get_buffer.patch
+0012-console-add-write_atomic-interface.patch
+0013-serial-8250-implement-write_atomic.patch
+0014-printk-relocate-printk_delay-and-vprintk_default.patch
+0015-printk-combine-boot_delay_msec-into-printk_delay.patch
+0016-printk-change-console_seq-to-atomic64_t.patch
+0017-printk-introduce-kernel-sync-mode.patch
+0018-printk-move-console-printing-to-kthreads.patch
+0019-printk-remove-deferred-printing.patch
+0020-printk-add-console-handover.patch
+0021-printk-add-pr_flush.patch
 
 ############################################################
 # Needs to address review feedback
@@ -255,9 +273,6 @@ kconfig-disable-a-few-options-rt.patch
 # proper changelog
 mm-disable-sloub-rt.patch
 
-# Post
-rcu-make-RCU_BOOST-default-on-RT.patch
-
 # Revisit ????
 sched-disable-rt-group-sched-on-rt.patch
 
@@ -346,10 +361,8 @@ ftrace-migrate-disable-tracing.patch
 locking-don-t-check-for-__LINUX_SPINLOCK_TYPES_H-on-.patch
 
 # RCU
-# Talk to Paul, Local locks
 locking-Make-spinlock_t-and-rwlock_t-a-RCU-section-o.patch
-rcu-Use-rcuc-threads-on-PREEMPT_RT-as-we-did.patch
-rcu-enable-rcu_normal_after_boot-by-default-for-RT.patch
+# atomic BH is longer doable in current softirq implemention.
 rcutorture-Avoid-problematic-critical-section-nestin.patch
 
 # CPU get light
@@ -463,6 +476,7 @@ ARM-Allow-to-enable-RT.patch
 ARM64-Allow-to-enable-RT.patch
 
 # PowerPC
+powerpc-traps.patch
 powerpc-pseries-iommu-Use-a-locallock-instead-local_ir.patch
 powerpc-kvm-Disable-in-kernel-MPIC-emulation-for-PRE.patch
 powerpc-stackprotector-work-around-stack-guard-init-.patch

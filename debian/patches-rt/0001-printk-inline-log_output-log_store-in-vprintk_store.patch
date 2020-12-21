@@ -1,18 +1,22 @@
 From: John Ogness <john.ogness@linutronix.de>
-Date: Mon, 30 Nov 2020 01:41:57 +0106
-Subject: [PATCH 02/16] printk: inline log_output(),log_store() in
+Date: Wed, 9 Dec 2020 01:50:52 +0106
+Subject: [PATCH 01/21] printk: inline log_output(),log_store() in
  vprintk_store()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rt17.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
 
 In preparation for removing logbuf_lock, inline log_output()
 and log_store() into vprintk_store(). This will simplify dealing
 with the various code branches and fallbacks that are possible.
 
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Reviewed-by: Petr Mladek <pmladek@suse.com>
+Reviewed-by: Sergey Senozhatsky <sergey.senozhatsky@gmail.com>
+Signed-off-by: Petr Mladek <pmladek@suse.com>
+Link: https://lore.kernel.org/r/20201209004453.17720-2-john.ogness@linutronix.de
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/printk/printk.c |  134 ++++++++++++++++++++-----------------------------
- 1 file changed, 56 insertions(+), 78 deletions(-)
+ kernel/printk/printk.c |  145 ++++++++++++++++++++++---------------------------
+ 1 file changed, 67 insertions(+), 78 deletions(-)
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
@@ -69,7 +73,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  int dmesg_restrict = IS_ENABLED(CONFIG_SECURITY_DMESG_RESTRICT);
  
  static int syslog_action_restricted(int type)
-@@ -1907,44 +1861,22 @@ static inline u32 printk_caller_id(void)
+@@ -1907,44 +1861,28 @@ static inline u32 printk_caller_id(void)
  		0x80000000 + raw_smp_processor_id();
  }
  
@@ -119,11 +123,17 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	u16 text_len;
 +	u64 ts_nsec;
 +
++	/*
++	 * Since the duration of printk() can vary depending on the message
++	 * and state of the ringbuffer, grab the timestamp now so that it is
++	 * close to the call of printk(). This provides a more deterministic
++	 * timestamp with respect to the caller.
++	 */
 +	ts_nsec = local_clock();
  
  	/*
  	 * The printf needs to come first; we need the syslog
-@@ -1983,7 +1915,53 @@ int vprintk_store(int facility, int leve
+@@ -1983,7 +1921,58 @@ int vprintk_store(int facility, int leve
  	if (dev_info)
  		lflags |= LOG_NEWLINE;
  
@@ -145,6 +155,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +		}
 +	}
 +
++	/*
++	 * Explicitly initialize the record before every prb_reserve() call.
++	 * prb_reserve_in_last() and prb_reserve() purposely invalidate the
++	 * structure when they fail.
++	 */
 +	prb_rec_init_wr(&r, text_len);
 +	if (!prb_reserve(&e, prb, &r)) {
 +		/* truncate the message if it is too long for empty buffer */

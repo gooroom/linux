@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rt17.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -56,17 +56,17 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  include/linux/preempt.h      |   54 ++++++++++++++++++++++++++--
  include/linux/sched.h        |   38 +++++++++++++++++++
  include/linux/thread_info.h  |   12 +++++-
- include/linux/trace_events.h |    1 
+ include/linux/trace_events.h |    4 +-
  kernel/Kconfig.preempt       |    6 +++
  kernel/sched/core.c          |   82 +++++++++++++++++++++++++++++++++++++++++--
  kernel/sched/fair.c          |   16 ++++----
  kernel/sched/features.h      |    3 +
  kernel/sched/sched.h         |    9 ++++
- kernel/trace/trace.c         |   42 ++++++++++++----------
+ kernel/trace/trace.c         |   45 +++++++++++++----------
  kernel/trace/trace.h         |    2 +
  kernel/trace/trace_events.c  |    1 
  kernel/trace/trace_output.c  |   14 ++++++-
- 13 files changed, 246 insertions(+), 34 deletions(-)
+ 13 files changed, 250 insertions(+), 36 deletions(-)
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
@@ -251,6 +251,18 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  };
  
  #define TRACE_EVENT_TYPE_MAX						\
+@@ -157,9 +158,10 @@ static inline void tracing_generic_entry
+ 
+ 	entry->preempt_count		= trace_ctx & 0xff;
+ 	entry->migrate_disable		= (trace_ctx >> 8) & 0xff;
++	entry->preempt_lazy_count	= (trace_ctx >> 16) & 0xff;
+ 	entry->pid			= (tsk) ? tsk->pid : 0;
+ 	entry->type			= type;
+-	entry->flags =			trace_ctx >> 16;
++	entry->flags =			trace_ctx >> 24;
+ }
+ 
+ unsigned int _tracing_gen_ctx_flags(unsigned long irqflags);
 --- a/kernel/Kconfig.preempt
 +++ b/kernel/Kconfig.preempt
 @@ -1,5 +1,11 @@
@@ -518,25 +530,21 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2592,6 +2592,7 @@ tracing_generic_entry_update(struct trac
- 	struct task_struct *tsk = current;
+@@ -2610,8 +2610,11 @@ static unsigned int __tracing_gen_ctx_fl
+ 		trace_flags |= TRACE_FLAG_NEED_RESCHED;
+ 	if (test_preempt_need_resched())
+ 		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
+-	return (trace_flags << 16) | (pc & 0xff) |
+-		(migration_disable_value() & 0xff) << 8;
++
++	return (pc & 0xff) |
++		(migration_disable_value() & 0xff) << 8 |
++		(preempt_lazy_count() & 0xff) << 16 |
++		(trace_flags << 24);
+ }
  
- 	entry->preempt_count		= pc & 0xff;
-+	entry->preempt_lazy_count	= preempt_lazy_count();
- 	entry->pid			= (tsk) ? tsk->pid : 0;
- 	entry->type			= type;
- 	entry->flags =
-@@ -2603,7 +2604,8 @@ tracing_generic_entry_update(struct trac
- 		((pc & NMI_MASK    ) ? TRACE_FLAG_NMI     : 0) |
- 		((pc & HARDIRQ_MASK) ? TRACE_FLAG_HARDIRQ : 0) |
- 		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
--		(tif_need_resched() ? TRACE_FLAG_NEED_RESCHED : 0) |
-+		(tif_need_resched_now() ? TRACE_FLAG_NEED_RESCHED : 0) |
-+		(need_resched_lazy() ? TRACE_FLAG_NEED_RESCHED_LAZY : 0) |
- 		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
- 
- 	entry->migrate_disable = migration_disable_value(tsk);
-@@ -3813,15 +3815,17 @@ unsigned long trace_total_entries(struct
+ unsigned int _tracing_gen_ctx_flags(unsigned long irqflags)
+@@ -3848,15 +3851,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -563,7 +571,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -3855,14 +3859,16 @@ static void print_func_help_header_irq(s
+@@ -3890,14 +3895,16 @@ static void print_func_help_header_irq(s
  
  	print_event_info(buf, m);
  

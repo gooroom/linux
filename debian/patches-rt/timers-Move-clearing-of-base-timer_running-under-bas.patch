@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 6 Dec 2020 22:40:07 +0100
 Subject: [PATCH] timers: Move clearing of base::timer_running under base::lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10-rt17.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
 
 syzbot reported KCSAN data races vs. timer_base::timer_running being set to
 NULL without holding base::lock in expire_timers().
@@ -21,14 +21,12 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Cc: stable-rt@vger.kernel.org
 ---
- kernel/time/timer.c | 6 ++++--
+ kernel/time/timer.c |    6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 7c4ac329711b4..b6477db234e6a 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1263,8 +1263,10 @@ static inline void timer_base_unlock_expiry(struct timer_base *base)
+@@ -1263,8 +1263,10 @@ static inline void timer_base_unlock_exp
  static void timer_sync_wait_running(struct timer_base *base)
  {
  	if (atomic_read(&base->timer_waiters)) {
@@ -39,7 +37,7 @@ index 7c4ac329711b4..b6477db234e6a 100644
  	}
  }
  
-@@ -1455,14 +1457,14 @@ static void expire_timers(struct timer_base *base, struct hlist_head *head)
+@@ -1448,14 +1450,14 @@ static void expire_timers(struct timer_b
  		if (timer->flags & TIMER_IRQSAFE) {
  			raw_spin_unlock(&base->lock);
  			call_timer_fn(timer, fn, baseclk);
@@ -56,6 +54,3 @@ index 7c4ac329711b4..b6477db234e6a 100644
  		}
  	}
  }
--- 
-2.29.2
-
