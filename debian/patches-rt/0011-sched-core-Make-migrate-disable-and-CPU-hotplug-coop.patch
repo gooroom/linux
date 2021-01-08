@@ -2,7 +2,7 @@ From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:09 +0200
 Subject: [PATCH 11/19] sched/core: Make migrate disable and CPU hotplug
  cooperative
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.4-rt22.tar.xz
 
 On CPU unplug tasks which are in a migrate disabled region cannot be pushed
 to a different CPU until they returned to migrateable state.
@@ -72,7 +72,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  
  static void
-@@ -7069,15 +7087,20 @@ static void balance_push(struct rq *rq)
+@@ -7065,15 +7083,20 @@ static void balance_push(struct rq *rq)
  	 * Both the cpu-hotplug and stop task are in this case and are
  	 * required to complete the hotplug process.
  	 */
@@ -95,7 +95,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			raw_spin_unlock(&rq->lock);
  			rcuwait_wake_up(&rq->hotplug_wait);
  			raw_spin_lock(&rq->lock);
-@@ -7124,7 +7147,8 @@ static void balance_hotplug_wait(void)
+@@ -7120,7 +7143,8 @@ static void balance_hotplug_wait(void)
  {
  	struct rq *rq = this_rq();
  
@@ -105,7 +105,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			   TASK_UNINTERRUPTIBLE);
  }
  
-@@ -7369,7 +7393,7 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7365,7 +7389,7 @@ int sched_cpu_dying(unsigned int cpu)
  	sched_tick_stop(cpu);
  
  	rq_lock_irqsave(rq, &rf);
@@ -116,7 +116,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	calc_load_migrate(rq);
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1053,6 +1053,10 @@ struct rq {
+@@ -1047,6 +1047,10 @@ struct rq {
  	/* Must be inspected within a rcu lock section */
  	struct cpuidle_state	*idle_state;
  #endif

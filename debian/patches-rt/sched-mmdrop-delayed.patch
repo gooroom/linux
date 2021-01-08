@@ -1,7 +1,7 @@
 Subject: sched: Move mmdrop to RCU on RT
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 06 Jun 2011 12:20:33 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.4-rt22.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -24,7 +24,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #include <linux/page-flags-layout.h>
  #include <linux/workqueue.h>
  #include <linux/seqlock.h>
-@@ -556,6 +557,9 @@
+@@ -556,6 +557,9 @@ struct mm_struct {
  		bool tlb_flush_batched;
  #endif
  		struct uprobes_state uprobes_state;
@@ -36,7 +36,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #endif
 --- a/include/linux/sched/mm.h
 +++ b/include/linux/sched/mm.h
-@@ -49,6 +49,17 @@
+@@ -49,6 +49,17 @@ static inline void mmdrop(struct mm_stru
  		__mmdrop(mm);
  }
  
@@ -56,7 +56,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
   * @mm: The address space to pin.
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -693,6 +693,19 @@
+@@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)
  }
  EXPORT_SYMBOL_GPL(__mmdrop);
  
@@ -78,7 +78,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	struct mm_struct *mm;
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4248,9 +4248,13 @@
+@@ -4248,9 +4248,13 @@ static struct rq *finish_task_switch(str
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -93,7 +93,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -7266,6 +7270,7 @@
+@@ -7265,6 +7269,7 @@ void sched_setnuma(struct task_struct *p
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
