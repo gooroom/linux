@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.1-rt20.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.4-rt22.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -413,7 +413,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -7172,7 +7248,9 @@ void init_idle(struct task_struct *idle,
+@@ -7168,7 +7244,9 @@ void init_idle(struct task_struct *idle,
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -512,7 +512,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  /*
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1993,6 +1993,15 @@ extern void reweight_task(struct task_st
+@@ -1987,6 +1987,15 @@ extern void reweight_task(struct task_st
  extern void resched_curr(struct rq *rq);
  extern void resched_cpu(int cpu);
  
@@ -530,7 +530,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2610,8 +2610,11 @@ static unsigned int __tracing_gen_ctx_fl
+@@ -2617,8 +2617,11 @@ static unsigned int __tracing_gen_ctx_fl
  		trace_flags |= TRACE_FLAG_NEED_RESCHED;
  	if (test_preempt_need_resched())
  		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
@@ -544,7 +544,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  unsigned int _tracing_gen_ctx_flags(unsigned long irqflags)
-@@ -3848,15 +3851,17 @@ unsigned long trace_total_entries(struct
+@@ -3855,15 +3858,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -571,7 +571,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -3890,14 +3895,16 @@ static void print_func_help_header_irq(s
+@@ -3897,14 +3902,16 @@ static void print_func_help_header_irq(s
  
  	print_event_info(buf, m);
  
