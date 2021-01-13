@@ -1,11 +1,11 @@
-From b39a623de5c6db7cb9ba582cb9dec3512951a247 Mon Sep 17 00:00:00 2001
-Message-Id: <b39a623de5c6db7cb9ba582cb9dec3512951a247.1606340620.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From 5266b16de054d92bd40f4cad1a03b037f8da0e66 Mon Sep 17 00:00:00 2001
+Message-Id: <5266b16de054d92bd40f4cad1a03b037f8da0e66.1610128660.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:14 -0500
 Subject: [PATCH 309/335] sched: migrate_enable: Use stop_one_cpu_nowait()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 [ Upstream commit 6b39a1fa8c53cae08dc03afdae193b7d3a78a173 ]
 
@@ -38,7 +38,7 @@ index 6d3635c86dbe..82fc686ddd9e 100644
  
  int stop_one_cpu(unsigned int cpu, cpu_stop_fn_t fn, void *arg);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7895077bb4fc..8ed28b601dc7 100644
+index 05657455eff1..e678fab33a3a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -990,6 +990,7 @@ static struct rq *move_queued_task(struct rq *rq, struct rq_flags *rf,
@@ -73,7 +73,7 @@ index 7895077bb4fc..8ed28b601dc7 100644
  	}
  	rq_unlock(rq, &rf);
  	raw_spin_unlock(&p->pi_lock);
-@@ -7317,6 +7323,7 @@ void migrate_enable(void)
+@@ -7313,6 +7319,7 @@ void migrate_enable(void)
  	WARN_ON(smp_processor_id() != cpu);
  	if (!is_cpu_allowed(p, cpu)) {
  		struct migration_arg arg = { p };
@@ -81,7 +81,7 @@ index 7895077bb4fc..8ed28b601dc7 100644
  		struct rq_flags rf;
  
  		rq = task_rq_lock(p, &rf);
-@@ -7324,15 +7331,11 @@ void migrate_enable(void)
+@@ -7320,15 +7327,11 @@ void migrate_enable(void)
  		arg.dest_cpu = select_fallback_rq(cpu, p);
  		task_rq_unlock(rq, p, &rf);
  

@@ -1,7 +1,7 @@
-From 60831a9b458664098a7318da6c0139b83beec6ca Mon Sep 17 00:00:00 2001
-Message-Id: <60831a9b458664098a7318da6c0139b83beec6ca.1606340618.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From 1e5284f02e3c91e8b9b38299d506cb3b9fa110fd Mon Sep 17 00:00:00 2001
+Message-Id: <1e5284f02e3c91e8b9b38299d506cb3b9fa110fd.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
 Subject: [PATCH 026/335] kernel: sched: Provide a pointer to the valid CPU
@@ -9,7 +9,7 @@ Subject: [PATCH 026/335] kernel: sched: Provide a pointer to the valid CPU
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 In commit 4b53a3412d66 ("sched/core: Remove the tsk_nr_cpus_allowed()
 wrapper") the tsk_nr_cpus_allowed() wrapper was removed. There was not
@@ -337,7 +337,7 @@ index f2c92c100194..dc9fb7000dc5 100644
  	/*
  	 * One for us, one for whoever does the "release_task()" (usually
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b166320f7633..a3b6106d9845 100644
+index 013b1c6cb4ed..5a852bdb3f3b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -878,7 +878,7 @@ static inline bool is_per_cpu_kthread(struct task_struct *p)
@@ -478,7 +478,7 @@ index b166320f7633..a3b6106d9845 100644
  	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
  
  out_unlock:
-@@ -5499,7 +5499,7 @@ int task_can_attach(struct task_struct *p,
+@@ -5495,7 +5495,7 @@ int task_can_attach(struct task_struct *p,
  	 * allowed nodes is unnecessary.  Thus, cpusets are not
  	 * applicable for such threads.  This prevents checking for
  	 * success of set_cpus_allowed_ptr() on all attached tasks
@@ -487,7 +487,7 @@ index b166320f7633..a3b6106d9845 100644
  	 */
  	if (p->flags & PF_NO_SETAFFINITY) {
  		ret = -EINVAL;
-@@ -5526,7 +5526,7 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
+@@ -5522,7 +5522,7 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
  	if (curr_cpu == target_cpu)
  		return 0;
  
@@ -496,7 +496,7 @@ index b166320f7633..a3b6106d9845 100644
  		return -EINVAL;
  
  	/* TODO: This is not properly updating schedstats */
-@@ -5665,7 +5665,7 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
+@@ -5661,7 +5661,7 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
  		put_prev_task(rq, next);
  
  		/*
@@ -545,7 +545,7 @@ index daaadf939ccb..f7d2c10b4c92 100644
  			/*
  			 * We have to ensure that we have at least one bit
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 8aecfb143859..311b3cf1270e 100644
+index aa592dc3cb40..288d199005c4 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -539,7 +539,7 @@ static struct rq *dl_task_offline_migration(struct rq *rq, struct task_struct *p
@@ -745,7 +745,7 @@ index b980cc96604f..b6ca4a630050 100644
  				     !rt_task(task) ||
  				     !task_on_rq_queued(task))) {
 diff --git a/kernel/trace/trace_hwlat.c b/kernel/trace/trace_hwlat.c
-index 568918fae8d4..35512ed26d9f 100644
+index ade6c3070c62..164e5c618cce 100644
 --- a/kernel/trace/trace_hwlat.c
 +++ b/kernel/trace/trace_hwlat.c
 @@ -280,7 +280,7 @@ static void move_to_next_cpu(void)

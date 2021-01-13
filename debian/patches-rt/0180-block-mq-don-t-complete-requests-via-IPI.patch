@@ -1,11 +1,11 @@
-From 6c661fa24c83816267df916c9b275586aa9c5ef3 Mon Sep 17 00:00:00 2001
-Message-Id: <6c661fa24c83816267df916c9b275586aa9c5ef3.1606340619.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From 476f68683dce0a804f9a8a5214b6a9ecf363341e Mon Sep 17 00:00:00 2001
+Message-Id: <476f68683dce0a804f9a8a5214b6a9ecf363341e.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
 Subject: [PATCH 180/335] block/mq: don't complete requests via IPI
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -33,7 +33,7 @@ index ce3710404544..8926b5d998fa 100644
  	rq->q = q;
  	rq->__sector = (sector_t) -1;
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 830944372d51..f73b111a4d8f 100644
+index cbd2d46e906c..7f067c5e2df9 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -320,6 +320,9 @@ static struct request *blk_mq_rq_ctx_init(struct blk_mq_alloc_data *data,

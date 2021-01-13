@@ -1,12 +1,12 @@
-From ca5b7e6344da016ba6ad76077d5cf70a55d93121 Mon Sep 17 00:00:00 2001
-Message-Id: <ca5b7e6344da016ba6ad76077d5cf70a55d93121.1606340620.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From c2dc3db5d419522a8c5957c66780d579eb95675d Mon Sep 17 00:00:00 2001
+Message-Id: <c2dc3db5d419522a8c5957c66780d579eb95675d.1610128660.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Dec 2019 10:53:59 +0100
 Subject: [PATCH 314/335] sched: migrate_enable: Busy loop until the migration
  request is completed
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 [ Upstream commit 140d7f54a5fff02898d2ca9802b39548bf7455f1 ]
 
@@ -31,10 +31,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ac98d0b83bf9..af0b18741bfb 100644
+index 5cb45221bf38..43125b51332d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7324,7 +7324,7 @@ void migrate_enable(void)
+@@ -7320,7 +7320,7 @@ void migrate_enable(void)
  
  	WARN_ON(smp_processor_id() != cpu);
  	if (!is_cpu_allowed(p, cpu)) {
@@ -43,7 +43,7 @@ index ac98d0b83bf9..af0b18741bfb 100644
  		struct cpu_stop_work work;
  		struct rq_flags rf;
  
-@@ -7337,7 +7337,10 @@ void migrate_enable(void)
+@@ -7333,7 +7333,10 @@ void migrate_enable(void)
  				    &arg, &work);
  		tlb_migrate_finish(p->mm);
  		__schedule(true);
