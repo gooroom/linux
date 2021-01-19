@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.4-rt22.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -251,15 +251,15 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  };
  
  #define TRACE_EVENT_TYPE_MAX						\
-@@ -157,9 +158,10 @@ static inline void tracing_generic_entry
- 
+@@ -155,9 +156,10 @@ static inline void tracing_generic_entry
+ {
  	entry->preempt_count		= trace_ctx & 0xff;
  	entry->migrate_disable		= (trace_ctx >> 8) & 0xff;
 +	entry->preempt_lazy_count	= (trace_ctx >> 16) & 0xff;
- 	entry->pid			= (tsk) ? tsk->pid : 0;
+ 	entry->pid			= current->pid;
  	entry->type			= type;
 -	entry->flags =			trace_ctx >> 16;
-+	entry->flags =			trace_ctx >> 24;
++	entry->flags			= trace_ctx >> 24;
  }
  
  unsigned int _tracing_gen_ctx_flags(unsigned long irqflags);
@@ -530,7 +530,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2617,8 +2617,11 @@ static unsigned int __tracing_gen_ctx_fl
+@@ -2612,8 +2612,11 @@ unsigned int _tracing_gen_ctx_flags(unsi
  		trace_flags |= TRACE_FLAG_NEED_RESCHED;
  	if (test_preempt_need_resched())
  		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
@@ -543,8 +543,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		(trace_flags << 24);
  }
  
- unsigned int _tracing_gen_ctx_flags(unsigned long irqflags)
-@@ -3855,15 +3858,17 @@ unsigned long trace_total_entries(struct
+ unsigned int tracing_gen_ctx_flags(void)
+@@ -3841,15 +3844,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -571,7 +571,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -3897,14 +3902,16 @@ static void print_func_help_header_irq(s
+@@ -3883,14 +3888,16 @@ static void print_func_help_header_irq(s
  
  	print_event_info(buf, m);
  
