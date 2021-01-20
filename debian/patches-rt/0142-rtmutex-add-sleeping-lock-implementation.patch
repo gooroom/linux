@@ -1,11 +1,11 @@
-From dacaa2ae6c2687823f119e4824c04c6150ec10e8 Mon Sep 17 00:00:00 2001
-Message-Id: <dacaa2ae6c2687823f119e4824c04c6150ec10e8.1606340619.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From d78c6bf35c3885a2fc818083d9e53f74ea6af71c Mon Sep 17 00:00:00 2001
+Message-Id: <d78c6bf35c3885a2fc818083d9e53f74ea6af71c.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 142/335] rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -1147,7 +1147,7 @@ index 5955ad2aa2a8..6fcf0a3e180d 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 67f4d5861fef..b296432b4c86 100644
+index 66f99dc4dac3..140228327b8c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct task_struct *p)

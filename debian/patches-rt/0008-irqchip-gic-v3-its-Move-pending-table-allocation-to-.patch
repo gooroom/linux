@@ -1,12 +1,12 @@
-From 4f5ac1d16824fb241ae4ec78745362cb896b3475 Mon Sep 17 00:00:00 2001
-Message-Id: <4f5ac1d16824fb241ae4ec78745362cb896b3475.1606340618.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From cea7a487fd37747ff8118c603f4ae300a07516b1 Mon Sep 17 00:00:00 2001
+Message-Id: <cea7a487fd37747ff8118c603f4ae300a07516b1.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Fri, 27 Jul 2018 13:38:54 +0100
 Subject: [PATCH 008/335] irqchip/gic-v3-its: Move pending table allocation to
  init time
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 53 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/irqchip/irq-gic-v3-its.c b/drivers/irqchip/irq-gic-v3-its.c
-index d5cc32e80f5e..07a6ade2b39e 100644
+index cd58c123f547..dfbc73f49a1d 100644
 --- a/drivers/irqchip/irq-gic-v3-its.c
 +++ b/drivers/irqchip/irq-gic-v3-its.c
-@@ -179,6 +179,7 @@ static DEFINE_RAW_SPINLOCK(vmovp_lock);
+@@ -178,6 +178,7 @@ static DEFINE_RAW_SPINLOCK(vmovp_lock);
  static DEFINE_IDA(its_vpeid_ida);
  
  #define gic_data_rdist()		(raw_cpu_ptr(gic_rdists->rdist))
@@ -27,7 +27,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  #define gic_data_rdist_rd_base()	(gic_data_rdist()->rd_base)
  #define gic_data_rdist_vlpi_base()	(gic_data_rdist_rd_base() + SZ_128K)
  
-@@ -1659,7 +1660,7 @@ static void its_free_prop_table(struct page *prop_page)
+@@ -1658,7 +1659,7 @@ static void its_free_prop_table(struct page *prop_page)
  		   get_order(LPI_PROPBASE_SZ));
  }
  
@@ -36,7 +36,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  {
  	phys_addr_t paddr;
  
-@@ -2007,30 +2008,47 @@ static u64 its_clear_vpend_valid(void __iomem *vlpi_base)
+@@ -2006,30 +2007,47 @@ static u64 its_clear_vpend_valid(void __iomem *vlpi_base)
  	return val;
  }
  
@@ -99,7 +99,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  	/* set PROPBASE */
  	val = (page_to_phys(gic_rdists->prop_page) |
  	       GICR_PROPBASER_InnerShareable |
-@@ -2106,6 +2124,10 @@ static void its_cpu_init_lpis(void)
+@@ -2105,6 +2123,10 @@ static void its_cpu_init_lpis(void)
  
  	/* Make sure the GIC has seen the above */
  	dsb(sy);
@@ -110,7 +110,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  }
  
  static void its_cpu_init_collection(struct its_node *its)
-@@ -3594,16 +3616,6 @@ static int redist_disable_lpis(void)
+@@ -3584,16 +3606,6 @@ static int redist_disable_lpis(void)
  	u64 timeout = USEC_PER_SEC;
  	u64 val;
  
@@ -127,7 +127,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  	if (!gic_rdists_supports_plpis()) {
  		pr_info("CPU%d: LPIs not supported\n", smp_processor_id());
  		return -ENXIO;
-@@ -3613,7 +3625,18 @@ static int redist_disable_lpis(void)
+@@ -3603,7 +3615,18 @@ static int redist_disable_lpis(void)
  	if (!(val & GICR_CTLR_ENABLE_LPIS))
  		return 0;
  
@@ -147,7 +147,7 @@ index d5cc32e80f5e..07a6ade2b39e 100644
  		smp_processor_id());
  	add_taint(TAINT_CRAP, LOCKDEP_STILL_OK);
  
-@@ -3869,7 +3892,8 @@ int __init its_init(struct fwnode_handle *handle, struct rdists *rdists,
+@@ -3859,7 +3882,8 @@ int __init its_init(struct fwnode_handle *handle, struct rdists *rdists,
  	}
  
  	gic_rdists = rdists;

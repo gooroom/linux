@@ -1,12 +1,12 @@
-From afc0388126e7f0b5fa2b1a33ca041678bc157729 Mon Sep 17 00:00:00 2001
-Message-Id: <afc0388126e7f0b5fa2b1a33ca041678bc157729.1606340619.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From b96b7c9a1ead0f822b666baa39b7941ffd63a5dc Mon Sep 17 00:00:00 2001
+Message-Id: <b96b7c9a1ead0f822b666baa39b7941ffd63a5dc.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
 Subject: [PATCH 098/335] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -31,10 +31,10 @@ Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
  7 files changed, 67 insertions(+), 34 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index db2db0b70d34..eae78363c036 100644
+index 0df43515ff94..dcf2a4cc2dbd 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -3137,10 +3137,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
+@@ -3144,10 +3144,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
  	kt = nsecs;
  
  	mode = HRTIMER_MODE_REL;

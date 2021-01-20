@@ -1,11 +1,11 @@
-From dca9a354d06bab543de5a763b8183dd8134e6896 Mon Sep 17 00:00:00 2001
-Message-Id: <dca9a354d06bab543de5a763b8183dd8134e6896.1606340619.git.zanussi@kernel.org>
-In-Reply-To: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
-References: <ed9d09c7a4927383a47903a6b59b35853a530a2c.1606340618.git.zanussi@kernel.org>
+From 012431c4f3836a43ebc02daf1fb6e28c2e14dcc0 Mon Sep 17 00:00:00 2001
+Message-Id: <012431c4f3836a43ebc02daf1fb6e28c2e14dcc0.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 095/335] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.160-rt69.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -43,7 +43,7 @@ index e7075aaff1bb..1580464a9d5b 100644
  		res = -EINTR;
  	if (res) {
 diff --git a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
-index b704e4bce171..c364abaac548 100644
+index a04d59843022..e0046c35a0bd 100644
 --- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 +++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 @@ -697,8 +697,8 @@ static void ezusb_req_ctx_wait(struct ezusb_priv *upriv,
@@ -58,10 +58,10 @@ index b704e4bce171..c364abaac548 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index 11a501d0664c..1fe8a1b359d6 100644
+index 5c1846d1372e..469a02ed7345 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1628,7 +1628,7 @@ static void ffs_data_put(struct ffs_data *ffs)
+@@ -1631,7 +1631,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		pr_info("%s(): freeing\n", __func__);
  		ffs_data_clear(ffs);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
@@ -71,7 +71,7 @@ index 11a501d0664c..1fe8a1b359d6 100644
  		destroy_workqueue(ffs->io_completion_wq);
  		kfree(ffs->dev_name);
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index 25d417ad9000..c5c11ff634b5 100644
+index 09ed5f02c24f..84094164f8ad 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
 @@ -343,7 +343,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
@@ -323,10 +323,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e3a05db66b48..d302a5d895ec 100644
+index f07c6f53312a..a98288d56f71 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7158,7 +7158,10 @@ void migrate_disable(void)
+@@ -7154,7 +7154,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -338,7 +338,7 @@ index e3a05db66b48..d302a5d895ec 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7188,7 +7191,10 @@ void migrate_enable(void)
+@@ -7184,7 +7187,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
