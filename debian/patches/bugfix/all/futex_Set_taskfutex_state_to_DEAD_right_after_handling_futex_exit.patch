@@ -1,0 +1,46 @@
+Subject: futex: Set task::futex_state to DEAD right after handling futex exit
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed Nov  6 22:55:40 2019 +0100
+
+From: Thomas Gleixner <tglx@linutronix.de>
+
+commit f24f22435dcc11389acc87e5586239c1819d217c upstream
+
+Setting task::futex_state in do_exit() is rather arbitrarily placed for no
+reason. Move it into the futex code.
+
+Note, this is only done for the exit cleanup as the exec cleanup cannot set
+the state to FUTEX_STATE_DEAD because the task struct is still in active
+use.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Reviewed-by: Ingo Molnar <mingo@kernel.org>
+Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://lkml.kernel.org/r/20191106224556.439511191@linutronix.de
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ kernel/exit.c  |    1 -
+ kernel/futex.c |    1 +
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -909,7 +909,6 @@ void __noreturn do_exit(long code)
+ 	 * Make sure we are holding no locks:
+ 	 */
+ 	debug_check_no_locks_held();
+-	futex_exit_done(tsk);
+ 
+ 	if (tsk->io_context)
+ 		exit_io_context(tsk);
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -3719,6 +3719,7 @@ void futex_exec_release(struct task_stru
+ void futex_exit_release(struct task_struct *tsk)
+ {
+ 	futex_exec_release(tsk);
++	futex_exit_done(tsk);
+ }
+ 
+ long do_futex(u32 __user *uaddr, int op, u32 val, ktime_t *timeout,

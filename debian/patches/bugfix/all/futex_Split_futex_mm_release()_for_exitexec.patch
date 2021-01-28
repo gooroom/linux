@@ -1,0 +1,96 @@
+Subject: futex: Split futex_mm_release() for exit/exec
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed Nov  6 22:55:39 2019 +0100
+
+From: Thomas Gleixner <tglx@linutronix.de>
+
+commit 150d71584b12809144b8145b817e83b81158ae5f upstream
+
+To allow separate handling of the futex exit state in the futex exit code
+for exit and exec, split futex_mm_release() into two functions and invoke
+them from the corresponding exit/exec_mm_release() callsites.
+
+Preparatory only, no functional change.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Reviewed-by: Ingo Molnar <mingo@kernel.org>
+Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://lkml.kernel.org/r/20191106224556.332094221@linutronix.de
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ include/linux/futex.h |    6 ++++--
+ kernel/fork.c         |    5 ++---
+ kernel/futex.c        |    7 ++++++-
+ 3 files changed, 12 insertions(+), 6 deletions(-)
+
+--- a/include/linux/futex.h
++++ b/include/linux/futex.h
+@@ -96,14 +96,16 @@ static inline void futex_exit_done(struc
+ 	tsk->futex_state = FUTEX_STATE_DEAD;
+ }
+ 
+-void futex_mm_release(struct task_struct *tsk);
++void futex_exit_release(struct task_struct *tsk);
++void futex_exec_release(struct task_struct *tsk);
+ 
+ long do_futex(u32 __user *uaddr, int op, u32 val, ktime_t *timeout,
+ 	      u32 __user *uaddr2, u32 val2, u32 val3);
+ #else
+ static inline void futex_init_task(struct task_struct *tsk) { }
+-static inline void futex_mm_release(struct task_struct *tsk) { }
+ static inline void futex_exit_done(struct task_struct *tsk) { }
++static inline void futex_exit_release(struct task_struct *tsk) { }
++static inline void futex_exec_release(struct task_struct *tsk) { }
+ static inline long do_futex(u32 __user *uaddr, int op, u32 val,
+ 			    ktime_t *timeout, u32 __user *uaddr2,
+ 			    u32 val2, u32 val3)
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1219,9 +1219,6 @@ static int wait_for_vfork_done(struct ta
+  */
+ static void mm_release(struct task_struct *tsk, struct mm_struct *mm)
+ {
+-	/* Get rid of any futexes when releasing the mm */
+-	futex_mm_release(tsk);
+-
+ 	uprobe_free_utask(tsk);
+ 
+ 	/* Get rid of any cached register state */
+@@ -1256,11 +1253,13 @@ static void mm_release(struct task_struc
+ 
+ void exit_mm_release(struct task_struct *tsk, struct mm_struct *mm)
+ {
++	futex_exit_release(tsk);
+ 	mm_release(tsk, mm);
+ }
+ 
+ void exec_mm_release(struct task_struct *tsk, struct mm_struct *mm)
+ {
++	futex_exec_release(tsk);
+ 	mm_release(tsk, mm);
+ }
+ 
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -3698,7 +3698,7 @@ static void exit_robust_list(struct task
+ 	}
+ }
+ 
+-void futex_mm_release(struct task_struct *tsk)
++void futex_exec_release(struct task_struct *tsk)
+ {
+ 	if (unlikely(tsk->robust_list)) {
+ 		exit_robust_list(tsk);
+@@ -3716,6 +3716,11 @@ void futex_mm_release(struct task_struct
+ 		exit_pi_state_list(tsk);
+ }
+ 
++void futex_exit_release(struct task_struct *tsk)
++{
++	futex_exec_release(tsk);
++}
++
+ long do_futex(u32 __user *uaddr, int op, u32 val, ktime_t *timeout,
+ 		u32 __user *uaddr2, u32 val2, u32 val3)
+ {
