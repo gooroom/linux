@@ -1,22 +1,24 @@
-From: Thomas Gleixner <tglx@linutronix.de>
-Date: Wed, 20 Jan 2021 11:35:19 +0100
 Subject: futex: Use pi_state_update_owner() in put_pi_state()
-Origin: https://git.kernel.org/linus/6ccc84f917d33312eb2846bd7b567639f585ad6d
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed Jan 20 11:35:19 2021 +0100
+
+From: Thomas Gleixner <tglx@linutronix.de>
+
+commit 6ccc84f917d33312eb2846bd7b567639f585ad6d upstream
 
 No point in open coding it. This way it gains the extra sanity checks.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 Cc: stable@vger.kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- kernel/futex.c | 8 +-------
+ kernel/futex.c |    8 +-------
  1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/kernel/futex.c b/kernel/futex.c
-index cfca221c1bc5..a0fe63c34248 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -808,16 +808,10 @@ static void put_pi_state(struct futex_pi_state *pi_state)
+@@ -884,16 +884,10 @@ static void put_pi_state(struct futex_pi
  	 * and has cleaned up the pi_state already
  	 */
  	if (pi_state->owner) {
@@ -34,6 +36,3 @@ index cfca221c1bc5..a0fe63c34248 100644
  		rt_mutex_proxy_unlock(&pi_state->pi_mutex);
  		raw_spin_unlock_irqrestore(&pi_state->pi_mutex.wait_lock, flags);
  	}
--- 
-2.30.0
-

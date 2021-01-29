@@ -1,7 +1,10 @@
-From f2dac39d93987f7de1e20b3988c8685523247ae2 Mon Sep 17 00:00:00 2001
+Subject: futex: Simplify fixup_pi_state_owner()
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Tue, 19 Jan 2021 16:26:38 +0100
-Subject: [PATCH] futex: Simplify fixup_pi_state_owner()
+Date: Tue Jan 19 16:26:38 2021 +0100
+
+From: Thomas Gleixner <tglx@linutronix.de>
+
+commit f2dac39d93987f7de1e20b3988c8685523247ae2 upstream
 
 Too many gotos already and an upcoming fix would make it even more
 unreadable.
@@ -9,10 +12,9 @@ unreadable.
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
 Cc: stable@vger.kernel.org
-[Salvatore Bonaccorso: Backport to 4.19.171: Drop use of
-uninitialized_var() in __fixup_pi_state_owner]
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- kernel/futex.c | 53 +++++++++++++++++++++++++-------------------------
+ kernel/futex.c |   53 ++++++++++++++++++++++++++---------------------------
  1 file changed, 26 insertions(+), 27 deletions(-)
 
 --- a/kernel/futex.c
@@ -26,6 +28,7 @@ uninitialized_var() in __fixup_pi_state_owner]
 +static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
 +				  struct task_struct *argowner)
  {
++	u32 uval, uninitialized_var(curval), newval, newtid;
  	struct futex_pi_state *pi_state = q->pi_state;
 -	u32 uval, uninitialized_var(curval), newval;
  	struct task_struct *oldowner, *newowner;
@@ -35,7 +38,6 @@ uninitialized_var() in __fixup_pi_state_owner]
 -	lockdep_assert_held(q->lock_ptr);
 -
 -	raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
-+	u32 uval, curval, newval, newtid;
 +	int err = 0;
  
  	oldowner = pi_state->owner;
