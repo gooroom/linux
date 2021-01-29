@@ -46,7 +46,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  void *napi_alloc_frag(unsigned int fragsz)
-@@ -464,6 +469,7 @@
+@@ -468,6 +473,7 @@
  	struct napi_alloc_cache *nc;
  	struct sk_buff *skb;
  	void *data;
@@ -54,7 +54,14 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	len += NET_SKB_PAD + NET_IP_ALIGN;
  
-@@ -486,7 +492,10 @@
+@@ -483,14 +489,16 @@
+ 		goto skb_success;
+ 	}
+ 
+-	nc = this_cpu_ptr(&napi_alloc_cache);
+ 	len += SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+ 	len = SKB_DATA_ALIGN(len);
+ 
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -65,7 +72,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(!data))
  		return NULL;
  
-@@ -497,7 +506,7 @@
+@@ -501,7 +509,7 @@
  	}
  
  	/* use OR instead of assignment to avoid clearing of bits in mask */
@@ -74,7 +81,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		skb->pfmemalloc = 1;
  	skb->head_frag = 1;
  
-@@ -729,23 +738,26 @@
+@@ -733,23 +741,26 @@
  
  void __kfree_skb_flush(void)
  {
@@ -103,7 +110,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* record skb to CPU local list */
  	nc->skb_cache[nc->skb_count++] = skb;
  
-@@ -760,6 +772,7 @@
+@@ -764,6 +775,7 @@
  				     nc->skb_cache);
  		nc->skb_count = 0;
  	}
