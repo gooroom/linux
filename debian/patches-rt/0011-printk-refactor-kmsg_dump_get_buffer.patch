@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3450,19 +3450,17 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
+@@ -3472,19 +3472,17 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
   * read.
   */
  bool kmsg_dump_get_buffer(struct kmsg_dumper *dumper, bool syslog,
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (!dumper->active || !buf || !size)
  		goto out;
  
-@@ -3475,47 +3473,50 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3497,47 +3495,50 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  	if (dumper->cur_seq >= dumper->next_seq)
  		goto out;
  
@@ -60,9 +60,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	prb_for_each_info(dumper->cur_seq, prb, seq, &info, &line_count) {
 +		if (info.seq >= dumper->next_seq)
  			break;
--		l += get_record_print_text_size(&info, line_count, true, time);
+-		l += get_record_print_text_size(&info, line_count, syslog, time);
 -		seq = r.info->seq + 1;
-+		len += get_record_print_text_size(&info, line_count, true, time);
++		len += get_record_print_text_size(&info, line_count, syslog, time);
  	}
  
 -	/* move first record forward until length fits into the buffer */
@@ -79,9 +79,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	prb_for_each_info(dumper->cur_seq, prb, seq, &info, &line_count) {
 +		if (len <= size || info.seq >= dumper->next_seq)
  			break;
--		l -= get_record_print_text_size(&info, line_count, true, time);
+-		l -= get_record_print_text_size(&info, line_count, syslog, time);
 -		seq = r.info->seq + 1;
-+		len -= get_record_print_text_size(&info, line_count, true, time);
++		len -= get_record_print_text_size(&info, line_count, syslog, time);
  	}
  
 -	/* last message in next interation */
