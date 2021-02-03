@@ -1,8 +1,7 @@
-From d75e3961d9c002fe48ddaf60f3228f0465b9f6a6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 31 Aug 2016 17:54:09 +0200
 Subject: [PATCH 239/365] net: add a lock around icmp_sk()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=44086621e05c86eaaf7b4c8c5cc292246b41430d
 
 It looks like the this_cpu_ptr() access in icmp_sk() is protected with
 local_bh_disable(). To avoid missing serialization in -RT I am adding
@@ -15,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 8 insertions(+)
 
 diff --git a/net/ipv4/icmp.c b/net/ipv4/icmp.c
-index cc5c8d598e5e..af03f0c3ff5d 100644
+index 9a21080e2456..4d155a1bc244 100644
 --- a/net/ipv4/icmp.c
 +++ b/net/ipv4/icmp.c
 @@ -77,6 +77,7 @@
@@ -58,7 +57,7 @@ index cc5c8d598e5e..af03f0c3ff5d 100644
  }
  
  int sysctl_icmp_msgs_per_sec __read_mostly = 1000;
-@@ -359,6 +365,7 @@ static void icmp_push_reply(struct icmp_bxm *icmp_param,
+@@ -362,6 +368,7 @@ static void icmp_push_reply(struct icmp_bxm *icmp_param,
  	struct sock *sk;
  	struct sk_buff *skb;
  
@@ -66,7 +65,7 @@ index cc5c8d598e5e..af03f0c3ff5d 100644
  	sk = icmp_sk(dev_net((*rt)->dst.dev));
  	if (ip_append_data(sk, fl4, icmp_glue_bits, icmp_param,
  			   icmp_param->data_len+icmp_param->head_len,
-@@ -381,6 +388,7 @@ static void icmp_push_reply(struct icmp_bxm *icmp_param,
+@@ -384,6 +391,7 @@ static void icmp_push_reply(struct icmp_bxm *icmp_param,
  		skb->ip_summed = CHECKSUM_NONE;
  		ip_push_pending_frames(sk, fl4);
  	}
@@ -74,6 +73,3 @@ index cc5c8d598e5e..af03f0c3ff5d 100644
  }
  
  /*
--- 
-2.28.0
-

@@ -1,9 +1,8 @@
-From 01c603568997f71ba577f10b07e90af803c69611 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 7 Jun 2013 22:37:06 +0200
 Subject: [PATCH 280/365] kernel/cpu: fix cpu down problem if kthread's cpu is
  going down
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b455e21f9d7834edf8fee9449c27eb7b441d59d4
 
 If kthread is pinned to CPUx and CPUx is going down then we get into
 trouble:
@@ -28,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 6df17f4024b1..50166c0fa1fb 100644
+index 5fbabf90cd65..fdd7ad36ab6d 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -267,6 +267,7 @@ struct hotplug_pcp {
@@ -80,7 +79,7 @@ index 6df17f4024b1..50166c0fa1fb 100644
  	return 0;
  }
  
-@@ -1201,6 +1211,7 @@ static int takedown_cpu(unsigned int cpu)
+@@ -1205,6 +1215,7 @@ static int takedown_cpu(unsigned int cpu)
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
@@ -88,6 +87,3 @@ index 6df17f4024b1..50166c0fa1fb 100644
  	/* Park the smpboot threads */
  	kthread_park(per_cpu_ptr(&cpuhp_state, cpu)->thread);
  
--- 
-2.28.0
-

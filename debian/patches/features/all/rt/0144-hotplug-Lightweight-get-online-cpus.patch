@@ -1,8 +1,7 @@
-From 34856e83ace0945752ebc472bd804b900f201dd8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
 Subject: [PATCH 144/365] hotplug: Lightweight get online cpus
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b4f0d553311ea769e03b4478539cb51b4c2eb857
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -51,7 +50,7 @@ index e4c58fd52faa..dd888fe6ec9b 100644
  #define __hotcpu_notifier(fn, pri)	do { (void)(fn); } while (0)
  /* These aren't inline functions due to a GCC bug. */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index ebcfb672e90c..8f0039ff18c6 100644
+index cc6940bc416f..a1e16cbd4592 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -247,6 +247,100 @@ static struct {
@@ -155,7 +154,7 @@ index ebcfb672e90c..8f0039ff18c6 100644
  
  void get_online_cpus(void)
  {
-@@ -1015,6 +1109,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1019,6 +1113,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int prev_state, ret = 0;
  	bool hasdied = false;
@@ -164,7 +163,7 @@ index ebcfb672e90c..8f0039ff18c6 100644
  
  	if (num_online_cpus() == 1)
  		return -EBUSY;
-@@ -1022,7 +1118,27 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1026,7 +1122,27 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	if (!cpu_present(cpu))
  		return -EINVAL;
  
@@ -192,7 +191,7 @@ index ebcfb672e90c..8f0039ff18c6 100644
  
  	cpuhp_tasks_frozen = tasks_frozen;
  
-@@ -1061,6 +1177,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1065,6 +1181,8 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  
  	hasdied = prev_state != st->state && st->state == CPUHP_OFFLINE;
  out:
@@ -201,6 +200,3 @@ index ebcfb672e90c..8f0039ff18c6 100644
  	cpu_hotplug_done();
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
--- 
-2.28.0
-

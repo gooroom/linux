@@ -1,8 +1,7 @@
-From f922ee739780181eaf0873d5bb469e73a650e6fd Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 193/365] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8e9bcb0e6d54216b283dc674ea1e1d78f05b01f2
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -25,7 +24,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  12 files changed, 72 insertions(+), 27 deletions(-)
 
 diff --git a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
-index 4e91c74fcfad..0f7d2bfcfef4 100644
+index de928938c7a1..b8984b3f009f 100644
 --- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 +++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 @@ -697,7 +697,7 @@ static void ezusb_req_ctx_wait(struct ezusb_priv *upriv,
@@ -38,10 +37,10 @@ index 4e91c74fcfad..0f7d2bfcfef4 100644
  		}
  		break;
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index bea11be98526..b942c943492e 100644
+index 26fcbb92c4ba..67e7c3c6a447 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1601,7 +1601,7 @@ static void ffs_data_put(struct ffs_data *ffs)
+@@ -1604,7 +1604,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		pr_info("%s(): freeing\n", __func__);
  		ffs_data_clear(ffs);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
@@ -51,7 +50,7 @@ index bea11be98526..b942c943492e 100644
  		kfree(ffs);
  	}
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index cb02e9ecd8e7..a782a044d89d 100644
+index de0f3c2c9f6f..d706d2e134d9 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
 @@ -347,7 +347,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
@@ -151,7 +150,7 @@ index 4a29c75b146e..0a294e950df8 100644
  struct vm_area_struct;
  struct mm_struct;
 diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
-index f23131e43660..eb60c34d3a0d 100644
+index 73ddd8143753..18f3162a9d39 100644
 --- a/kernel/power/hibernate.c
 +++ b/kernel/power/hibernate.c
 @@ -692,6 +692,10 @@ static int load_image_and_restore(void)
@@ -371,6 +370,3 @@ index 9c2da06a8869..a26906faf07e 100644
  void swake_up(struct swait_queue_head *q)
  {
  	unsigned long flags;
--- 
-2.28.0
-

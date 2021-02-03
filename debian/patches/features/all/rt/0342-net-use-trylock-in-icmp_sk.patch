@@ -1,8 +1,7 @@
-From 0efe2a1b87a02540782ad8191e4185ebea5462d9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:42:04 +0200
 Subject: [PATCH 342/365] net: use trylock in icmp_sk
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2fd026539531aac65b70d598f43adff46211401a
 
 The locking path can be recursive (same as for sk->sk_lock.slock) and
 therefore we need a trylock version for the locallock, too.
@@ -15,7 +14,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/net/ipv4/icmp.c b/net/ipv4/icmp.c
-index 8b7465e140bd..a95da33b256a 100644
+index 50e37a73b1ff..95c5ee9fb641 100644
 --- a/net/ipv4/icmp.c
 +++ b/net/ipv4/icmp.c
 @@ -219,7 +219,11 @@ static inline struct sock *icmp_xmit_lock(struct net *net)
@@ -31,6 +30,3 @@ index 8b7465e140bd..a95da33b256a 100644
  	sk = icmp_sk(net);
  
  	if (unlikely(!spin_trylock(&sk->sk_lock.slock))) {
--- 
-2.28.0
-

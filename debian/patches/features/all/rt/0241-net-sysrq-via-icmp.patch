@@ -1,8 +1,7 @@
-From 7ea28d7adb531106a934b266b923bbb47aba8766 Mon Sep 17 00:00:00 2001
 From: Carsten Emde <C.Emde@osadl.org>
 Date: Tue, 19 Jul 2011 13:51:17 +0100
 Subject: [PATCH 241/365] net: sysrq via icmp
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=dc55469c296eeecb06cb479c40ab44902fb20622
 
 There are (probably rare) situations when a system crashed and the system
 console becomes unresponsive but the network icmp layer still is alive.
@@ -56,7 +55,7 @@ index af1c5e7c7e94..faf4a8cd61e6 100644
  	int sysctl_icmp_ratelimit;
  	int sysctl_icmp_ratemask;
 diff --git a/net/ipv4/icmp.c b/net/ipv4/icmp.c
-index af03f0c3ff5d..8b7465e140bd 100644
+index 4d155a1bc244..50e37a73b1ff 100644
 --- a/net/ipv4/icmp.c
 +++ b/net/ipv4/icmp.c
 @@ -69,6 +69,7 @@
@@ -67,7 +66,7 @@ index af03f0c3ff5d..8b7465e140bd 100644
  #include <linux/socket.h>
  #include <linux/in.h>
  #include <linux/inet.h>
-@@ -909,6 +910,30 @@ static bool icmp_redirect(struct sk_buff *skb)
+@@ -912,6 +913,30 @@ static bool icmp_redirect(struct sk_buff *skb)
  	return true;
  }
  
@@ -98,7 +97,7 @@ index af03f0c3ff5d..8b7465e140bd 100644
  /*
   *	Handle ICMP_ECHO ("ping") requests.
   *
-@@ -936,6 +961,11 @@ static bool icmp_echo(struct sk_buff *skb)
+@@ -939,6 +964,11 @@ static bool icmp_echo(struct sk_buff *skb)
  		icmp_param.data_len	   = skb->len;
  		icmp_param.head_len	   = sizeof(struct icmphdr);
  		icmp_reply(&icmp_param, skb);
@@ -128,6 +127,3 @@ index e202babb14d6..66c6f574f030 100644
  	{
  		.procname	= "icmp_ignore_bogus_error_responses",
  		.data		= &init_net.ipv4.sysctl_icmp_ignore_bogus_error_responses,
--- 
-2.28.0
-

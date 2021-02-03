@@ -1,8 +1,7 @@
-From d55b57751e01082de28114ea1b21b5e87a847018 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 26 Sep 2012 16:21:08 +0200
 Subject: [PATCH 287/365] net: Another local_irq_disable/kmalloc headache
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ba71d2af7769bd4e78a5e51ba4ef0da864910f75
 
 Replace it by a local lock. Though that's pretty inefficient :(
 
@@ -12,7 +11,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index a4c423497686..a82d4249aeb2 100644
+index 79034fb861b5..c99d61d4ea82 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -64,6 +64,7 @@
@@ -44,7 +43,7 @@ index a4c423497686..a82d4249aeb2 100644
  	return data;
  }
  
-@@ -442,13 +444,13 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
+@@ -446,13 +448,13 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -60,6 +59,3 @@ index a4c423497686..a82d4249aeb2 100644
  
  	if (unlikely(!data))
  		return NULL;
--- 
-2.28.0
-

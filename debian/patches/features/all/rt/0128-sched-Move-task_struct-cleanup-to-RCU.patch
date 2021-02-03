@@ -1,8 +1,7 @@
-From 44312291e1c8f11a2cbeae5644b2461b12168701 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
 Subject: [PATCH 128/365] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ce5c8cb2bd875c809d49248d0555a22b15b158d4
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -52,7 +51,7 @@ index 33a552fc039d..71ec79b61b64 100644
  struct task_struct *task_rcu_dereference(struct task_struct **ptask);
  struct task_struct *try_get_task_struct(struct task_struct **ptask);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index f6ac0bb17f0b..01920ddc9065 100644
+index 5d2aee412f29..5319d160177f 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -381,7 +381,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
@@ -85,6 +84,3 @@ index f6ac0bb17f0b..01920ddc9065 100644
  
  void __init __weak arch_task_cache_init(void) { }
  
--- 
-2.28.0
-

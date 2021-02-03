@@ -1,8 +1,7 @@
-From 8d8e3e8f18baafe7d9a995d62984558cc9b0cf6f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 299/365] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=079ce3d86d9b8083f7200aa921e521b94bad7fea
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -479,7 +478,7 @@ index 72e161f6b9b8..2a1da77b9989 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 90387cbb7908..fc478c7d046e 100644
+index 56d45751d2de..6c13a1ff83c5 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -1906,6 +1906,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -500,7 +499,7 @@ index 90387cbb7908..fc478c7d046e 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -2917,15 +2919,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -2918,15 +2920,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -527,7 +526,7 @@ index 90387cbb7908..fc478c7d046e 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -2951,11 +2955,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -2952,11 +2956,14 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  	print_event_info(buf, m);
  	seq_puts(m, "#                              _-----=> irqs-off\n"
  		    "#                             / _----=> need-resched\n"
@@ -548,7 +547,7 @@ index 90387cbb7908..fc478c7d046e 100644
  
  void
 diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 476c6c4204da..49ab719e56dc 100644
+index d9b7910ef365..ba97ed7bc947 100644
 --- a/kernel/trace/trace.h
 +++ b/kernel/trace/trace.h
 @@ -124,6 +124,7 @@ struct kretprobe_trace_entry_head {
@@ -612,6 +611,3 @@ index badf130635f1..65a6dde71a7d 100644
  	if (entry->migrate_disable)
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
--- 
-2.28.0
-
