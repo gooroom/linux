@@ -1,12 +1,12 @@
-From b96b7c9a1ead0f822b666baa39b7941ffd63a5dc Mon Sep 17 00:00:00 2001
-Message-Id: <b96b7c9a1ead0f822b666baa39b7941ffd63a5dc.1610128658.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 220344c0c84077c5ab41f84364719c326278ffc1 Mon Sep 17 00:00:00 2001
+Message-Id: <220344c0c84077c5ab41f84364719c326278ffc1.1612799231.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
 Subject: [PATCH 098/335] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -129,10 +129,10 @@ index 2b5ef8e94d19..94bd2e841de6 100644
  		hrtimer_start_range_ns(&__t.timer, timeout,			\
  				       current->timer_slack_ns,			\
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 4a1dce2e4648..6391aae26018 100644
+index 09390bbfb91e..5f2a84f905e6 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2736,10 +2736,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
+@@ -2816,10 +2816,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
  	if (abs_time) {
  		to = &timeout;
  
@@ -146,7 +146,7 @@ index 4a1dce2e4648..6391aae26018 100644
  		hrtimer_set_expires_range_ns(&to->timer, *abs_time,
  					     current->timer_slack_ns);
  	}
-@@ -2838,9 +2837,8 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2918,9 +2917,8 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  
  	if (time) {
  		to = &timeout;
@@ -158,7 +158,7 @@ index 4a1dce2e4648..6391aae26018 100644
  		hrtimer_set_expires(&to->timer, *time);
  	}
  
-@@ -3277,10 +3275,9 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3350,10 +3348,9 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  
  	if (abs_time) {
  		to = &timeout;

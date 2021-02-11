@@ -1,12 +1,12 @@
-From fe552bf39b73a459a1490d87634fb5007278b292 Mon Sep 17 00:00:00 2001
-Message-Id: <fe552bf39b73a459a1490d87634fb5007278b292.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 6bce6dbf41795f476df46fbdf9af3726415d45fc Mon Sep 17 00:00:00 2001
+Message-Id: <6bce6dbf41795f476df46fbdf9af3726415d45fc.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
 Subject: [PATCH 233/335] net/core: protect users of napi_alloc_cache against
  reentrance
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 On -RT the code running in BH can not be moved to another CPU so CPU
 local variable remain local. However the code can be preempted
@@ -17,12 +17,14 @@ This patch ensures that each user of napi_alloc_cache uses a local lock.
 Cc: stable-rt@vger.kernel.org
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- net/core/skbuff.c | 25 +++++++++++++++++++------
- 1 file changed, 19 insertions(+), 6 deletions(-)
+ net/core/skbuff.c | 23 ++++++++++++++++++-----
+ 1 file changed, 18 insertions(+), 5 deletions(-)
 
+diff --git a/net/core/skbuff.c b/net/core/skbuff.c
+index fc8356d7d581..2bdea77299ca 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -332,6 +332,7 @@
+@@ -332,6 +332,7 @@ struct napi_alloc_cache {
  static DEFINE_PER_CPU(struct page_frag_cache, netdev_alloc_cache);
  static DEFINE_PER_CPU(struct napi_alloc_cache, napi_alloc_cache);
  static DEFINE_LOCAL_IRQ_LOCK(netdev_alloc_lock);
@@ -30,7 +32,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static void *__netdev_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
  {
-@@ -363,9 +364,13 @@
+@@ -363,9 +364,13 @@ EXPORT_SYMBOL(netdev_alloc_frag);
  
  static void *__napi_alloc_frag(unsigned int fragsz, gfp_t gfp_mask)
  {
@@ -46,7 +48,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  void *napi_alloc_frag(unsigned int fragsz)
-@@ -468,6 +473,7 @@
+@@ -468,6 +473,7 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
  	struct napi_alloc_cache *nc;
  	struct sk_buff *skb;
  	void *data;
@@ -54,14 +56,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	len += NET_SKB_PAD + NET_IP_ALIGN;
  
-@@ -483,14 +489,16 @@
- 		goto skb_success;
- 	}
- 
--	nc = this_cpu_ptr(&napi_alloc_cache);
- 	len += SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
- 	len = SKB_DATA_ALIGN(len);
- 
+@@ -490,7 +496,10 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -72,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (unlikely(!data))
  		return NULL;
  
-@@ -501,7 +509,7 @@
+@@ -501,7 +510,7 @@ struct sk_buff *__napi_alloc_skb(struct napi_struct *napi, unsigned int len,
  	}
  
  	/* use OR instead of assignment to avoid clearing of bits in mask */
@@ -81,7 +76,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		skb->pfmemalloc = 1;
  	skb->head_frag = 1;
  
-@@ -733,23 +741,26 @@
+@@ -733,23 +742,26 @@ void __consume_stateless_skb(struct sk_buff *skb)
  
  void __kfree_skb_flush(void)
  {
@@ -110,7 +105,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* record skb to CPU local list */
  	nc->skb_cache[nc->skb_count++] = skb;
  
-@@ -764,6 +775,7 @@
+@@ -764,6 +776,7 @@ static inline void _kfree_skb_defer(struct sk_buff *skb)
  				     nc->skb_cache);
  		nc->skb_count = 0;
  	}
@@ -118,3 +113,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  void __kfree_skb_defer(struct sk_buff *skb)
  {
+-- 
+2.17.1
+

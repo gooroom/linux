@@ -1,11 +1,11 @@
-From 855869b200947b3589e2b3d826cf8dffaffa4e83 Mon Sep 17 00:00:00 2001
-Message-Id: <855869b200947b3589e2b3d826cf8dffaffa4e83.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From aab2d8435aa5e103e21489a341683aec1fd7d076 Mon Sep 17 00:00:00 2001
+Message-Id: <aab2d8435aa5e103e21489a341683aec1fd7d076.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Oct 2017 17:34:38 +0200
 Subject: [PATCH 148/335] rtmutex: add ww_mutex addon for mutex-rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 261 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 88df1ff7ca2d..1f2dc2dfe2e7 100644
+index 5ff2189f1199..cc47d5aa93a1 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -23,6 +23,7 @@
@@ -301,7 +301,7 @@ index 88df1ff7ca2d..1f2dc2dfe2e7 100644
  				       rt_mutex_slowlock);
  	if (ret)
  		mutex_release(&lock->dep_map, 1, _RET_IP_);
-@@ -2300,7 +2449,7 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
+@@ -2299,7 +2448,7 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
  	raw_spin_lock_irq(&lock->wait_lock);
  	/* sleep on the mutex */
  	set_current_state(TASK_INTERRUPTIBLE);
@@ -310,7 +310,7 @@ index 88df1ff7ca2d..1f2dc2dfe2e7 100644
  	/*
  	 * try_to_take_rt_mutex() sets the waiter bit unconditionally. We might
  	 * have to fix that up.
-@@ -2385,3 +2534,99 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
+@@ -2384,3 +2533,99 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
  
  	return cleanup;
  }
@@ -411,10 +411,10 @@ index 88df1ff7ca2d..1f2dc2dfe2e7 100644
 +EXPORT_SYMBOL(__rt_mutex_owner_current);
 +#endif
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index 6fcf0a3e180d..546aaf058b9e 100644
+index 7c1dd1bd95c7..8e0c592273e6 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -165,6 +165,7 @@ extern void rt_mutex_postunlock(struct wake_q_head *wake_q,
+@@ -164,6 +164,7 @@ extern void rt_mutex_postunlock(struct wake_q_head *wake_q,
  				struct wake_q_head *wake_sleeper_q);
  
  /* RW semaphore special interface */
@@ -422,7 +422,7 @@ index 6fcf0a3e180d..546aaf058b9e 100644
  
  extern int __rt_mutex_lock_state(struct rt_mutex *lock, int state);
  extern int __rt_mutex_trylock(struct rt_mutex *lock);
-@@ -172,6 +173,7 @@ extern void __rt_mutex_unlock(struct rt_mutex *lock);
+@@ -171,6 +172,7 @@ extern void __rt_mutex_unlock(struct rt_mutex *lock);
  int __sched rt_mutex_slowlock_locked(struct rt_mutex *lock, int state,
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,

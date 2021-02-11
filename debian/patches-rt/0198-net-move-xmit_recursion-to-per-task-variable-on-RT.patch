@@ -1,11 +1,11 @@
-From 44f89ae8d3b4f44f892c519a657c9a49c0507b74 Mon Sep 17 00:00:00 2001
-Message-Id: <44f89ae8d3b4f44f892c519a657c9a49c0507b74.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From ae1a471d67da9c2f09a07fbc48a64e1a9342d781 Mon Sep 17 00:00:00 2001
+Message-Id: <ae1a471d67da9c2f09a07fbc48a64e1a9342d781.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
 Subject: [PATCH 198/335] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -179,10 +179,10 @@ index 8fff010fff6e..7bf58533f955 100644
  }
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4a4f03a8d8d4..37334ec1ab3e 100644
+index 3a49782e50e1..d3a16fd28663 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1216,6 +1216,9 @@ struct task_struct {
+@@ -1218,6 +1218,9 @@ struct task_struct {
  #endif
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  	unsigned long			task_state_change;
@@ -193,7 +193,7 @@ index 4a4f03a8d8d4..37334ec1ab3e 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index fc1dfd57d4c0..03572f1205c6 100644
+index c71db0a668d3..002147710000 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3825,7 +3825,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
@@ -208,7 +208,7 @@ index fc1dfd57d4c0..03572f1205c6 100644
  			if (dev_xmit_recursion())
  				goto recursion_alert;
  
-@@ -8570,7 +8574,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -8575,7 +8579,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);

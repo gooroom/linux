@@ -1,12 +1,12 @@
-From d5917ea12ad39b71ccf6ef70c21db41301a30adb Mon Sep 17 00:00:00 2001
-Message-Id: <d5917ea12ad39b71ccf6ef70c21db41301a30adb.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From e744c8a30faa30bee8adba899ebed5c5b4fd113f Mon Sep 17 00:00:00 2001
+Message-Id: <e744c8a30faa30bee8adba899ebed5c5b4fd113f.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 26 Jun 2019 17:44:18 +0200
 Subject: [PATCH 273/335] Revert "futex: Fix bug on when a requeued RT task
  times out"
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 [ Upstream commit f1a170cb3289a48df26cae3c60d77608f7a988bb ]
 
@@ -21,7 +21,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  2 files changed, 1 insertion(+), 31 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 2a9bf2443acc..7f6f402e04ae 100644
+index ded2296f848a..a87b65447991 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -144,8 +144,7 @@ static void fixup_rt_mutex_waiters(struct rt_mutex *lock)
@@ -34,7 +34,7 @@ index 2a9bf2443acc..7f6f402e04ae 100644
  }
  
  /*
-@@ -2350,34 +2349,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+@@ -2349,34 +2348,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  	if (try_to_take_rt_mutex(lock, task, NULL))
  		return 1;
  
@@ -70,7 +70,7 @@ index 2a9bf2443acc..7f6f402e04ae 100644
  	ret = task_blocks_on_rt_mutex(lock, waiter, task,
  				      RT_MUTEX_FULL_CHAINWALK);
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index 546aaf058b9e..a501f3b47081 100644
+index 8e0c592273e6..627340e7427e 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
 @@ -133,7 +133,6 @@ enum rtmutex_chainwalk {

@@ -1,11 +1,11 @@
-From 23ce5cfcea47418b3d40fdac3ef06e6e4f3b2d12 Mon Sep 17 00:00:00 2001
-Message-Id: <23ce5cfcea47418b3d40fdac3ef06e6e4f3b2d12.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 69dd096bb7f612e541070ef17b9c147577b5f74e Mon Sep 17 00:00:00 2001
+Message-Id: <69dd096bb7f612e541070ef17b9c147577b5f74e.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 197/335] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -31,7 +31,7 @@ index 4e14926433ed..8fff010fff6e 100644
  };
  
 diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index 703ce71caeac..9d6dfbfafcc2 100644
+index 06176ef2a842..8af2e56e0fe3 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -287,6 +287,7 @@ struct sk_buff_head {
@@ -42,7 +42,7 @@ index 703ce71caeac..9d6dfbfafcc2 100644
  };
  
  struct sk_buff;
-@@ -1730,6 +1731,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
+@@ -1735,6 +1736,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
  	__skb_queue_head_init(list);
  }
  
@@ -56,7 +56,7 @@ index 703ce71caeac..9d6dfbfafcc2 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 414e4d7e2082..fc1dfd57d4c0 100644
+index 6437ea1e5edc..c71db0a668d3 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -219,14 +219,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -119,7 +119,7 @@ index 414e4d7e2082..fc1dfd57d4c0 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9521,10 +9531,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9526,10 +9536,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -134,7 +134,7 @@ index 414e4d7e2082..fc1dfd57d4c0 100644
  
  	return 0;
  }
-@@ -9835,8 +9848,9 @@ static int __init net_dev_init(void)
+@@ -9840,8 +9853,9 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  

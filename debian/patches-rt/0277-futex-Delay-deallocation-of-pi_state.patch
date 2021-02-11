@@ -1,11 +1,11 @@
-From 2409e988c9f5485c5f4be7b1fb295705434898ef Mon Sep 17 00:00:00 2001
-Message-Id: <2409e988c9f5485c5f4be7b1fb295705434898ef.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 94a4fb3d1cb7f9c0caeaccac19ae82138562b5e0 Mon Sep 17 00:00:00 2001
+Message-Id: <94a4fb3d1cb7f9c0caeaccac19ae82138562b5e0.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 26 Jun 2019 13:35:36 +0200
 Subject: [PATCH 277/335] futex: Delay deallocation of pi_state
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 [ Upstream commit d7c7cf8cb68b7df17e6e50be1f25f35d83e686c7 ]
 
@@ -20,9 +20,11 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  kernel/futex.c | 55 ++++++++++++++++++++++++++++++++++++++++----------
  1 file changed, 44 insertions(+), 11 deletions(-)
 
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 9035bc29a0f7..105f245add9b 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -871,13 +871,13 @@
+@@ -871,13 +871,13 @@ static void get_pi_state(struct futex_pi_state *pi_state)
   * Drops a reference to the pi_state object and frees or caches it
   * when the last reference is gone.
   */
@@ -39,7 +41,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	/*
  	 * If pi_state->owner is NULL, the owner is most probably dying
-@@ -892,9 +892,7 @@
+@@ -892,9 +892,7 @@ static void put_pi_state(struct futex_pi_state *pi_state)
  		raw_spin_unlock_irqrestore(&pi_state->pi_mutex.wait_lock, flags);
  	}
  
@@ -50,7 +52,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  		/*
  		 * pi_state->list is already empty.
  		 * clear pi_state->owner.
-@@ -903,6 +901,30 @@
+@@ -903,6 +901,30 @@ static void put_pi_state(struct futex_pi_state *pi_state)
  		pi_state->owner = NULL;
  		atomic_set(&pi_state->refcount, 1);
  		current->pi_state_cache = pi_state;
@@ -81,7 +83,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	}
  }
  
-@@ -919,6 +941,7 @@
+@@ -919,6 +941,7 @@ static void exit_pi_state_list(struct task_struct *curr)
  	struct futex_pi_state *pi_state;
  	struct futex_hash_bucket *hb;
  	union futex_key key = FUTEX_KEY_INIT;
@@ -89,7 +91,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	if (!futex_cmpxchg_enabled)
  		return;
-@@ -963,7 +986,7 @@
+@@ -963,7 +986,7 @@ static void exit_pi_state_list(struct task_struct *curr)
  			/* retain curr->pi_lock for the loop invariant */
  			raw_spin_unlock(&pi_state->pi_mutex.wait_lock);
  			raw_spin_unlock(&hb->lock);
@@ -98,7 +100,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  			continue;
  		}
  
-@@ -982,6 +1005,8 @@
+@@ -982,6 +1005,8 @@ static void exit_pi_state_list(struct task_struct *curr)
  		raw_spin_lock_irq(&curr->pi_lock);
  	}
  	raw_spin_unlock_irq(&curr->pi_lock);
@@ -107,7 +109,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  }
  #else
  static inline void exit_pi_state_list(struct task_struct *curr) { }
-@@ -2017,6 +2042,7 @@
+@@ -2017,6 +2042,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  	struct futex_hash_bucket *hb1, *hb2;
  	struct futex_q *this, *next;
  	DEFINE_WAKE_Q(wake_q);
@@ -115,7 +117,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	if (nr_wake < 0 || nr_requeue < 0)
  		return -EINVAL;
-@@ -2265,7 +2291,7 @@
+@@ -2265,7 +2291,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  				 * object.
  				 */
  				this->pi_state = NULL;
@@ -124,7 +126,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  				/*
  				 * We stop queueing more waiters and let user
  				 * space deal with the mess.
-@@ -2282,7 +2308,7 @@
+@@ -2282,7 +2308,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  	 * in futex_proxy_trylock_atomic() or in lookup_pi_state(). We
  	 * need to drop it here again.
  	 */
@@ -133,7 +135,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  out_unlock:
  	double_unlock_hb(hb1, hb2);
-@@ -2303,6 +2329,7 @@
+@@ -2303,6 +2329,7 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  out_put_key1:
  	put_futex_key(&key1);
  out:
@@ -141,7 +143,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	return ret ? ret : task_count;
  }
  
-@@ -2439,13 +2466,16 @@
+@@ -2439,13 +2466,16 @@ static int unqueue_me(struct futex_q *q)
  static void unqueue_me_pi(struct futex_q *q)
  	__releases(q->lock_ptr)
  {
@@ -159,7 +161,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  }
  
  static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
-@@ -3395,14 +3425,17 @@
+@@ -3395,14 +3425,17 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  		 * did a lock-steal - fix up the PI-state in that case.
  		 */
  		if (q.pi_state && (q.pi_state->owner != current)) {
@@ -173,8 +175,11 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  			 */
 -			put_pi_state(q.pi_state);
 +			ps_free = __put_pi_state(q.pi_state);
- 			raw_spin_unlock(q.lock_ptr);
+ 			spin_unlock(&hb2->lock);
 +			kfree(ps_free);
  			/*
  			 * Adjust the return value. It's either -EFAULT or
  			 * success (1) but the caller expects 0 for success.
+-- 
+2.17.1
+

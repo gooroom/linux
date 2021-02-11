@@ -1,11 +1,11 @@
-From 91f1b42b0c650c655d2c0faece9b301ba5e8793c Mon Sep 17 00:00:00 2001
-Message-Id: <91f1b42b0c650c655d2c0faece9b301ba5e8793c.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 7ec4824231dae3e2bd350f9b44d164c2d8b1715f Mon Sep 17 00:00:00 2001
+Message-Id: <7ec4824231dae3e2bd350f9b44d164c2d8b1715f.1612799232.git.zanussi@kernel.org>
+In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 26 Jun 2019 11:59:44 +0200
 Subject: [PATCH 276/335] futex: Make the futex_hash_bucket lock raw
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
 
 [ Upstream commit f646521aadedab78801c9befe193e2e8a0c99298 ]
 
@@ -22,12 +22,14 @@ lockchain.
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
 ---
- kernel/futex.c | 88 +++++++++++++++++++++++++-------------------------
- 1 file changed, 44 insertions(+), 44 deletions(-)
+ kernel/futex.c | 86 +++++++++++++++++++++++++-------------------------
+ 1 file changed, 43 insertions(+), 43 deletions(-)
 
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 43ad938df8c6..9035bc29a0f7 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -243,7 +243,7 @@
+@@ -243,7 +243,7 @@ struct futex_q {
  	struct plist_node list;
  
  	struct task_struct *task;
@@ -36,7 +38,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	union futex_key key;
  	struct futex_pi_state *pi_state;
  	struct rt_mutex_waiter *rt_waiter;
-@@ -264,7 +264,7 @@
+@@ -264,7 +264,7 @@ static const struct futex_q futex_q_init = {
   */
  struct futex_hash_bucket {
  	atomic_t waiters;
@@ -45,7 +47,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	struct plist_head chain;
  } ____cacheline_aligned_in_smp;
  
-@@ -952,7 +952,7 @@
+@@ -952,7 +952,7 @@ static void exit_pi_state_list(struct task_struct *curr)
  		}
  		raw_spin_unlock_irq(&curr->pi_lock);
  
@@ -54,7 +56,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
  		raw_spin_lock(&curr->pi_lock);
  		/*
-@@ -962,7 +962,7 @@
+@@ -962,7 +962,7 @@ static void exit_pi_state_list(struct task_struct *curr)
  		if (head->next != next) {
  			/* retain curr->pi_lock for the loop invariant */
  			raw_spin_unlock(&pi_state->pi_mutex.wait_lock);
@@ -63,7 +65,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  			put_pi_state(pi_state);
  			continue;
  		}
-@@ -974,7 +974,7 @@
+@@ -974,7 +974,7 @@ static void exit_pi_state_list(struct task_struct *curr)
  
  		raw_spin_unlock(&curr->pi_lock);
  		raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
@@ -72,7 +74,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  		rt_mutex_futex_unlock(&pi_state->pi_mutex);
  		put_pi_state(pi_state);
-@@ -1523,7 +1523,7 @@
+@@ -1523,7 +1523,7 @@ static void __unqueue_futex(struct futex_q *q)
  {
  	struct futex_hash_bucket *hb;
  
@@ -81,7 +83,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	    || WARN_ON(plist_node_empty(&q->list)))
  		return;
  
-@@ -1643,21 +1643,21 @@
+@@ -1643,21 +1643,21 @@ static inline void
  double_lock_hb(struct futex_hash_bucket *hb1, struct futex_hash_bucket *hb2)
  {
  	if (hb1 <= hb2) {
@@ -109,7 +111,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  }
  
  /*
-@@ -1685,7 +1685,7 @@
+@@ -1685,7 +1685,7 @@ futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
  	if (!hb_waiters_pending(hb))
  		goto out_put_key;
  
@@ -118,7 +120,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	plist_for_each_entry_safe(this, next, &hb->chain, list) {
  		if (match_futex (&this->key, &key)) {
-@@ -1704,7 +1704,7 @@
+@@ -1704,7 +1704,7 @@ futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
  		}
  	}
  
@@ -127,7 +129,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	wake_up_q(&wake_q);
  out_put_key:
  	put_futex_key(&key);
-@@ -2326,7 +2326,7 @@
+@@ -2326,7 +2326,7 @@ static inline struct futex_hash_bucket *queue_lock(struct futex_q *q)
  
  	q->lock_ptr = &hb->lock;
  
@@ -136,7 +138,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	return hb;
  }
  
-@@ -2334,7 +2334,7 @@
+@@ -2334,7 +2334,7 @@ static inline void
  queue_unlock(struct futex_hash_bucket *hb)
  	__releases(&hb->lock)
  {
@@ -145,7 +147,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	hb_waiters_dec(hb);
  }
  
-@@ -2373,7 +2373,7 @@
+@@ -2373,7 +2373,7 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
  	__releases(&hb->lock)
  {
  	__queue_me(q, hb);
@@ -154,7 +156,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  }
  
  /**
-@@ -2389,41 +2389,41 @@
+@@ -2389,41 +2389,41 @@ static inline void queue_me(struct futex_q *q, struct futex_hash_bucket *hb)
   */
  static int unqueue_me(struct futex_q *q)
  {
@@ -207,7 +209,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  		ret = 1;
  	}
  
-@@ -2445,7 +2445,7 @@
+@@ -2445,7 +2445,7 @@ static void unqueue_me_pi(struct futex_q *q)
  	put_pi_state(q->pi_state);
  	q->pi_state = NULL;
  
@@ -216,7 +218,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  }
  
  static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
-@@ -2569,7 +2569,7 @@
+@@ -2569,7 +2569,7 @@ static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
  	 */
  handle_err:
  	raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
@@ -225,7 +227,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	switch (err) {
  	case -EFAULT:
-@@ -2586,7 +2586,7 @@
+@@ -2586,7 +2586,7 @@ static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
  		break;
  	}
  
@@ -234,7 +236,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
  
  	/*
-@@ -2700,7 +2700,7 @@
+@@ -2700,7 +2700,7 @@ static void futex_wait_queue_me(struct futex_hash_bucket *hb, struct futex_q *q,
  	/*
  	 * The task state is guaranteed to be set before another task can
  	 * wake it. set_current_state() is implemented using smp_store_mb() and
@@ -243,7 +245,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	 * access to the hash list and forcing another memory barrier.
  	 */
  	set_current_state(TASK_INTERRUPTIBLE);
-@@ -2999,7 +2999,7 @@
+@@ -2999,7 +2999,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * before __rt_mutex_start_proxy_lock() is done.
  	 */
  	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -252,7 +254,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	/*
  	 * __rt_mutex_start_proxy_lock() unconditionally enqueues the @rt_waiter
  	 * such that futex_unlock_pi() is guaranteed to observe the waiter when
-@@ -3020,7 +3020,7 @@
+@@ -3020,7 +3020,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	ret = rt_mutex_wait_proxy_lock(&q.pi_state->pi_mutex, to, &rt_waiter);
  
  cleanup:
@@ -261,7 +263,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	/*
  	 * If we failed to acquire the lock (deadlock/signal/timeout), we must
  	 * first acquire the hb->lock before removing the lock from the
-@@ -3107,7 +3107,7 @@
+@@ -3107,7 +3107,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		return ret;
  
  	hb = hash_futex(&key);
@@ -270,7 +272,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  	/*
  	 * Check waiters first. We do not trust user space values at
-@@ -3141,7 +3141,7 @@
+@@ -3141,7 +3141,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		 * rt_waiter. Also see the WARN in wake_futex_pi().
  		 */
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
@@ -279,7 +281,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  
  		/* drops pi_state->pi_mutex.wait_lock */
  		ret = wake_futex_pi(uaddr, uval, pi_state);
-@@ -3180,7 +3180,7 @@
+@@ -3180,7 +3180,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  	 * owner.
  	 */
  	if ((ret = cmpxchg_futex_value_locked(&curval, uaddr, uval, 0))) {
@@ -288,7 +290,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  		switch (ret) {
  		case -EFAULT:
  			goto pi_faulted;
-@@ -3200,7 +3200,7 @@
+@@ -3200,7 +3200,7 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  	ret = (curval == uval) ? 0 : -EAGAIN;
  
  out_unlock:
@@ -297,7 +299,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  out_putkey:
  	put_futex_key(&key);
  	return ret;
-@@ -3373,9 +3373,9 @@
+@@ -3373,9 +3373,9 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  	/* Queue the futex_q, drop the hb lock, wait for wakeup. */
  	futex_wait_queue_me(hb, &q, to);
  
@@ -309,7 +311,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	if (ret)
  		goto out_put_keys;
  
-@@ -3395,14 +3395,14 @@
+@@ -3395,7 +3395,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  		 * did a lock-steal - fix up the PI-state in that case.
  		 */
  		if (q.pi_state && (q.pi_state->owner != current)) {
@@ -318,15 +320,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  			ret = fixup_pi_state_owner(uaddr2, &q, current);
  			/*
  			 * Drop the reference to the pi state which
- 			 * the requeue_pi() code acquired for us.
- 			 */
- 			put_pi_state(q.pi_state);
--			spin_unlock(q.lock_ptr);
-+			raw_spin_unlock(q.lock_ptr);
- 			/*
- 			 * Adjust the return value. It's either -EFAULT or
- 			 * success (1) but the caller expects 0 for success.
-@@ -3421,7 +3421,7 @@
+@@ -3421,7 +3421,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  		pi_mutex = &q.pi_state->pi_mutex;
  		ret = rt_mutex_wait_proxy_lock(pi_mutex, to, &rt_waiter);
  
@@ -335,7 +329,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  		if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
  			ret = 0;
  
-@@ -4181,7 +4181,7 @@
+@@ -4181,7 +4181,7 @@ static int __init futex_init(void)
  	for (i = 0; i < futex_hashsize; i++) {
  		atomic_set(&futex_queues[i].waiters, 0);
  		plist_head_init(&futex_queues[i].chain);
@@ -344,3 +338,6 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  	}
  
  	return 0;
+-- 
+2.17.1
+
