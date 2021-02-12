@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:41:59 +0106
 Subject: [PATCH 09/21] printk: remove logbuf_lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 Since the ringbuffer is lockless, there is no need for it to be
 protected by @logbuf_lock. Remove @logbuf_lock.
@@ -170,7 +170,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	file->private_data = user;
  	return 0;
-@@ -1465,11 +1419,9 @@ static int syslog_print(char __user *buf
+@@ -1483,11 +1437,9 @@ static int syslog_print(char __user *buf
  		size_t n;
  		size_t skip;
  
@@ -184,7 +184,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			break;
  		}
  		if (r.info->seq != syslog_seq) {
-@@ -1498,8 +1450,7 @@ static int syslog_print(char __user *buf
+@@ -1516,8 +1468,7 @@ static int syslog_print(char __user *buf
  			syslog_partial += n;
  		} else
  			n = 0;
@@ -194,7 +194,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		if (!n)
  			break;
-@@ -1524,6 +1475,7 @@ static int syslog_print_all(char __user
+@@ -1542,6 +1493,7 @@ static int syslog_print_all(char __user
  	struct printk_info info;
  	unsigned int line_count;
  	struct printk_record r;
@@ -202,7 +202,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u64 clr_seq;
  	char *text;
  	int len = 0;
-@@ -1535,19 +1487,25 @@ static int syslog_print_all(char __user
+@@ -1553,19 +1505,25 @@ static int syslog_print_all(char __user
  		return -ENOMEM;
  
  	time = printk_time;
@@ -231,7 +231,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			break;
  		len -= get_record_print_text_size(&info, line_count, true, time);
  	}
-@@ -1565,23 +1523,20 @@ static int syslog_print_all(char __user
+@@ -1583,23 +1541,20 @@ static int syslog_print_all(char __user
  			break;
  		}
  
@@ -257,7 +257,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	kfree(text);
  	return len;
-@@ -1589,11 +1544,9 @@ static int syslog_print_all(char __user
+@@ -1607,11 +1562,9 @@ static int syslog_print_all(char __user
  
  static void syslog_clear(void)
  {
@@ -271,7 +271,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  int do_syslog(int type, char __user *buf, int len, int source)
-@@ -1674,8 +1627,7 @@ int do_syslog(int type, char __user *buf
+@@ -1692,8 +1645,7 @@ int do_syslog(int type, char __user *buf
  		break;
  	/* Number of chars in the log buffer */
  	case SYSLOG_ACTION_SIZE_UNREAD:
@@ -281,7 +281,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (syslog_seq < prb_first_valid_seq(prb)) {
  			/* messages are gone, move to first one */
  			syslog_seq = prb_first_valid_seq(prb);
-@@ -1702,8 +1654,7 @@ int do_syslog(int type, char __user *buf
+@@ -1720,8 +1672,7 @@ int do_syslog(int type, char __user *buf
  			}
  			error -= syslog_partial;
  		}
@@ -291,7 +291,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		break;
  	/* Size of the log buffer */
  	case SYSLOG_ACTION_SIZE_BUFFER:
-@@ -2171,9 +2122,9 @@ asmlinkage int vprintk_emit(int facility
+@@ -2189,9 +2140,9 @@ asmlinkage int vprintk_emit(int facility
  			    const struct dev_printk_info *dev_info,
  			    const char *fmt, va_list args)
  {
@@ -302,7 +302,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Suppress unimportant messages after panic happens */
  	if (unlikely(suppress_printk))
-@@ -2619,7 +2570,6 @@ void console_unlock(void)
+@@ -2637,7 +2588,6 @@ void console_unlock(void)
  		size_t len;
  
  		printk_safe_enter_irqsave(flags);
@@ -310,7 +310,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  skip:
  		if (!prb_read_valid(prb, console_seq, &r))
  			break;
-@@ -2663,7 +2613,6 @@ void console_unlock(void)
+@@ -2681,7 +2631,6 @@ void console_unlock(void)
  				console_msg_format & MSG_FORMAT_SYSLOG,
  				printk_time);
  		console_seq++;
@@ -318,7 +318,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		/*
  		 * While actively printing out messages, if another printk()
-@@ -2690,8 +2639,6 @@ void console_unlock(void)
+@@ -2708,8 +2657,6 @@ void console_unlock(void)
  
  	console_locked = 0;
  
@@ -327,7 +327,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	up_console_sem();
  
  	/*
-@@ -2700,9 +2647,7 @@ void console_unlock(void)
+@@ -2718,9 +2665,7 @@ void console_unlock(void)
  	 * there's a new owner and the console_unlock() from them will do the
  	 * flush, no worries.
  	 */
@@ -337,7 +337,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	printk_safe_exit_irqrestore(flags);
  
  	if (retry && console_trylock())
-@@ -2766,13 +2711,8 @@ void console_flush_on_panic(enum con_flu
+@@ -2784,13 +2729,8 @@ void console_flush_on_panic(enum con_flu
  	console_trylock();
  	console_may_schedule = 0;
  
@@ -352,7 +352,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	console_unlock();
  }
  
-@@ -2999,9 +2939,7 @@ void register_console(struct console *ne
+@@ -3017,9 +2957,7 @@ void register_console(struct console *ne
  		/*
  		 * console_unlock(); will print out the buffered messages
  		 * for us.
@@ -363,7 +363,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		 * We're about to replay the log buffer.  Only do this to the
  		 * just-registered console to avoid excessive message spam to
  		 * the already-registered consoles.
-@@ -3014,11 +2952,9 @@ void register_console(struct console *ne
+@@ -3032,11 +2970,9 @@ void register_console(struct console *ne
  		exclusive_console_stop_seq = console_seq;
  
  		/* Get a consistent copy of @syslog_seq. */
@@ -377,7 +377,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  	console_unlock();
  	console_sysfs_notify();
-@@ -3384,7 +3320,6 @@ EXPORT_SYMBOL_GPL(kmsg_dump_reason_str);
+@@ -3402,7 +3338,6 @@ EXPORT_SYMBOL_GPL(kmsg_dump_reason_str);
  void kmsg_dump(enum kmsg_dump_reason reason)
  {
  	struct kmsg_dumper *dumper;
@@ -385,7 +385,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	rcu_read_lock();
  	list_for_each_entry_rcu(dumper, &dump_list, list) {
-@@ -3412,10 +3347,8 @@ void kmsg_dump(enum kmsg_dump_reason rea
+@@ -3430,10 +3365,8 @@ void kmsg_dump(enum kmsg_dump_reason rea
  		INIT_LIST_HEAD(&dumper_copy.list);
  		dumper_copy.active = true;
  
@@ -396,7 +396,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  	rcu_read_unlock();
  }
-@@ -3496,14 +3429,7 @@ bool kmsg_dump_get_line_nolock(struct km
+@@ -3514,14 +3447,7 @@ bool kmsg_dump_get_line_nolock(struct km
  bool kmsg_dump_get_line(struct kmsg_dumper *dumper, bool syslog,
  			char *line, size_t size, size_t *len)
  {
@@ -412,7 +412,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
  
-@@ -3532,7 +3458,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3550,7 +3476,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  	struct printk_info info;
  	unsigned int line_count;
  	struct printk_record r;
@@ -420,7 +420,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u64 seq;
  	u64 next_seq;
  	size_t l = 0;
-@@ -3544,17 +3469,14 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3562,17 +3487,14 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  	if (!dumper->active || !buf || !size)
  		goto out;
  
@@ -439,7 +439,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* calculate length of entire buffer */
  	seq = dumper->cur_seq;
-@@ -3594,7 +3516,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3612,7 +3534,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  
  	dumper->next_seq = next_seq;
  	ret = true;
@@ -447,7 +447,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  out:
  	if (len)
  		*len = l;
-@@ -3628,11 +3549,7 @@ void kmsg_dump_rewind_nolock(struct kmsg
+@@ -3646,11 +3567,7 @@ void kmsg_dump_rewind_nolock(struct kmsg
   */
  void kmsg_dump_rewind(struct kmsg_dumper *dumper)
  {

@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Thu, 10 Dec 2020 16:58:02 +0106
 Subject: [PATCH 05/21] printk: add syslog_lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 The global variables @syslog_seq, @syslog_partial, @syslog_time
 and write access to @clear_seq are protected by @logbuf_lock.
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void latched_seq_write(struct latched_seq *ls, u64 val)
  {
  	raw_write_seqcount_latch(&ls->latch);
-@@ -1462,7 +1466,9 @@ static int syslog_print(char __user *buf
+@@ -1480,7 +1484,9 @@ static int syslog_print(char __user *buf
  		size_t skip;
  
  		logbuf_lock_irq();
@@ -49,7 +49,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			logbuf_unlock_irq();
  			break;
  		}
-@@ -1492,6 +1498,7 @@ static int syslog_print(char __user *buf
+@@ -1510,6 +1516,7 @@ static int syslog_print(char __user *buf
  			syslog_partial += n;
  		} else
  			n = 0;
@@ -57,7 +57,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		logbuf_unlock_irq();
  
  		if (!n)
-@@ -1569,8 +1576,11 @@ static int syslog_print_all(char __user
+@@ -1587,8 +1594,11 @@ static int syslog_print_all(char __user
  			break;
  	}
  
@@ -70,7 +70,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	logbuf_unlock_irq();
  
  	kfree(text);
-@@ -1580,7 +1590,9 @@ static int syslog_print_all(char __user
+@@ -1598,7 +1608,9 @@ static int syslog_print_all(char __user
  static void syslog_clear(void)
  {
  	logbuf_lock_irq();
@@ -80,7 +80,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	logbuf_unlock_irq();
  }
  
-@@ -1589,6 +1601,7 @@ int do_syslog(int type, char __user *buf
+@@ -1607,6 +1619,7 @@ int do_syslog(int type, char __user *buf
  	bool clear = false;
  	static int saved_console_loglevel = LOGLEVEL_DEFAULT;
  	int error;
@@ -88,7 +88,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	error = check_syslog_permissions(type, source);
  	if (error)
-@@ -1606,8 +1619,14 @@ int do_syslog(int type, char __user *buf
+@@ -1624,8 +1637,14 @@ int do_syslog(int type, char __user *buf
  			return 0;
  		if (!access_ok(buf, len))
  			return -EFAULT;
@@ -104,7 +104,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (error)
  			return error;
  		error = syslog_print(buf, len);
-@@ -1656,6 +1675,7 @@ int do_syslog(int type, char __user *buf
+@@ -1674,6 +1693,7 @@ int do_syslog(int type, char __user *buf
  	/* Number of chars in the log buffer */
  	case SYSLOG_ACTION_SIZE_UNREAD:
  		logbuf_lock_irq();
@@ -112,7 +112,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (syslog_seq < prb_first_valid_seq(prb)) {
  			/* messages are gone, move to first one */
  			syslog_seq = prb_first_valid_seq(prb);
-@@ -1682,6 +1702,7 @@ int do_syslog(int type, char __user *buf
+@@ -1700,6 +1720,7 @@ int do_syslog(int type, char __user *buf
  			}
  			error -= syslog_partial;
  		}
@@ -120,7 +120,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		logbuf_unlock_irq();
  		break;
  	/* Size of the log buffer */
-@@ -2925,7 +2946,12 @@ void register_console(struct console *ne
+@@ -2943,7 +2964,12 @@ void register_console(struct console *ne
  		 */
  		exclusive_console = newcon;
  		exclusive_console_stop_seq = console_seq;

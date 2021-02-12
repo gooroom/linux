@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:08 +0106
 Subject: [PATCH 19/21] printk: remove deferred printing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 Since printing occurs either atomically or from the printing
 kthread, there is no need for any deferring or tracking possible
@@ -255,7 +255,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (seq != prb_next_seq(&printk_rb_static)) {
  		pr_err("dropped %llu messages\n",
  		       prb_next_seq(&printk_rb_static) - seq);
-@@ -1925,9 +1904,9 @@ static u16 printk_sprint(char *text, u16
+@@ -1943,9 +1922,9 @@ static u16 printk_sprint(char *text, u16
  }
  
  __printf(4, 0)
@@ -268,7 +268,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	const u32 caller_id = printk_caller_id();
  	struct prb_reserved_entry e;
-@@ -2051,7 +2030,6 @@ asmlinkage int vprintk_emit(int facility
+@@ -2069,7 +2048,6 @@ asmlinkage int vprintk_emit(int facility
  			    const struct dev_printk_info *dev_info,
  			    const char *fmt, va_list args)
  {
@@ -276,7 +276,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	int printed_len;
  
  	/* Suppress unimportant messages after panic happens */
-@@ -2061,20 +2039,29 @@ asmlinkage int vprintk_emit(int facility
+@@ -2079,20 +2057,29 @@ asmlinkage int vprintk_emit(int facility
  	if (level == LOGLEVEL_SCHED)
  		level = LOGLEVEL_DEFAULT;
  
@@ -310,7 +310,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  asmlinkage int vprintk(const char *fmt, va_list args)
  {
-@@ -3038,18 +3025,10 @@ void wake_up_klogd(void)
+@@ -3056,18 +3043,10 @@ void wake_up_klogd(void)
  	preempt_enable();
  }
  
@@ -423,7 +423,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -9329,7 +9329,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9295,7 +9295,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -431,7 +431,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -9409,7 +9408,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9375,7 +9374,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);
