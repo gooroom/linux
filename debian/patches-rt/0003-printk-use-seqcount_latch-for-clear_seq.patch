@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:41:58 +0106
 Subject: [PATCH 03/21] printk: use seqcount_latch for clear_seq
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 kmsg_dump_rewind_nolock() locklessly reads @clear_seq. However,
 this is not done atomically. Since @clear_seq is 64-bit, this
@@ -92,7 +92,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  #endif
  
-@@ -1476,6 +1517,7 @@ static int syslog_print_all(char __user
+@@ -1494,6 +1535,7 @@ static int syslog_print_all(char __user
  	struct printk_info info;
  	unsigned int line_count;
  	struct printk_record r;
@@ -100,7 +100,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	char *text;
  	int len = 0;
  	u64 seq;
-@@ -1487,15 +1529,17 @@ static int syslog_print_all(char __user
+@@ -1505,15 +1547,17 @@ static int syslog_print_all(char __user
  
  	time = printk_time;
  	logbuf_lock_irq();
@@ -120,7 +120,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (len <= size)
  			break;
  		len -= get_record_print_text_size(&info, line_count, true, time);
-@@ -1526,7 +1570,7 @@ static int syslog_print_all(char __user
+@@ -1544,7 +1588,7 @@ static int syslog_print_all(char __user
  	}
  
  	if (clear)
@@ -129,7 +129,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	logbuf_unlock_irq();
  
  	kfree(text);
-@@ -1536,7 +1580,7 @@ static int syslog_print_all(char __user
+@@ -1554,7 +1598,7 @@ static int syslog_print_all(char __user
  static void syslog_clear(void)
  {
  	logbuf_lock_irq();
@@ -138,7 +138,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	logbuf_unlock_irq();
  }
  
-@@ -3269,7 +3313,7 @@ void kmsg_dump(enum kmsg_dump_reason rea
+@@ -3287,7 +3331,7 @@ void kmsg_dump(enum kmsg_dump_reason rea
  		dumper->active = true;
  
  		logbuf_lock_irqsave(flags);
@@ -147,7 +147,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		dumper->next_seq = prb_next_seq(prb);
  		logbuf_unlock_irqrestore(flags);
  
-@@ -3476,7 +3520,7 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_buffer);
+@@ -3494,7 +3538,7 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_buffer);
   */
  void kmsg_dump_rewind_nolock(struct kmsg_dumper *dumper)
  {

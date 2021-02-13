@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:41:56 +0106
 Subject: [PATCH 11/21] printk: refactor kmsg_dump_get_buffer()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 kmsg_dump_get_buffer() requires nearly the same logic as
 syslog_print_all(), but uses different variable names and
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3472,19 +3472,17 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
+@@ -3468,19 +3468,17 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
   * read.
   */
  bool kmsg_dump_get_buffer(struct kmsg_dumper *dumper, bool syslog,
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (!dumper->active || !buf || !size)
  		goto out;
  
-@@ -3497,47 +3495,50 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3493,47 +3491,50 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  	if (dumper->cur_seq >= dumper->next_seq)
  		goto out;
  

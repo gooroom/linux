@@ -1,14 +1,12 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Subject: tasklets: Prevent kill/unlock_wait deadlock on RT
-Date: Fri, 13 Nov 2020 15:02:26 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Date: Fri, 4 Dec 2020 18:02:00 +0100
+Subject: [PATCH 06/19] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
+ on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
-From: Thomas Gleixner <tglx@linutronix.de>
-
-tasklet_kill() and tasklet_unlock_wait() spin and wait for the
-TASKLET_STATE_SCHED resp. TASKLET_STATE_RUN bit in the tasklet state to be
-cleared. This works on !RT nicely because the corresponding execution can
-only happen on a different CPU.
+tasklet_unlock_spin_wait() spin waits for the TASKLET_STATE_SCHED bit in
+the tasklet state to be cleared. This works on !RT nicely because the
+corresponding execution can only happen on a different CPU.
 
 On RT softirq processing is preemptible, therefore a task preempting the
 softirq processing thread can spin forever.
@@ -21,10 +19,11 @@ then the local_bh_disable()/enable() pair is just a waste of processor
 cycles.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/interrupt.h |    8 ++------
- kernel/softirq.c          |   38 +++++++++++++++++++++++++++++++++++++-
- 2 files changed, 39 insertions(+), 7 deletions(-)
+ include/linux/interrupt.h |   13 ++-----------
+ kernel/softirq.c          |   26 ++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+), 11 deletions(-)
 
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
@@ -37,28 +36,36 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static inline int tasklet_trylock(struct tasklet_struct *t)
  {
  	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
-@@ -666,11 +666,7 @@ static inline void tasklet_unlock(struct
- 	clear_bit(TASKLET_STATE_RUN, &(t)->state);
- }
+@@ -662,16 +662,7 @@ static inline int tasklet_trylock(struct
  
--static inline void tasklet_unlock_wait(struct tasklet_struct *t)
+ void tasklet_unlock(struct tasklet_struct *t);
+ void tasklet_unlock_wait(struct tasklet_struct *t);
+-
+-/*
+- * Do not use in new code. There is no real reason to invoke this from
+- * atomic contexts.
+- */
+-static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 -{
--	while (test_bit(TASKLET_STATE_RUN, &(t)->state))
+-	while (test_bit(TASKLET_STATE_RUN, &t->state))
 -		cpu_relax();
 -}
-+void tasklet_unlock_wait(struct tasklet_struct *t);
++void tasklet_unlock_spin_wait(struct tasklet_struct *t);
  #else
  static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
  static inline void tasklet_unlock(struct tasklet_struct *t) { }
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -818,6 +818,29 @@ void tasklet_init(struct tasklet_struct
+@@ -614,6 +614,32 @@ void tasklet_init(struct tasklet_struct
  }
  EXPORT_SYMBOL(tasklet_init);
  
 +#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
-+
-+void tasklet_unlock_wait(struct tasklet_struct *t)
++/*
++ * Do not use in new code. There is no real reason to invoke this from
++ * atomic contexts.
++ */
++void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 +{
 +	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
 +		if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
@@ -76,31 +83,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +		}
 +	}
 +}
-+EXPORT_SYMBOL(tasklet_unlock_wait);
++EXPORT_SYMBOL(tasklet_unlock_spin_wait);
 +#endif
 +
  void tasklet_kill(struct tasklet_struct *t)
  {
  	if (in_interrupt())
-@@ -825,7 +848,20 @@ void tasklet_kill(struct tasklet_struct
- 
- 	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
- 		do {
--			yield();
-+			if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
-+				/*
-+				 * Prevent a live lock when current
-+				 * preempted soft interrupt processing or
-+				 * prevents ksoftirqd from running. If the
-+				 * tasklet runs on a different CPU then
-+				 * this has no effect other than doing the
-+				 * BH disable/enable dance for nothing.
-+				 */
-+				local_bh_disable();
-+				local_bh_enable();
-+			} else {
-+				yield();
-+			}
- 		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
- 	}
- 	tasklet_unlock_wait(t);

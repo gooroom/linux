@@ -1,9 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Subject: softirq: Make softirq control and processing RT aware
-Date: Fri, 13 Nov 2020 15:02:21 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
-
-From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 4 Dec 2020 18:01:55 +0100
+Subject: [PATCH 10/19] softirq: Make softirq control and processing RT aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
 
 Provide a local lock based serialization for soft interrupts on RT which
 allows the local_bh_disabled() sections and servicing soft interrupts to be
@@ -13,8 +11,8 @@ Provide the necessary inline helpers which allow to reuse the bulk of the
 softirq processing code.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
----
-V2: Adjusted to Frederic's changes
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
 ---
  include/linux/bottom_half.h |    2 
  kernel/softirq.c            |  188 ++++++++++++++++++++++++++++++++++++++++++--
@@ -41,7 +39,7 @@ V2: Adjusted to Frederic's changes
  #include <linux/mm.h>
  #include <linux/notifier.h>
  #include <linux/percpu.h>
-@@ -100,20 +101,189 @@ EXPORT_PER_CPU_SYMBOL_GPL(hardirq_contex
+@@ -101,20 +102,189 @@ EXPORT_PER_CPU_SYMBOL_GPL(hardirq_contex
  #endif
  
  /*
@@ -157,7 +155,7 @@ V2: Adjusted to Frederic's changes
 +	lockdep_assert_irqs_enabled();
 +
 +	local_irq_save(flags);
-+	curcnt = this_cpu_read(softirq_ctrl.cnt);
++	curcnt = __this_cpu_read(softirq_ctrl.cnt);
 +
 +	/*
 +	 * If this is not reenabling soft interrupts, no point in trying to
@@ -237,7 +235,7 @@ V2: Adjusted to Frederic's changes
  void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
  {
  	unsigned long flags;
-@@ -274,6 +444,8 @@ asmlinkage __visible void do_softirq(voi
+@@ -275,6 +445,8 @@ asmlinkage __visible void do_softirq(voi
  	local_irq_restore(flags);
  }
  
@@ -246,7 +244,7 @@ V2: Adjusted to Frederic's changes
  /*
   * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
   * but break the loop if need_resched() is set or after 2 ms.
-@@ -378,8 +550,10 @@ asmlinkage __visible void __softirq_entr
+@@ -379,8 +551,10 @@ asmlinkage __visible void __softirq_entr
  		pending >>= softirq_bit;
  	}
  
