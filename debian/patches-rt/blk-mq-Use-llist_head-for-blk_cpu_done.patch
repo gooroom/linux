@@ -1,23 +1,29 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Date: Wed, 28 Oct 2020 11:08:21 +0100
-Subject: [PATCH 3/3] blk-mq: Use llist_head for blk_cpu_done
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
+Date: Sat, 23 Jan 2021 21:10:27 +0100
+Subject: [PATCH] blk-mq: Use llist_head for blk_cpu_done
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.16-rt30.tar.xz
 
 With llist_head it is possible to avoid the locking (the irq-off region)
 when items are added. This makes it possible to add items on a remote
-CPU.
+CPU without additional locking.
 llist_add() returns true if the list was previously empty. This can be
 used to invoke the SMP function call / raise sofirq only if the first
 item was added (otherwise it is already pending).
-This simplifies the code a little and reduces the IRQ-off regions. With
-this change it possible to reduce the SMP-function call a simple
-__raise_softirq_irqoff().
+This simplifies the code a little and reduces the IRQ-off regions.
 
+blk_mq_raise_softirq() needs a preempt-disable section to ensure the
+request is enqueued on the same CPU as the softirq is raised.
+Some callers (USB-storage) invoke this path in preemptible context.
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Daniel Wagner <dwagner@suse.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- block/blk-mq.c         |   78 +++++++++++++++----------------------------------
- include/linux/blkdev.h |    2 -
- 2 files changed, 26 insertions(+), 54 deletions(-)
+ block/blk-mq.c         |  101 ++++++++++++++++++++-----------------------------
+ include/linux/blkdev.h |    2 
+ 2 files changed, 44 insertions(+), 59 deletions(-)
 
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
@@ -30,7 +36,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  static void blk_mq_poll_stats_start(struct request_queue *q);
  static void blk_mq_poll_stats_fn(struct blk_stat_callback *cb);
-@@ -565,68 +565,32 @@ void blk_mq_end_request(struct request *
+@@ -565,68 +565,29 @@ void blk_mq_end_request(struct request *
  }
  EXPORT_SYMBOL(blk_mq_end_request);
  
@@ -39,25 +45,23 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 - * while passing them to the queue registered handler.
 - */
 -static __latent_entropy void blk_done_softirq(struct softirq_action *h)
-+static void blk_complete_reqs(struct llist_head *cpu_list)
++static void blk_complete_reqs(struct llist_head *list)
  {
 -	struct list_head *cpu_list, local_list;
-+	struct llist_node *entry;
-+	struct request *rq, *rq_next;
- 
+-
 -	local_irq_disable();
 -	cpu_list = this_cpu_ptr(&blk_cpu_done);
 -	list_replace_init(cpu_list, &local_list);
 -	local_irq_enable();
-+	entry = llist_del_all(cpu_list);
-+	entry = llist_reverse_order(entry);
- 
+-
 -	while (!list_empty(&local_list)) {
 -		struct request *rq;
--
++	struct llist_node *entry = llist_reverse_order(llist_del_all(list));
++	struct request *rq, *next;
+ 
 -		rq = list_entry(local_list.next, struct request, ipi_list);
 -		list_del_init(&rq->ipi_list);
-+	llist_for_each_entry_safe(rq, rq_next, entry, ipi_list)
++	llist_for_each_entry_safe(rq, next, entry, ipi_list)
  		rq->q->mq_ops->complete(rq);
 -	}
  }
@@ -109,15 +113,40 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  static inline bool blk_mq_complete_need_ipi(struct request *rq)
-@@ -657,6 +621,7 @@ static inline bool blk_mq_complete_need_
+@@ -655,6 +616,32 @@ static inline bool blk_mq_complete_need_
+ 	return cpu_online(rq->mq_ctx->cpu);
+ }
  
++static void blk_mq_complete_send_ipi(struct request *rq)
++{
++	struct llist_head *list;
++	unsigned int cpu;
++
++	cpu = rq->mq_ctx->cpu;
++	list = &per_cpu(blk_cpu_done, cpu);
++	if (llist_add(&rq->ipi_list, list)) {
++		rq->csd.func = __blk_mq_complete_request_remote;
++		rq->csd.info = rq;
++		rq->csd.flags = 0;
++		smp_call_function_single_async(cpu, &rq->csd);
++	}
++}
++
++static void blk_mq_raise_softirq(struct request *rq)
++{
++	struct llist_head *list;
++
++	preempt_disable();
++	list = this_cpu_ptr(&blk_cpu_done);
++	if (llist_add(&rq->ipi_list, list))
++		raise_softirq(BLOCK_SOFTIRQ);
++	preempt_enable();
++}
++
  bool blk_mq_complete_request_remote(struct request *rq)
  {
-+	struct llist_head *cpu_list;
  	WRITE_ONCE(rq->state, MQ_RQ_COMPLETE);
- 
- 	/*
-@@ -667,14 +632,21 @@ bool blk_mq_complete_request_remote(stru
+@@ -667,17 +654,15 @@ bool blk_mq_complete_request_remote(stru
  		return false;
  
  	if (blk_mq_complete_need_ipi(rq)) {
@@ -125,26 +154,24 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -		rq->csd.info = rq;
 -		rq->csd.flags = 0;
 -		smp_call_function_single_async(rq->mq_ctx->cpu, &rq->csd);
-+		unsigned int cpu;
-+
-+		cpu = rq->mq_ctx->cpu;
-+		cpu_list = &per_cpu(blk_cpu_done, cpu);
-+		if (llist_add(&rq->ipi_list, cpu_list)) {
-+			rq->csd.func = __blk_mq_complete_request_remote;
-+			rq->csd.flags = 0;
-+			smp_call_function_single_async(cpu, &rq->csd);
-+		}
- 	} else {
- 		if (rq->q->nr_hw_queues > 1)
- 			return false;
+-	} else {
+-		if (rq->q->nr_hw_queues > 1)
+-			return false;
 -		blk_mq_trigger_softirq(rq);
-+		cpu_list = this_cpu_ptr(&blk_cpu_done);
-+		if (llist_add(&rq->ipi_list, cpu_list))
-+			raise_softirq(BLOCK_SOFTIRQ);
++		blk_mq_complete_send_ipi(rq);
++		return true;
  	}
  
- 	return true;
-@@ -3905,7 +3877,7 @@ static int __init blk_mq_init(void)
+-	return true;
++	if (rq->q->nr_hw_queues == 1) {
++		blk_mq_raise_softirq(rq);
++		return true;
++	}
++	return false;
+ }
+ EXPORT_SYMBOL_GPL(blk_mq_complete_request_remote);
+ 
+@@ -3905,7 +3890,7 @@ static int __init blk_mq_init(void)
  	int i;
  
  	for_each_possible_cpu(i)
