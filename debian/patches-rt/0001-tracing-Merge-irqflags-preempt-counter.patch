@@ -4,7 +4,7 @@ Subject: [PATCH 1/4] tracing: Merge irqflags + preempt counter.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.16-rt30.tar.xz
 
 The state of the interrupts (irqflags) and the preemption counter are
 both passed down to tracing_generic_entry_update(). Only one bit of
@@ -1395,7 +1395,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  EXPORT_SYMBOL_GPL(stop_critical_timings);
  NOKPROBE_SYMBOL(stop_critical_timings);
-@@ -609,19 +603,15 @@ static void irqsoff_tracer_stop(struct t
+@@ -613,19 +607,15 @@ static void irqsoff_tracer_stop(struct t
   */
  void tracer_hardirqs_on(unsigned long a0, unsigned long a1)
  {
@@ -1419,7 +1419,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  NOKPROBE_SYMBOL(tracer_hardirqs_off);
  
-@@ -661,18 +651,14 @@ static struct tracer irqsoff_tracer __re
+@@ -665,18 +655,14 @@ static struct tracer irqsoff_tracer __re
  #ifdef CONFIG_PREEMPT_TRACER
  void tracer_preempt_on(unsigned long a0, unsigned long a1)
  {
@@ -1444,7 +1444,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static int preemptoff_tracer_init(struct trace_array *tr)
 --- a/kernel/trace/trace_kprobe.c
 +++ b/kernel/trace/trace_kprobe.c
-@@ -1384,8 +1384,7 @@ static nokprobe_inline void
+@@ -1386,8 +1386,7 @@ static nokprobe_inline void
  	if (trace_trigger_soft_disabled(trace_file))
  		return;
  
@@ -1454,7 +1454,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	fbuffer.trace_file = trace_file;
  
  	dsize = __get_data_size(&tk->tp, regs);
-@@ -1394,7 +1393,7 @@ static nokprobe_inline void
+@@ -1396,7 +1395,7 @@ static nokprobe_inline void
  		trace_event_buffer_lock_reserve(&fbuffer.buffer, trace_file,
  					call->event.type,
  					sizeof(*entry) + tk->tp.size + dsize,
@@ -1463,7 +1463,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (!fbuffer.event)
  		return;
  
-@@ -1432,8 +1431,7 @@ static nokprobe_inline void
+@@ -1434,8 +1433,7 @@ static nokprobe_inline void
  	if (trace_trigger_soft_disabled(trace_file))
  		return;
  
@@ -1473,7 +1473,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	fbuffer.trace_file = trace_file;
  
  	dsize = __get_data_size(&tk->tp, regs);
-@@ -1441,7 +1439,7 @@ static nokprobe_inline void
+@@ -1443,7 +1441,7 @@ static nokprobe_inline void
  		trace_event_buffer_lock_reserve(&fbuffer.buffer, trace_file,
  					call->event.type,
  					sizeof(*entry) + tk->tp.size + dsize,

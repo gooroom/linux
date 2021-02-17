@@ -2,7 +2,7 @@ From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 4 Dec 2020 18:02:00 +0100
 Subject: [PATCH 06/19] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.14-rt28.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.16-rt30.tar.xz
 
 tasklet_unlock_spin_wait() spin waits for the TASKLET_STATE_SCHED bit in
 the tasklet state to be cleared. This works on !RT nicely because the
@@ -22,8 +22,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/interrupt.h |   13 ++-----------
- kernel/softirq.c          |   26 ++++++++++++++++++++++++++
- 2 files changed, 28 insertions(+), 11 deletions(-)
+ kernel/softirq.c          |   28 +++++++++++++++++++++++++++-
+ 2 files changed, 29 insertions(+), 12 deletions(-)
 
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
@@ -89,3 +89,12 @@ Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void tasklet_kill(struct tasklet_struct *t)
  {
  	if (in_interrupt())
+@@ -627,7 +653,7 @@ void tasklet_kill(struct tasklet_struct
+ }
+ EXPORT_SYMBOL(tasklet_kill);
+ 
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
+ void tasklet_unlock(struct tasklet_struct *t)
+ {
+ 	smp_mb__before_atomic();
