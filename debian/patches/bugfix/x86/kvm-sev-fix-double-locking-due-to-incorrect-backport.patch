@@ -1,0 +1,36 @@
+From 09b21dcef97e85617a788e57090a064ab44c6200 Mon Sep 17 00:00:00 2001
+From: Sasha Levin <sashal@kernel.org>
+Date: Thu, 18 Feb 2021 13:40:58 -0500
+Subject: KVM: SEV: fix double locking due to incorrect backport
+
+From: Paolo Bonzini <pbonzini@redhat.com>
+
+Fix an incorrect line in the 5.4.y and 4.19.y backports of commit
+19a23da53932bc ("Fix unsynchronized access to sev members through
+svm_register_enc_region"), first applied to 5.4.98 and 4.19.176.
+
+Fixes: 1e80fdc09d12 ("KVM: SVM: Pin guest memory when SEV is active")
+Reported-by: Dov Murik <dovmurik@linux.vnet.ibm.com>
+Cc: stable@vger.kernel.org # 5.4.x
+Cc: stable@vger.kernel.org # 4.19.x
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/x86/kvm/svm.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/x86/kvm/svm.c b/arch/x86/kvm/svm.c
+index b34d11f22213f..8cb9277aa6ff2 100644
+--- a/arch/x86/kvm/svm.c
++++ b/arch/x86/kvm/svm.c
+@@ -7097,7 +7097,6 @@ static int svm_register_enc_region(struct kvm *kvm,
+ 	region->uaddr = range->addr;
+ 	region->size = range->size;
+ 
+-	mutex_lock(&kvm->lock);
+ 	list_add_tail(&region->list, &sev->regions_list);
+ 	mutex_unlock(&kvm->lock);
+ 
+-- 
+2.27.0
+
