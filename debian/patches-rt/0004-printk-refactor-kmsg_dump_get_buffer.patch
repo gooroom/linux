@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:41:56 +0106
-Subject: [PATCH 11/21] printk: refactor kmsg_dump_get_buffer()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.16-rt30.tar.xz
+Subject: [PATCH 04/28] printk: refactor kmsg_dump_get_buffer()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
 
 kmsg_dump_get_buffer() requires nearly the same logic as
 syslog_print_all(), but uses different variable names and
@@ -9,20 +9,31 @@ does not make use of the ringbuffer loop macros. Modify
 kmsg_dump_get_buffer() so that the implementation is as similar
 to syslog_print_all() as possible.
 
-At some point it would be nice to have this code factored into a
-helper function. But until then, the code should at least look
-similar enough so that it is obvious there is logic duplication
-implemented.
+A follow-up commit will move this common logic into a
+separate helper function.
 
 Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Reviewed-by: Petr Mladek <pmladek@suse.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- kernel/printk/printk.c |   57 ++++++++++++++++++++++++-------------------------
- 1 file changed, 29 insertions(+), 28 deletions(-)
+ include/linux/kmsg_dump.h |    2 -
+ kernel/printk/printk.c    |   60 ++++++++++++++++++++++++----------------------
+ 2 files changed, 33 insertions(+), 29 deletions(-)
 
+--- a/include/linux/kmsg_dump.h
++++ b/include/linux/kmsg_dump.h
+@@ -62,7 +62,7 @@ bool kmsg_dump_get_line(struct kmsg_dump
+ 			char *line, size_t size, size_t *len);
+ 
+ bool kmsg_dump_get_buffer(struct kmsg_dumper *dumper, bool syslog,
+-			  char *buf, size_t size, size_t *len);
++			  char *buf, size_t size, size_t *len_out);
+ 
+ void kmsg_dump_rewind_nolock(struct kmsg_dumper *dumper);
+ 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3468,19 +3468,17 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
+@@ -3420,7 +3420,7 @@ EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
   * read.
   */
  bool kmsg_dump_get_buffer(struct kmsg_dumper *dumper, bool syslog,
@@ -31,7 +42,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	struct printk_info info;
  	unsigned int line_count;
- 	struct printk_record r;
+@@ -3428,12 +3428,10 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+ 	unsigned long flags;
  	u64 seq;
  	u64 next_seq;
 -	size_t l = 0;
@@ -44,9 +56,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (!dumper->active || !buf || !size)
  		goto out;
  
-@@ -3493,47 +3491,50 @@ bool kmsg_dump_get_buffer(struct kmsg_du
- 	if (dumper->cur_seq >= dumper->next_seq)
+@@ -3451,48 +3449,54 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  		goto out;
+ 	}
  
 -	/* calculate length of entire buffer */
 -	seq = dumper->cur_seq;
@@ -77,7 +89,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +	 * that prevents an infinite loop.
 +	 */
 +	prb_for_each_info(dumper->cur_seq, prb, seq, &info, &line_count) {
-+		if (len <= size || info.seq >= dumper->next_seq)
++		if (len < size || info.seq >= dumper->next_seq)
  			break;
 -		l -= get_record_print_text_size(&info, line_count, syslog, time);
 -		seq = r.info->seq + 1;
@@ -85,7 +97,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
 -	/* last message in next interation */
-+	/* Keep track of the last message for the next iteration. */
++	/*
++	 * Next kmsg_dump_get_buffer() invocation will dump block of
++	 * older records stored right before this one.
++	 */
  	next_seq = seq;
  
 -	/* actually read text into the buffer now */
@@ -111,6 +126,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	dumper->next_seq = next_seq;
  	ret = true;
+ 	logbuf_unlock_irqrestore(flags);
  out:
 -	if (len)
 -		*len = l;

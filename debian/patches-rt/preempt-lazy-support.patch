@@ -1,7 +1,7 @@
 Subject: sched: Add support for lazy preemption
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.16-rt30.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -62,10 +62,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/sched/fair.c          |   16 ++++----
  kernel/sched/features.h      |    3 +
  kernel/sched/sched.h         |    9 ++++
- kernel/trace/trace.c         |   45 +++++++++++++----------
+ kernel/trace/trace.c         |   50 ++++++++++++++++----------
  kernel/trace/trace_events.c  |    1 
  kernel/trace/trace_output.c  |   14 ++++++-
- 12 files changed, 249 insertions(+), 36 deletions(-)
+ 12 files changed, 254 insertions(+), 36 deletions(-)
 
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
@@ -537,12 +537,17 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2605,8 +2605,11 @@ unsigned int tracing_gen_ctx_irq_test(un
+@@ -2605,8 +2605,16 @@ unsigned int tracing_gen_ctx_irq_test(un
  		trace_flags |= TRACE_FLAG_NEED_RESCHED;
  	if (test_preempt_need_resched())
  		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
 -	return (trace_flags << 16) | (pc & 0xff) |
 -		(migration_disable_value() & 0xff) << 8;
++
++#ifdef CONFIG_PREEMPT_LAZY
++	if (need_resched_lazy())
++		trace_flags |= TRACE_FLAG_NEED_RESCHED_LAZY;
++#endif
 +
 +	return (pc & 0xff) |
 +		(migration_disable_value() & 0xff) << 8 |
@@ -551,7 +556,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  struct ring_buffer_event *
-@@ -3807,15 +3810,17 @@ unsigned long trace_total_entries(struct
+@@ -3807,15 +3815,17 @@ unsigned long trace_total_entries(struct
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -578,7 +583,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -3849,14 +3854,16 @@ static void print_func_help_header_irq(s
+@@ -3849,14 +3859,16 @@ static void print_func_help_header_irq(s
  
  	print_event_info(buf, m);
  
