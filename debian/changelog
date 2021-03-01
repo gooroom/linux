@@ -1,4 +1,4 @@
-linux (4.9.254-1) UNRELEASED; urgency=medium
+linux (4.9.258-1) UNRELEASED; urgency=medium
 
   * New upstream stable update:
     https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.247
@@ -252,12 +252,15 @@ linux (4.9.254-1) UNRELEASED; urgency=medium
     - quota: Don't overflow quota file offsets
     - module: delay kobject uevent until after module init call
     - kdev_t: always inline major/minor helper functions
-    - xen/xenbus: Allow watches discard events before queueing
-    - xen/xenbus: Add 'will_handle' callback support in xenbus_watch_path()
-    - xen/xenbus/xen_bus_type: Support will_handle watch callback
-    - xen/xenbus: Count pending messages for each watch
-    - xenbus/xenbus_backend: Disallow pending watch messages
+    - xen/xenbus: Fix possible out-of-memory triggered by front-end
+      (CVE-2020-29568):
+      + xen/xenbus: Allow watches discard events before queueing
+      + xen/xenbus: Add 'will_handle' callback support in xenbus_watch_path()
+      + xen/xenbus/xen_bus_type: Support will_handle watch callback
+      + xen/xenbus: Count pending messages for each watch
+      + xenbus/xenbus_backend: Disallow pending watch messages
     - mwifiex: Fix possible buffer overflows in mwifiex_cmd_802_11_ad_hoc_start
+      (CVE-2020-36158)
     https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.251
     - kbuild: don't hardcode depmod path
     - workqueue: Kick a worker based on the actual activation of delayed works
@@ -303,7 +306,7 @@ linux (4.9.254-1) UNRELEASED; urgency=medium
     - target: simplify XCOPY wwn->se_dev lookup helper
     - target: use XCOPY segment descriptor CSCD IDs
     - xcopy: loop over devices using idr helper
-    - scsi: target: Fix XCOPY NAA identifier lookup
+    - scsi: target: Fix XCOPY NAA identifier lookup (CVE-2020-28374)
     - target: add XCOPY target/segment desc sense codes
     - net: ip: always refragment ip defragmented packets
     - net: fix pmtu check in nopmtudisc mode
@@ -333,7 +336,7 @@ linux (4.9.254-1) UNRELEASED; urgency=medium
     - net: sunrpc: interpret the return value of kstrtou32 correctly
     - netfilter: conntrack: fix reading nf_conntrack_buckets
     - usb: ohci: Make distrust_firmware param default to false
-    - nfsd4: readdirplus shouldn't return parent of export
+    - nfsd4: readdirplus shouldn't return parent of export (CVE-2021-3178)
     - net: cdc_ncm: correct overhead in delayed_ndp_size
     - netxen_nic: fix MSI/MSI-x interrupts
     - rndis_host: set proper input size for OID_GEN_PHYSICAL_MEDIUM request
@@ -368,8 +371,133 @@ linux (4.9.254-1) UNRELEASED; urgency=medium
     - [armhf] net: dsa: b53: fix an off by one in checking "vlan->vid"
     - Revert "mm/slub: fix a memory leak in sysfs_slab_add()"
       (regression in 4.9.228)
-    - tracing: Fix race in trace_open and buffer resize call
+    - tracing: Fix race in trace_open and buffer resize call (CVE-2020-27825)
     - [x86] boot/compressed: Disable relocation relaxation
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.255
+    - ACPI: sysfs: Prefer "compatible" modalias
+    - wext: fix NULL-ptr-dereference with cfg80211's lack of commit()
+    - net: usb: qmi_wwan: added support for Thales Cinterion PLSx3 modem family
+    - y2038: futex: Move compat implementation into futex.c
+    - futex: Move futex exit handling into futex code
+    - futex: Replace PF_EXITPIDONE with a state
+    - exit/exec: Seperate mm_release()
+    - futex: Split futex_mm_release() for exit/exec
+    - futex: Set task::futex_state to DEAD right after handling futex exit
+    - futex: Mark the begin of futex exit explicitly
+    - futex: Sanitize exit state handling
+    - futex: Provide state handling for exec() as well
+    - futex: Add mutex around futex exit
+    - futex: Provide distinct return value when owner is exiting
+    - futex: Prevent exit livelock
+    - [x86] KVM: x86/pmu: Fix HW_REF_CPU_CYCLES event pseudo-encoding in
+      intel_arch_events[]
+    - [x86] KVM: x86: get smi pending status correctly
+    - leds: trigger: fix potential deadlock with libata
+    - mt7601u: fix kernel crash unplugging the device
+    - mt7601u: fix rx buffer refcounting
+    - netfilter: nft_dynset: add timeout extension to template
+    - xfrm: Fix oops in xfrm_replay_advance_bmp
+    - RDMA/cxgb4: Fix the reported max_recv_sge value
+    - iwlwifi: pcie: use jiffies for memory read spin time limit
+    - iwlwifi: pcie: reschedule in long-running memory reads
+    - mac80211: pause TX while changing interface type
+    - can: dev: prevent potential information leak in can_fill_info()
+    - [x86] iommu/vt-d: Gracefully handle DMAR units with no supported address
+      widths
+    - NFC: fix resource leak when target index is invalid
+    - NFC: fix possible resource leak
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.256
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.257
+    - [armhf] net: dsa: bcm_sf2: put device node before return
+    - net_sched: reject silly cell_log in qdisc_get_rtab()
+    - futex: Fix PI futex use-after-free (CVE-2021-3347):
+      + futex,rt_mutex: Provide futex specific rt_mutex API
+      + futex: Remove rt_mutex_deadlock_account_*()
+      + futex: Rework inconsistent rt_mutex/futex_q state
+      + futex: Avoid violating the 10th rule of futex
+      + futex: Replace pointless printk in fixup_owner()
+      + futex: Provide and use pi_state_update_owner()
+      + rtmutex: Remove unused argument from rt_mutex_proxy_unlock()
+      + futex: Use pi_state_update_owner() in put_pi_state()
+      + futex: Simplify fixup_pi_state_owner()
+      + futex: Handle faults correctly for PI futexes
+    - scsi: libfc: Avoid invoking response handler twice if ep is already
+      completed
+    - mac80211: fix fast-rx encryption check
+    - scsi: ibmvfc: Set default timeout to avoid crash during migration
+    - objtool: Don't fail on missing symbol table
+    - stable: clamp SUBLEVEL in 4.4 and 4.9
+    - USB: serial: cp210x: add pid/vid for WSDA-200-USB
+    - USB: serial: cp210x: add new VID/PID for supporting Teraoka AD2000
+    - USB: serial: option: Adding support for Cinterion MV31
+    - [x86] Input: i8042 - unbreak Pegatron C15B
+    - [x86] net: lapb: Copy the skb before sending a packet
+    - elfcore: fix building with clang
+    - USB: gadget: legacy: fix an error code in eth_bind()
+    - USB: usblp: don't call usb_set_interface if there's a single alt
+    - [arm64,armhf] usb: dwc2: Fix endpoint direction check in ep_from_windex
+    - mac80211: fix station rate table updates on assoc
+    - kretprobe: Avoid re-registration of the same kretprobe earlier
+    - xhci: fix bounce buffer usage for non-sg list case
+    - cifs: report error instead of invalid when revalidating a dentry fails
+    - mmc: core: Limit retries when analyse of SDIO tuples fails
+    - mm: hugetlbfs: fix cannot migrate the fallocated HugeTLB page
+    - mm: hugetlb: fix a race between isolating and freeing page
+    - mm: hugetlb: remove VM_BUG_ON_PAGE from page_huge_active
+    - mm: thp: fix MADV_REMOVE deadlock on shmem THP
+    - [x86] build: Disable CET instrumentation in the kernel
+    - [x86] apic: Add extra serialization for non-serializing MSRs
+    - Input: xpad - sync supported devices with fork on GitHub
+    - ACPI: thermal: Do not call acpi_thermal_check() directly
+    - [x86] iommu/vt-d: Do not use flush-queue when caching-mode is on
+    - ALSA: hda/realtek - Fix typo of pincfg for Dell quirk
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.9.258
+    - mm: memcontrol: fix NULL pointer crash in test_clear_page_writeback()
+    - fgraph: Initialize tracing_graph_pause at task creation
+    - af_key: relax availability checks for skb size calculation
+    - iwlwifi: mvm: take mutex for calling iwl_mvm_get_sync_time()
+    - iwlwifi: pcie: add a NULL check in iwl_pcie_txq_unmap
+    - iwlwifi: mvm: guard against device removal in reprobe
+    - SUNRPC: Move simple_get_bytes and simple_get_netobj into private header
+    - SUNRPC: Handle 0 length opaque XDR object data properly
+    - include/trace/events/writeback.h: fix -Wstringop-truncation warnings
+    - memcg: fix a crash in wb_workfn when a device disappears
+    - futex: Ensure the correct return value from futex_lock_pi()
+    - futex: Change locking rules
+    - futex: Cure exit race
+    - squashfs: add more sanity checks in id lookup
+    - squashfs: add more sanity checks in inode lookup
+    - squashfs: add more sanity checks in xattr id lookup
+    - tracing: Do not count ftrace events in top level enable output
+    - tracing: Check length before giving out the filter buffer
+    - ovl: skip getxattr of security labels
+    - memblock: do not start bottom-up allocations with kernel_end
+    - bpf: Check for integer overflow when using roundup_pow_of_two()
+    - netfilter: xt_recent: Fix attempt to update deleted entry
+    - xen/netback: avoid race in xenvif_rx_ring_slots_available()
+    - netfilter: conntrack: skip identical origin tuple in same zone only
+    - [arm64,armhf] usb: dwc3: ulpi: Replace CPU-based busyloop with
+      Protocol-based one
+    - [x86] net/vmw_vsock: improve locking in vsock_connect_timeout()
+    - net: watchdog: hold device global xmit lock during tx disable
+    - vsock/virtio: update credit only if socket is not closed
+    - vsock: fix locking in vsock_shutdown()
+    - trace: Use -mcount-record for dynamic ftrace
+    - tracing: Avoid calling cc-option -mrecord-mcount for every Makefile
+    - xen: Fix crash or memory leak on failure (CVE-2021-26932):
+      + [x86] Xen/x86: don't bail early from clear_foreign_p2m_mapping()
+      + [x86] Xen/x86: also check kernel mapping in set_foreign_p2m_mapping()
+      + Xen/gntdev: correct dev_bus_addr handling in gntdev_map_grant_pages()
+      + Xen/gntdev: correct error checking in gntdev_map_grant_pages()
+      + [arm64,armhf] xen/arm: don't ignore return errors from
+        set_phys_to_machine
+    - xen: Fix crash on allocation failure (CVE-2021-26931):
+      + xen-blkback: don't "handle" error by BUG()
+      + xen-netback: don't "handle" error by BUG()
+      + xen-scsiback: don't "handle" error by BUG()
+    - xen-blkback: fix error handling in xen_blkbk_map() (CVE-2021-26930)
+    - scsi: qla2xxx: Fix crash during driver load on big endian machines
+    - kvm: check tlbs_dirty directly
 
   [ Ben Hutchings ]
   * Revert "seq_buf: Avoid type mismatch for seq_buf_init" to avoid an ABI
