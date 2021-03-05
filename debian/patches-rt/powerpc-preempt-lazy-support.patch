@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
 Subject: powerpc: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -12,8 +12,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  arch/powerpc/kernel/asm-offsets.c      |    1 +
  arch/powerpc/kernel/entry_32.S         |   23 ++++++++++++++++-------
  arch/powerpc/kernel/exceptions-64e.S   |   16 ++++++++++++----
- arch/powerpc/kernel/syscall_64.c       |    9 ++++++---
- 6 files changed, 49 insertions(+), 18 deletions(-)
+ arch/powerpc/kernel/syscall_64.c       |   10 +++++++---
+ 6 files changed, 50 insertions(+), 18 deletions(-)
 
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
@@ -232,7 +232,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  			schedule();
  		} else {
  			if (ti_flags & _TIF_SIGPENDING)
-@@ -361,11 +361,14 @@ notrace unsigned long interrupt_exit_ker
+@@ -361,11 +361,15 @@ notrace unsigned long interrupt_exit_ker
  		/* Returning to a kernel context with local irqs enabled. */
  		WARN_ON_ONCE(!(regs->msr & MSR_EE));
  again:
@@ -243,7 +243,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  				if (preempt_count() == 0)
  					preempt_schedule_irq();
 +			} else if (unlikely(*ti_flagsp & _TIF_NEED_RESCHED_LAZY)) {
-+				if (current_thread_info()->preempt_lazy_count == 0)
++				if ((preempt_count() == 0) &&
++				    (current_thread_info()->preempt_lazy_count == 0))
 +					preempt_schedule_irq();
  			}
  		}

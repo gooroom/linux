@@ -2,7 +2,7 @@ From: John Ogness <john.ogness@linutronix.de>
 Date: Wed, 9 Dec 2020 01:50:53 +0106
 Subject: [PATCH 02/21] printk: remove logbuf_lock writer-protection of
  ringbuffer
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
 
 Since the ringbuffer is lockless, there is no need for it to be
 protected by @logbuf_lock. Remove @logbuf_lock writer-protection of
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if (seq != prb_next_seq(&printk_rb_static)) {
  		pr_err("dropped %llu messages\n",
-@@ -1861,18 +1861,90 @@ static inline u32 printk_caller_id(void)
+@@ -1879,18 +1879,90 @@ static inline u32 printk_caller_id(void)
  		0x80000000 + raw_smp_processor_id();
  }
  
@@ -146,7 +146,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u16 text_len;
  	u64 ts_nsec;
  
-@@ -1885,35 +1957,21 @@ int vprintk_store(int facility, int leve
+@@ -1903,35 +1975,21 @@ int vprintk_store(int facility, int leve
  	ts_nsec = local_clock();
  
  	/*
@@ -197,7 +197,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if (level == LOGLEVEL_DEFAULT)
  		level = default_message_loglevel;
-@@ -1922,9 +1980,10 @@ int vprintk_store(int facility, int leve
+@@ -1940,9 +1998,10 @@ int vprintk_store(int facility, int leve
  		lflags |= LOG_NEWLINE;
  
  	if (lflags & LOG_CONT) {
@@ -210,7 +210,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			r.info->text_len += text_len;
  
  			if (lflags & LOG_NEWLINE) {
-@@ -1943,18 +2002,18 @@ int vprintk_store(int facility, int leve
+@@ -1961,18 +2020,18 @@ int vprintk_store(int facility, int leve
  	 * prb_reserve_in_last() and prb_reserve() purposely invalidate the
  	 * structure when they fail.
  	 */
@@ -233,7 +233,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (trunc_msg_len)
  		memcpy(&r.text_buf[text_len], trunc_msg, trunc_msg_len);
  	r.info->text_len = text_len + trunc_msg_len;
-@@ -1995,10 +2054,9 @@ asmlinkage int vprintk_emit(int facility
+@@ -2013,10 +2072,9 @@ asmlinkage int vprintk_emit(int facility
  	boot_delay_msec(level);
  	printk_delay();
  
