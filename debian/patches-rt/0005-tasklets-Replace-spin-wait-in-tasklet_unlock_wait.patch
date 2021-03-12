@@ -1,18 +1,24 @@
 From: Peter Zijlstra <peterz@infradead.org>
-Date: Mon, 7 Dec 2020 12:39:58 +0100
-Subject: [PATCH 04/19] tasklets: Replace spin wait in tasklet_unlock_wait()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Date: Tue, 9 Mar 2021 09:42:08 +0100
+Subject: [PATCH 05/20] tasklets: Replace spin wait in tasklet_unlock_wait()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 tasklet_unlock_wait() spin waits for TASKLET_STATE_RUN to be cleared. This
 is wasting CPU cycles in a tight loop which is especially painful in a
 guest when the CPU running the tasklet is scheduled out.
 
-tasklet_unlock_wait() is invoked from tasklet_kill() and tasklet_disable()
-which are used in teardown paths and not performance critical at
-all. Replace the spin wait with wait_var_event().
+tasklet_unlock_wait() is invoked from tasklet_kill() which is used in
+teardown paths and not performance critical at all. Replace the spin wait
+with wait_var_event().
+
+There are no users of tasklet_unlock_wait() which are invoked from atomic
+contexts. The usage in tasklet_disable() has been replaced temporarily with
+the spin waiting variant until the atomic users are fixed up and will be
+converted to the sleep wait variant later.
 
 Signed-off-by: Peter Zijlstra <peterz@infradead.org>
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/interrupt.h |   13 ++-----------
  kernel/softirq.c          |   18 ++++++++++++++++++
@@ -39,7 +45,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 +void tasklet_unlock_wait(struct tasklet_struct *t);
  
  /*
-  * Do not use in new code. There is no real reason to invoke this from
+  * Do not use in new code. Waiting for tasklets from atomic contexts is
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -25,6 +25,7 @@

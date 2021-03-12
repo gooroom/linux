@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Fri, 4 Dec 2020 18:02:00 +0100
-Subject: [PATCH 06/19] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
+Date: Tue, 9 Mar 2021 09:42:10 +0100
+Subject: [PATCH 07/20] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 tasklet_unlock_spin_wait() spin waits for the TASKLET_STATE_SCHED bit in
 the tasklet state to be cleared. This works on !RT nicely because the
@@ -20,10 +20,11 @@ cycles.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/interrupt.h |   13 ++-----------
+ include/linux/interrupt.h |   12 ++----------
  kernel/softirq.c          |   28 +++++++++++++++++++++++++++-
- 2 files changed, 29 insertions(+), 12 deletions(-)
+ 2 files changed, 29 insertions(+), 11 deletions(-)
 
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
@@ -36,21 +37,21 @@ Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static inline int tasklet_trylock(struct tasklet_struct *t)
  {
  	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
-@@ -662,16 +662,7 @@ static inline int tasklet_trylock(struct
+@@ -662,16 +662,8 @@ static inline int tasklet_trylock(struct
  
  void tasklet_unlock(struct tasklet_struct *t);
  void tasklet_unlock_wait(struct tasklet_struct *t);
--
++void tasklet_unlock_spin_wait(struct tasklet_struct *t);
+ 
 -/*
-- * Do not use in new code. There is no real reason to invoke this from
-- * atomic contexts.
+- * Do not use in new code. Waiting for tasklets from atomic contexts is
+- * error prone and should be avoided.
 - */
 -static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 -{
 -	while (test_bit(TASKLET_STATE_RUN, &t->state))
 -		cpu_relax();
 -}
-+void tasklet_unlock_spin_wait(struct tasklet_struct *t);
  #else
  static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
  static inline void tasklet_unlock(struct tasklet_struct *t) { }
@@ -62,8 +63,8 @@ Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
 +#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
 +/*
-+ * Do not use in new code. There is no real reason to invoke this from
-+ * atomic contexts.
++ * Do not use in new code. Waiting for tasklets from atomic contexts is
++ * error prone and should be avoided.
 + */
 +void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 +{

@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:05 +0106
 Subject: [PATCH 23/28] printk: change @console_seq to atomic64_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 In preparation for atomic printing, change @console_seq to atomic
 so that it can be accessed without requiring @console_sem.
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  struct latched_seq {
  	seqcount_latch_t	latch;
  	u64			val[2];
-@@ -2270,7 +2271,7 @@ EXPORT_SYMBOL(printk);
+@@ -2271,7 +2272,7 @@ EXPORT_SYMBOL(printk);
  #define prb_first_valid_seq(rb)		0
  
  static u64 syslog_seq;
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static u64 exclusive_console_stop_seq;
  static unsigned long console_dropped;
  
-@@ -2585,6 +2586,7 @@ void console_unlock(void)
+@@ -2579,6 +2580,7 @@ void console_unlock(void)
  	bool do_cond_resched, retry;
  	struct printk_info info;
  	struct printk_record r;
@@ -48,7 +48,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	if (console_suspended) {
  		up_console_sem();
-@@ -2627,12 +2629,14 @@ void console_unlock(void)
+@@ -2621,12 +2623,14 @@ void console_unlock(void)
  		size_t len;
  
  skip:
@@ -67,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		}
  
  		if (suppress_message_printing(r.info->level)) {
-@@ -2641,13 +2645,13 @@ void console_unlock(void)
+@@ -2635,13 +2639,13 @@ void console_unlock(void)
  			 * directly to the console when we received it, and
  			 * record that has level above the console loglevel.
  			 */
@@ -83,7 +83,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			exclusive_console = NULL;
  		}
  
-@@ -2668,7 +2672,7 @@ void console_unlock(void)
+@@ -2662,7 +2666,7 @@ void console_unlock(void)
  		len = record_print_text(&r,
  				console_msg_format & MSG_FORMAT_SYSLOG,
  				printk_time);
@@ -92,7 +92,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		/*
  		 * While actively printing out messages, if another printk()
-@@ -2699,7 +2703,7 @@ void console_unlock(void)
+@@ -2693,7 +2697,7 @@ void console_unlock(void)
  	 * there's a new owner and the console_unlock() from them will do the
  	 * flush, no worries.
  	 */
@@ -101,7 +101,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (retry && console_trylock())
  		goto again;
  }
-@@ -2762,7 +2766,7 @@ void console_flush_on_panic(enum con_flu
+@@ -2756,7 +2760,7 @@ void console_flush_on_panic(enum con_flu
  	console_may_schedule = 0;
  
  	if (mode == CONSOLE_REPLAY_ALL)
@@ -110,7 +110,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	console_unlock();
  }
  
-@@ -2999,11 +3003,11 @@ void register_console(struct console *ne
+@@ -2993,11 +2997,11 @@ void register_console(struct console *ne
  		 * ignores console_lock.
  		 */
  		exclusive_console = newcon;

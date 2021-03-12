@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 21 Dec 2020 11:10:03 +0106
 Subject: [PATCH 11/28] um: synchronize kmsg_dumper
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 The kmsg_dumper can be called from any context and CPU, possibly
 from multiple CPUs simultaneously. Since a static buffer is used
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <linux/console.h>
  #include <shared/init.h>
  #include <shared/kern.h>
-@@ -9,8 +10,10 @@
+@@ -9,8 +10,10 @@ static void kmsg_dumper_stdout(struct km
  				enum kmsg_dump_reason reason,
  				struct kmsg_dumper_iter *iter)
  {
@@ -36,7 +36,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	size_t len = 0;
  
  	/* only dump kmsg when no console is available */
-@@ -25,11 +28,16 @@
+@@ -25,11 +28,16 @@ static void kmsg_dumper_stdout(struct km
  	if (con)
  		return;
  

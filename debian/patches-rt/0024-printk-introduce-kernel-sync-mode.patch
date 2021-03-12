@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:06 +0106
 Subject: [PATCH 24/28] printk: introduce kernel sync mode
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 When the kernel performs an OOPS, enter into "sync mode":
 
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  struct vc_data;
  struct console_font_op;
-@@ -150,6 +151,9 @@ struct console {
+@@ -151,6 +152,9 @@ struct console {
  	short	flags;
  	short	index;
  	int	cflag;
@@ -84,7 +84,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define LOG_LEVEL(v)		((v) & 0x07)
  #define LOG_FACILITY(v)		((v) >> 3 & 0xff)
  
-@@ -1742,6 +1743,91 @@ static inline void printk_delay(int leve
+@@ -1743,6 +1744,91 @@ static inline void printk_delay(int leve
  	}
  }
  
@@ -176,7 +176,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * Special console_lock variants that help to reduce the risk of soft-lockups.
   * They allow to pass console_lock to another printk() call using a busy wait.
-@@ -1916,6 +2002,8 @@ static void call_console_drivers(const c
+@@ -1917,6 +2003,8 @@ static void call_console_drivers(const c
  		if (!cpu_online(smp_processor_id()) &&
  		    !(con->flags & CON_ANYTIME))
  			continue;
@@ -185,7 +185,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		if (con->flags & CON_EXTENDED)
  			con->write(con, ext_text, ext_len);
  		else {
-@@ -2070,6 +2158,7 @@ int vprintk_store(int facility, int leve
+@@ -2071,6 +2159,7 @@ int vprintk_store(int facility, int leve
  	const u32 caller_id = printk_caller_id();
  	struct prb_reserved_entry e;
  	enum log_flags lflags = 0;
@@ -193,7 +193,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	struct printk_record r;
  	unsigned long irqflags;
  	u16 trunc_msg_len = 0;
-@@ -2079,6 +2168,7 @@ int vprintk_store(int facility, int leve
+@@ -2080,6 +2169,7 @@ int vprintk_store(int facility, int leve
  	u16 text_len;
  	int ret = 0;
  	u64 ts_nsec;
@@ -201,7 +201,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * Since the duration of printk() can vary depending on the message
-@@ -2117,6 +2207,7 @@ int vprintk_store(int facility, int leve
+@@ -2118,6 +2208,7 @@ int vprintk_store(int facility, int leve
  	if (lflags & LOG_CONT) {
  		prb_rec_init_wr(&r, reserve_size);
  		if (prb_reserve_in_last(&e, prb, &r, caller_id, LOG_LINE_MAX)) {
@@ -209,7 +209,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			text_len = printk_sprint(&r.text_buf[r.info->text_len], reserve_size,
  						 facility, &lflags, fmt, args);
  			r.info->text_len += text_len;
-@@ -2124,6 +2215,7 @@ int vprintk_store(int facility, int leve
+@@ -2125,6 +2216,7 @@ int vprintk_store(int facility, int leve
  			if (lflags & LOG_NEWLINE) {
  				r.info->flags |= LOG_NEWLINE;
  				prb_final_commit(&e);
@@ -217,7 +217,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			} else {
  				prb_commit(&e);
  			}
-@@ -2148,6 +2240,8 @@ int vprintk_store(int facility, int leve
+@@ -2149,6 +2241,8 @@ int vprintk_store(int facility, int leve
  			goto out;
  	}
  
@@ -226,7 +226,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/* fill message */
  	text_len = printk_sprint(&r.text_buf[0], reserve_size, facility, &lflags, fmt, args);
  	if (trunc_msg_len)
-@@ -2162,13 +2256,25 @@ int vprintk_store(int facility, int leve
+@@ -2163,13 +2257,25 @@ int vprintk_store(int facility, int leve
  		memcpy(&r.info->dev_info, dev_info, sizeof(r.info->dev_info));
  
  	/* A message without a trailing newline can be continued. */
@@ -254,7 +254,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	printk_exit_irqrestore(irqflags);
  	return ret;
  }
-@@ -2264,12 +2370,13 @@ EXPORT_SYMBOL(printk);
+@@ -2265,12 +2371,13 @@ EXPORT_SYMBOL(printk);
  
  #else /* CONFIG_PRINTK */
  
@@ -269,7 +269,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static u64 syslog_seq;
  static atomic64_t console_seq = ATOMIC64_INIT(0);
  static u64 exclusive_console_stop_seq;
-@@ -2562,6 +2669,8 @@ static int have_callable_console(void)
+@@ -2556,6 +2663,8 @@ static int have_callable_console(void)
   */
  static inline int can_use_console(void)
  {
@@ -278,7 +278,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return cpu_online(raw_smp_processor_id()) || have_callable_console();
  }
  
-@@ -3374,6 +3483,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
+@@ -3370,6 +3479,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
  	struct kmsg_dumper_iter iter;
  	struct kmsg_dumper *dumper;
  
