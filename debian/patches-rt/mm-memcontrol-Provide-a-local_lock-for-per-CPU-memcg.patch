@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 18 Aug 2020 10:30:00 +0200
 Subject: [PATCH] mm: memcontrol: Provide a local_lock for per-CPU memcg_stock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.8-rt24.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
 
 The interrupts are disabled to ensure CPU-local access to the per-CPU
 variable `memcg_stock'.
@@ -82,7 +82,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  /*
-@@ -3145,7 +3146,7 @@ static bool consume_obj_stock(struct obj
+@@ -3143,7 +3144,7 @@ static bool consume_obj_stock(struct obj
  	unsigned long flags;
  	bool ret = false;
  
@@ -91,7 +91,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	stock = this_cpu_ptr(&memcg_stock);
  	if (objcg == stock->cached_objcg && stock->nr_bytes >= nr_bytes) {
-@@ -3153,7 +3154,7 @@ static bool consume_obj_stock(struct obj
+@@ -3151,7 +3152,7 @@ static bool consume_obj_stock(struct obj
  		ret = true;
  	}
  
@@ -100,7 +100,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return ret;
  }
-@@ -3212,7 +3213,7 @@ static void refill_obj_stock(struct obj_
+@@ -3210,7 +3211,7 @@ static void refill_obj_stock(struct obj_
  	struct memcg_stock_pcp *stock;
  	unsigned long flags;
  
@@ -109,7 +109,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	stock = this_cpu_ptr(&memcg_stock);
  	if (stock->cached_objcg != objcg) { /* reset if necessary */
-@@ -3226,7 +3227,7 @@ static void refill_obj_stock(struct obj_
+@@ -3224,7 +3225,7 @@ static void refill_obj_stock(struct obj_
  	if (stock->nr_bytes > PAGE_SIZE)
  		drain_obj_stock(stock);
  
@@ -118,7 +118,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  int obj_cgroup_charge(struct obj_cgroup *objcg, gfp_t gfp, size_t size)
-@@ -7138,9 +7139,13 @@ static int __init mem_cgroup_init(void)
+@@ -7135,9 +7136,13 @@ static int __init mem_cgroup_init(void)
  	cpuhp_setup_state_nocalls(CPUHP_MM_MEMCQ_DEAD, "mm/memctrl:dead", NULL,
  				  memcg_hotplug_cpu_dead);
  
