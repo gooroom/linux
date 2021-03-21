@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
-Date: Mon, 25 Jan 2021 11:45:00 +0100
-Subject: [PATCH 03/19] tasklets: Provide tasklet_disable_in_atomic()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Date: Tue, 9 Mar 2021 09:42:06 +0100
+Subject: [PATCH 03/20] tasklets: Provide tasklet_disable_in_atomic()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 Replacing the spin wait loops in tasklet_unlock_wait() with
 wait_var_event() is not possible as a handful of tasklet_disable()
@@ -13,6 +13,7 @@ convert the few atomic use cases over, which allows to change
 tasklet_disable() and tasklet_unlock_wait() in a later step.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/interrupt.h |   22 ++++++++++++++++++++++
  1 file changed, 22 insertions(+)
@@ -25,8 +26,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
 +
 +/*
-+ * Do not use in new code. There is no real reason to invoke this from
-+ * atomic contexts.
++ * Do not use in new code. Waiting for tasklets from atomic contexts is
++ * error prone and should be avoided.
 + */
 +static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t)
 +{
@@ -46,8 +47,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
 +/*
-+ * Do not use in new code. There is no real reason to invoke this from
-+ * atomic contexts.
++ * Do not use in new code. Disabling tasklets from atomic contexts is
++ * error prone and should be avoided.
 + */
 +static inline void tasklet_disable_in_atomic(struct tasklet_struct *t)
 +{

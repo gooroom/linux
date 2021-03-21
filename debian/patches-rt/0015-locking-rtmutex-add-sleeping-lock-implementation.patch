@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 15/22] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -1116,7 +1116,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  # include "rtmutex-debug.h"
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -512,9 +512,15 @@ static bool set_nr_if_polling(struct tas
+@@ -510,9 +510,15 @@ static bool set_nr_if_polling(struct tas
  #endif
  #endif
  
@@ -1134,7 +1134,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * Atomically grab the task, if ->wake_q is !nil already it means
-@@ -550,7 +556,13 @@ static bool __wake_q_add(struct wake_q_h
+@@ -548,7 +554,13 @@ static bool __wake_q_add(struct wake_q_h
   */
  void wake_q_add(struct wake_q_head *head, struct task_struct *task)
  {
@@ -1149,7 +1149,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		get_task_struct(task);
  }
  
-@@ -573,28 +585,39 @@ void wake_q_add(struct wake_q_head *head
+@@ -571,28 +583,39 @@ void wake_q_add(struct wake_q_head *head
   */
  void wake_q_add_safe(struct wake_q_head *head, struct task_struct *task)
  {
