@@ -19,8 +19,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/softirq.c          |  9 +++++++++
  5 files changed, 38 insertions(+), 2 deletions(-)
 
-diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 127cfbd8f129..f323a5109987 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -61,6 +61,7 @@
@@ -39,8 +37,6 @@ index 127cfbd8f129..f323a5109987 100644
  
  #define IRQF_TIMER		(__IRQF_TIMER | IRQF_NO_SUSPEND | IRQF_NO_THREAD)
  
-diff --git a/include/linux/irq.h b/include/linux/irq.h
-index 39e3254e5769..8ebac94fbb9f 100644
 --- a/include/linux/irq.h
 +++ b/include/linux/irq.h
 @@ -72,6 +72,7 @@ enum irqchip_irq_state;
@@ -67,14 +63,12 @@ index 39e3254e5769..8ebac94fbb9f 100644
  
  #define IRQ_NO_BALANCING_MASK	(IRQ_PER_CPU | IRQ_NO_BALANCING)
  
-diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 8054162e660a..996b5fb0efc4 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -893,7 +893,15 @@ irq_forced_thread_fn(struct irq_desc *desc, struct irqaction *action)
- 		atomic_inc(&desc->threads_handled);
- 
+@@ -897,7 +897,15 @@ irq_forced_thread_fn(struct irq_desc *de
  	irq_finalize_oneshot(desc, action);
+ 	if (!IS_ENABLED(CONFIG_PREEMPT_RT_BASE))
+ 		local_irq_enable();
 -	local_bh_enable();
 +	/*
 +	 * Interrupts which have real time requirements can be set up
@@ -88,7 +82,7 @@ index 8054162e660a..996b5fb0efc4 100644
  	return ret;
  }
  
-@@ -1360,6 +1368,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
+@@ -1364,6 +1372,9 @@ __setup_irq(unsigned int irq, struct irq
  			irqd_set(&desc->irq_data, IRQD_NO_BALANCING);
  		}
  
@@ -98,8 +92,6 @@ index 8054162e660a..996b5fb0efc4 100644
  		/* Set default affinity mask once everything is setup */
  		setup_affinity(desc, mask);
  
-diff --git a/kernel/irq/settings.h b/kernel/irq/settings.h
-index 320579d89091..2df2d4445b1e 100644
 --- a/kernel/irq/settings.h
 +++ b/kernel/irq/settings.h
 @@ -16,6 +16,7 @@ enum {
@@ -118,7 +110,7 @@ index 320579d89091..2df2d4445b1e 100644
  #undef IRQF_MODIFY_MASK
  #define IRQF_MODIFY_MASK	GOT_YOU_MORON
  
-@@ -40,6 +42,16 @@ irq_settings_clr_and_set(struct irq_desc *desc, u32 clr, u32 set)
+@@ -40,6 +42,16 @@ irq_settings_clr_and_set(struct irq_desc
  	desc->status_use_accessors |= (set & _IRQF_MODIFY_MASK);
  }
  
@@ -135,8 +127,6 @@ index 320579d89091..2df2d4445b1e 100644
  static inline bool irq_settings_is_per_cpu(struct irq_desc *desc)
  {
  	return desc->status_use_accessors & _IRQ_PER_CPU;
-diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 654cebf7b736..8957a27e45a7 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -593,6 +593,15 @@ void __local_bh_enable(void)
