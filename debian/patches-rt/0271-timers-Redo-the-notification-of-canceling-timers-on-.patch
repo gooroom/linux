@@ -1,12 +1,12 @@
-From 8cb895bd433ead86326f154b2194ece855908c7a Mon Sep 17 00:00:00 2001
-Message-Id: <8cb895bd433ead86326f154b2194ece855908c7a.1612799232.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From c1f65cd9d3777a132d653576fc731c71099d1eaa Mon Sep 17 00:00:00 2001
+Message-Id: <c1f65cd9d3777a132d653576fc731c71099d1eaa.1616531143.git.zanussi@kernel.org>
+In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
 Subject: [PATCH 271/335] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -152,10 +152,10 @@ index a465564367ec..dcf0204264f1 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index f16cbc98c47a..ed5d8d51ca91 100644
+index e3b7a0244cf3..132c78aff650 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -963,33 +963,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
+@@ -981,33 +981,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
  }
  EXPORT_SYMBOL_GPL(hrtimer_forward);
  
@@ -194,7 +194,7 @@ index f16cbc98c47a..ed5d8d51ca91 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1227,7 +1210,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1245,7 +1228,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -203,7 +203,7 @@ index f16cbc98c47a..ed5d8d51ca91 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1531,6 +1514,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1549,6 +1532,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	unsigned long flags;
  	ktime_t now;
  
@@ -211,7 +211,7 @@ index f16cbc98c47a..ed5d8d51ca91 100644
  	raw_spin_lock_irqsave(&cpu_base->lock, flags);
  
  	now = hrtimer_update_base(cpu_base);
-@@ -1540,7 +1524,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1558,7 +1542,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -220,7 +220,7 @@ index f16cbc98c47a..ed5d8d51ca91 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1950,9 +1934,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -1968,9 +1952,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;

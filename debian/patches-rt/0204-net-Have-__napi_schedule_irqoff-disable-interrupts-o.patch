@@ -1,12 +1,12 @@
-From 0130e806eb6af9028975a0d59d71f608d8dd37e3 Mon Sep 17 00:00:00 2001
-Message-Id: <0130e806eb6af9028975a0d59d71f608d8dd37e3.1612799232.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From 15a2fea55334ed192b2dcf5135f443f7f942bb00 Mon Sep 17 00:00:00 2001
+Message-Id: <15a2fea55334ed192b2dcf5135f443f7f942bb00.1616531142.git.zanussi@kernel.org>
+In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
 Subject: [PATCH 204/335] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -32,10 +32,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 7bf58533f955..0e34e8051ac2 100644
+index d37d6fac5b87..e2c61d402073 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -422,7 +422,19 @@ typedef enum rx_handler_result rx_handler_result_t;
+@@ -423,7 +423,19 @@ typedef enum rx_handler_result rx_handler_result_t;
  typedef rx_handler_result_t rx_handler_func_t(struct sk_buff **pskb);
  
  void __napi_schedule(struct napi_struct *n);

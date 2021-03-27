@@ -1,11 +1,11 @@
-From 7f328a021975043d9ef4a309d436555adb8a72ed Mon Sep 17 00:00:00 2001
-Message-Id: <7f328a021975043d9ef4a309d436555adb8a72ed.1612799231.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From e0955ede950979480661382b4595cafdfd963ce3 Mon Sep 17 00:00:00 2001
+Message-Id: <e0955ede950979480661382b4595cafdfd963ce3.1616531142.git.zanussi@kernel.org>
+In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
 Subject: [PATCH 074/335] mm/SLxB: change list_lock to raw_spinlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -402,7 +402,7 @@ index 9632772e14be..d6b01d61f768 100644
  #ifdef CONFIG_SLAB
  	struct list_head slabs_partial;	/* partial list first, better asm code */
 diff --git a/mm/slub.c b/mm/slub.c
-index eac80b0516fe..27fe06cc937c 100644
+index da141e5974f2..2dba0b64b61d 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1181,7 +1181,7 @@ static noinline int free_debug_processing(

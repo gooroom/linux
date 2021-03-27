@@ -1,12 +1,12 @@
-From 6bce6dbf41795f476df46fbdf9af3726415d45fc Mon Sep 17 00:00:00 2001
-Message-Id: <6bce6dbf41795f476df46fbdf9af3726415d45fc.1612799232.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From 8664095e04c78c1a11002d1bba667b28bd88227e Mon Sep 17 00:00:00 2001
+Message-Id: <8664095e04c78c1a11002d1bba667b28bd88227e.1616531143.git.zanussi@kernel.org>
+In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
 Subject: [PATCH 233/335] net/core: protect users of napi_alloc_cache against
  reentrance
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
 
 On -RT the code running in BH can not be moved to another CPU so CPU
 local variable remain local. However the code can be preempted
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 18 insertions(+), 5 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index fc8356d7d581..2bdea77299ca 100644
+index 247626436755..8010a79e4f7e 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -332,6 +332,7 @@ struct napi_alloc_cache {

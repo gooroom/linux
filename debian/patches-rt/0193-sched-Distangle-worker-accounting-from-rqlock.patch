@@ -1,11 +1,11 @@
-From d2da48ca95d4421582450156ee4d01c39a2da2b5 Mon Sep 17 00:00:00 2001
-Message-Id: <d2da48ca95d4421582450156ee4d01c39a2da2b5.1612799232.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From 4b90f464ae38f70e867de2c08cdcb714ab3bd07c Mon Sep 17 00:00:00 2001
+Message-Id: <4b90f464ae38f70e867de2c08cdcb714ab3bd07c.1616531142.git.zanussi@kernel.org>
+In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
 Subject: [PATCH 193/335] sched: Distangle worker accounting from rqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -173,7 +173,7 @@ index a0b5e4914895..8c89bcdb2724 100644
  EXPORT_SYMBOL(schedule);
  
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index d663b779f77a..d6b1cf164273 100644
+index 00889d1bcee1..d52f4b7c847a 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -843,43 +843,32 @@ static void wake_up_worker(struct worker_pool *pool)
