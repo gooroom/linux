@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:08 +0106
 Subject: [PATCH 26/28] printk: remove deferred printing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 Since printing occurs either atomically or from the printing
 kthread, there is no need for any deferring or tracking possible
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/arch/arm/kernel/smp.c
 +++ b/arch/arm/kernel/smp.c
-@@ -671,9 +671,7 @@ static void do_handle_IPI(int ipinr)
+@@ -672,9 +672,7 @@ static void do_handle_IPI(int ipinr)
  		break;
  
  	case IPI_CPU_BACKTRACE:
@@ -229,7 +229,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	return __printk_percpu_data_ready;
  }
-@@ -1060,7 +1044,6 @@ void __init setup_log_buf(int early)
+@@ -1061,7 +1045,6 @@ void __init setup_log_buf(int early)
  	struct printk_record r;
  	size_t new_descs_size;
  	size_t new_infos_size;
@@ -237,7 +237,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	char *new_log_buf;
  	unsigned int free;
  	u64 seq;
-@@ -1958,9 +1941,9 @@ static u16 printk_sprint(char *text, u16
+@@ -1959,9 +1942,9 @@ static u16 printk_sprint(char *text, u16
  }
  
  __printf(4, 0)
@@ -250,7 +250,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  	const u32 caller_id = printk_caller_id();
  	struct prb_reserved_entry e;
-@@ -2106,11 +2089,22 @@ asmlinkage int vprintk_emit(int facility
+@@ -2107,11 +2090,22 @@ asmlinkage int vprintk_emit(int facility
  }
  EXPORT_SYMBOL(vprintk_emit);
  
@@ -275,7 +275,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  asmlinkage int vprintk(const char *fmt, va_list args)
  {
-@@ -3073,18 +3067,10 @@ void wake_up_klogd(void)
+@@ -3069,18 +3063,10 @@ void wake_up_klogd(void)
  	preempt_enable();
  }
  
@@ -390,7 +390,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -}
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -9325,7 +9325,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9295,7 +9295,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  	tracing_off();
  
  	local_irq_save(flags);
@@ -398,7 +398,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -9405,7 +9404,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+@@ -9375,7 +9374,6 @@ void ftrace_dump(enum ftrace_dump_mode o
  		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);

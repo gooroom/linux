@@ -1,7 +1,7 @@
 Subject: lockdep: Make it RT aware
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 18:51:23 +0200
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 teach lockdep that we don't really do softirqs on -RT.
 
@@ -52,7 +52,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
   extern void stop_critical_timings(void);
 --- a/kernel/locking/lockdep.c
 +++ b/kernel/locking/lockdep.c
-@@ -5290,6 +5290,7 @@ static noinstr void check_flags(unsigned
+@@ -5291,6 +5291,7 @@ static noinstr void check_flags(unsigned
  		}
  	}
  
@@ -60,7 +60,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	/*
  	 * We dont accurately track softirq state in e.g.
  	 * hardirq contexts (such as on 4KSTACKS), so only
-@@ -5304,6 +5305,7 @@ static noinstr void check_flags(unsigned
+@@ -5305,6 +5306,7 @@ static noinstr void check_flags(unsigned
  			DEBUG_LOCKS_WARN_ON(!current->softirqs_enabled);
  		}
  	}

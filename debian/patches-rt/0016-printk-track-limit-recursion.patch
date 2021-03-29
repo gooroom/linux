@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Fri, 11 Dec 2020 00:55:25 +0106
 Subject: [PATCH 16/28] printk: track/limit recursion
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 Limit printk() recursion to 1 level. This is enough to print a
 stacktrace for the printk call, should a WARN or BUG occur.
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1940,6 +1940,65 @@ static void call_console_drivers(const c
+@@ -1941,6 +1941,65 @@ static void call_console_drivers(const c
  	}
  }
  
@@ -80,7 +80,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  int printk_delay_msec __read_mostly;
  
  static inline void printk_delay(void)
-@@ -2040,11 +2099,13 @@ int vprintk_store(int facility, int leve
+@@ -2041,11 +2100,13 @@ int vprintk_store(int facility, int leve
  	struct prb_reserved_entry e;
  	enum log_flags lflags = 0;
  	struct printk_record r;
@@ -94,7 +94,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	u64 ts_nsec;
  
  	/*
-@@ -2055,6 +2116,9 @@ int vprintk_store(int facility, int leve
+@@ -2056,6 +2117,9 @@ int vprintk_store(int facility, int leve
  	 */
  	ts_nsec = local_clock();
  
@@ -104,7 +104,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	/*
  	 * The sprintf needs to come first since the syslog prefix might be
  	 * passed in as a parameter. An extra byte must be reserved so that
-@@ -2092,7 +2156,8 @@ int vprintk_store(int facility, int leve
+@@ -2093,7 +2157,8 @@ int vprintk_store(int facility, int leve
  				prb_commit(&e);
  			}
  
@@ -114,7 +114,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		}
  	}
  
-@@ -2108,7 +2173,7 @@ int vprintk_store(int facility, int leve
+@@ -2109,7 +2174,7 @@ int vprintk_store(int facility, int leve
  
  		prb_rec_init_wr(&r, reserve_size + trunc_msg_len);
  		if (!prb_reserve(&e, prb, &r))
@@ -123,7 +123,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
  	/* fill message */
-@@ -2130,7 +2195,10 @@ int vprintk_store(int facility, int leve
+@@ -2131,7 +2196,10 @@ int vprintk_store(int facility, int leve
  	else
  		prb_final_commit(&e);
  

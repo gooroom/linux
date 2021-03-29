@@ -1,7 +1,7 @@
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 21 Dec 2020 10:27:58 +0106
 Subject: [PATCH 13/28] printk: kmsg_dump: remove _nolock() variants
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.17-rt32.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.21-rt34.tar.xz
 
 kmsg_dump_rewind() and kmsg_dump_get_line() are lockless, so there is
 no need for _nolock() variants. Remove these functions and switch all
@@ -105,7 +105,7 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
  			continue;
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3382,7 +3382,7 @@ void kmsg_dump(enum kmsg_dump_reason rea
+@@ -3378,7 +3378,7 @@ void kmsg_dump(enum kmsg_dump_reason rea
  }
  
  /**
@@ -114,7 +114,7 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
   * @iter: kmsg dumper iterator
   * @syslog: include the "<4>" prefixes
   * @line: buffer to copy the line to
-@@ -3397,18 +3397,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
+@@ -3393,18 +3393,18 @@ void kmsg_dump(enum kmsg_dump_reason rea
   *
   * A return value of FALSE indicates that there are no more records to
   * read.
@@ -137,7 +137,7 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
  	prb_rec_init_rd(&r, &info, line, size);
  
  	if (!iter->active)
-@@ -3432,40 +3432,11 @@ bool kmsg_dump_get_line_nolock(struct km
+@@ -3428,40 +3428,11 @@ bool kmsg_dump_get_line_nolock(struct km
  	iter->cur_seq = r.info->seq + 1;
  	ret = true;
  out:
@@ -179,7 +179,7 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
  EXPORT_SYMBOL_GPL(kmsg_dump_get_line);
  
  /**
-@@ -3555,22 +3526,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
+@@ -3551,22 +3522,6 @@ bool kmsg_dump_get_buffer(struct kmsg_du
  EXPORT_SYMBOL_GPL(kmsg_dump_get_buffer);
  
  /**
@@ -202,7 +202,7 @@ Signed-off-by: John Ogness <john.ogness@linutronix.de>
   * kmsg_dump_rewind - reset the iterator
   * @iter: kmsg dumper iterator
   *
-@@ -3583,7 +3538,8 @@ void kmsg_dump_rewind(struct kmsg_dumper
+@@ -3579,7 +3534,8 @@ void kmsg_dump_rewind(struct kmsg_dumper
  	unsigned long flags;
  
  	printk_safe_enter_irqsave(flags);
