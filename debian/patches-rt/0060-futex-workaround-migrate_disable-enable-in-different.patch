@@ -1,12 +1,9 @@
-From f30ae4b5600979ceab72831a61ff5bc37a794ad7 Mon Sep 17 00:00:00 2001
-Message-Id: <f30ae4b5600979ceab72831a61ff5bc37a794ad7.1616531142.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From 33c77e8ae57a21703b0a17011f0a49694a25bf4d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 8 Mar 2017 14:23:35 +0100
 Subject: [PATCH 060/335] futex: workaround migrate_disable/enable in different
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 migrate_disable()/migrate_enable() takes a different path in atomic() vs
 !atomic() context. These little hacks ensure that we don't underflow / overflow
@@ -20,10 +17,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 19 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 224adcdac6c1..09390bbfb91e 100644
+index 7d0d8a45f9ae..5cb5001350cd 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2999,6 +2999,14 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2998,6 +2998,14 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * before __rt_mutex_start_proxy_lock() is done.
  	 */
  	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -38,7 +35,7 @@ index 224adcdac6c1..09390bbfb91e 100644
  	spin_unlock(q.lock_ptr);
  	/*
  	 * __rt_mutex_start_proxy_lock() unconditionally enqueues the @rt_waiter
-@@ -3007,6 +3015,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3006,6 +3014,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 */
  	ret = __rt_mutex_start_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter, current);
  	raw_spin_unlock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -46,7 +43,7 @@ index 224adcdac6c1..09390bbfb91e 100644
  
  	if (ret) {
  		if (ret == 1)
-@@ -3141,11 +3150,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -3140,11 +3149,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		 * rt_waiter. Also see the WARN in wake_futex_pi().
  		 */
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
@@ -69,5 +66,5 @@ index 224adcdac6c1..09390bbfb91e 100644
  
  		/*
 -- 
-2.17.1
+2.30.2
 

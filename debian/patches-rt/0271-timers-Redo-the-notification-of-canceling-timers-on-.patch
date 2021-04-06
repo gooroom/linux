@@ -1,12 +1,9 @@
-From c1f65cd9d3777a132d653576fc731c71099d1eaa Mon Sep 17 00:00:00 2001
-Message-Id: <c1f65cd9d3777a132d653576fc731c71099d1eaa.1616531143.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From 53276c20c632b6fa5172206ec6e400dbec9bd119 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
 Subject: [PATCH 271/335] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -139,7 +136,7 @@ index 0571b498db73..3e6c91bdf2ef 100644
  
  /*
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index a465564367ec..dcf0204264f1 100644
+index f4c8cfde00b0..e7b983df6996 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
 @@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
@@ -152,7 +149,7 @@ index a465564367ec..dcf0204264f1 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index e3b7a0244cf3..132c78aff650 100644
+index bca423281227..0d88298bfbee 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -981,33 +981,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -245,7 +242,7 @@ index 7650ee736964..48d977f947d9 100644
  		}
  		expires = timeval_to_ktime(value->it_value);
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index 8d95e8de98b2..765e700962ab 100644
+index 2d29b269dc83..54632ed51c65 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
 @@ -792,6 +792,7 @@ check_timers_list(struct list_head *timers,
@@ -649,5 +646,5 @@ index c7bd68db6f63..a2be2277506d 100644
  }
  
 -- 
-2.17.1
+2.30.2
 

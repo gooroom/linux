@@ -1,11 +1,8 @@
-From 14ae5db6c026bcdd12260d19d4de24142a7ebb3f Mon Sep 17 00:00:00 2001
-Message-Id: <14ae5db6c026bcdd12260d19d4de24142a7ebb3f.1616531143.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From 65d44e74c10ec564234492fa1980f9ca7625e5ed Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
 Subject: [PATCH 242/335] arm: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
@@ -87,7 +84,7 @@ diff --git a/arch/arm/kernel/entry-armv.S b/arch/arm/kernel/entry-armv.S
 index 89e551eebff1..4fba92bcebfe 100644
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -209,11 +209,18 @@ __irq_svc:
+@@ -209,11 +209,18 @@ ENDPROC(__dabt_svc)
  
  #ifdef CONFIG_PREEMPT
  	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
@@ -108,7 +105,7 @@ index 89e551eebff1..4fba92bcebfe 100644
  #endif
  
  	svc_exit r5, irq = 1			@ return from exception
-@@ -228,8 +235,14 @@ svc_preempt:
+@@ -228,8 +235,14 @@ ENDPROC(__irq_svc)
  1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
  	ldr	r0, [tsk, #TI_FLAGS]		@ get new tasks TI_FLAGS
  	tst	r0, #_TIF_NEED_RESCHED
@@ -128,7 +125,7 @@ diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
 index 0465d65d23de..47675830ed30 100644
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
-@@ -56,7 +56,9 @@ __ret_fast_syscall:
+@@ -56,7 +56,9 @@ saved_pc	.req	lr
  	cmp	r2, #TASK_SIZE
  	blne	addr_limit_check_failed
  	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
@@ -139,7 +136,7 @@ index 0465d65d23de..47675830ed30 100644
  	bne	fast_work_pending
  
  
-@@ -93,8 +95,11 @@ __ret_fast_syscall:
+@@ -93,8 +95,11 @@ ENDPROC(ret_fast_syscall)
  	cmp	r2, #TASK_SIZE
  	blne	addr_limit_check_failed
  	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
@@ -167,5 +164,5 @@ index 1c01358b9b6d..263b0321dc50 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.17.1
+2.30.2
 

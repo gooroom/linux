@@ -1,11 +1,8 @@
-From 6698bd773d65b685bd994aaef3945ca9c38b33f3 Mon Sep 17 00:00:00 2001
-Message-Id: <6698bd773d65b685bd994aaef3945ca9c38b33f3.1616531142.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From fdbbea53717c7d43133116ddbd9ff1380cf46fde Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
 Subject: [PATCH 099/335] hrtimers: Prepare full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 Make cancellation of a running callback in softirq context safe
 against preemption.
@@ -98,7 +95,7 @@ index ee7e987ea1b4..0571b498db73 100644
  
  void run_posix_cpu_timers(struct task_struct *task);
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index 9eece67f29f3..a465564367ec 100644
+index 6a2ba39889bd..f4c8cfde00b0 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
 @@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
@@ -111,7 +108,7 @@ index 9eece67f29f3..a465564367ec 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 4420f7e5605f..6eeadcd5c306 100644
+index 0f27e2db4e9b..ae29464d18c4 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -957,6 +957,33 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -289,5 +286,5 @@ index 5a01c4fdbfef..a5ec421e3437 100644
  	}
  	list_del(&timer->list);
 -- 
-2.17.1
+2.30.2
 

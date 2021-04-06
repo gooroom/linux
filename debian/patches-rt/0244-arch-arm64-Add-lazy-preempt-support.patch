@@ -1,11 +1,8 @@
-From 905b3c0c515f741621d66247e3ed146e1e8e5bab Mon Sep 17 00:00:00 2001
-Message-Id: <905b3c0c515f741621d66247e3ed146e1e8e5bab.1616531143.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From 40667164f3a64aaafe351440e3ae09e0131de6b8 Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: [PATCH 244/335] arch/arm64: Add lazy preempt support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -90,7 +87,7 @@ diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
 index 5f800384cb9a..b582580c8c4c 100644
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
-@@ -623,11 +623,16 @@ el1_irq:
+@@ -623,11 +623,16 @@ ENDPROC(el1_sync)
  
  #ifdef CONFIG_PREEMPT
  	ldr	w24, [tsk, #TSK_TI_PREEMPT]	// get preempt count
@@ -110,7 +107,7 @@ index 5f800384cb9a..b582580c8c4c 100644
  #endif
  #ifdef CONFIG_TRACE_IRQFLAGS
  	bl	trace_hardirqs_on
-@@ -641,6 +646,7 @@ el1_preempt:
+@@ -641,6 +646,7 @@ ENDPROC(el1_irq)
  1:	bl	preempt_schedule_irq		// irq en/disable is done inside
  	ldr	x0, [tsk, #TSK_TI_FLAGS]	// get new tasks TI_FLAGS
  	tbnz	x0, #TIF_NEED_RESCHED, 1b	// needs rescheduling?
@@ -132,5 +129,5 @@ index ca565853dea6..3f321daa7702 100644
  			local_daif_restore(DAIF_PROCCTX_NOIRQ);
  
 -- 
-2.17.1
+2.30.2
 

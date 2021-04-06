@@ -1,12 +1,9 @@
-From 15a2fea55334ed192b2dcf5135f443f7f942bb00 Mon Sep 17 00:00:00 2001
-Message-Id: <15a2fea55334ed192b2dcf5135f443f7f942bb00.1616531142.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From 00e3e7f0e8dfdfb457063908c97a0296486ec042 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
 Subject: [PATCH 204/335] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -56,7 +53,7 @@ index d37d6fac5b87..e2c61d402073 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index a1c28660295f..3d870f79190b 100644
+index fdebb966c958..f78c8285b2ef 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -5941,6 +5941,7 @@ bool napi_schedule_prep(struct napi_struct *n)
@@ -76,5 +73,5 @@ index a1c28660295f..3d870f79190b 100644
  bool napi_complete_done(struct napi_struct *n, int work_done)
  {
 -- 
-2.17.1
+2.30.2
 

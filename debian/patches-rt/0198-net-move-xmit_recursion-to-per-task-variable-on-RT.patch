@@ -1,11 +1,8 @@
-From a8e993637cb88296e94d886c1964b0fffc578704 Mon Sep 17 00:00:00 2001
-Message-Id: <a8e993637cb88296e94d886c1964b0fffc578704.1616531142.git.zanussi@kernel.org>
-In-Reply-To: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
-References: <0165b1bd8ac816835c3ad2a7dbbee87e9e5ad6dc.1616531141.git.zanussi@kernel.org>
+From b53f85fbdc36f2981527ec429c261b08f8be8fca Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
 Subject: [PATCH 198/335] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.182-rt74.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -193,7 +190,7 @@ index 3a49782e50e1..d3a16fd28663 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c71db0a668d3..002147710000 100644
+index c124e08827c4..513a5af25ffd 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3825,7 +3825,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
@@ -218,5 +215,5 @@ index c71db0a668d3..002147710000 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 -- 
-2.17.1
+2.30.2
 
