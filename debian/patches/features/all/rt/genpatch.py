@@ -3,7 +3,7 @@
 import argparse
 import codecs, errno, io, os, os.path, re, shutil, subprocess, tempfile
 
-def main(source, version=None):
+def main(source, version, verify_signature):
     patch_dir = 'debian/patches'
     rt_patch_dir = 'features/all/rt'
     series_name = 'series-rt'
@@ -49,15 +49,16 @@ def main(source, version=None):
             env['GIT_DIR'] = os.path.join(source, '.git')
             env['DEBIAN_KERNEL_KEYRING'] = 'rt-signing-key.pgp'
 
-            # Validate tag signature
-            gpg_wrapper = os.path.join(os.getcwd(),
-                                       "debian/bin/git-tag-gpg-wrapper")
-            verify_proc = subprocess.Popen(['git',
-                                            '-c', 'gpg.program=%s' % gpg_wrapper,
-                                            'tag', '-v', 'v%s-rebase' % version],
-                                           env=env)
-            if verify_proc.wait():
-                raise RuntimeError("GPG tag verification failed")
+            if verify_signature:
+                # Validate tag signature
+                gpg_wrapper = os.path.join(os.getcwd(),
+                                           "debian/bin/git-tag-gpg-wrapper")
+                verify_proc = subprocess.Popen(
+                    ['git', '-c', 'gpg.program=%s' % gpg_wrapper,
+                     'tag', '-v', 'v%s-rebase' % version],
+                    env=env)
+                if verify_proc.wait():
+                    raise RuntimeError("GPG tag verification failed")
 
             args = ['git', 'format-patch', 'v%s..v%s-rebase' % (up_ver, version)]
             format_proc = subprocess.Popen(args,
@@ -84,21 +85,22 @@ def main(source, version=None):
             assert match, 'could not parse version string'
             up_ver = match.group(1)
 
-            # Expect an accompanying signature, and validate it
-            source_sig = re.sub(r'.[gx]z$', '.sign', source)
-            unxz_proc = subprocess.Popen(['xzcat', source],
-                                         stdout=subprocess.PIPE)
-            verify_output = subprocess.check_output(
-                ['gpgv', '--status-fd', '1',
-                 '--keyring', 'debian/upstream/rt-signing-key.pgp',
-                 '--ignore-time-conflict', source_sig, '-'],
-                stdin=unxz_proc.stdout)
-            if unxz_proc.wait() or \
-               not re.search(r'^\[GNUPG:\]\s+VALIDSIG\s',
-                             codecs.decode(verify_output),
-                             re.MULTILINE):
-                os.write(2, verify_output) # bytes not str!
-                raise RuntimeError("GPG signature verification failed")
+            if verify_signature:
+                # Expect an accompanying signature, and validate it
+                source_sig = re.sub(r'.[gx]z$', '.sign', source)
+                unxz_proc = subprocess.Popen(['xzcat', source],
+                                             stdout=subprocess.PIPE)
+                verify_output = subprocess.check_output(
+                    ['gpgv', '--status-fd', '1',
+                     '--keyring', 'debian/upstream/rt-signing-key.pgp',
+                     '--ignore-time-conflict', source_sig, '-'],
+                    stdin=unxz_proc.stdout)
+                if unxz_proc.wait() or \
+                   not re.search(r'^\[GNUPG:\]\s+VALIDSIG\s',
+                                 codecs.decode(verify_output),
+                                 re.MULTILINE):
+                    os.write(2, verify_output)  # bytes not str!
+                    raise RuntimeError("GPG signature verification failed")
 
             temp_dir = tempfile.mkdtemp(prefix='rt-genpatch', dir='debian')
             try:
@@ -140,5 +142,9 @@ if __name__ == '__main__':
     parser.add_argument(
         'version', metavar='RT-VERSION', type=str, nargs='?',
         help='rt kernel version (optional for tarballs)')
+    parser.add_argument(
+        '--verify-signature', action=argparse.BooleanOptionalAction,
+        default=True,
+        help='verify signature on tarball (detached in .sign file) or git tag')
     args = parser.parse_args()
-    main(args.source, args.version)
+    main(args.source, args.version, args.verify_signature)
