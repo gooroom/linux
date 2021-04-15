@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import codecs, errno, io, os, os.path, re, shutil, subprocess, sys, tempfile
+import argparse
+import codecs, errno, io, os, os.path, re, shutil, subprocess, tempfile
 
 def main(source, version=None):
     patch_dir = 'debian/patches'
@@ -131,9 +132,13 @@ def main(source, version=None):
         print('Obsoleted patch', os.path.join(patch_dir, name))
 
 if __name__ == '__main__':
-    if not (1 <= len(sys.argv) <= 3):
-        print('Usage: %s {TAR [RT-VERSION] | REPO RT-VERSION}' % sys.argv[0], file=sys.stderr)
-        print('TAR is a tarball of patches.', file=sys.stderr)
-        print('REPO is a git repo containing the given RT-VERSION.', file=sys.stderr)
-        sys.exit(2)
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(
+        description='Generate or update the rt featureset patch series')
+    parser.add_argument(
+        'source', metavar='SOURCE', type=str,
+        help='tarball of patches or git repo containing the given RT-VERSION')
+    parser.add_argument(
+        'version', metavar='RT-VERSION', type=str, nargs='?',
+        help='rt kernel version (optional for tarballs)')
+    args = parser.parse_args()
+    main(args.source, args.version)
