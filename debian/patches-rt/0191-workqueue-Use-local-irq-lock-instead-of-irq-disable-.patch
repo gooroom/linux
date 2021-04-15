@@ -13,8 +13,6 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  kernel/workqueue.c | 45 ++++++++++++++++++++++++++++++---------------
  1 file changed, 30 insertions(+), 15 deletions(-)
 
-diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index c7052c629aa8..0e67fd635c6b 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -49,6 +49,7 @@
@@ -25,7 +23,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  
  #include "workqueue_internal.h"
  
-@@ -350,6 +351,8 @@ EXPORT_SYMBOL_GPL(system_power_efficient_wq);
+@@ -350,6 +351,8 @@
  struct workqueue_struct *system_freezable_power_efficient_wq __read_mostly;
  EXPORT_SYMBOL_GPL(system_freezable_power_efficient_wq);
  
@@ -34,7 +32,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  static int worker_thread(void *__worker);
  static void workqueue_sysfs_unregister(struct workqueue_struct *wq);
  
-@@ -1103,9 +1106,11 @@ static void put_pwq_unlocked(struct pool_workqueue *pwq)
+@@ -1103,9 +1106,11 @@
  		 * As both pwqs and pools are RCU protected, the
  		 * following lock operations are safe.
  		 */
@@ -48,7 +46,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	}
  }
  
-@@ -1209,7 +1214,7 @@ static int try_to_grab_pending(struct work_struct *work, bool is_dwork,
+@@ -1209,7 +1214,7 @@
  	struct worker_pool *pool;
  	struct pool_workqueue *pwq;
  
@@ -57,7 +55,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  
  	/* try to steal the timer if it exists */
  	if (is_dwork) {
-@@ -1273,7 +1278,7 @@ static int try_to_grab_pending(struct work_struct *work, bool is_dwork,
+@@ -1273,7 +1278,7 @@
  	spin_unlock(&pool->lock);
  fail:
  	rcu_read_unlock();
@@ -66,7 +64,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	if (work_is_canceling(work))
  		return -ENOENT;
  	cpu_relax();
-@@ -1378,7 +1383,13 @@ static void __queue_work(int cpu, struct workqueue_struct *wq,
+@@ -1378,7 +1383,13 @@
  	 * queued or lose PENDING.  Grabbing PENDING and queueing should
  	 * happen with IRQ disabled.
  	 */
@@ -78,9 +76,9 @@ index c7052c629aa8..0e67fd635c6b 100644
  	lockdep_assert_irqs_disabled();
 +#endif
  
- 	debug_work_activate(work);
  
-@@ -1486,14 +1497,14 @@ bool queue_work_on(int cpu, struct workqueue_struct *wq,
+ 	/* if draining, only works from the same workqueue are allowed */
+@@ -1486,14 +1497,14 @@
  	bool ret = false;
  	unsigned long flags;
  
@@ -97,7 +95,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	return ret;
  }
  EXPORT_SYMBOL(queue_work_on);
-@@ -1502,8 +1513,11 @@ void delayed_work_timer_fn(struct timer_list *t)
+@@ -1502,8 +1513,11 @@
  {
  	struct delayed_work *dwork = from_timer(dwork, t, timer);
  
@@ -109,7 +107,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  }
  EXPORT_SYMBOL(delayed_work_timer_fn);
  
-@@ -1558,14 +1572,14 @@ bool queue_delayed_work_on(int cpu, struct workqueue_struct *wq,
+@@ -1558,14 +1572,14 @@
  	unsigned long flags;
  
  	/* read the comment in __queue_work() */
@@ -126,7 +124,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	return ret;
  }
  EXPORT_SYMBOL(queue_delayed_work_on);
-@@ -1600,7 +1614,7 @@ bool mod_delayed_work_on(int cpu, struct workqueue_struct *wq,
+@@ -1600,7 +1614,7 @@
  
  	if (likely(ret >= 0)) {
  		__queue_delayed_work(cpu, wq, dwork, delay);
@@ -135,7 +133,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	}
  
  	/* -ENOENT from try_to_grab_pending() becomes %true */
-@@ -1611,11 +1625,12 @@ EXPORT_SYMBOL_GPL(mod_delayed_work_on);
+@@ -1611,11 +1625,12 @@
  static void rcu_work_rcufn(struct rcu_head *rcu)
  {
  	struct rcu_work *rwork = container_of(rcu, struct rcu_work, rcu);
@@ -150,7 +148,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  }
  
  /**
-@@ -3007,7 +3022,7 @@ static bool __cancel_work_timer(struct work_struct *work, bool is_dwork)
+@@ -3007,7 +3022,7 @@
  
  	/* tell other tasks trying to grab @work to back off */
  	mark_work_canceling(work);
@@ -159,7 +157,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  
  	/*
  	 * This allows canceling during early boot.  We know that @work
-@@ -3068,10 +3083,10 @@ EXPORT_SYMBOL_GPL(cancel_work_sync);
+@@ -3068,10 +3083,10 @@
   */
  bool flush_delayed_work(struct delayed_work *dwork)
  {
@@ -172,7 +170,7 @@ index c7052c629aa8..0e67fd635c6b 100644
  	return flush_work(&dwork->work);
  }
  EXPORT_SYMBOL(flush_delayed_work);
-@@ -3109,7 +3124,7 @@ static bool __cancel_work(struct work_struct *work, bool is_dwork)
+@@ -3109,7 +3124,7 @@
  		return false;
  
  	set_work_pool_and_clear_pending(work, get_work_pool_id(work));
@@ -181,6 +179,3 @@ index c7052c629aa8..0e67fd635c6b 100644
  	return ret;
  }
  
--- 
-2.30.2
-
