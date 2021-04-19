@@ -1,8 +1,8 @@
-From 0119cc97902e415df8db240cf53c0f67e61121c4 Mon Sep 17 00:00:00 2001
+From 0942e35c74b6340c8fbf5a06b4e718323a824135 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 237/335] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
+Subject: [PATCH 237/338] sched: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.188-rt77.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -530,7 +530,7 @@ index 494d21b04b1d..ccb08446c9bc 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index bf9160fd94a3..017226261bb0 100644
+index 9e864741fac6..d99b928598e9 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2139,6 +2139,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -551,7 +551,7 @@ index bf9160fd94a3..017226261bb0 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3355,15 +3357,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -3356,15 +3358,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -578,7 +578,7 @@ index bf9160fd94a3..017226261bb0 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3401,15 +3405,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -3402,15 +3406,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  		   tgid ? tgid_space : space);
  	seq_printf(m, "#                          %s / _----=> need-resched\n",
  		   tgid ? tgid_space : space);

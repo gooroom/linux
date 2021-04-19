@@ -1,8 +1,8 @@
-From 30a0124eec52c168f96bb219d480515f8a319084 Mon Sep 17 00:00:00 2001
+From 2692da33ec168cb1cba53aa3ceacd644ab217a8f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
-Subject: [PATCH 193/335] sched: Distangle worker accounting from rqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.184-rt75.tar.xz
+Subject: [PATCH 193/338] sched: Distangle worker accounting from rqlock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.188-rt77.tar.xz
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -170,7 +170,7 @@ index a0b5e4914895..8c89bcdb2724 100644
  EXPORT_SYMBOL(schedule);
  
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 00889d1bcee1..d52f4b7c847a 100644
+index 07333643bb4c..1ff712808e43 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -843,43 +843,32 @@ static void wake_up_worker(struct worker_pool *pool)
