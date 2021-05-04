@@ -1,11 +1,11 @@
-From 236db40535158dec4a4181b1de982e0f3eeb81bf Mon Sep 17 00:00:00 2001
-Message-Id: <236db40535158dec4a4181b1de982e0f3eeb81bf.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 94d1f1fd58a56bc23cd3ede4805c552ddc5c10ea Mon Sep 17 00:00:00 2001
+Message-Id: <94d1f1fd58a56bc23cd3ede4805c552ddc5c10ea.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 104/333] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 104/335] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -61,7 +61,7 @@ index 0b49b9cf5571..9e3362748214 100644
  	.thread_group	= LIST_HEAD_INIT(init_task.thread_group),
  	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
 diff --git a/kernel/fork.c b/kernel/fork.c
-index bc182d6fa2a9..ccfcd44a370f 100644
+index dc9fb7000dc5..97cc80bab065 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -1590,6 +1590,9 @@ static void rt_mutex_init_task(struct task_struct *p)

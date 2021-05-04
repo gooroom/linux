@@ -1,12 +1,12 @@
-From 072768e7c1a02d208981cf6084b03594c1e10b81 Mon Sep 17 00:00:00 2001
-Message-Id: <072768e7c1a02d208981cf6084b03594c1e10b81.1601675151.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From fe68d4948875653d2a993a7684f9661b5c4f1f6d Mon Sep 17 00:00:00 2001
+Message-Id: <fe68d4948875653d2a993a7684f9661b5c4f1f6d.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 8 Mar 2017 14:23:35 +0100
-Subject: [PATCH 060/333] futex: workaround migrate_disable/enable in different
+Subject: [PATCH 060/335] futex: workaround migrate_disable/enable in different
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 migrate_disable()/migrate_enable() takes a different path in atomic() vs
 !atomic() context. These little hacks ensure that we don't underflow / overflow
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 19 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 920d853a8e9e..32f9e3fa8c46 100644
+index 334dc4cae780..4a1dce2e4648 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2896,6 +2896,14 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2911,6 +2911,14 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 * before __rt_mutex_start_proxy_lock() is done.
  	 */
  	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -38,7 +38,7 @@ index 920d853a8e9e..32f9e3fa8c46 100644
  	spin_unlock(q.lock_ptr);
  	/*
  	 * __rt_mutex_start_proxy_lock() unconditionally enqueues the @rt_waiter
-@@ -2904,6 +2912,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2919,6 +2927,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  	 */
  	ret = __rt_mutex_start_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter, current);
  	raw_spin_unlock_irq(&q.pi_state->pi_mutex.wait_lock);
@@ -46,7 +46,7 @@ index 920d853a8e9e..32f9e3fa8c46 100644
  
  	if (ret) {
  		if (ret == 1)
-@@ -3052,11 +3061,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+@@ -3067,11 +3076,21 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
  		 * rt_waiter. Also see the WARN in wake_futex_pi().
  		 */
  		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);

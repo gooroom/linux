@@ -1,11 +1,11 @@
-From f5b8bffc2c6c9158ce9618fa1240c9fe03a321ab Mon Sep 17 00:00:00 2001
-Message-Id: <f5b8bffc2c6c9158ce9618fa1240c9fe03a321ab.1601675151.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 695c70ad81499636ab2e6626d2abf1600f4358c7 Mon Sep 17 00:00:00 2001
+Message-Id: <695c70ad81499636ab2e6626d2abf1600f4358c7.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 089/333] timers: Prepare for full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 089/335] timers: Prepare for full preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -33,7 +33,7 @@ index 7b066fd38248..54627d046b3a 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 541c7222ffc2..c0058e62a3fc 100644
+index 85f7c609493a..f07c6f53312a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -498,11 +498,14 @@ void resched_cpu(int cpu)
@@ -63,7 +63,7 @@ index 541c7222ffc2..c0058e62a3fc 100644
  }
  
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 61e41ea3a96e..ecc23d2c21a9 100644
+index a6e88d9bb931..0043bf8e2c90 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -45,6 +45,7 @@
@@ -154,7 +154,7 @@ index 61e41ea3a96e..ecc23d2c21a9 100644
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1702,8 +1736,8 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1695,8 +1729,8 @@ static inline void __run_timers(struct timer_base *base)
  		while (levels--)
  			expire_timers(base, heads + levels);
  	}
@@ -164,7 +164,7 @@ index 61e41ea3a96e..ecc23d2c21a9 100644
  }
  
  /*
-@@ -1948,6 +1982,9 @@ static void __init init_timer_cpu(int cpu)
+@@ -1941,6 +1975,9 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;

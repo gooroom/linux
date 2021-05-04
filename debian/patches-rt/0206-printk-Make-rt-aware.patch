@@ -1,11 +1,11 @@
-From 99abb977ad29a00172612acdcd8cf3fbe95470b4 Mon Sep 17 00:00:00 2001
-Message-Id: <99abb977ad29a00172612acdcd8cf3fbe95470b4.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From fafebf99742f318d0c3cc08be1c54c76bab49c97 Mon Sep 17 00:00:00 2001
+Message-Id: <fafebf99742f318d0c3cc08be1c54c76bab49c97.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 206/333] printk: Make rt aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 206/335] printk: Make rt aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 30 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index e582817249ce..1eb212298f95 100644
+index cf6bda1fffd1..cb62ffa69278 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -1652,6 +1652,7 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
@@ -93,7 +93,7 @@ index e582817249ce..1eb212298f95 100644
  	}
  
  	if (pending_output)
-@@ -2491,6 +2513,10 @@ void console_unlock(void)
+@@ -2494,6 +2516,10 @@ void console_unlock(void)
  		console_seq++;
  		raw_spin_unlock(&logbuf_lock);
  
@@ -104,7 +104,7 @@ index e582817249ce..1eb212298f95 100644
  		/*
  		 * While actively printing out messages, if another printk()
  		 * were to occur on another CPU, it may wait for this one to
-@@ -2509,6 +2535,7 @@ void console_unlock(void)
+@@ -2512,6 +2538,7 @@ void console_unlock(void)
  		}
  
  		printk_safe_exit_irqrestore(flags);

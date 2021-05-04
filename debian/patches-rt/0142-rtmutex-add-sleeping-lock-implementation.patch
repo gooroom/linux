@@ -1,11 +1,11 @@
-From d926dc2fb25d9379235944ce4c4224792a270a53 Mon Sep 17 00:00:00 2001
-Message-Id: <d926dc2fb25d9379235944ce4c4224792a270a53.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From d78c6bf35c3885a2fc818083d9e53f74ea6af71c Mon Sep 17 00:00:00 2001
+Message-Id: <d78c6bf35c3885a2fc818083d9e53f74ea6af71c.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 142/333] rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 142/335] rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -25,11 +25,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  create mode 100644 include/linux/spinlock_rt.h
  create mode 100644 include/linux/spinlock_types_rt.h
 
-diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index f6f94e54ab96..78f30d553037 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
-@@ -260,6 +260,9 @@ extern int _cond_resched(void);
+@@ -260,6 +260,9 @@
   */
  # define might_sleep() \
  	do { __might_sleep(__FILE__, __LINE__, 0); might_resched(); } while (0)
@@ -39,7 +37,7 @@ index f6f94e54ab96..78f30d553037 100644
  # define sched_annotate_sleep()	(current->task_state_change = 0)
  #else
    static inline void ___might_sleep(const char *file, int line,
-@@ -267,6 +270,7 @@ extern int _cond_resched(void);
+@@ -267,6 +270,7 @@
    static inline void __might_sleep(const char *file, int line,
  				   int preempt_offset) { }
  # define might_sleep() do { might_resched(); } while (0)
@@ -47,8 +45,6 @@ index f6f94e54ab96..78f30d553037 100644
  # define sched_annotate_sleep() do { } while (0)
  #endif
  
-diff --git a/include/linux/rtmutex.h b/include/linux/rtmutex.h
-index a355289b1fa1..138bd1e183e0 100644
 --- a/include/linux/rtmutex.h
 +++ b/include/linux/rtmutex.h
 @@ -14,11 +14,15 @@
@@ -68,7 +64,7 @@ index a355289b1fa1..138bd1e183e0 100644
  /**
   * The rt_mutex structure
   *
-@@ -31,8 +35,8 @@ struct rt_mutex {
+@@ -31,8 +35,8 @@
  	raw_spinlock_t		wait_lock;
  	struct rb_root_cached   waiters;
  	struct task_struct	*owner;
@@ -78,7 +74,7 @@ index a355289b1fa1..138bd1e183e0 100644
  	const char		*name, *file;
  	int			line;
  	void			*magic;
-@@ -82,16 +86,23 @@ do { \
+@@ -82,16 +86,23 @@
  #define __DEP_MAP_RT_MUTEX_INITIALIZER(mutexname)
  #endif
  
@@ -105,11 +101,9 @@ index a355289b1fa1..138bd1e183e0 100644
  /**
   * rt_mutex_is_locked - is the mutex locked
   * @lock: the mutex to be queried
-diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 30895ae9e82d..a0d1a009aa56 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -134,6 +134,9 @@ struct task_group;
+@@ -134,6 +134,9 @@
  		smp_store_mb(current->state, (state_value));	\
  	} while (0)
  
@@ -119,7 +113,7 @@ index 30895ae9e82d..a0d1a009aa56 100644
  #define set_special_state(state_value)					\
  	do {								\
  		unsigned long flags; /* may shadow */			\
-@@ -143,6 +146,7 @@ struct task_group;
+@@ -143,6 +146,7 @@
  		current->state = (state_value);				\
  		raw_spin_unlock_irqrestore(&current->pi_lock, flags);	\
  	} while (0)
@@ -127,7 +121,7 @@ index 30895ae9e82d..a0d1a009aa56 100644
  #else
  /*
   * set_current_state() includes a barrier so that the write of current->state
-@@ -187,6 +191,9 @@ struct task_group;
+@@ -187,6 +191,9 @@
  #define set_current_state(state_value)					\
  	smp_store_mb(current->state, (state_value))
  
@@ -137,7 +131,7 @@ index 30895ae9e82d..a0d1a009aa56 100644
  /*
   * set_special_state() should be used for those states when the blocking task
   * can not use the regular condition based wait-loop. In that case we must
-@@ -914,6 +921,7 @@ struct task_struct {
+@@ -914,6 +921,7 @@
  	raw_spinlock_t			pi_lock;
  
  	struct wake_q_node		wake_q;
@@ -145,11 +139,9 @@ index 30895ae9e82d..a0d1a009aa56 100644
  
  #ifdef CONFIG_RT_MUTEXES
  	/* PI waiters blocked on a rt_mutex held by this task: */
-diff --git a/include/linux/sched/wake_q.h b/include/linux/sched/wake_q.h
-index 10b19a192b2d..ce3ccff3d9d8 100644
 --- a/include/linux/sched/wake_q.h
 +++ b/include/linux/sched/wake_q.h
-@@ -47,8 +47,29 @@ static inline void wake_q_init(struct wake_q_head *head)
+@@ -47,8 +47,29 @@
  	head->lastp = &head->first;
  }
  
@@ -182,9 +174,6 @@ index 10b19a192b2d..ce3ccff3d9d8 100644
 +}
  
  #endif /* _LINUX_SCHED_WAKE_Q_H */
-diff --git a/include/linux/spinlock_rt.h b/include/linux/spinlock_rt.h
-new file mode 100644
-index 000000000000..3696a77fa77d
 --- /dev/null
 +++ b/include/linux/spinlock_rt.h
 @@ -0,0 +1,156 @@
@@ -344,9 +333,6 @@ index 000000000000..3696a77fa77d
 +}
 +
 +#endif
-diff --git a/include/linux/spinlock_types_rt.h b/include/linux/spinlock_types_rt.h
-new file mode 100644
-index 000000000000..3e3d8c5f7a9a
 --- /dev/null
 +++ b/include/linux/spinlock_types_rt.h
 @@ -0,0 +1,48 @@
@@ -398,11 +384,9 @@ index 000000000000..3e3d8c5f7a9a
 +	spinlock_t name = __SPIN_LOCK_UNLOCKED(name)
 +
 +#endif
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 29b54a64daf5..ecec0f8bef7e 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -900,6 +900,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
+@@ -905,6 +905,7 @@
  	tsk->splice_pipe = NULL;
  	tsk->task_frag.page = NULL;
  	tsk->wake_q.next = NULL;
@@ -410,11 +394,9 @@ index 29b54a64daf5..ecec0f8bef7e 100644
  
  	account_kernel_stack(tsk, 1);
  
-diff --git a/kernel/futex.c b/kernel/futex.c
-index cde7ff6f9a48..084527af43d4 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -1496,6 +1496,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
+@@ -1575,6 +1575,7 @@
  	struct task_struct *new_owner;
  	bool postunlock = false;
  	DEFINE_WAKE_Q(wake_q);
@@ -422,14 +404,15 @@ index cde7ff6f9a48..084527af43d4 100644
  	int ret = 0;
  
  	new_owner = rt_mutex_next_owner(&pi_state->pi_mutex);
-@@ -1555,13 +1556,13 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
- 	pi_state->owner = new_owner;
- 	raw_spin_unlock(&new_owner->pi_lock);
+@@ -1624,14 +1625,15 @@
+ 		 * not fail.
+ 		 */
+ 		pi_state_update_owner(pi_state, new_owner);
+-		postunlock = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q);
++		postunlock = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q,
++						     &wake_sleeper_q);
+ 	}
  
--	postunlock = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q);
--
-+	postunlock = __rt_mutex_futex_unlock(&pi_state->pi_mutex, &wake_q,
-+					     &wake_sleeper_q);
  out_unlock:
  	raw_spin_unlock_irq(&pi_state->pi_mutex.wait_lock);
  
@@ -439,7 +422,7 @@ index cde7ff6f9a48..084527af43d4 100644
  
  	return ret;
  }
-@@ -2890,7 +2891,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2993,7 +2995,7 @@
  		goto no_block;
  	}
  
@@ -448,7 +431,7 @@ index cde7ff6f9a48..084527af43d4 100644
  
  	/*
  	 * On PREEMPT_RT_FULL, when hb->lock becomes an rt_mutex, we must not
-@@ -3283,7 +3284,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3371,7 +3373,7 @@
  	 * The waiter is allocated on our stack, manipulated by the requeue
  	 * code while we sleep on uaddr.
  	 */
@@ -457,8 +440,6 @@ index cde7ff6f9a48..084527af43d4 100644
  
  	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, VERIFY_WRITE);
  	if (unlikely(ret != 0))
-diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index d732976d0f05..88df1ff7ca2d 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -7,6 +7,11 @@
@@ -473,7 +454,7 @@ index d732976d0f05..88df1ff7ca2d 100644
   *
   *  See Documentation/locking/rt-mutex-design.txt for details.
   */
-@@ -234,7 +239,7 @@ static inline bool unlock_rt_mutex_safe(struct rt_mutex *lock,
+@@ -234,7 +239,7 @@
   * Only use with rt_mutex_waiter_{less,equal}()
   */
  #define task_to_waiter(p)	\
@@ -482,7 +463,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  
  static inline int
  rt_mutex_waiter_less(struct rt_mutex_waiter *left,
-@@ -274,6 +279,27 @@ rt_mutex_waiter_equal(struct rt_mutex_waiter *left,
+@@ -274,6 +279,27 @@
  	return 1;
  }
  
@@ -510,7 +491,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  static void
  rt_mutex_enqueue(struct rt_mutex *lock, struct rt_mutex_waiter *waiter)
  {
-@@ -378,6 +404,14 @@ static bool rt_mutex_cond_detect_deadlock(struct rt_mutex_waiter *waiter,
+@@ -378,6 +404,14 @@
  	return debug_rt_mutex_detect_deadlock(waiter, chwalk);
  }
  
@@ -525,7 +506,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  /*
   * Max number of times we'll walk the boosting chain:
   */
-@@ -703,13 +737,16 @@ static int rt_mutex_adjust_prio_chain(struct task_struct *task,
+@@ -703,13 +737,16 @@
  	 * follow here. This is the end of the chain we are walking.
  	 */
  	if (!rt_mutex_owner(lock)) {
@@ -544,7 +525,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  		raw_spin_unlock_irq(&lock->wait_lock);
  		return 0;
  	}
-@@ -811,9 +848,11 @@ static int rt_mutex_adjust_prio_chain(struct task_struct *task,
+@@ -811,9 +848,11 @@
   * @task:   The task which wants to acquire the lock
   * @waiter: The waiter that is queued to the lock's wait tree if the
   *	    callsite called task_blocked_on_lock(), otherwise NULL
@@ -558,7 +539,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  {
  	lockdep_assert_held(&lock->wait_lock);
  
-@@ -849,12 +888,11 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
+@@ -849,12 +888,11 @@
  	 */
  	if (waiter) {
  		/*
@@ -574,7 +555,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  		/*
  		 * We can acquire the lock. Remove the waiter from the
  		 * lock waiters tree.
-@@ -872,14 +910,12 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
+@@ -872,14 +910,12 @@
  		 */
  		if (rt_mutex_has_waiters(lock)) {
  			/*
@@ -593,7 +574,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -926,6 +962,296 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
+@@ -926,6 +962,296 @@
  	return 1;
  }
  
@@ -890,7 +871,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  /*
   * Task blocks on lock.
   *
-@@ -1039,6 +1365,7 @@ static int task_blocks_on_rt_mutex(struct rt_mutex *lock,
+@@ -1039,6 +1365,7 @@
   * Called with lock->wait_lock held and interrupts disabled.
   */
  static void mark_wakeup_next_waiter(struct wake_q_head *wake_q,
@@ -898,7 +879,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  				    struct rt_mutex *lock)
  {
  	struct rt_mutex_waiter *waiter;
-@@ -1078,7 +1405,10 @@ static void mark_wakeup_next_waiter(struct wake_q_head *wake_q,
+@@ -1078,7 +1405,10 @@
  	 * Pairs with preempt_enable() in rt_mutex_postunlock();
  	 */
  	preempt_disable();
@@ -910,7 +891,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  	raw_spin_unlock(&current->pi_lock);
  }
  
-@@ -1162,21 +1492,22 @@ void rt_mutex_adjust_pi(struct task_struct *task)
+@@ -1162,21 +1492,22 @@
  		return;
  	}
  	next_lock = waiter->lock;
@@ -935,7 +916,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  }
  
  /**
-@@ -1293,7 +1624,7 @@ rt_mutex_slowlock(struct rt_mutex *lock, int state,
+@@ -1293,7 +1624,7 @@
  	unsigned long flags;
  	int ret = 0;
  
@@ -944,7 +925,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  
  	/*
  	 * Technically we could use raw_spin_[un]lock_irq() here, but this can
-@@ -1366,7 +1697,8 @@ static inline int rt_mutex_slowtrylock(struct rt_mutex *lock)
+@@ -1366,7 +1697,8 @@
   * Return whether the current task needs to call rt_mutex_postunlock().
   */
  static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
@@ -954,7 +935,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  {
  	unsigned long flags;
  
-@@ -1420,7 +1752,7 @@ static bool __sched rt_mutex_slowunlock(struct rt_mutex *lock,
+@@ -1420,7 +1752,7 @@
  	 *
  	 * Queue the next waiter for wakeup once we release the wait_lock.
  	 */
@@ -963,7 +944,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
  
  	return true; /* call rt_mutex_postunlock() */
-@@ -1472,9 +1804,11 @@ rt_mutex_fasttrylock(struct rt_mutex *lock,
+@@ -1472,9 +1804,11 @@
  /*
   * Performs the wakeup of the the top-waiter and re-enables preemption.
   */
@@ -976,7 +957,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  
  	/* Pairs with preempt_disable() in rt_mutex_slowunlock() */
  	preempt_enable();
-@@ -1483,15 +1817,17 @@ void rt_mutex_postunlock(struct wake_q_head *wake_q)
+@@ -1483,15 +1817,17 @@
  static inline void
  rt_mutex_fastunlock(struct rt_mutex *lock,
  		    bool (*slowfn)(struct rt_mutex *lock,
@@ -997,7 +978,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  }
  
  int __sched __rt_mutex_lock_state(struct rt_mutex *lock, int state)
-@@ -1673,16 +2009,13 @@ void __sched __rt_mutex_unlock(struct rt_mutex *lock)
+@@ -1673,16 +2009,13 @@
  void __sched rt_mutex_unlock(struct rt_mutex *lock)
  {
  	mutex_release(&lock->dep_map, 1, _RET_IP_);
@@ -1018,7 +999,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  {
  	lockdep_assert_held(&lock->wait_lock);
  
-@@ -1699,23 +2032,35 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
+@@ -1699,23 +2032,35 @@
  	 * avoid inversion prior to the wakeup.  preempt_disable()
  	 * therein pairs with rt_mutex_postunlock().
  	 */
@@ -1057,7 +1038,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  }
  
  /**
-@@ -1754,7 +2099,7 @@ void __rt_mutex_init(struct rt_mutex *lock, const char *name,
+@@ -1754,7 +2099,7 @@
  	if (name && key)
  		debug_rt_mutex_init(lock, name, key);
  }
@@ -1066,7 +1047,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  
  /**
   * rt_mutex_init_proxy_locked - initialize and lock a rt_mutex on behalf of a
-@@ -1949,6 +2294,7 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
+@@ -1948,6 +2293,7 @@
  			       struct hrtimer_sleeper *to,
  			       struct rt_mutex_waiter *waiter)
  {
@@ -1074,7 +1055,7 @@ index d732976d0f05..88df1ff7ca2d 100644
  	int ret;
  
  	raw_spin_lock_irq(&lock->wait_lock);
-@@ -1960,6 +2306,24 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
+@@ -1959,6 +2305,24 @@
  	 * have to fix that up.
  	 */
  	fixup_rt_mutex_waiters(lock);
@@ -1099,11 +1080,9 @@ index d732976d0f05..88df1ff7ca2d 100644
  	raw_spin_unlock_irq(&lock->wait_lock);
  
  	return ret;
-diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index 5955ad2aa2a8..6fcf0a3e180d 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -30,6 +30,7 @@ struct rt_mutex_waiter {
+@@ -30,6 +30,7 @@
  	struct rb_node          pi_tree_entry;
  	struct task_struct	*task;
  	struct rt_mutex		*lock;
@@ -1111,16 +1090,16 @@ index 5955ad2aa2a8..6fcf0a3e180d 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  	unsigned long		ip;
  	struct pid		*deadlock_task_pid;
-@@ -139,7 +140,7 @@ extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
+@@ -138,7 +139,7 @@
+ extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  				       struct task_struct *proxy_owner);
- extern void rt_mutex_proxy_unlock(struct rt_mutex *lock,
- 				  struct task_struct *proxy_owner);
+ extern void rt_mutex_proxy_unlock(struct rt_mutex *lock);
 -extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter);
 +extern void rt_mutex_init_waiter(struct rt_mutex_waiter *waiter, bool savetate);
  extern int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  				     struct rt_mutex_waiter *waiter,
  				     struct task_struct *task);
-@@ -157,9 +158,12 @@ extern int __rt_mutex_futex_trylock(struct rt_mutex *l);
+@@ -156,9 +157,12 @@
  
  extern void rt_mutex_futex_unlock(struct rt_mutex *lock);
  extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
@@ -1135,7 +1114,7 @@ index 5955ad2aa2a8..6fcf0a3e180d 100644
  /* RW semaphore special interface */
  
  extern int __rt_mutex_lock_state(struct rt_mutex *lock, int state);
-@@ -169,6 +173,10 @@ int __sched rt_mutex_slowlock_locked(struct rt_mutex *lock, int state,
+@@ -168,6 +172,10 @@
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,
  				     struct rt_mutex_waiter *waiter);
@@ -1146,11 +1125,9 @@ index 5955ad2aa2a8..6fcf0a3e180d 100644
  
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
-diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 2197f965f9bb..c94224ddfb73 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct task_struct *p)
+@@ -401,9 +401,15 @@
  #endif
  #endif
  
@@ -1168,7 +1145,7 @@ index 2197f965f9bb..c94224ddfb73 100644
  
  	/*
  	 * Atomically grab the task, if ->wake_q is !nil already it means
-@@ -426,24 +432,32 @@ void wake_q_add(struct wake_q_head *head, struct task_struct *task)
+@@ -426,24 +432,32 @@
  	head->lastp = &node->next;
  }
  
@@ -1206,6 +1183,3 @@ index 2197f965f9bb..c94224ddfb73 100644
  		put_task_struct(task);
  	}
  }
--- 
-2.17.1
-

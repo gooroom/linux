@@ -1,0 +1,35 @@
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Fri, 7 Jun 2019 16:57:09 +0300
+Subject: usb/hcd: Fix a NULL vs IS_ERR() bug in usb_hcd_setup_local_mem()
+Origin: https://git.kernel.org/linus/94b9a70d32db0d1e8eeaeb27d74a5ae712644da9
+
+The devm_memremap() function doesn't return NULL, it returns error
+pointers.
+
+Fixes: b0310c2f09bb ("USB: use genalloc for USB HCs with local memory")
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Acked-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Link: https://lore.kernel.org/r/20190607135709.GC16718@mwanda
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/core/hcd.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
+index 8b8ec0c7325d..a84b201dd844 100644
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -3038,8 +3038,8 @@ int usb_hcd_setup_local_mem(struct usb_hcd *hcd, phys_addr_t phys_addr,
+ 
+ 	local_mem = devm_memremap(hcd->self.sysdev, phys_addr,
+ 				  size, MEMREMAP_WC);
+-	if (!local_mem)
+-		return -ENOMEM;
++	if (IS_ERR(local_mem))
++		return PTR_ERR(local_mem);
+ 
+ 	/*
+ 	 * Here we pass a dma_addr_t but the arg type is a phys_addr_t.
+-- 
+2.26.2
+

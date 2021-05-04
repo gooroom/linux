@@ -1,11 +1,11 @@
-From ae9e3f8cfe11f06deac2238dfc419d9b202ea1c2 Mon Sep 17 00:00:00 2001
-Message-Id: <ae9e3f8cfe11f06deac2238dfc419d9b202ea1c2.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 9861f7c3a0b189811156969459e4d17579136be8 Mon Sep 17 00:00:00 2001
+Message-Id: <9861f7c3a0b189811156969459e4d17579136be8.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 8 Jan 2013 21:36:51 +0100
-Subject: [PATCH 165/333] tty/serial/pl011: Make the locking work on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 165/335] tty/serial/pl011: Make the locking work on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the optimsation
 we are looking for. Redo it to make it work on -RT and non-RT.
@@ -16,10 +16,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 45e4f2952143..f4a01c7909fb 100644
+index 1306ce5c5d9b..f9103eb566d0 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -2214,13 +2214,19 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+@@ -2217,13 +2217,19 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
  
  	clk_enable(uap->clk);
  
@@ -42,7 +42,7 @@ index 45e4f2952143..f4a01c7909fb 100644
  
  	/*
  	 *	First save the CR then disable the interrupts
-@@ -2246,8 +2252,7 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+@@ -2249,8 +2255,7 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
  		pl011_write(old_cr, uap, REG_CR);
  
  	if (locked)

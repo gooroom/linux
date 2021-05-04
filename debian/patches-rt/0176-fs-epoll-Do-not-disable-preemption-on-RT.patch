@@ -1,11 +1,11 @@
-From 887fdc51db7b73d22860a6846ee9a0a51566654b Mon Sep 17 00:00:00 2001
-Message-Id: <887fdc51db7b73d22860a6846ee9a0a51566654b.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 9ced8cec980da1742d7b4c2d3d3d2a82beea2bef Mon Sep 17 00:00:00 2001
+Message-Id: <9ced8cec980da1742d7b4c2d3d3d2a82beea2bef.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 8 Jul 2011 16:35:35 +0200
-Subject: [PATCH 176/333] fs/epoll: Do not disable preemption on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 176/335] fs/epoll: Do not disable preemption on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 ep_call_nested() takes a sleeping lock so we can't disable preemption.
 The light version is enough since ep_call_nested() doesn't mind beeing
@@ -17,10 +17,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/fs/eventpoll.c b/fs/eventpoll.c
-index 61a52bb26d12..87022491d5f6 100644
+index a4a32b79e832..8569db5eceb0 100644
 --- a/fs/eventpoll.c
 +++ b/fs/eventpoll.c
-@@ -571,12 +571,12 @@ static int ep_poll_wakeup_proc(void *priv, void *cookie, int call_nests)
+@@ -569,12 +569,12 @@ static int ep_poll_wakeup_proc(void *priv, void *cookie, int call_nests)
  
  static void ep_poll_safewake(wait_queue_head_t *wq)
  {

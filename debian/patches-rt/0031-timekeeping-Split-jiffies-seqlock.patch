@@ -1,11 +1,11 @@
-From 0bda092df133445692f77e6eb13149493b3464a2 Mon Sep 17 00:00:00 2001
-Message-Id: <0bda092df133445692f77e6eb13149493b3464a2.1601675151.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 31d872971a0c7d98fd7c1f2078a8262e8e948d60 Mon Sep 17 00:00:00 2001
+Message-Id: <31d872971a0c7d98fd7c1f2078a8262e8e948d60.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 031/333] timekeeping: Split jiffies seqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 031/335] timekeeping: Split jiffies seqlock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -46,10 +46,10 @@ index 497719127bf9..62acb8914c9e 100644
  }
  EXPORT_SYMBOL(get_jiffies_64);
 diff --git a/kernel/time/tick-common.c b/kernel/time/tick-common.c
-index a02e0f6b287c..32f5101f07ce 100644
+index 0a3cc37e4b83..7bd136b646d4 100644
 --- a/kernel/time/tick-common.c
 +++ b/kernel/time/tick-common.c
-@@ -79,13 +79,15 @@ int tick_is_oneshot_available(void)
+@@ -80,13 +80,15 @@ int tick_is_oneshot_available(void)
  static void tick_periodic(int cpu)
  {
  	if (tick_do_timer_cpu == cpu) {
@@ -67,7 +67,7 @@ index a02e0f6b287c..32f5101f07ce 100644
  		update_wall_time();
  	}
  
-@@ -157,9 +159,9 @@ void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
+@@ -158,9 +160,9 @@ void tick_setup_periodic(struct clock_event_device *dev, int broadcast)
  		ktime_t next;
  
  		do {
@@ -139,10 +139,10 @@ index 48403fb653c2..e774a49176cc 100644
  	ts->timer_expires_base = basemono;
  
 diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
-index 81ee5b83c920..512db778f442 100644
+index c66fd11d94bc..5e5f8ab2ab73 100644
 --- a/kernel/time/timekeeping.c
 +++ b/kernel/time/timekeeping.c
-@@ -2394,8 +2394,10 @@ EXPORT_SYMBOL(hardpps);
+@@ -2393,8 +2393,10 @@ EXPORT_SYMBOL(hardpps);
   */
  void xtime_update(unsigned long ticks)
  {

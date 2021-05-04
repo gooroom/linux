@@ -1,12 +1,12 @@
-From f059bfda07206762f855a897add57bace1d1d804 Mon Sep 17 00:00:00 2001
-Message-Id: <f059bfda07206762f855a897add57bace1d1d804.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From e9f4c60e04e3d333aad151eaa778d2d10a685309 Mon Sep 17 00:00:00 2001
+Message-Id: <e9f4c60e04e3d333aad151eaa778d2d10a685309.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 26 Jun 2017 17:07:15 +0200
-Subject: [PATCH 114/333] rt: Increase/decrease the nr of migratory tasks when
+Subject: [PATCH 114/335] rt: Increase/decrease the nr of migratory tasks when
  enabling/disabling migration
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 There is a problem in the migrate_disable()/enable() implementation
 regarding the number of migratory tasks in the rt/dl RQs. The problem
@@ -85,10 +85,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 44 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index be048e7066d1..25dd44553ea6 100644
+index 0915e400eff8..d9e80ccb4dbf 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7180,6 +7180,47 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7176,6 +7176,47 @@ const u32 sched_prio_to_wmult[40] = {
  
  #if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
  
@@ -136,7 +136,7 @@ index be048e7066d1..25dd44553ea6 100644
  void migrate_disable(void)
  {
  	struct task_struct *p = current;
-@@ -7203,10 +7244,9 @@ void migrate_disable(void)
+@@ -7199,10 +7240,9 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -149,7 +149,7 @@ index be048e7066d1..25dd44553ea6 100644
  
  	preempt_enable();
  }
-@@ -7238,9 +7278,8 @@ void migrate_enable(void)
+@@ -7234,9 +7274,8 @@ void migrate_enable(void)
  
  	preempt_disable();
  

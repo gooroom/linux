@@ -1,11 +1,11 @@
-From 586f9ddaabc928736127ef2dd08127ab71596283 Mon Sep 17 00:00:00 2001
-Message-Id: <586f9ddaabc928736127ef2dd08127ab71596283.1601675151.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 28c6127e26cc10622807dc3801862516821ff383 Mon Sep 17 00:00:00 2001
+Message-Id: <28c6127e26cc10622807dc3801862516821ff383.1610128658.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: [PATCH 077/333] mm/swap: Convert to percpu locked
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 077/335] mm/swap: Convert to percpu locked
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -59,10 +59,10 @@ index 5079ddbec8f9..c40d3a13cbbd 100644
  				cc->last_migrated_pfn = 0;
  			}
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index f6f11e22970e..c80714992781 100644
+index 9e12c615ded8..2cecacd2a618 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -7243,8 +7243,9 @@ void __init free_area_init(unsigned long *zones_size)
+@@ -7250,8 +7250,9 @@ void __init free_area_init(unsigned long *zones_size)
  
  static int page_alloc_cpu_dead(unsigned int cpu)
  {

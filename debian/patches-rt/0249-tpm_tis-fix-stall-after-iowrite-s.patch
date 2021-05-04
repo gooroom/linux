@@ -1,11 +1,11 @@
-From 0249842554e776541173cf005b179a2c38955b19 Mon Sep 17 00:00:00 2001
-Message-Id: <0249842554e776541173cf005b179a2c38955b19.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 69121d905c16f5c3fd17c9bb2f4e34afb148db4d Mon Sep 17 00:00:00 2001
+Message-Id: <69121d905c16f5c3fd17c9bb2f4e34afb148db4d.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Haris Okanovic <haris.okanovic@ni.com>
 Date: Tue, 15 Aug 2017 15:13:08 -0500
-Subject: [PATCH 249/333] tpm_tis: fix stall after iowrite*()s
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 249/335] tpm_tis: fix stall after iowrite*()s
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 ioread8() operations to TPM MMIO addresses can stall the cpu when
 immediately following a sequence of iowrite*()'s to the same region.
@@ -29,10 +29,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/char/tpm/tpm_tis.c b/drivers/char/tpm/tpm_tis.c
-index f08949a5f678..9fefcfcae593 100644
+index 5a3a4f095391..5ecca6585049 100644
 --- a/drivers/char/tpm/tpm_tis.c
 +++ b/drivers/char/tpm/tpm_tis.c
-@@ -53,6 +53,31 @@ static inline struct tpm_tis_tcg_phy *to_tpm_tis_tcg_phy(struct tpm_tis_data *da
+@@ -54,6 +54,31 @@ static inline struct tpm_tis_tcg_phy *to_tpm_tis_tcg_phy(struct tpm_tis_data *da
  	return container_of(data, struct tpm_tis_tcg_phy, priv);
  }
  
@@ -61,10 +61,10 @@ index f08949a5f678..9fefcfcae593 100644
 +	tpm_tis_flush(iobase);
 +}
 +
- static bool interrupts = true;
- module_param(interrupts, bool, 0444);
+ static int interrupts = -1;
+ module_param(interrupts, int, 0444);
  MODULE_PARM_DESC(interrupts, "Enable interrupts");
-@@ -150,7 +175,7 @@ static int tpm_tcg_write_bytes(struct tpm_tis_data *data, u32 addr, u16 len,
+@@ -173,7 +198,7 @@ static int tpm_tcg_write_bytes(struct tpm_tis_data *data, u32 addr, u16 len,
  	struct tpm_tis_tcg_phy *phy = to_tpm_tis_tcg_phy(data);
  
  	while (len--)
@@ -73,7 +73,7 @@ index f08949a5f678..9fefcfcae593 100644
  
  	return 0;
  }
-@@ -177,7 +202,7 @@ static int tpm_tcg_write32(struct tpm_tis_data *data, u32 addr, u32 value)
+@@ -200,7 +225,7 @@ static int tpm_tcg_write32(struct tpm_tis_data *data, u32 addr, u32 value)
  {
  	struct tpm_tis_tcg_phy *phy = to_tpm_tis_tcg_phy(data);
  

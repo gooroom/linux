@@ -1,11 +1,11 @@
-From b3a7ab13e3187b7ea588dac54fff962b61f6fc44 Mon Sep 17 00:00:00 2001
-Message-Id: <b3a7ab13e3187b7ea588dac54fff962b61f6fc44.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 55930963875d523d3767574e883bb6837222b6fa Mon Sep 17 00:00:00 2001
+Message-Id: <55930963875d523d3767574e883bb6837222b6fa.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 115/333] hotplug: Lightweight get online cpus
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 115/335] hotplug: Lightweight get online cpus
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -46,7 +46,7 @@ index aab4273810e3..e67645924404 100644
  
  /* Wrappers which go away once all code is converted */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 08b9d6ba0807..267fcad3a81e 100644
+index 9a39a24f6025..3e67b131ecac 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -282,6 +282,21 @@ static int cpu_hotplug_disabled;
@@ -72,10 +72,10 @@ index 08b9d6ba0807..267fcad3a81e 100644
  
  void cpus_read_lock(void)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 25dd44553ea6..2197f965f9bb 100644
+index d9e80ccb4dbf..66f99dc4dac3 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7244,6 +7244,7 @@ void migrate_disable(void)
+@@ -7240,6 +7240,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -83,7 +83,7 @@ index 25dd44553ea6..2197f965f9bb 100644
  
  	migrate_disable_update_cpus_allowed(p);
  	p->migrate_disable = 1;
-@@ -7309,12 +7310,15 @@ void migrate_enable(void)
+@@ -7305,12 +7306,15 @@ void migrate_enable(void)
  			arg.task = p;
  			arg.dest_cpu = dest_cpu;
  

@@ -1,11 +1,11 @@
-From 739f241c793a4258729c6ededd6ec4c02093ac7d Mon Sep 17 00:00:00 2001
-Message-Id: <739f241c793a4258729c6ededd6ec4c02093ac7d.1601675153.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 5e30e98c0a0805bbec8ca30c5c216ada4abc21d7 Mon Sep 17 00:00:00 2001
+Message-Id: <5e30e98c0a0805bbec8ca30c5c216ada4abc21d7.1610128660.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Matt Fleming <matt@codeblueprint.co.uk>
 Date: Tue, 7 Apr 2020 10:54:13 +0100
-Subject: [PATCH 329/333] signal: Prevent double-free of user struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 329/335] signal: Prevent double-free of user struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 [ Upsteam commit 9567db2ebe566a93485e1a27d8759969d0002d7a ]
 
@@ -39,10 +39,10 @@ Signed-off-by: Tom Zanussi <zanussi@kernel.org>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 45748993f777..05c9b5a6b3ae 100644
+index 947731042b7c..0275c582421b 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -488,8 +488,8 @@ static void sigqueue_free_current(struct sigqueue *q)
+@@ -489,8 +489,8 @@ static void sigqueue_free_current(struct sigqueue *q)
  
  	up = q->user;
  	if (rt_prio(current->normal_prio) && !put_task_cache(current, q)) {

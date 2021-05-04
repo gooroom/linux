@@ -1,11 +1,11 @@
-From c3c52cd587d395b046d02e9abbc0569b66f78ade Mon Sep 17 00:00:00 2001
-Message-Id: <c3c52cd587d395b046d02e9abbc0569b66f78ade.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 307f69a0d0066010059b2059d2daa5acfce80004 Mon Sep 17 00:00:00 2001
+Message-Id: <307f69a0d0066010059b2059d2daa5acfce80004.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 107/333] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 107/335] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -63,7 +63,7 @@ index 766bbe813861..51828764f932 100644
  
  /*
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 309f4a20d4ac..d4ec53c72577 100644
+index be49ec9a7650..df27c7d32ba4 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -642,6 +642,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -87,7 +87,7 @@ index 309f4a20d4ac..d4ec53c72577 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 87c04b6a78d2..ec979c93a488 100644
+index 74f718d17e67..c4a289b5fa5b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2731,9 +2731,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -105,7 +105,7 @@ index 87c04b6a78d2..ec979c93a488 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -5604,6 +5608,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5600,6 +5604,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU

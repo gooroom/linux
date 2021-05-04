@@ -1,11 +1,11 @@
-From 8719ee0dff01da88df6077f0f5d8b56117272de7 Mon Sep 17 00:00:00 2001
-Message-Id: <8719ee0dff01da88df6077f0f5d8b56117272de7.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From 47d9d99aa1e0d69ac38d85d517a25a0e44389c34 Mon Sep 17 00:00:00 2001
+Message-Id: <47d9d99aa1e0d69ac38d85d517a25a0e44389c34.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Apr 2016 16:55:02 +0200
-Subject: [PATCH 168/333] tty: serial: 8250: don't take the trylock during oops
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 168/335] tty: serial: 8250: don't take the trylock during oops
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 An oops with irqs off (panic() from irqsafe hrtimer like the watchdog
 timer) will lead to a lockdep warning on each invocation and as such
@@ -18,10 +18,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
-index 09f0dc3b967b..620cc8ee9828 100644
+index 60ca19eca1f6..632d3af69dba 100644
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
-@@ -3248,10 +3248,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
+@@ -3262,10 +3262,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
  
  	serial8250_rpm_get(up);
  

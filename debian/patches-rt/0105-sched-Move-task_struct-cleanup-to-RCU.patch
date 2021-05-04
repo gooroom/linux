@@ -1,11 +1,11 @@
-From 3370c869acd8725ed7ff841e822277d85c74f3fb Mon Sep 17 00:00:00 2001
-Message-Id: <3370c869acd8725ed7ff841e822277d85c74f3fb.1601675152.git.zanussi@kernel.org>
-In-Reply-To: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
-References: <5b5a156f9808b1acf1205606e03da117214549ea.1601675151.git.zanussi@kernel.org>
+From ab783a47c9949f598f4cc695b0967bf9c62343e6 Mon Sep 17 00:00:00 2001
+Message-Id: <ab783a47c9949f598f4cc695b0967bf9c62343e6.1610128659.git.zanussi@kernel.org>
+In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 105/333] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.148-rt64.tar.xz
+Subject: [PATCH 105/335] sched: Move task_struct cleanup to RCU
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -61,7 +61,7 @@ index 44c6f15800ff..d2b33e57c636 100644
  
  #ifdef CONFIG_ARCH_WANTS_DYNAMIC_TASK_STRUCT
 diff --git a/kernel/fork.c b/kernel/fork.c
-index ccfcd44a370f..309f4a20d4ac 100644
+index 97cc80bab065..be49ec9a7650 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -676,7 +676,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
