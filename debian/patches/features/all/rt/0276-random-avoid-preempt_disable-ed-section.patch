@@ -1,8 +1,7 @@
-From 27babf6da574bd65eeb54140c661993ad1a7f360 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 12 May 2017 15:46:17 +0200
 Subject: [PATCH 276/365] random: avoid preempt_disable()ed section
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=84bd4913f2b85f0b87268a77a3aed03333e6f580
 
 extract_crng() will use sleeping locks while in a preempt_disable()
 section due to get_cpu_var().
@@ -15,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 15 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index d18e82b490fa..2c0fb096ec8e 100644
+index 3777a8ff637e..c033135f2a67 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -263,6 +263,7 @@
@@ -26,7 +25,7 @@ index d18e82b490fa..2c0fb096ec8e 100644
  #include <crypto/chacha20.h>
  
  #include <asm/processor.h>
-@@ -1665,7 +1666,7 @@ void get_random_bytes_arch(void *buf, int nbytes)
+@@ -1664,7 +1665,7 @@ void get_random_bytes_arch(void *buf, int nbytes)
  
  		if (!arch_get_random_long(&v))
  			break;
@@ -35,7 +34,7 @@ index d18e82b490fa..2c0fb096ec8e 100644
  		memcpy(p, &v, chunk);
  		p += chunk;
  		nbytes -= chunk;
-@@ -2119,18 +2120,22 @@ struct batched_entropy {
+@@ -2118,18 +2119,22 @@ struct batched_entropy {
   * the goal of being quite fast and not depleting entropy.
   */
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_long);
@@ -60,7 +59,7 @@ index d18e82b490fa..2c0fb096ec8e 100644
  	return ret;
  }
  EXPORT_SYMBOL(get_random_long);
-@@ -2142,18 +2147,23 @@ unsigned int get_random_int(void)
+@@ -2141,18 +2146,23 @@ unsigned int get_random_int(void)
  }
  #else
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_int);
@@ -86,6 +85,3 @@ index d18e82b490fa..2c0fb096ec8e 100644
  	return ret;
  }
  #endif
--- 
-2.28.0
-

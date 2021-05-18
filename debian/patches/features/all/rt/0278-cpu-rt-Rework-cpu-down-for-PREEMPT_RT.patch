@@ -1,8 +1,7 @@
-From 2e5cc1fb10ed45ca815f85759ca1d57a0c9d03b5 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Mon, 16 Jul 2012 08:07:43 +0000
 Subject: [PATCH 278/365] cpu/rt: Rework cpu down for PREEMPT_RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3e6237d73facff7256a716009e2d5f910f212d2c
 
 Bringing a CPU down is a pain with the PREEMPT_RT kernel because
 tasks can be preempted in many more places than in non-RT. In
@@ -81,7 +80,7 @@ index 81eb32ddfcee..4860fd47f606 100644
  
  #ifdef CONFIG_NO_HZ_COMMON
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 5156fa1d0f32..ca72c5164699 100644
+index f20fd8fb8a38..98afe0e80fdd 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -218,16 +218,10 @@ static int cpu_hotplug_disabled;
@@ -431,7 +430,7 @@ index 5156fa1d0f32..ca72c5164699 100644
  	cpuhp_lock_release();
  }
  
-@@ -1045,6 +1196,9 @@ static int takedown_cpu(unsigned int cpu)
+@@ -1049,6 +1200,9 @@ static int takedown_cpu(unsigned int cpu)
  	/* Park the smpboot threads */
  	kthread_park(per_cpu_ptr(&cpuhp_state, cpu)->thread);
  
@@ -530,6 +529,3 @@ index 2c3fa2480141..928361cc1525 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
--- 
-2.28.0
-

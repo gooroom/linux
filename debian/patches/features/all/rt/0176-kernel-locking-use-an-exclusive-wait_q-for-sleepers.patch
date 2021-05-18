@@ -1,11 +1,10 @@
-From dcea94743cbbf1bfc04b328734d2e689787af3a0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Jun 2017 17:53:34 +0200
 Subject: [PATCH 176/365] kernel/locking: use an exclusive wait_q for sleepers
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2b9be672950982c1b73b69358e716b6d03b63e80
 
 If a task is queued as a sleeper for a wakeup and never goes to
 schedule() (because it just obtained the lock) then it will receive a
@@ -79,7 +78,7 @@ index 5c390d886b42..07e0def6a6f3 100644
  #ifdef CONFIG_RT_MUTEXES
  	/* PI waiters blocked on a rt_mutex held by this task */
 diff --git a/kernel/fork.c b/kernel/fork.c
-index e22ddbcfd627..924b06bd1a78 100644
+index c487cfa06e7b..c781571119e3 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -567,6 +567,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -145,6 +144,3 @@ index c6327064c5c2..99da62df3be5 100644
  
  		/*
  		 * wake_up_process() implies a wmb() to pair with the queueing
--- 
-2.28.0
-

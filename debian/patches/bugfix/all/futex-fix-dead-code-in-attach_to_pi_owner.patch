@@ -1,0 +1,59 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 24 Feb 2021 18:09:23 +0800
+Subject: [PATCH 2/9] futex: fix dead code in attach_to_pi_owner()
+
+The handle_exit_race() function is defined in commit 9c3f39860367
+ ("futex: Cure exit race"), which never returns -EBUSY. This results
+in a small piece of dead code in the attach_to_pi_owner() function:
+
+	int ret = handle_exit_race(uaddr, uval, p); /* Never return -EBUSY */
+	...
+	if (ret == -EBUSY)
+		*exiting = p; /* dead code */
+
+The return value -EBUSY is added to handle_exit_race() in upsteam
+commit ac31c7ff8624409 ("futex: Provide distinct return value when
+owner is exiting"). This commit was incorporated into v4.9.255, before
+the function handle_exit_race() was introduced, whitout Modify
+handle_exit_race().
+
+To fix dead code, extract the change of handle_exit_race() from
+commit ac31c7ff8624409 ("futex: Provide distinct return value when owner
+ is exiting"), re-incorporated.
+
+Lee writes:
+
+This commit takes the remaining functional snippet of:
+
+ ac31c7ff8624409 ("futex: Provide distinct return value when owner is exiting")
+
+... and is the correct fix for this issue.
+
+Fixes: 9c3f39860367 ("futex: Cure exit race")
+Cc: stable@vger.kernel.org # v4.9.258
+Signed-off-by: Xiaoming Ni <nixiaoming@huawei.com>
+Reviewed-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ kernel/futex.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 604d1cb9839d..0b49a8e1e1be 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -1207,11 +1207,11 @@ static int handle_exit_race(u32 __user *uaddr, u32 uval,
+ 	u32 uval2;
+ 
+ 	/*
+-	 * If the futex exit state is not yet FUTEX_STATE_DEAD, wait
+-	 * for it to finish.
++	 * If the futex exit state is not yet FUTEX_STATE_DEAD, tell the
++	 * caller that the alleged owner is busy.
+ 	 */
+ 	if (tsk && tsk->futex_state != FUTEX_STATE_DEAD)
+-		return -EAGAIN;
++		return -EBUSY;
+ 
+ 	/*
+ 	 * Reread the user space value to handle the following situation:

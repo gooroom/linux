@@ -1,0 +1,58 @@
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Mon, 22 Jan 2018 11:39:47 +0100
+Subject: [PATCH 1/9] futex: Fix OWNER_DEAD fixup
+
+commit a97cb0e7b3f4c6297fd857055ae8e895f402f501 upstream.
+
+Both Geert and DaveJ reported that the recent futex commit:
+
+  c1e2f0eaf015 ("futex: Avoid violating the 10th rule of futex")
+
+introduced a problem with setting OWNER_DEAD. We set the bit on an
+uninitialized variable and then entirely optimize it away as a
+dead-store.
+
+Move the setting of the bit to where it is more useful.
+
+Reported-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Reported-by: Dave Jones <davej@codemonkey.org.uk>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: Paul E. McKenney <paulmck@us.ibm.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Fixes: c1e2f0eaf015 ("futex: Avoid violating the 10th rule of futex")
+Link: http://lkml.kernel.org/r/20180122103947.GD2228@hirez.programming.kicks-ass.net
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Lee Jones <lee.jones@linaro.org>
+Signed-off-by: Zheng Yejian <zhengyejian1@huawei.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ kernel/futex.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/futex.c b/kernel/futex.c
+index b65dbb5d60bb..604d1cb9839d 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -2424,9 +2424,6 @@ static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
+ 	int err = 0;
+ 
+ 	oldowner = pi_state->owner;
+-	/* Owner died? */
+-	if (!pi_state->owner)
+-		newtid |= FUTEX_OWNER_DIED;
+ 
+ 	/*
+ 	 * We are here because either:
+@@ -2484,6 +2481,9 @@ static int __fixup_pi_state_owner(u32 __user *uaddr, struct futex_q *q,
+ 	}
+ 
+ 	newtid = task_pid_vnr(newowner) | FUTEX_WAITERS;
++	/* Owner died? */
++	if (!pi_state->owner)
++		newtid |= FUTEX_OWNER_DIED;
+ 
+ 	if (get_futex_value_locked(&uval, uaddr))
+ 		goto handle_fault;

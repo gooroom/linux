@@ -1,8 +1,7 @@
-From f39a449b79ce8b2b30518b92a68e6c31444e1b6f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
 Subject: [PATCH 242/365] irqwork: push most work into softirq context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e33031ebe5f2f632991a9ee3f1cacb198adb55f2
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -172,7 +171,7 @@ index 586c3bcc3e01..87fd56b88f01 100644
  
  /*
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index ac9c4b3f686d..da0c66f4e170 100644
+index 4686736fc986..b742e84cbe1c 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -1664,7 +1664,7 @@ void update_process_times(int user_tick)
@@ -184,7 +183,7 @@ index ac9c4b3f686d..da0c66f4e170 100644
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1727,6 +1727,10 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
+@@ -1720,6 +1720,10 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  {
  	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
@@ -195,6 +194,3 @@ index ac9c4b3f686d..da0c66f4e170 100644
  	__run_timers(base);
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
--- 
-2.28.0
-

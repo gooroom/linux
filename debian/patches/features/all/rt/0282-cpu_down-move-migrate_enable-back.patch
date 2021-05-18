@@ -1,8 +1,7 @@
-From e95646138a9fdd69607e8b39fe83bc58121f113a Mon Sep 17 00:00:00 2001
 From: Tiejun Chen <tiejun.chen@windriver.com>
 Date: Thu, 7 Nov 2013 10:06:07 +0800
 Subject: [PATCH 282/365] cpu_down: move migrate_enable() back
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5ecb9de6fd96b851b076f4abc2bbc57dfe50f929
 
 Commit 08c1ab68, "hotplug-use-migrate-disable.patch", intends to
 use migrate_enable()/migrate_disable() to replace that combination
@@ -35,10 +34,10 @@ Signed-off-by: Tiejun Chen <tiejun.chen@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 6eb350836f98..c299c4fa8f68 100644
+index c10ea7f3ce05..a28d672c2828 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1333,6 +1333,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1337,6 +1337,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  		goto restore_cpus;
  	}
  
@@ -46,7 +45,7 @@ index 6eb350836f98..c299c4fa8f68 100644
  	cpu_hotplug_begin();
  	ret = cpu_unplug_begin(cpu);
  	if (ret) {
-@@ -1380,7 +1381,6 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1384,7 +1385,6 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	cpu_unplug_done(cpu);
  out_cancel:
  	cpu_hotplug_done();
@@ -54,6 +53,3 @@ index 6eb350836f98..c299c4fa8f68 100644
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
  		cpu_notify_nofail(CPU_POST_DEAD, cpu);
--- 
-2.28.0
-

@@ -1,8 +1,7 @@
-From bde4bb7a0c4eeab346b57cead27f4ac833b8b767 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 19:35:29 +0200
 Subject: [PATCH 148/365] hotplug: Use migrate disable on unplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.9/older/patches-4.9.240-rt155.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=654de93f9ab75c4d6810bf29c19873f149a060ab
 
 Migration needs to be disabled accross the unplug handling to make
 sure that the unplug thread is off the unplugged cpu.
@@ -13,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index c17a11123974..774b1c045467 100644
+index b59011e05dc9..afca82f32fed 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1126,14 +1126,13 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1130,14 +1130,13 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	cpumask_andnot(cpumask, cpu_online_mask, cpumask_of(cpu));
  	set_cpus_allowed_ptr(current, cpumask);
  	free_cpumask_var(cpumask);
@@ -33,7 +32,7 @@ index c17a11123974..774b1c045467 100644
  
  	cpu_hotplug_begin();
  	ret = cpu_unplug_begin(cpu);
-@@ -1182,6 +1181,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
+@@ -1186,6 +1185,7 @@ static int __ref _cpu_down(unsigned int cpu, int tasks_frozen,
  	cpu_unplug_done(cpu);
  out_cancel:
  	cpu_hotplug_done();
@@ -41,6 +40,3 @@ index c17a11123974..774b1c045467 100644
  	/* This post dead nonsense must die */
  	if (!ret && hasdied)
  		cpu_notify_nofail(CPU_POST_DEAD, cpu);
--- 
-2.28.0
-
