@@ -1,0 +1,29 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 14 Jul 2015 14:26:34 +0200
+Subject: [PATCH 233/346] powerpc: Use generic rwsem on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e33e3613fc7b52df97324c196f079531774054b1
+
+Use generic code which uses rtmutex
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/powerpc/Kconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 6a06411f9bf1..d65da4153331 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -52,10 +52,11 @@ config LOCKDEP_SUPPORT
+ 
+ config RWSEM_GENERIC_SPINLOCK
+ 	bool
++	default y if PREEMPT_RT_FULL
+ 
+ config RWSEM_XCHGADD_ALGORITHM
+ 	bool
+-	default y
++	default y if !PREEMPT_RT_FULL
+ 
+ config GENERIC_LOCKBREAK
+ 	bool
