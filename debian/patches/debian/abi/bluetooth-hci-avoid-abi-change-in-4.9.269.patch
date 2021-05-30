@@ -1,0 +1,23 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 31 May 2021 01:26:14 +0200
+Subject: Bluetooth: hci: Avoid ABI change in 4.9.269
+Forwarded: not-needed
+
+Commit 31f20a6e7366 "Bluetooth: verify AMP hci_chan before
+amp_destroy" added a new member to the end of struct hci_chan.  This
+structure is alawys allocated, and the new member used, by the
+Bluetooth core, so this is safe.  Hide the change from genksyms.
+
+---
+--- a/include/net/bluetooth/hci_core.h
++++ b/include/net/bluetooth/hci_core.h
+@@ -512,7 +512,9 @@ struct hci_chan {
+ 	struct sk_buff_head data_q;
+ 	unsigned int	sent;
+ 	__u8		state;
++#ifndef __GENKSYMS__
+ 	bool		amp;
++#endif
+ };
+ 
+ struct hci_conn_params {

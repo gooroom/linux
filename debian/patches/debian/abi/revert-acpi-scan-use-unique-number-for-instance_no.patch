@@ -3,10 +3,10 @@ Date: Mon, 12 Apr 2021 15:22:07 +0200
 Subject: Revert "ACPI: scan: Use unique number for instance_no"
 Forwarded: not-needed
 
-This reverts commit e5cdbe419004e172f642e876a671a9ff1c52f8bb.  It
-causes an ABI change for ACPI and there's no obvious way to avoid
-that.  As the bug is not very serious, defer the fix until we next
-need an ABI bump.
+This reverts commits e5cdbe419004e172f642e876a671a9ff1c52f8bb and
+6901a4f795e0e8d65ae779cb37fc22e0bf294712.  They cause an ABI change
+for ACPI and there's no obvious way to avoid that.  As the bug is not
+very serious, defer the fix until we next need an ABI bump.
 
 ---
 --- a/drivers/acpi/internal.h
@@ -80,7 +80,7 @@ need an ABI bump.
  	} else {
  		acpi_device_bus_id = kzalloc(sizeof(*acpi_device_bus_id),
  					     GFP_KERNEL);
-@@ -700,16 +684,9 @@ int acpi_device_add(struct acpi_device *
+@@ -700,17 +684,9 @@ int acpi_device_add(struct acpi_device *
  			goto err_unlock;
  		}
  
@@ -88,6 +88,7 @@ need an ABI bump.
 -
 -		result = acpi_device_set_name(device, acpi_device_bus_id);
 -		if (result) {
+-			kfree_const(acpi_device_bus_id->bus_id);
 -			kfree(acpi_device_bus_id);
 -			goto err_unlock;
 -		}
