@@ -1,0 +1,32 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 31 May 2021 01:40:00 +0200
+Subject: vt: Avoid ABI change in 4.9.270
+Forwarded: not-needed
+
+Commit 3bd3a8ca5a7b "vt: Fix character height handling with
+VT_RESIZEX" added a new member to struct vc_data.  The structure is
+always allocated, and the new member only used, by built-in code, so
+we can safely add new members at the end.  Move it there and hide it
+from genksyms.
+
+---
+--- a/include/linux/console_struct.h
++++ b/include/linux/console_struct.h
+@@ -61,7 +61,6 @@ struct vc_data {
+ 	unsigned int	vc_rows;
+ 	unsigned int	vc_size_row;		/* Bytes per row */
+ 	unsigned int	vc_scan_lines;		/* # of scan lines */
+-	unsigned int	vc_cell_height;		/* CRTC character cell height */
+ 	unsigned long	vc_origin;		/* [!] Start of real screen */
+ 	unsigned long	vc_scr_end;		/* [!] End of real screen */
+ 	unsigned long	vc_visible_origin;	/* [!] Top of visible window */
+@@ -141,6 +140,9 @@ struct vc_data {
+ 	struct uni_pagedir *vc_uni_pagedir;
+ 	struct uni_pagedir **vc_uni_pagedir_loc; /* [!] Location of uni_pagedir variable for this console */
+ 	bool vc_panic_force_write; /* when oops/panic this VC can accept forced output/blanking */
++#ifndef __GENKSYMS__
++	unsigned int	vc_cell_height;		/* CRTC character cell height */
++#endif
+ 	/* additional information is in vt_kern.h */
+ };
+ 
