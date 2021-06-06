@@ -1,12 +1,9 @@
-From 6bce6dbf41795f476df46fbdf9af3726415d45fc Mon Sep 17 00:00:00 2001
-Message-Id: <6bce6dbf41795f476df46fbdf9af3726415d45fc.1612799232.git.zanussi@kernel.org>
-In-Reply-To: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
-References: <9b97d36a7373516ef554024657209dac176a1ab8.1612799231.git.zanussi@kernel.org>
+From ada5592ba1b5b17cdaa4e20b9de127f770cb8502 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
-Subject: [PATCH 233/335] net/core: protect users of napi_alloc_cache against
+Subject: [PATCH 233/338] net/core: protect users of napi_alloc_cache against
  reentrance
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.173-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
 
 On -RT the code running in BH can not be moved to another CPU so CPU
 local variable remain local. However the code can be preempted
@@ -21,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 18 insertions(+), 5 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index fc8356d7d581..2bdea77299ca 100644
+index 247626436755..8010a79e4f7e 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -332,6 +332,7 @@ struct napi_alloc_cache {
@@ -114,5 +111,5 @@ index fc8356d7d581..2bdea77299ca 100644
  void __kfree_skb_defer(struct sk_buff *skb)
  {
 -- 
-2.17.1
+2.31.1
 
