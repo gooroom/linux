@@ -1,9 +1,9 @@
-From bd61c4e066c0871e0832280aba7b49442fd4f5ac Mon Sep 17 00:00:00 2001
+From 1d4484a090cec12f65d35e9a94ee8932c7fd821a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
 Subject: [PATCH 271/338] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -318,7 +318,7 @@ index 2d29b269dc83..54632ed51c65 100644
  			 * We need to handle case when timer was or is in the
  			 * middle of firing. In other cases we already freed
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index a5ec421e3437..c7e97d421590 100644
+index 2cf5aa704106..3fd433d2a767 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
 @@ -821,25 +821,20 @@ static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,

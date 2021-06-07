@@ -1,8 +1,8 @@
-From f318b29ad891367f0959902c84ce8da617e1591d Mon Sep 17 00:00:00 2001
+From 334baa362c67306592413f0748248ad1b6602d07 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 26 Jun 2019 11:59:44 +0200
 Subject: [PATCH 276/338] futex: Make the futex_hash_bucket lock raw
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 [ Upstream commit f646521aadedab78801c9befe193e2e8a0c99298 ]
 
@@ -23,7 +23,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 43 insertions(+), 43 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index ae37fd35f09d..9b42e41b263b 100644
+index 954a5855b45b..80100393d226 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -243,7 +243,7 @@ struct futex_q {
@@ -326,7 +326,7 @@ index ae37fd35f09d..9b42e41b263b 100644
  		if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
  			ret = 0;
  
-@@ -4180,7 +4180,7 @@ static int __init futex_init(void)
+@@ -4179,7 +4179,7 @@ static int __init futex_init(void)
  	for (i = 0; i < futex_hashsize; i++) {
  		atomic_set(&futex_queues[i].waiters, 0);
  		plist_head_init(&futex_queues[i].chain);

@@ -1,9 +1,9 @@
-From 4db3b6c4eeee848eda44497108bf3f86783970ec Mon Sep 17 00:00:00 2001
+From 2ce9ec1468c6ac771dce9554653ab85c6b8eb03d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
 Subject: [PATCH 098/338] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -28,10 +28,10 @@ Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
  7 files changed, 67 insertions(+), 34 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 195526b93895..339d5b64856c 100644
+index ae70b4809bec..ffa97d90bde9 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -3137,10 +3137,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
+@@ -3139,10 +3139,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
  	kt = nsecs;
  
  	mode = HRTIMER_MODE_REL;
@@ -126,7 +126,7 @@ index 2b5ef8e94d19..94bd2e841de6 100644
  		hrtimer_start_range_ns(&__t.timer, timeout,			\
  				       current->timer_slack_ns,			\
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 5cb5001350cd..f5c5b8333b19 100644
+index ed2f180f1225..80fad9f01c86 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -2816,10 +2816,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,

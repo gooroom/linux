@@ -1,9 +1,9 @@
-From 353dd6f5b35527c404189260afaf1e1eabde4219 Mon Sep 17 00:00:00 2001
+From 3a320aaf2703032f521300a76b405bc171b1a14f Mon Sep 17 00:00:00 2001
 From: Josh Cartwright <joshc@ni.com>
 Date: Thu, 11 Feb 2016 11:54:01 -0600
 Subject: [PATCH 211/338] KVM: arm/arm64: downgrade preempt_disable()d region
  to migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 kvm_arch_vcpu_ioctl_run() disables the use of preemption when updating
 the vgic and timer states to prevent the calling task from migrating to
@@ -24,10 +24,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/virt/kvm/arm/arm.c b/virt/kvm/arm/arm.c
-index d982650deb33..efe2d6c0201c 100644
+index 39706799ecdf..4879283e28bb 100644
 --- a/virt/kvm/arm/arm.c
 +++ b/virt/kvm/arm/arm.c
-@@ -723,7 +723,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+@@ -725,7 +725,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
  		 * involves poking the GIC, which must be done in a
  		 * non-preemptible context.
  		 */
@@ -36,7 +36,7 @@ index d982650deb33..efe2d6c0201c 100644
  
  		kvm_pmu_flush_hwstate(vcpu);
  
-@@ -772,7 +772,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+@@ -774,7 +774,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
  				kvm_timer_sync_hwstate(vcpu);
  			kvm_vgic_sync_hwstate(vcpu);
  			local_irq_enable();
@@ -45,7 +45,7 @@ index d982650deb33..efe2d6c0201c 100644
  			continue;
  		}
  
-@@ -850,7 +850,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+@@ -852,7 +852,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
  		/* Exit types that need handling before we can be preempted */
  		handle_exit_early(vcpu, run, ret);
  

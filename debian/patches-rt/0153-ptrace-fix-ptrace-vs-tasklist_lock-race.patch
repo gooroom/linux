@@ -1,8 +1,8 @@
-From 1a9ec3241f501b1e65e2b58c65f5f4ff8d9f5471 Mon Sep 17 00:00:00 2001
+From 35c4f781fcc0afc36c7fcaa5a30b925d490db53c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
 Subject: [PATCH 153/338] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -30,9 +30,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/sched/core.c   | 17 +++++++++++++--
  3 files changed, 68 insertions(+), 7 deletions(-)
 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 116fc34eb965..50124bb1a17c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -101,12 +101,8 @@
+@@ -101,12 +101,8 @@ struct task_group;
  					 __TASK_TRACED | EXIT_DEAD | EXIT_ZOMBIE | \
  					 TASK_PARKED)
  
@@ -45,7 +47,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define task_contributes_to_load(task)	((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
  					 (task->flags & PF_FROZEN) == 0 && \
  					 (task->state & TASK_NOLOAD) == 0)
-@@ -1718,6 +1714,51 @@
+@@ -1718,6 +1714,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -97,9 +99,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index af74e843221b..31cdd0bb08d2 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
-@@ -190,7 +190,14 @@
+@@ -190,7 +190,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
  	spin_lock_irq(&task->sighand->siglock);
  	if (task_is_traced(task) && !looks_like_a_spurious_pid(task) &&
  	    !__fatal_signal_pending(task)) {
@@ -115,9 +119,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		ret = true;
  	}
  	spin_unlock_irq(&task->sighand->siglock);
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 140228327b8c..482c1dbb2415 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1349,6 +1349,18 @@
+@@ -1349,6 +1349,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
  }
  #endif /* CONFIG_NUMA_BALANCING */
  
@@ -136,7 +142,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * wait_task_inactive - wait for a thread to unschedule.
   *
-@@ -1393,7 +1405,7 @@
+@@ -1393,7 +1405,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		 * is actually now running somewhere else!
  		 */
  		while (task_running(rq, p)) {
@@ -145,7 +151,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				return 0;
  			cpu_relax();
  		}
-@@ -1408,7 +1420,8 @@
+@@ -1408,7 +1420,8 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		running = task_running(rq, p);
  		queued = task_on_rq_queued(p);
  		ncsw = 0;
@@ -155,3 +161,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			ncsw = p->nvcsw | LONG_MIN; /* sets MSB */
  		task_rq_unlock(rq, p, &rf);
  
+-- 
+2.31.1
+

@@ -1,8 +1,8 @@
-From 7f38c98dfbb1fb5b7ba666e4d8d84409a0605aac Mon Sep 17 00:00:00 2001
+From d92ce0df4e7cf701548d9e4198d7afedb148be79 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 10 Jun 2011 11:04:15 +0200
 Subject: [PATCH 129/338] rtmutex: Handle the various new futex race conditions
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 RT opens a few new interesting race conditions in the rtmutex/futex
 combo due to futex hash bucket lock being a 'sleeping' spinlock and
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 94 insertions(+), 21 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index f5c5b8333b19..b3aef7d3ded8 100644
+index 80fad9f01c86..7c7d1e092643 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -2253,6 +2253,16 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,

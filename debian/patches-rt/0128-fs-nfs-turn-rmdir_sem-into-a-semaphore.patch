@@ -1,8 +1,8 @@
-From 56de1fd6ba70493236ab3895a236de8dc2c79cd1 Mon Sep 17 00:00:00 2001
+From 8dd07de411762c4ec8251b94e6c247766f754591 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
 Subject: [PATCH 128/338] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -50,7 +50,7 @@ index 733fd9e4f0a1..e166bc8be849 100644
  		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
  	trace_nfs_rmdir_exit(dir, dentry, error);
 diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
-index aee66d8f1330..26d3e271b6a0 100644
+index dc55ecc3bec4..d09a1eb12aae 100644
 --- a/fs/nfs/inode.c
 +++ b/fs/nfs/inode.c
 @@ -2104,7 +2104,11 @@ static void init_once(void *foo)

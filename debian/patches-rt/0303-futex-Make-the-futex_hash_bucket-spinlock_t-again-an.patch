@@ -1,9 +1,9 @@
-From c2ecb1ce5c6d14844f06946cb0722ba97d712efa Mon Sep 17 00:00:00 2001
+From f2c1f84923cce910e07af02332ae28e6e6d280ee Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 7 Oct 2019 16:45:18 +0200
 Subject: [PATCH 303/338] futex: Make the futex_hash_bucket spinlock_t again
  and bring back its old state
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.190-rt79.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 [ Upstream commit 954ad80c23edfe71f4e8ce70b961eac884320c3a ]
 
@@ -26,7 +26,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  3 files changed, 193 insertions(+), 103 deletions(-)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 7936969224d7..77d2fed0c22b 100644
+index 785a655c5d36..ee9ae01dddc6 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -243,7 +243,7 @@ struct futex_q {
@@ -575,7 +575,7 @@ index 7936969224d7..77d2fed0c22b 100644
  		if (ret && !rt_mutex_cleanup_proxy_lock(pi_mutex, &rt_waiter))
  			ret = 0;
  
-@@ -4213,7 +4247,7 @@ static int __init futex_init(void)
+@@ -4212,7 +4246,7 @@ static int __init futex_init(void)
  	for (i = 0; i < futex_hashsize; i++) {
  		atomic_set(&futex_queues[i].waiters, 0);
  		plist_head_init(&futex_queues[i].chain);
