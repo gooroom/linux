@@ -1,0 +1,35 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Tue, 15 Jun 2021 01:23:10 +0200
+Subject: spi: Avoid ABI change in 4.9.271
+Forwarded: not-needed
+
+Commit 8bf96425c90f "spi: Fix use-after-free with devm_spi_alloc_*"
+added a new member to struct spi_master.  The structure is always
+allocated, and the new member used, in the SPI core.  So it is safe
+to add it at the end, but not in the middle.  Move it to the end.
+
+---
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -443,9 +443,6 @@ struct spi_master {
+ #define SPI_MASTER_MUST_RX      BIT(3)		/* requires rx */
+ #define SPI_MASTER_MUST_TX      BIT(4)		/* requires tx */
+ 
+-	/* flag indicating this is a non-devres managed controller */
+-	bool			devm_allocated;
+-
+ 	/*
+ 	 * on some hardware transfer / message size may be constrained
+ 	 * the limit may depend on device transfer settings
+@@ -567,6 +564,11 @@ struct spi_master {
+ 	void			*dummy_tx;
+ 
+ 	int (*fw_translate_cs)(struct spi_master *master, unsigned cs);
++
++#ifndef __GENKSYMS__
++	/* flag indicating this is a non-devres managed controller */
++	bool			devm_allocated;
++#endif
+ };
+ 
+ static inline void *spi_master_get_devdata(struct spi_master *master)
