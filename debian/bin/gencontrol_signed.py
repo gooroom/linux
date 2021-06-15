@@ -34,7 +34,6 @@ class Gencontrol(Base):
 
         self.abiname = config_entry['abiname']
         self.vars = {
-            'template': 'linux-image-%s-signed-template' % arch,
             'upstreamversion': self.version.linux_upstream,
             'version': self.version.linux_version,
             'source_basename': re.sub(r'-[\d.]+$', '',
@@ -47,6 +46,8 @@ class Gencontrol(Base):
         }
         self.vars['source_suffix'] = \
             self.changelog[0].source[len(self.vars['source_basename']):]
+        self.vars['template'] = \
+            'linux-image%(source_suffix)s-%(arch)s-signed-template' % self.vars
 
         self.package_dir = 'debian/%(template)s' % self.vars
         self.template_top_dir = (self.package_dir
