@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
-Subject: [PATCH 147/346] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=437a5619188049c093fe2873230b9a9c2033bdb1
+Subject: [PATCH 147/347] fs/nfs: turn rmdir_sem into a semaphore
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ad755abbbb7070707216398cd6594934a750ebd5
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -49,7 +49,7 @@ index d405b5a14073..179965ae5164 100644
  		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
  	trace_nfs_rmdir_exit(dir, dentry, error);
 diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
-index 6c0035761d17..b6b8e8e7eda0 100644
+index 7a94f5a5f8c8..99a3655602ed 100644
 --- a/fs/nfs/inode.c
 +++ b/fs/nfs/inode.c
 @@ -1958,7 +1958,11 @@ static void init_once(void *foo)

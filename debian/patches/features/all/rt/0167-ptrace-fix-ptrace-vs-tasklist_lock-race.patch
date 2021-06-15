@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 167/346] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ed07c4a928dde4707196289e24c2d84a38b3fc9f
+Subject: [PATCH 167/347] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4b11de245ae32a7f76437fb857df64daef90017f
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -23,16 +23,18 @@ taken in case the caller is interrupted between looking into ->state and
 ->saved_state.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[bwh: Adjust context to apply on top of 4.9.270]
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  include/linux/sched.h | 48 ++++++++++++++++++++++++++++++++++++++++---
  kernel/ptrace.c       |  9 +++++++-
  kernel/sched/core.c   | 17 +++++++++++++--
  3 files changed, 68 insertions(+), 6 deletions(-)
 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 6e235dc4d758..5a4c24990406 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -242,10 +242,7 @@ extern char ___assert_task_state[1 - 2*!
+@@ -242,10 +242,7 @@ extern char ___assert_task_state[1 - 2*!!(
  				 TASK_UNINTERRUPTIBLE | __TASK_STOPPED | \
  				 __TASK_TRACED | EXIT_ZOMBIE | EXIT_DEAD)
  
@@ -43,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #define task_contributes_to_load(task)	\
  				((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
  				 (task->flags & PF_FROZEN) == 0 && \
-@@ -3419,6 +3416,51 @@ static inline int signal_pending_state(l
+@@ -3419,6 +3416,51 @@ static inline int signal_pending_state(long state, struct task_struct *p)
  	return (state & TASK_INTERRUPTIBLE) || __fatal_signal_pending(p);
  }
  
@@ -95,9 +97,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
+diff --git a/kernel/ptrace.c b/kernel/ptrace.c
+index 4f10223bc7b0..cd869b487adc 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
-@@ -186,7 +186,14 @@ static bool ptrace_freeze_traced(struct
+@@ -186,7 +186,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
  	spin_lock_irq(&task->sighand->siglock);
  	if (task_is_traced(task) && !looks_like_a_spurious_pid(task) &&
  	    !__fatal_signal_pending(task)) {
@@ -113,9 +117,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		ret = true;
  	}
  	spin_unlock_irq(&task->sighand->siglock);
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 99da62df3be5..a2d6b5d33438 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1397,6 +1397,18 @@ out:
+@@ -1397,6 +1397,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p)
  	return ret;
  }
  
@@ -134,7 +140,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /*
   * wait_task_inactive - wait for a thread to unschedule.
   *
-@@ -1441,7 +1453,7 @@ unsigned long wait_task_inactive(struct
+@@ -1441,7 +1453,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		 * is actually now running somewhere else!
  		 */
  		while (task_running(rq, p)) {
@@ -143,7 +149,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				return 0;
  			cpu_relax();
  		}
-@@ -1456,7 +1468,8 @@ unsigned long wait_task_inactive(struct
+@@ -1456,7 +1468,8 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		running = task_running(rq, p);
  		queued = task_on_rq_queued(p);
  		ncsw = 0;

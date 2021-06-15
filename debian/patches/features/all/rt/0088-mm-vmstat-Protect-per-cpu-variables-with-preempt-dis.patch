@@ -1,8 +1,8 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:13 -0500
-Subject: [PATCH 088/346] mm/vmstat: Protect per cpu variables with preempt
+Subject: [PATCH 088/347] mm/vmstat: Protect per cpu variables with preempt
  disable on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b66518ab08afda4b59cc20eaf8bc0af4394047ac
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=30ffa73223ed69fb4fa3242a44419dde6ee6b3e6
 
 Disable preemption on -RT for the vmstat code. On vanila the code runs in
 IRQ-off regions while on -RT it is not. "preempt_disable" ensures that the
@@ -40,7 +40,7 @@ index 613771909b6e..e28c5a43229d 100644
  
  static inline void count_vm_events(enum vm_event_item item, long delta)
 diff --git a/mm/vmstat.c b/mm/vmstat.c
-index e60435d556e3..ea660046761b 100644
+index d01a2b3c1b89..c21c6f27540a 100644
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
 @@ -245,6 +245,7 @@ void __mod_zone_page_state(struct zone *zone, enum zone_stat_item item,
