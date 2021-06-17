@@ -1,0 +1,41 @@
+From ff30ed62c0a8976a4411e7e5b8af7a823231a3ba Mon Sep 17 00:00:00 2001
+From: Salvatore Bonaccorso <carnil@debian.org>
+Date: Thu, 27 May 2021 23:03:22 +0200
+Subject: [PATCH] Deal with vc_data ABI changes in 5.10.40
+
+struct vc_data changed with a14ca25d4f23 ("vt: Fix character height
+handling with VT_RESIZEX"); although it shouldn't be used by OOT modules
+it does affect symbol versions for many of the console handling
+functions.
+
+Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
+---
+ include/linux/console_struct.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/console_struct.h b/include/linux/console_struct.h
+index d5b9c8d40c18..b6f311552454 100644
+--- a/include/linux/console_struct.h
++++ b/include/linux/console_struct.h
+@@ -101,7 +101,6 @@ struct vc_data {
+ 	unsigned int	vc_rows;
+ 	unsigned int	vc_size_row;		/* Bytes per row */
+ 	unsigned int	vc_scan_lines;		/* # of scan lines */
+-	unsigned int	vc_cell_height;		/* CRTC character cell height */
+ 	unsigned long	vc_origin;		/* [!] Start of real screen */
+ 	unsigned long	vc_scr_end;		/* [!] End of real screen */
+ 	unsigned long	vc_visible_origin;	/* [!] Top of visible window */
+@@ -161,6 +160,10 @@ struct vc_data {
+ 	struct uni_pagedir **vc_uni_pagedir_loc; /* [!] Location of uni_pagedir variable for this console */
+ 	struct uni_screen *vc_uni_screen;	/* unicode screen content */
+ 	/* additional information is in vt_kern.h */
++
++#ifndef __GENKSYMS__
++	unsigned int	vc_cell_height;		/* CRTC character cell height */
++#endif
+ };
+ 
+ struct vc {
+-- 
+2.32.0.rc0
+
