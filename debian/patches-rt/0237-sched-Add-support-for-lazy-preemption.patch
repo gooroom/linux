@@ -1,8 +1,8 @@
-From 8b4af4ae8696ace3c5557a1f6a6b854ab3735276 Mon Sep 17 00:00:00 2001
+From a4d1a6330c6c337f54af35f92e7c27a8cc9e0a9e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 237/338] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.195-rt82.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -420,7 +420,7 @@ index da1176ee324e..6286dde4af70 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 461d085dafad..3a65c739ca71 100644
+index 8d847a0785bc..6ccc787b0c5c 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4104,7 +4104,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -468,7 +468,7 @@ index 461d085dafad..3a65c739ca71 100644
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6705,7 +6705,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+@@ -6706,7 +6706,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
  	return;
  
  preempt:
@@ -477,7 +477,7 @@ index 461d085dafad..3a65c739ca71 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9839,7 +9839,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -9840,7 +9840,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -486,7 +486,7 @@ index 461d085dafad..3a65c739ca71 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9863,7 +9863,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -9864,7 +9864,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -530,7 +530,7 @@ index 494d21b04b1d..ccb08446c9bc 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 8a78743902cb..2978cc4f43cc 100644
+index 844b4993dbb2..9e5e2288b73a 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2128,6 +2128,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,

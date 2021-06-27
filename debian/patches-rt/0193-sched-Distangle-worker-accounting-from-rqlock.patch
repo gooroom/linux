@@ -1,8 +1,8 @@
-From 6a992869dae4310c7c42051dfc2dccb00677939f Mon Sep 17 00:00:00 2001
+From 3f50028cdab48533f9250812b9def4c5b4d58729 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
 Subject: [PATCH 193/338] sched: Distangle worker accounting from rqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.195-rt82.tar.xz
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -170,10 +170,10 @@ index a0b5e4914895..8c89bcdb2724 100644
  EXPORT_SYMBOL(schedule);
  
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 07333643bb4c..1ff712808e43 100644
+index eab4031a137b..a7070b087890 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -843,43 +843,32 @@ static void wake_up_worker(struct worker_pool *pool)
+@@ -844,43 +844,32 @@ static void wake_up_worker(struct worker_pool *pool)
  }
  
  /**
@@ -228,7 +228,7 @@ index 07333643bb4c..1ff712808e43 100644
  	struct worker_pool *pool;
  
  	/*
-@@ -888,13 +877,15 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
+@@ -889,13 +878,15 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
  	 * checking NOT_RUNNING.
  	 */
  	if (worker->flags & WORKER_NOT_RUNNING)
@@ -248,7 +248,7 @@ index 07333643bb4c..1ff712808e43 100644
  
  	/*
  	 * The counterpart of the following dec_and_test, implied mb,
-@@ -908,9 +899,12 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
+@@ -909,9 +900,12 @@ struct task_struct *wq_worker_sleeping(struct task_struct *task)
  	 * lock is safe.
  	 */
  	if (atomic_dec_and_test(&pool->nr_running) &&
