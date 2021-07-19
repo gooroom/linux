@@ -1,0 +1,28 @@
+From: Eric Sandeen <sandeen@redhat.com>
+Date: Tue, 6 Jul 2021 19:56:03 +0200
+Subject: seq_file: Disallow extremely large seq buffer allocations
+Bug-Debian-Security: https://security-tracker.debian.org/tracker/CVE-2021-33909
+
+There is no reasonable need for a buffer larger than this,
+and it avoids int overflow pitfalls.
+
+Fixes: 058504edd026 ("fs/seq_file: fallback to vmalloc allocation")
+Suggested-by: Al Viro <viro@zeniv.linux.org.uk>
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+[bwh: Backported to 4.9: adjust context]
+---
+ fs/seq_file.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/fs/seq_file.c
++++ b/fs/seq_file.c
+@@ -28,6 +28,9 @@ static void *seq_buf_alloc(unsigned long
+ 	void *buf;
+ 	gfp_t gfp = GFP_KERNEL;
+ 
++	if (unlikely(size > MAX_RW_COUNT))
++		return NULL;
++
+ 	/*
+ 	 * For high order allocations, use __GFP_NORETRY to avoid oom-killing -
+ 	 * it's better to fall back to vmalloc() than to kill things.  For small
