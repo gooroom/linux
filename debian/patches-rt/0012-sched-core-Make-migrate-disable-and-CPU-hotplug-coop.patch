@@ -1,9 +1,9 @@
-From 9cd3e6a8b48eaad5ed8393c3cccf4e9645c95fc8 Mon Sep 17 00:00:00 2001
+From a937f91fdd59d4cfc02eeeae42104a5286a25a52 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:09 +0200
-Subject: [PATCH 012/296] sched/core: Make migrate disable and CPU hotplug
+Subject: [PATCH 012/303] sched/core: Make migrate disable and CPU hotplug
  cooperative
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 On CPU unplug tasks which are in a migrate disabled region cannot be pushed
 to a different CPU until they returned to migrateable state.
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 34 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9dac9131d313..91f2985ee447 100644
+index 8964e23db666..831d631317dc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1719,10 +1719,17 @@ static void migrate_disable_switch(struct rq *rq, struct task_struct *p)
@@ -118,10 +118,10 @@ index 9dac9131d313..91f2985ee447 100644
  
  	calc_load_migrate(rq);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index d2fc1db9d3c7..3be3a1e9179f 100644
+index c3ad2b21a697..6d9be4e6e406 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1048,6 +1048,10 @@ struct rq {
+@@ -1055,6 +1055,10 @@ struct rq {
  	/* Must be inspected within a rcu lock section */
  	struct cpuidle_state	*idle_state;
  #endif

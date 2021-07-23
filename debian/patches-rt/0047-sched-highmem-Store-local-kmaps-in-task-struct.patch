@@ -1,8 +1,8 @@
-From 91579d9fbb60f3539968f90345d78d9bd9e18a30 Mon Sep 17 00:00:00 2001
+From 555a78b752bbc6d50763f3dec09fd04462ada9ba Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
-Subject: [PATCH 047/296] sched: highmem: Store local kmaps in task struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 047/303] sched: highmem: Store local kmaps in task struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -52,7 +52,7 @@ index 6ceed907b14e..c5a22177db85 100644
  
  #ifdef CONFIG_HIGHMEM
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 942b87f80cc7..6e324d455a0c 100644
+index 1cf7938ce643..2083a2d42851 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -34,6 +34,7 @@
@@ -63,7 +63,7 @@ index 942b87f80cc7..6e324d455a0c 100644
  
  /* task_struct member predeclarations (sorted alphabetically): */
  struct audit_context;
-@@ -637,6 +638,13 @@ struct wake_q_node {
+@@ -645,6 +646,13 @@ struct wake_q_node {
  	struct wake_q_node *next;
  };
  
@@ -77,7 +77,7 @@ index 942b87f80cc7..6e324d455a0c 100644
  struct task_struct {
  #ifdef CONFIG_THREAD_INFO_IN_TASK
  	/*
-@@ -1316,6 +1324,7 @@ struct task_struct {
+@@ -1324,6 +1332,7 @@ struct task_struct {
  	unsigned int			sequential_io;
  	unsigned int			sequential_io_avg;
  #endif
@@ -118,7 +118,7 @@ index 7c044d377926..356104c1e0a3 100644
  #ifdef CONFIG_FAULT_INJECTION
  	tsk->fail_nth = 0;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4dad5b392f86..6763a6ec8715 100644
+index db56f4c31a46..e75600f56605 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4068,6 +4068,22 @@ static inline void finish_lock_switch(struct rq *rq)

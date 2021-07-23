@@ -1,8 +1,8 @@
-From cab021aed0c1f72899edd54800322e5190e98a8c Mon Sep 17 00:00:00 2001
+From eb9a241bcd091c2816da16d9d13f806acb634832 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:07 +0200
-Subject: [PATCH 010/296] sched: Add migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 010/303] sched: Add migrate_disable()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 Add the base migrate_disable() support (under protest).
 
@@ -105,10 +105,10 @@ index 7d9c1c0e149c..97ba7c920653 100644
 +
  #endif /* __LINUX_PREEMPT_H */
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 76cd21fa5501..8efed5834170 100644
+index 2660ee4b08ad..30857da00adc 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -722,6 +722,9 @@ struct task_struct {
+@@ -730,6 +730,9 @@ struct task_struct {
  	int				nr_cpus_allowed;
  	const cpumask_t			*cpus_ptr;
  	cpumask_t			cpus_mask;
@@ -119,7 +119,7 @@ index 76cd21fa5501..8efed5834170 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1323b3f9d40e..583b1312f5c6 100644
+index 2658df8954fb..1d47da0161fc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1694,6 +1694,61 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -313,10 +313,10 @@ index 1323b3f9d40e..583b1312f5c6 100644
  
  		trace_sched_switch(preempt, prev, next);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 07991844697c..d2fc1db9d3c7 100644
+index b23283a3326a..c3ad2b21a697 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1897,14 +1897,16 @@ static inline bool sched_fair_runnable(struct rq *rq)
+@@ -1904,14 +1904,16 @@ static inline bool sched_fair_runnable(struct rq *rq)
  extern struct task_struct *pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf);
  extern struct task_struct *pick_next_task_idle(struct rq *rq);
  

@@ -1,8 +1,8 @@
-From 5adb6ab8f6e119125e87c57652aaddf6dea80b89 Mon Sep 17 00:00:00 2001
+From c6fdd499b36d09f569748a962609e38b22243766 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 28 Jul 2011 13:32:57 +0200
-Subject: [PATCH 273/296] tty/serial/omap: Make the locking RT aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 273/303] tty/serial/omap: Make the locking RT aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the
 optimsation we are looking for. Redo it to make it work on -RT and
@@ -14,10 +14,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 4 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/tty/serial/omap-serial.c b/drivers/tty/serial/omap-serial.c
-index 76b94d0ff586..80371598efea 100644
+index 84e8158088cd..342005ed5ebf 100644
 --- a/drivers/tty/serial/omap-serial.c
 +++ b/drivers/tty/serial/omap-serial.c
-@@ -1301,13 +1301,10 @@ serial_omap_console_write(struct console *co, const char *s,
+@@ -1311,13 +1311,10 @@ serial_omap_console_write(struct console *co, const char *s,
  
  	pm_runtime_get_sync(up->dev);
  
@@ -34,7 +34,7 @@ index 76b94d0ff586..80371598efea 100644
  
  	/*
  	 * First save the IER then disable the interrupts
-@@ -1336,8 +1333,7 @@ serial_omap_console_write(struct console *co, const char *s,
+@@ -1346,8 +1343,7 @@ serial_omap_console_write(struct console *co, const char *s,
  	pm_runtime_mark_last_busy(up->dev);
  	pm_runtime_put_autosuspend(up->dev);
  	if (locked)

@@ -1,8 +1,8 @@
-From 434caa1bbb1880ba459451e26923fce47fe637c5 Mon Sep 17 00:00:00 2001
+From 3b8f061e968e36dcb711c22c2741bb10442c48a1 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/296] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 009/303] sched: Massage set_cpus_allowed()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f7403832b3b1..1323b3f9d40e 100644
+index 5f2ce256bc49..2658df8954fb 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1822,13 +1822,14 @@ static int migration_cpu_stop(void *data)
@@ -146,10 +146,10 @@ index e0564abfece1..9495a26f7e73 100644
  
  /* Assumes rq->lock is held */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 7dcd5ac722ec..07991844697c 100644
+index c8ea64a72e0a..b23283a3326a 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1809,7 +1809,8 @@ struct sched_class {
+@@ -1816,7 +1816,8 @@ struct sched_class {
  	void (*task_woken)(struct rq *this_rq, struct task_struct *task);
  
  	void (*set_cpus_allowed)(struct task_struct *p,
@@ -159,7 +159,7 @@ index 7dcd5ac722ec..07991844697c 100644
  
  	void (*rq_online)(struct rq *rq);
  	void (*rq_offline)(struct rq *rq);
-@@ -1902,7 +1903,9 @@ extern void update_group_capacity(struct sched_domain *sd, int cpu);
+@@ -1909,7 +1910,9 @@ extern void update_group_capacity(struct sched_domain *sd, int cpu);
  
  extern void trigger_load_balance(struct rq *rq);
  

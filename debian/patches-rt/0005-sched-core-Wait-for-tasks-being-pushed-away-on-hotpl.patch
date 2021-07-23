@@ -1,9 +1,9 @@
-From 921cbc00825ced6ea9a1b029a41a8926480d9ab6 Mon Sep 17 00:00:00 2001
+From 18e7d440b86928e6977c63fa739d27dafbee2708 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:02 +0200
-Subject: [PATCH 005/296] sched/core: Wait for tasks being pushed away on
+Subject: [PATCH 005/303] sched/core: Wait for tasks being pushed away on
  hotplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 RT kernels need to ensure that all tasks which are not per CPU kthreads
 have left the outgoing CPU to guarantee that no tasks are force migrated
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 43 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index feca16c2a780..116f9797a6d0 100644
+index 2abe17030180..77d6178b8747 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6894,8 +6894,21 @@ static void balance_push(struct rq *rq)
@@ -105,10 +105,10 @@ index feca16c2a780..116f9797a6d0 100644
  		hrtick_rq_init(rq);
  		atomic_set(&rq->nr_iowait, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index ca3106f66351..7dcd5ac722ec 100644
+index 85ca78879a08..c8ea64a72e0a 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -998,6 +998,10 @@ struct rq {
+@@ -1005,6 +1005,10 @@ struct rq {
  
  	/* This is used to determine avg_idle's max value */
  	u64			max_idle_balance_cost;

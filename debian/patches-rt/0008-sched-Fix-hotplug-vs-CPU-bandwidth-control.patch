@@ -1,8 +1,8 @@
-From 7e826e336f66907d688e4c457f2104618d960de3 Mon Sep 17 00:00:00 2001
+From 1ebf96ffff80b635598480bdf09e1ed8c537cab7 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:05 +0200
-Subject: [PATCH 008/296] sched: Fix hotplug vs CPU bandwidth control
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 008/303] sched: Fix hotplug vs CPU bandwidth control
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 Since we now migrate tasks away before DYING, we should also move
 bandwidth unthrottle, otherwise we can gain tasks from unthrottle
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 12 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9ad43e648a78..f7403832b3b1 100644
+index 5fd467bb6a1b..5f2ce256bc49 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6975,6 +6975,8 @@ int sched_cpu_activate(unsigned int cpu)

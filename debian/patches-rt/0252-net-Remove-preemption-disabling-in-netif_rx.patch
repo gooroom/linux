@@ -1,8 +1,8 @@
-From 74452f979a73a407faa25f485831d939cc2449da Mon Sep 17 00:00:00 2001
+From 85d09163a17e0dc6f7e4f923b79ccda43a54e5a0 Mon Sep 17 00:00:00 2001
 From: Priyanka Jain <Priyanka.Jain@freescale.com>
 Date: Thu, 17 May 2012 09:35:11 +0530
-Subject: [PATCH 252/296] net: Remove preemption disabling in netif_rx()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 252/303] net: Remove preemption disabling in netif_rx()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 1)enqueue_to_backlog() (called from netif_rx) should be
   bind to a particluar CPU. This can be achieved by
@@ -33,10 +33,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 15bbb627c90d..73341e6c2e5d 100644
+index 0ffb49de56c3..4ff2d479f99c 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4794,7 +4794,7 @@ static int netif_rx_internal(struct sk_buff *skb)
+@@ -4795,7 +4795,7 @@ static int netif_rx_internal(struct sk_buff *skb)
  		struct rps_dev_flow voidflow, *rflow = &voidflow;
  		int cpu;
  
@@ -45,7 +45,7 @@ index 15bbb627c90d..73341e6c2e5d 100644
  		rcu_read_lock();
  
  		cpu = get_rps_cpu(skb->dev, skb, &rflow);
-@@ -4804,14 +4804,14 @@ static int netif_rx_internal(struct sk_buff *skb)
+@@ -4805,14 +4805,14 @@ static int netif_rx_internal(struct sk_buff *skb)
  		ret = enqueue_to_backlog(skb, cpu, &rflow->last_qtail);
  
  		rcu_read_unlock();

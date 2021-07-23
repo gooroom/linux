@@ -1,9 +1,9 @@
-From 38d3ecf0781a070be9fe6cf45ab58f513e9f4138 Mon Sep 17 00:00:00 2001
+From 67a340357f6c2a47c70ba58fb84f91297ebac0d4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:04 +0200
-Subject: [PATCH 007/296] sched/hotplug: Consolidate task migration on CPU
+Subject: [PATCH 007/303] sched/hotplug: Consolidate task migration on CPU
  unplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 With the new mechanism which kicks tasks off the outgoing CPU at the end of
 schedule() the situation on an outgoing CPU right before the stopper thread
@@ -39,10 +39,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 46 insertions(+), 120 deletions(-)
 
 diff --git a/include/linux/cpuhotplug.h b/include/linux/cpuhotplug.h
-index bc56287a1ed1..0042ef362511 100644
+index 8fb893ed205e..5c0a0883b91a 100644
 --- a/include/linux/cpuhotplug.h
 +++ b/include/linux/cpuhotplug.h
-@@ -152,6 +152,7 @@ enum cpuhp_state {
+@@ -153,6 +153,7 @@ enum cpuhp_state {
  	CPUHP_AP_ONLINE,
  	CPUHP_TEARDOWN_CPU,
  	CPUHP_AP_ONLINE_IDLE,
@@ -93,7 +93,7 @@ index 2b8d7a5db383..4e11e91010e1 100644
  	[CPUHP_AP_SMPBOOT_THREADS] = {
  		.name			= "smpboot/threads:online",
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 116f9797a6d0..9ad43e648a78 100644
+index 77d6178b8747..5fd467bb6a1b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6739,120 +6739,6 @@ void idle_task_exit(void)

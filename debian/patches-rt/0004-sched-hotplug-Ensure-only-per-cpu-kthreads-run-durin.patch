@@ -1,9 +1,9 @@
-From c66cb9f1491ba73a2ab6bc0fedc642bbeeacfdef Mon Sep 17 00:00:00 2001
+From 815dcfb19c824ba7145178c02e1a55966759001c Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:01 +0200
-Subject: [PATCH 004/296] sched/hotplug: Ensure only per-cpu kthreads run
+Subject: [PATCH 004/303] sched/hotplug: Ensure only per-cpu kthreads run
  during hotplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 In preparation for migrate_disable(), make sure only per-cpu kthreads
 are allowed to run on !active CPUs.
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 118 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 56f9a850c9bf..feca16c2a780 100644
+index 08fb157fd042..2abe17030180 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3511,8 +3511,10 @@ static inline struct callback_head *splice_balance_callbacks(struct rq *rq)
@@ -203,10 +203,10 @@ index 56f9a850c9bf..feca16c2a780 100644
  		return ret;
  	}
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 5e03f3210318..ca3106f66351 100644
+index 16f06a63b335..85ca78879a08 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -967,6 +967,7 @@ struct rq {
+@@ -974,6 +974,7 @@ struct rq {
  	unsigned long		cpu_capacity_orig;
  
  	struct callback_head	*balance_callback;
@@ -214,7 +214,7 @@ index 5e03f3210318..ca3106f66351 100644
  
  	unsigned char		nohz_idle_balance;
  	unsigned char		idle_balance;
-@@ -1380,6 +1381,9 @@ init_numa_balancing(unsigned long clone_flags, struct task_struct *p)
+@@ -1387,6 +1388,9 @@ init_numa_balancing(unsigned long clone_flags, struct task_struct *p)
  
  #ifdef CONFIG_SMP
  
@@ -224,7 +224,7 @@ index 5e03f3210318..ca3106f66351 100644
  static inline void
  queue_balance_callback(struct rq *rq,
  		       struct callback_head *head,
-@@ -1387,12 +1391,13 @@ queue_balance_callback(struct rq *rq,
+@@ -1394,12 +1398,13 @@ queue_balance_callback(struct rq *rq,
  {
  	lockdep_assert_held(&rq->lock);
  

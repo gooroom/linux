@@ -1,8 +1,8 @@
-From 778ed7c53a9e5e7a695d3d9278cc29c4c7affbfd Mon Sep 17 00:00:00 2001
+From bc4379c1825f18990bab33956d409da2b183c17b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 23 Jan 2021 21:10:27 +0100
-Subject: [PATCH 066/296] blk-mq: Use llist_head for blk_cpu_done
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 066/303] blk-mq: Use llist_head for blk_cpu_done
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
 
 With llist_head it is possible to avoid the locking (the irq-off region)
 when items are added. This makes it possible to add items on a remote
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 44 insertions(+), 59 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 510323b8c15e..87dd67e7abdc 100644
+index 918ad607de57..56723446b205 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -41,7 +41,7 @@
@@ -174,7 +174,7 @@ index 510323b8c15e..87dd67e7abdc 100644
  }
  EXPORT_SYMBOL_GPL(blk_mq_complete_request_remote);
  
-@@ -3905,7 +3890,7 @@ static int __init blk_mq_init(void)
+@@ -3908,7 +3893,7 @@ static int __init blk_mq_init(void)
  	int i;
  
  	for_each_possible_cpu(i)
