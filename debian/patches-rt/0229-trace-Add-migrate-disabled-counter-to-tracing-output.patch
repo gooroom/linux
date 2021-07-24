@@ -1,8 +1,8 @@
-From be4fbba73411350c7786fc6b0ba0aa89002d7557 Mon Sep 17 00:00:00 2001
+From fcbd3e2fa6e9cfe267bea4d120250b25d77a3ef3 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:56:42 +0200
 Subject: [PATCH 229/303] trace: Add migrate-disabled counter to tracing output
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -33,10 +33,10 @@ index 5d1eeac4bfbe..29c24ec33ffd 100644
  	entry->type			= type;
  	entry->flags =			trace_ctx >> 16;
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 7c6ba299a9d3..058344549795 100644
+index 62bf46c1465d..c2f56a0e82c9 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2562,6 +2562,15 @@ enum print_line_t trace_handle_return(struct trace_seq *s)
+@@ -2586,6 +2586,15 @@ enum print_line_t trace_handle_return(struct trace_seq *s)
  }
  EXPORT_SYMBOL_GPL(trace_handle_return);
  
@@ -52,7 +52,7 @@ index 7c6ba299a9d3..058344549795 100644
  unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
  {
  	unsigned int trace_flags = irqs_status;
-@@ -2580,7 +2589,8 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
+@@ -2604,7 +2613,8 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
  		trace_flags |= TRACE_FLAG_NEED_RESCHED;
  	if (test_preempt_need_resched())
  		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
@@ -62,7 +62,7 @@ index 7c6ba299a9d3..058344549795 100644
  }
  
  struct ring_buffer_event *
-@@ -3781,9 +3791,10 @@ static void print_lat_help_header(struct seq_file *m)
+@@ -3805,9 +3815,10 @@ static void print_lat_help_header(struct seq_file *m)
  		    "#                  | / _----=> need-resched    \n"
  		    "#                  || / _---=> hardirq/softirq \n"
  		    "#                  ||| / _--=> preempt-depth   \n"
@@ -76,7 +76,7 @@ index 7c6ba299a9d3..058344549795 100644
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -3821,9 +3832,10 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
+@@ -3845,9 +3856,10 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
  	seq_printf(m, "#                            %.*s / _----=> need-resched\n", prec, space);
  	seq_printf(m, "#                            %.*s| / _---=> hardirq/softirq\n", prec, space);
  	seq_printf(m, "#                            %.*s|| / _--=> preempt-depth\n", prec, space);

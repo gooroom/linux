@@ -1,9 +1,9 @@
-From 46ac6802d14b91549ae98bb1eb26d09a00a4e46f Mon Sep 17 00:00:00 2001
+From df2c32a565b8eb47fe0f40db8766b0bdcc7ae923 Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Tue, 15 Dec 2020 15:16:47 +0100
 Subject: [PATCH 074/303] rcu: Enable rcu_normal_after_boot unconditionally for
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Expedited RCU grace periods send IPIs to all non-idle CPUs, and thus can
 disrupt time-critical code in real-time applications.  However, there
@@ -34,10 +34,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 32cd79a3c3e7..9ee9d99cd811 100644
+index 181cebf69f96..9dd83d919db1 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -4467,6 +4467,13 @@
+@@ -4473,6 +4473,13 @@
  			only normal grace-period primitives.  No effect
  			on CONFIG_TINY_RCU kernels.
  
@@ -52,7 +52,7 @@ index 32cd79a3c3e7..9ee9d99cd811 100644
  			Set time in jiffies during which RCU tasks will
  			avoid sending IPIs, starting with the beginning
 diff --git a/kernel/rcu/update.c b/kernel/rcu/update.c
-index 39334d2d2b37..b95ae86c40a7 100644
+index 849f0aa99333..dd94a602a6d2 100644
 --- a/kernel/rcu/update.c
 +++ b/kernel/rcu/update.c
 @@ -56,8 +56,10 @@

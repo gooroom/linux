@@ -1,9 +1,9 @@
-From ac33826d955443621e37edde8642083aeefe5078 Mon Sep 17 00:00:00 2001
+From cce13787589aa6817d4ddd380e86702a573775b9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:35 +0100
 Subject: [PATCH 046/303] sched: Make migrate_disable/enable() independent of
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Now that the scheduler can deal with migrate disable properly, there is no
 real compelling reason to make it only available for RT.
@@ -163,7 +163,7 @@ index a7020a5c62f9..1cf7938ce643 100644
  #endif
  	unsigned short			migration_flags;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 53251dc1c29d..db56f4c31a46 100644
+index e4292a848a25..8638bc286280 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1694,8 +1694,6 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -254,7 +254,7 @@ index 53251dc1c29d..db56f4c31a46 100644
  
  #ifdef CONFIG_MAGIC_SYSRQ
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 9a6163a8ea69..0382721f6139 100644
+index c58d53376168..91b01910a167 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1056,7 +1056,7 @@ struct rq {

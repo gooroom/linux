@@ -1,8 +1,8 @@
-From b273a17b95cf753fc5962f29bc45af514c2611c1 Mon Sep 17 00:00:00 2001
+From 936ad27c0f7ef24f441759288df8a27660bc3c0a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 234/303] block/mq: do not invoke preempt_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 preempt_disable() and get_cpu() don't play well together with the sleeping
 locks it tries to allocate later.
@@ -14,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 56723446b205..e7551f3eb8ca 100644
+index 54517c82a624..c98ba39f8004 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -1585,14 +1585,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
+@@ -1586,14 +1586,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
  		return;
  
  	if (!async && !(hctx->flags & BLK_MQ_F_BLOCKING)) {

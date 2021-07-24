@@ -1,8 +1,8 @@
-From 3b8f061e968e36dcb711c22c2741bb10442c48a1 Mon Sep 17 00:00:00 2001
+From 63754df14d8901135dc1cd9704ebda004301c42e Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
 Subject: [PATCH 009/303] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5f2ce256bc49..2658df8954fb 100644
+index 3b89ea4b8636..352e43d1b7b9 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1822,13 +1822,14 @@ static int migration_cpu_stop(void *data)
@@ -113,7 +113,7 @@ index 5f2ce256bc49..2658df8954fb 100644
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6588,7 +6596,7 @@ void init_idle(struct task_struct *idle, int cpu)
+@@ -6588,7 +6596,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -123,7 +123,7 @@ index 5f2ce256bc49..2658df8954fb 100644
  	/*
  	 * We're having a chicken and egg problem, even though we are
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index e0564abfece1..9495a26f7e73 100644
+index 1cecc1886428..4b6df340d452 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -2307,7 +2307,8 @@ static void task_woken_dl(struct rq *rq, struct task_struct *p)
@@ -146,7 +146,7 @@ index e0564abfece1..9495a26f7e73 100644
  
  /* Assumes rq->lock is held */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index c8ea64a72e0a..b23283a3326a 100644
+index fd2ac91489d9..778103fc9fcf 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1816,7 +1816,8 @@ struct sched_class {

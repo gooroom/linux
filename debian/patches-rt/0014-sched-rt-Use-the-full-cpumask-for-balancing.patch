@@ -1,8 +1,8 @@
-From d83d0836dcc0d9bc0d4075898ef08a1a42e2afd8 Mon Sep 17 00:00:00 2001
+From d70ac30d88f5adaa0fcbc2bb4c706827f5d83d1c Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:11 +0200
 Subject: [PATCH 014/303] sched,rt: Use the full cpumask for balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 We want migrate_disable() tasks to get PULLs in order for them to PUSH
 away the higher priority task.
@@ -57,7 +57,7 @@ index 0033731a0797..11c4df2010de 100644
  		/*
  		 * We have to ensure that we have at least one bit
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 3c6b3d13e1b9..f38650b776ab 100644
+index 486ee6aeb178..9dae542af347 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1918,7 +1918,7 @@ static void task_fork_dl(struct task_struct *p)
@@ -79,7 +79,7 @@ index 3c6b3d13e1b9..f38650b776ab 100644
  				     !dl_task(task) ||
  				     !task_on_rq_queued(task))) {
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index 2525a1beed26..cf63346a07e4 100644
+index 5d15c875be2d..37a6758e2b99 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -1658,7 +1658,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)

@@ -1,9 +1,9 @@
-From 05fe8b90773c73a9b274ef59786b1df15119352f Mon Sep 17 00:00:00 2001
+From 1e3c902496a324556064da6af4b9aed84acb13b0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 6 Oct 2020 13:07:17 +0200
 Subject: [PATCH 180/303] locking/rtmutex: Use custom scheduling function for
  spin-schedule()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 PREEMPT_RT builds the rwsem, mutex, spinlock and rwlock typed locks on
 top of a rtmutex lock. While blocked task->pi_blocked_on is set
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  7 files changed, 32 insertions(+), 21 deletions(-)
 
 diff --git a/arch/arm64/include/asm/preempt.h b/arch/arm64/include/asm/preempt.h
-index 80e946b2abee..f06a23898540 100644
+index e83f0982b99c..f1486b32502c 100644
 --- a/arch/arm64/include/asm/preempt.h
 +++ b/arch/arm64/include/asm/preempt.h
 @@ -81,6 +81,9 @@ static inline bool should_resched(int preempt_offset)
@@ -54,7 +54,7 @@ index 80e946b2abee..f06a23898540 100644
  void preempt_schedule_notrace(void);
  #define __preempt_schedule_notrace() preempt_schedule_notrace()
 diff --git a/arch/x86/include/asm/preempt.h b/arch/x86/include/asm/preempt.h
-index 69485ca13665..5ef93c81b274 100644
+index a334dd0d7c42..50e0c0ab7b97 100644
 --- a/arch/x86/include/asm/preempt.h
 +++ b/arch/x86/include/asm/preempt.h
 @@ -103,6 +103,9 @@ static __always_inline bool should_resched(int preempt_offset)
@@ -68,7 +68,7 @@ index 69485ca13665..5ef93c81b274 100644
  # define __preempt_schedule() \
  	asm volatile ("call preempt_schedule_thunk" : ASM_CALL_CONSTRAINT)
 diff --git a/include/asm-generic/preempt.h b/include/asm-generic/preempt.h
-index d683f5e6d791..71c1535db56a 100644
+index b4d43a4af5f7..ac255e889462 100644
 --- a/include/asm-generic/preempt.h
 +++ b/include/asm-generic/preempt.h
 @@ -79,6 +79,9 @@ static __always_inline bool should_resched(int preempt_offset)
@@ -133,7 +133,7 @@ index 1ee16b8fedd7..16be7111aae7 100644
  		raw_spin_lock_irqsave(&m->wait_lock, flags);
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 673ea268d55b..28c8d93fc8c4 100644
+index 643feb7a7825..d46588ae53f1 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4978,7 +4978,7 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)

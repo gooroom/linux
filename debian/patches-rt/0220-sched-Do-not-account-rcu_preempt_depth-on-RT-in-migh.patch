@@ -1,9 +1,9 @@
-From c497f6b9efb9b995605159e1114b59096c2d8d94 Mon Sep 17 00:00:00 2001
+From 50fd55467b06f65bc3b48a0e161f6b2dceae082d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 7 Jun 2011 09:19:06 +0200
 Subject: [PATCH 220/303] sched: Do not account rcu_preempt_depth on RT in
  might_sleep()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 RT changes the rcu_preempt_depth semantics, so we cannot check for it
 in might_sleep().
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index fc5ba83fc818..f251ba473f77 100644
+index 2ad3b8a130da..d6d279e03541 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -52,6 +52,11 @@ void __rcu_read_unlock(void);
@@ -40,7 +40,7 @@ index fc5ba83fc818..f251ba473f77 100644
  
  /* Internal to kernel */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index bf7a81a1f81c..3571a3c1966c 100644
+index 14652657a179..e1fe1e3ad309 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -7874,7 +7874,7 @@ void __init sched_init(void)

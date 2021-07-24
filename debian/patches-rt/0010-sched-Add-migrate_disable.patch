@@ -1,8 +1,8 @@
-From eb9a241bcd091c2816da16d9d13f806acb634832 Mon Sep 17 00:00:00 2001
+From 4682abbbd558d6afde28c5176c0603c907407d3f Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:07 +0200
 Subject: [PATCH 010/303] sched: Add migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Add the base migrate_disable() support (under protest).
 
@@ -119,7 +119,7 @@ index 2660ee4b08ad..30857da00adc 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 2658df8954fb..1d47da0161fc 100644
+index 352e43d1b7b9..a209e883f132 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1694,6 +1694,61 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -313,7 +313,7 @@ index 2658df8954fb..1d47da0161fc 100644
  
  		trace_sched_switch(preempt, prev, next);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index b23283a3326a..c3ad2b21a697 100644
+index 778103fc9fcf..aeea80f12f2e 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1904,14 +1904,16 @@ static inline bool sched_fair_runnable(struct rq *rq)

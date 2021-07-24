@@ -1,8 +1,8 @@
-From cafc7cac5536b35ac42acd16b5020837ea8f5cfe Mon Sep 17 00:00:00 2001
+From 8e83e8755abed86ffa660a7f0daa25396cfa0126 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 173/303] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -369,7 +369,7 @@ index 000000000000..446da786e5d5
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 356104c1e0a3..e903347d1bc1 100644
+index 9763cd9cf5d4..dedb702d7fdf 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -926,6 +926,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -1140,7 +1140,7 @@ index 9d1e974ca9c3..c1a280167e3c 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index fc1cde8d4032..673ea268d55b 100644
+index 2dd67816fe2d..643feb7a7825 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -510,9 +510,15 @@ static bool set_nr_if_polling(struct task_struct *p)

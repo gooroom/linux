@@ -1,8 +1,8 @@
-From 836873da34466622f25e26d4368ce4876f9d93a2 Mon Sep 17 00:00:00 2001
+From 08924c7ca835a17d8f9937a64bf2b8355fafd29b Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:13 +0200
 Subject: [PATCH 016/303] sched: Fix migrate_disable() vs rt/dl balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 In order to minimize the interference of migrate_disable() on lower
 priority tasks, which can be deprived of runtime due to being stuck
@@ -101,7 +101,7 @@ index 9f2ee718bb3e..a7020a5c62f9 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ccca104bdf0b..e1df746b441a 100644
+index cd8d6da3a0e9..86f3be2367c0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1761,11 +1761,6 @@ void migrate_enable(void)
@@ -214,7 +214,7 @@ index ccca104bdf0b..e1df746b441a 100644
  {
  	return false;
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index f38650b776ab..8d615aacaafc 100644
+index 9dae542af347..dd2a8c5954b2 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -2135,6 +2135,9 @@ static int push_dl_task(struct rq *rq)
@@ -278,7 +278,7 @@ index f38650b776ab..8d615aacaafc 100644
  	}
  
  	if (resched)
-@@ -2530,6 +2544,7 @@ const struct sched_class dl_sched_class
+@@ -2532,6 +2546,7 @@ const struct sched_class dl_sched_class
  	.rq_online              = rq_online_dl,
  	.rq_offline             = rq_offline_dl,
  	.task_woken		= task_woken_dl,
@@ -287,7 +287,7 @@ index f38650b776ab..8d615aacaafc 100644
  
  	.task_tick		= task_tick_dl,
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index cf63346a07e4..c592e47cafed 100644
+index 37a6758e2b99..d7b33935e22a 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -1859,7 +1859,7 @@ static struct task_struct *pick_next_pushable_task(struct rq *rq)
@@ -418,7 +418,7 @@ index cf63346a07e4..c592e47cafed 100644
  	}
  
  	if (resched)
-@@ -2449,6 +2487,7 @@ const struct sched_class rt_sched_class
+@@ -2456,6 +2494,7 @@ const struct sched_class rt_sched_class
  	.rq_offline             = rq_offline_rt,
  	.task_woken		= task_woken_rt,
  	.switched_from		= switched_from_rt,
@@ -427,7 +427,7 @@ index cf63346a07e4..c592e47cafed 100644
  
  	.task_tick		= task_tick_rt,
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 6d9be4e6e406..9a6163a8ea69 100644
+index 0245544efe5a..c58d53376168 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1059,6 +1059,8 @@ struct rq {

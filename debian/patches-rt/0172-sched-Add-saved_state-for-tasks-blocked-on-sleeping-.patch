@@ -1,9 +1,9 @@
-From 2dabf2a14e4143f579ce6b5739e918d9103176c2 Mon Sep 17 00:00:00 2001
+From 2c8f158ca6ce1a4319f0674e131fdba66744253c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
 Subject: [PATCH 172/303] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -40,7 +40,7 @@ index f8c0d493ba87..f8d30d5c85e8 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e75600f56605..fc1cde8d4032 100644
+index 99a10fbf370d..2dd67816fe2d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3282,7 +3282,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -100,7 +100,7 @@ index e75600f56605..fc1cde8d4032 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 0382721f6139..8de084e7a45b 100644
+index 91b01910a167..63a508cd1452 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1751,6 +1751,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)

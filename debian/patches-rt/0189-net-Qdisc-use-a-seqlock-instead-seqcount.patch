@@ -1,8 +1,8 @@
-From b39d18fa5685944279038ca98e61515dbf1d05b3 Mon Sep 17 00:00:00 2001
+From 184c7c07398897f9db2245ce09497a72a47c735d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 189/303] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -99,7 +99,7 @@ index 000000000000..95a497a72e51
 +
 +#endif
 diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index 4dd2c9e34976..80d35888cac8 100644
+index f8631ad3c868..5a564a4f6629 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -10,6 +10,7 @@
@@ -131,7 +131,7 @@ index 4dd2c9e34976..80d35888cac8 100644
  }
  
  static inline bool qdisc_is_percpu_stats(const struct Qdisc *q)
-@@ -191,17 +196,27 @@ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
+@@ -203,17 +208,27 @@ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
  	} else if (qdisc_is_running(qdisc)) {
  		return false;
  	}
@@ -159,7 +159,7 @@ index 4dd2c9e34976..80d35888cac8 100644
  	if (qdisc->flags & TCQ_F_NOLOCK) {
  		spin_unlock(&qdisc->seqlock);
  
-@@ -583,7 +598,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
+@@ -595,7 +610,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
  	return qdisc_lock(root);
  }
  

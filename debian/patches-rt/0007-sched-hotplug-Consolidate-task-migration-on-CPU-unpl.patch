@@ -1,9 +1,9 @@
-From 67a340357f6c2a47c70ba58fb84f91297ebac0d4 Mon Sep 17 00:00:00 2001
+From 186eaba4cb9e73b2c985e3e31e2f58a985b91d1f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:04 +0200
 Subject: [PATCH 007/303] sched/hotplug: Consolidate task migration on CPU
  unplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.47-rt46.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
 
 With the new mechanism which kicks tasks off the outgoing CPU at the end of
 schedule() the situation on an outgoing CPU right before the stopper thread
@@ -66,10 +66,10 @@ index 9a62ffdd296f..412cdaba33eb 100644
  #endif
  
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 2b8d7a5db383..4e11e91010e1 100644
+index 67c22941b5f2..016f2d0686b6 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -1606,7 +1606,7 @@ static struct cpuhp_step cpuhp_hp_states[] = {
+@@ -1655,7 +1655,7 @@ static struct cpuhp_step cpuhp_hp_states[] = {
  		.name			= "ap:online",
  	},
  	/*
@@ -78,7 +78,7 @@ index 2b8d7a5db383..4e11e91010e1 100644
  	 * this itself.
  	 */
  	[CPUHP_TEARDOWN_CPU] = {
-@@ -1615,6 +1615,13 @@ static struct cpuhp_step cpuhp_hp_states[] = {
+@@ -1664,6 +1664,13 @@ static struct cpuhp_step cpuhp_hp_states[] = {
  		.teardown.single	= takedown_cpu,
  		.cant_stop		= true,
  	},
@@ -93,7 +93,7 @@ index 2b8d7a5db383..4e11e91010e1 100644
  	[CPUHP_AP_SMPBOOT_THREADS] = {
  		.name			= "smpboot/threads:online",
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 77d6178b8747..5fd467bb6a1b 100644
+index 1a61a74de70b..45c10513ac99 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6739,120 +6739,6 @@ void idle_task_exit(void)
