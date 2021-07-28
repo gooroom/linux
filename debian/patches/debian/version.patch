@@ -17,17 +17,17 @@ are set.
 
 --- a/Makefile
 +++ b/Makefile
-@@ -1195,7 +1195,7 @@ PHONY += prepare archprepare
+@@ -1234,7 +1234,7 @@
  
  archprepare: outputmakefile archheaders archscripts scripts include/config/kernel.release \
  	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h \
--	include/generated/autoconf.h
-+	include/generated/autoconf.h include/generated/package.h
+-	include/generated/autoconf.h remove-stale-files
++	include/generated/autoconf.h include/generated/package.h remove-stale-files
  
  prepare0: archprepare
  	$(Q)$(MAKE) $(build)=scripts/mod
-@@ -1258,6 +1258,16 @@ define filechk_version.h
- 	((c) > 255 ? 255 : (c)))'
+@@ -1308,6 +1308,16 @@
+ 	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL)
  endef
  
 +ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
@@ -43,7 +43,7 @@ are set.
  $(version_h): PATCHLEVEL := $(if $(PATCHLEVEL), $(PATCHLEVEL), 0)
  $(version_h): SUBLEVEL := $(if $(SUBLEVEL), $(SUBLEVEL), 0)
  $(version_h): FORCE
-@@ -1267,6 +1277,9 @@ $(version_h): FORCE
+@@ -1316,6 +1326,9 @@
  include/generated/utsrelease.h: include/config/kernel.release FORCE
  	$(call filechk,utsrelease.h)
  
@@ -63,7 +63,7 @@ are set.
  
  #include <asm/cpu.h>
  #include <asm/delay.h>
-@@ -101,9 +102,9 @@ show_regs (struct pt_regs *regs)
+@@ -101,9 +102,9 @@
  	print_modules();
  	printk("\n");
  	show_regs_print_info(KERN_DEFAULT);
@@ -83,9 +83,9 @@ are set.
  #include <linux/seq_buf.h>
 +#include <generated/package.h>
  
+ #include <asm/interrupt.h>
  #include <asm/io.h>
- #include <asm/processor.h>
-@@ -1474,8 +1475,9 @@ void show_regs(struct pt_regs * regs)
+@@ -1475,8 +1476,9 @@
  
  	printk("NIP:  "REG" LR: "REG" CTR: "REG"\n",
  	       regs->nip, regs->link, regs->ctr);
@@ -107,7 +107,7 @@ are set.
  #include <asm/current.h>
  #include <asm/ptrace.h>
  #include <asm/sysrq.h>
-@@ -17,8 +18,9 @@ void show_regs(struct pt_regs *regs)
+@@ -17,8 +18,9 @@
  {
  	printk("\n");
  	print_modules();
@@ -129,7 +129,7 @@ are set.
  
  /*
   * The number of tasks checked:
-@@ -128,10 +129,11 @@ static void check_hung_task(struct task_
+@@ -128,10 +129,11 @@
  			sysctl_hung_task_warnings--;
  		pr_err("INFO: task %s:%d blocked for more than %ld seconds.\n",
  		       t->comm, t->pid, (jiffies - t->last_switch_time) / HZ);
@@ -145,15 +145,15 @@ are set.
  		sched_show_task(t);
 --- a/lib/dump_stack.c
 +++ b/lib/dump_stack.c
-@@ -12,6 +12,7 @@
- #include <linux/atomic.h>
+@@ -13,6 +13,7 @@
  #include <linux/kexec.h>
  #include <linux/utsname.h>
+ #include <linux/stop_machine.h>
 +#include <generated/package.h>
  
  static char dump_stack_arch_desc_str[128];
  
-@@ -44,13 +45,14 @@ void __init dump_stack_set_arch_desc(con
+@@ -45,13 +46,14 @@
   */
  void dump_stack_print_info(const char *log_lvl)
  {

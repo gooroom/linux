@@ -16,12 +16,12 @@ Compile resolve_btfids tool at kernel compilation start".
 
 --- a/Makefile
 +++ b/Makefile
-@@ -1070,18 +1070,6 @@ export mod_sign_cmd
+@@ -1108,18 +1108,6 @@
  
  HOST_LIBELF_LIBS = $(shell pkg-config libelf --libs 2>/dev/null || echo -lelf)
  
 -has_libelf = $(call try-run,\
--               echo "int main() {}" | $(HOSTCC) -xc -o /dev/null $(HOST_LIBELF_LIBS) -,1,0)
+-               echo "int main() {}" | $(HOSTCC) $(KBUILD_HOSTLDFLAGS) -xc -o /dev/null $(HOST_LIBELF_LIBS) -,1,0)
 -
 -ifdef CONFIG_STACK_VALIDATION
 -  ifeq ($(has_libelf),1)
@@ -35,7 +35,7 @@ Compile resolve_btfids tool at kernel compilation start".
  PHONY += resolve_btfids_clean
  
  resolve_btfids_O = $(abspath $(objtree))/tools/bpf/resolve_btfids
-@@ -1093,16 +1081,6 @@ ifneq ($(wildcard $(resolve_btfids_O)),)
+@@ -1131,16 +1119,6 @@
  	$(Q)$(MAKE) -sC $(srctree)/tools/bpf/resolve_btfids O=$(resolve_btfids_O) clean
  endif
  
@@ -51,8 +51,8 @@ Compile resolve_btfids tool at kernel compilation start".
 -
  PHONY += prepare0
  
- export MODORDER := $(extmod-prefix)modules.order
-@@ -1226,6 +1204,28 @@ uapi-asm-generic:
+ export extmod_prefix = $(if $(KBUILD_EXTMOD),$(KBUILD_EXTMOD)/)
+@@ -1269,6 +1247,28 @@
  	$(Q)$(MAKE) $(asm-generic)=arch/$(SRCARCH)/include/generated/uapi/asm \
  	generic=include/uapi/asm-generic
  
