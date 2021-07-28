@@ -1,0 +1,62 @@
+From: Valentin Vidic <vvidic@valentin-vidic.from.hr>
+Date: Tue, 27 Apr 2021 21:40:10 +0200
+Subject: s390/sclp_vt220: fix console name to match device
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=78cddc9aa6be2122da9ee3a4d2fff0be5db08cea
+Bug-Debian: https://bugs.debian.org/961056
+
+[ Upstream commit b7d91d230a119fdcc334d10c9889ce9c5e15118b ]
+
+Console name reported in /proc/consoles:
+
+  ttyS1                -W- (EC p  )    4:65
+
+does not match the char device name:
+
+  crw--w----    1 root     root        4,  65 May 17 12:18 /dev/ttysclp0
+
+so debian-installer inside a QEMU s390x instance gets confused and fails
+to start with the following error:
+
+  steal-ctty: No such file or directory
+
+Signed-off-by: Valentin Vidic <vvidic@valentin-vidic.from.hr>
+Link: https://lore.kernel.org/r/20210427194010.9330-1-vvidic@valentin-vidic.from.hr
+Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
+Signed-off-by: Vasily Gorbik <gor@linux.ibm.com>
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+---
+ arch/s390/kernel/setup.c       | 2 +-
+ drivers/s390/char/sclp_vt220.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/s390/kernel/setup.c b/arch/s390/kernel/setup.c
+index 83a3f346e5bd..5cd9d20af31e 100644
+--- a/arch/s390/kernel/setup.c
++++ b/arch/s390/kernel/setup.c
+@@ -166,7 +166,7 @@ static void __init set_preferred_console(void)
+ 	else if (CONSOLE_IS_3270)
+ 		add_preferred_console("tty3270", 0, NULL);
+ 	else if (CONSOLE_IS_VT220)
+-		add_preferred_console("ttyS", 1, NULL);
++		add_preferred_console("ttysclp", 0, NULL);
+ 	else if (CONSOLE_IS_HVC)
+ 		add_preferred_console("hvc", 0, NULL);
+ }
+diff --git a/drivers/s390/char/sclp_vt220.c b/drivers/s390/char/sclp_vt220.c
+index 3f9a6ef650fa..3c2ed6d01387 100644
+--- a/drivers/s390/char/sclp_vt220.c
++++ b/drivers/s390/char/sclp_vt220.c
+@@ -35,8 +35,8 @@
+ #define SCLP_VT220_MINOR		65
+ #define SCLP_VT220_DRIVER_NAME		"sclp_vt220"
+ #define SCLP_VT220_DEVICE_NAME		"ttysclp"
+-#define SCLP_VT220_CONSOLE_NAME		"ttyS"
+-#define SCLP_VT220_CONSOLE_INDEX	1	/* console=ttyS1 */
++#define SCLP_VT220_CONSOLE_NAME		"ttysclp"
++#define SCLP_VT220_CONSOLE_INDEX	0	/* console=ttysclp0 */
+ 
+ /* Representation of a single write request */
+ struct sclp_vt220_request {
+-- 
+2.32.0
+
