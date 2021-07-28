@@ -176,8 +176,8 @@ class Gencontrol(Base):
 
     def do_flavour_packages(self, packages, makefile, arch, featureset,
                             flavour, vars, makeflags, extra):
-        if not (self.config.merge('build', arch, featureset, flavour)
-                .get('signed-code', False)):
+        config_build = self.config.merge('build', arch, featureset, flavour)
+        if not config_build.get('signed-code', False):
             return
 
         image_suffix = '%(abiname)s%(localversion)s' % vars
@@ -190,19 +190,7 @@ class Gencontrol(Base):
             kconfig = f.readlines()
         assert 'CONFIG_EFI_STUB=y\n' in kconfig
         assert 'CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y\n' in kconfig
-        cert_re = re.compile(r'CONFIG_SYSTEM_TRUSTED_KEYS="(.*)"$')
-        cert_file_name = None
-        for line in kconfig:
-            match = cert_re.match(line)
-            if match:
-                cert_file_name = match.group(1)
-                break
-        assert cert_file_name
-        if featureset != "none":
-            cert_file_name = os.path.join('debian/build/source_%s' %
-                                          featureset,
-                                          cert_file_name)
-
+        cert_file_name = config_build['trusted-certs']
         self.image_packages.append((image_suffix, image_package_name,
                                     cert_file_name))
 
