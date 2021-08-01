@@ -1,8 +1,8 @@
-From 798242409e5f4547449650be4ed599dde186a41e Mon Sep 17 00:00:00 2001
+From 480005082b3e27472cab0f0562fc9d7b098ca690 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 11 Dec 2018 15:10:33 +0100
 Subject: [PATCH 175/338] x86/fpu: Disable preemption around local_bh_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.195-rt82.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.196-rt83.tar.xz
 
 __fpu__restore_sig() restores the content of the FPU state in the CPUs
 and in order to avoid concurency it disbles BH. On !RT it also disables
@@ -17,10 +17,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+)
 
 diff --git a/arch/x86/kernel/fpu/signal.c b/arch/x86/kernel/fpu/signal.c
-index d99a8ee9e185..5e0274a94133 100644
+index 86a231338bbf..e5c8d5245289 100644
 --- a/arch/x86/kernel/fpu/signal.c
 +++ b/arch/x86/kernel/fpu/signal.c
-@@ -344,10 +344,12 @@ static int __fpu__restore_sig(void __user *buf, void __user *buf_fx, int size)
+@@ -351,10 +351,12 @@ static int __fpu__restore_sig(void __user *buf, void __user *buf_fx, int size)
  			sanitize_restored_xstate(tsk, &env, xfeatures, fx_only);
  		}
  
@@ -31,8 +31,8 @@ index d99a8ee9e185..5e0274a94133 100644
  		local_bh_enable();
 +		preempt_enable();
  
+ 		/* Failure is already handled */
  		return err;
- 	} else {
 -- 
 2.31.1
 
