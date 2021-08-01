@@ -1,8 +1,8 @@
-From f8a07803ad7bdd7bc4d06ef5165031ea39d56515 Mon Sep 17 00:00:00 2001
+From 77ab299636054063f03f12f38a28f3240f0233fb Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Fri, 28 Sep 2018 21:03:51 +0000
 Subject: [PATCH 009/338] kthread: convert worker lock to raw spinlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.196-rt83.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.197-rt84.tar.xz
 
 In order to enable the queuing of kthread work items from hardirq
 context even when PREEMPT_RT_FULL is enabled, convert the worker
@@ -36,7 +36,7 @@ index 72308c38e06c..e0498e46d642 100644
  	struct list_head	delayed_work_list;
  	struct task_struct	*task;
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index 81abfac35127..0042352c41bb 100644
+index 9750f4f7f901..c8cf4731ced8 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
 @@ -637,7 +637,7 @@ void __kthread_init_worker(struct kthread_worker *worker,
@@ -142,19 +142,19 @@ index 81abfac35127..0042352c41bb 100644
  
  	if (!noop)
  		wait_for_completion(&fwork.done);
-@@ -1035,9 +1035,9 @@ static bool __kthread_cancel_work(struct kthread_work *work, bool is_dwork,
- 		 * any queuing is blocked by setting the canceling counter.
- 		 */
- 		work->canceling++;
--		spin_unlock_irqrestore(&worker->lock, *flags);
-+		raw_spin_unlock_irqrestore(&worker->lock, *flags);
- 		del_timer_sync(&dwork->timer);
--		spin_lock_irqsave(&worker->lock, *flags);
-+		raw_spin_lock_irqsave(&worker->lock, *flags);
- 		work->canceling--;
- 	}
+@@ -1030,9 +1030,9 @@ static void kthread_cancel_delayed_work_timer(struct kthread_work *work,
+ 	 * any queuing is blocked by setting the canceling counter.
+ 	 */
+ 	work->canceling++;
+-	spin_unlock_irqrestore(&worker->lock, *flags);
++	raw_spin_unlock_irqrestore(&worker->lock, *flags);
+ 	del_timer_sync(&dwork->timer);
+-	spin_lock_irqsave(&worker->lock, *flags);
++	raw_spin_lock_irqsave(&worker->lock, *flags);
+ 	work->canceling--;
+ }
  
-@@ -1084,7 +1084,7 @@ bool kthread_mod_delayed_work(struct kthread_worker *worker,
+@@ -1094,7 +1094,7 @@ bool kthread_mod_delayed_work(struct kthread_worker *worker,
  	unsigned long flags;
  	int ret = false;
  
@@ -163,7 +163,7 @@ index 81abfac35127..0042352c41bb 100644
  
  	/* Do not bother with canceling when never queued. */
  	if (!work->worker)
-@@ -1101,7 +1101,7 @@ bool kthread_mod_delayed_work(struct kthread_worker *worker,
+@@ -1123,7 +1123,7 @@ bool kthread_mod_delayed_work(struct kthread_worker *worker,
  fast_queue:
  	__kthread_queue_delayed_work(worker, dwork, delay);
  out:
@@ -172,7 +172,7 @@ index 81abfac35127..0042352c41bb 100644
  	return ret;
  }
  EXPORT_SYMBOL_GPL(kthread_mod_delayed_work);
-@@ -1115,7 +1115,7 @@ static bool __kthread_cancel_work_sync(struct kthread_work *work, bool is_dwork)
+@@ -1137,7 +1137,7 @@ static bool __kthread_cancel_work_sync(struct kthread_work *work, bool is_dwork)
  	if (!worker)
  		goto out;
  
@@ -181,7 +181,7 @@ index 81abfac35127..0042352c41bb 100644
  	/* Work must not be used with >1 worker, see kthread_queue_work(). */
  	WARN_ON_ONCE(work->worker != worker);
  
-@@ -1129,13 +1129,13 @@ static bool __kthread_cancel_work_sync(struct kthread_work *work, bool is_dwork)
+@@ -1154,13 +1154,13 @@ static bool __kthread_cancel_work_sync(struct kthread_work *work, bool is_dwork)
  	 * In the meantime, block any queuing by setting the canceling counter.
  	 */
  	work->canceling++;
