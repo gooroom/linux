@@ -1,8 +1,8 @@
-From b0c31d5e268730738425cf6957413ccec46c6c92 Mon Sep 17 00:00:00 2001
+From b4132ff83bd5cab1cb002d0a8c6988d2b999ec42 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 197/338] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.197-rt84.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.198-rt85.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -53,7 +53,7 @@ index 06176ef2a842..8af2e56e0fe3 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 402a4f3bbd8e..c124e08827c4 100644
+index daa2e25f0d28..c52107a6010f 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -219,14 +219,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -94,7 +94,7 @@ index 402a4f3bbd8e..c124e08827c4 100644
  		rps_lock(sd);
  		if (skb_queue_empty(&sd->input_pkt_queue)) {
  			/*
-@@ -6322,13 +6324,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
+@@ -6329,13 +6331,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
  	unsigned long time_limit = jiffies +
  		usecs_to_jiffies(netdev_budget_usecs);
  	int budget = netdev_budget;
@@ -116,7 +116,7 @@ index 402a4f3bbd8e..c124e08827c4 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9526,10 +9536,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9533,10 +9543,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -131,7 +131,7 @@ index 402a4f3bbd8e..c124e08827c4 100644
  
  	return 0;
  }
-@@ -9840,8 +9853,9 @@ static int __init net_dev_init(void)
+@@ -9847,8 +9860,9 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  

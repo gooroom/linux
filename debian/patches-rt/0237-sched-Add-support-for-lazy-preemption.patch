@@ -1,8 +1,8 @@
-From c9649035af8336bf949ccdf74ed9092218e8cb26 Mon Sep 17 00:00:00 2001
+From 4af5ee3f998a499a078cd0739bcf4b74a58b3969 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 237/338] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.197-rt84.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.198-rt85.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -245,10 +245,10 @@ index 907d72b3ba95..306567f72a3e 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 7ec8d1de5a1e..6889721866a6 100644
+index f6511c62c9a4..11f48774b129 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -305,11 +305,13 @@ void pin_current_cpu(void)
+@@ -306,11 +306,13 @@ void pin_current_cpu(void)
  		return;
  	}
  	cpu = smp_processor_id();
@@ -420,7 +420,7 @@ index da1176ee324e..6286dde4af70 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 8d847a0785bc..6ccc787b0c5c 100644
+index 14c6513766db..7dafc21f3de1 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4104,7 +4104,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -530,10 +530,10 @@ index 494d21b04b1d..ccb08446c9bc 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 252941ebdcb9..befdd5f03016 100644
+index 3c7a6d08c3ce..d061b3e078aa 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2123,6 +2123,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
+@@ -2147,6 +2147,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
  	struct task_struct *tsk = current;
  
  	entry->preempt_count		= pc & 0xff;
@@ -541,7 +541,7 @@ index 252941ebdcb9..befdd5f03016 100644
  	entry->pid			= (tsk) ? tsk->pid : 0;
  	entry->flags =
  #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
-@@ -2133,7 +2134,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
+@@ -2157,7 +2158,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
  		((pc & NMI_MASK    ) ? TRACE_FLAG_NMI     : 0) |
  		((pc & HARDIRQ_MASK) ? TRACE_FLAG_HARDIRQ : 0) |
  		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
@@ -551,7 +551,7 @@ index 252941ebdcb9..befdd5f03016 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3334,15 +3336,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -3358,15 +3360,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -578,7 +578,7 @@ index 252941ebdcb9..befdd5f03016 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3380,15 +3384,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -3404,15 +3408,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  		   tgid ? tgid_space : space);
  	seq_printf(m, "#                          %s / _----=> need-resched\n",
  		   tgid ? tgid_space : space);
