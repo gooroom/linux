@@ -1,8 +1,8 @@
-From 08924c7ca835a17d8f9937a64bf2b8355fafd29b Mon Sep 17 00:00:00 2001
+From c33ce2282b9bba975a57424b94ca48464951bf99 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:13 +0200
 Subject: [PATCH 016/303] sched: Fix migrate_disable() vs rt/dl balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt51.tar.xz
 
 In order to minimize the interference of migrate_disable() on lower
 priority tasks, which can be deprived of runtime due to being stuck
@@ -101,10 +101,10 @@ index 9f2ee718bb3e..a7020a5c62f9 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index cd8d6da3a0e9..86f3be2367c0 100644
+index 95b1450b181e..e6a6130f706f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1761,11 +1761,6 @@ void migrate_enable(void)
+@@ -1759,11 +1759,6 @@ void migrate_enable(void)
  }
  EXPORT_SYMBOL_GPL(migrate_enable);
  
@@ -116,7 +116,7 @@ index cd8d6da3a0e9..86f3be2367c0 100644
  static inline bool rq_has_pinned_tasks(struct rq *rq)
  {
  	return rq->nr_pinned;
-@@ -1970,6 +1965,49 @@ static int migration_cpu_stop(void *data)
+@@ -1968,6 +1963,49 @@ static int migration_cpu_stop(void *data)
  	return 0;
  }
  
@@ -166,7 +166,7 @@ index cd8d6da3a0e9..86f3be2367c0 100644
  /*
   * sched_class::set_cpus_allowed must do the below, but is not required to
   * actually call this function.
-@@ -2050,6 +2088,14 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2048,6 +2086,14 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  
  	/* Can the task run on the task's current CPU? If so, we're done */
  	if (cpumask_test_cpu(task_cpu(p), &p->cpus_mask)) {
@@ -181,7 +181,7 @@ index cd8d6da3a0e9..86f3be2367c0 100644
  		pending = p->migration_pending;
  		if (pending) {
  			refcount_inc(&pending->refs);
-@@ -2058,6 +2104,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2056,6 +2102,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  		}
  		task_rq_unlock(rq, p, rf);
  
@@ -193,7 +193,7 @@ index cd8d6da3a0e9..86f3be2367c0 100644
  		if (complete)
  			goto do_complete;
  
-@@ -2094,6 +2145,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2092,6 +2143,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	if (flags & SCA_MIGRATE_ENABLE) {
  
  		refcount_inc(&pending->refs); /* pending->{arg,stop_work} */
@@ -201,7 +201,7 @@ index cd8d6da3a0e9..86f3be2367c0 100644
  		task_rq_unlock(rq, p, rf);
  
  		pending->arg = (struct migration_arg) {
-@@ -2712,11 +2764,6 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -2710,11 +2762,6 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
  
  static inline void migrate_disable_switch(struct rq *rq, struct task_struct *p) { }
  

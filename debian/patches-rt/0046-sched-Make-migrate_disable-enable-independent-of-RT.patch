@@ -1,9 +1,9 @@
-From cce13787589aa6817d4ddd380e86702a573775b9 Mon Sep 17 00:00:00 2001
+From 274e939471c88e2f041055d516a2d8e9154687e9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:35 +0100
 Subject: [PATCH 046/303] sched: Make migrate_disable/enable() independent of
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.52-rt47.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt51.tar.xz
 
 Now that the scheduler can deal with migrate disable properly, there is no
 real compelling reason to make it only available for RT.
@@ -163,10 +163,10 @@ index a7020a5c62f9..1cf7938ce643 100644
  #endif
  	unsigned short			migration_flags;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e4292a848a25..8638bc286280 100644
+index e988e68e9975..c452a98d887a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1694,8 +1694,6 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
+@@ -1692,8 +1692,6 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
  
  #ifdef CONFIG_SMP
  
@@ -175,7 +175,7 @@ index e4292a848a25..8638bc286280 100644
  static void
  __do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask, u32 flags);
  
-@@ -1770,8 +1768,6 @@ static inline bool rq_has_pinned_tasks(struct rq *rq)
+@@ -1768,8 +1766,6 @@ static inline bool rq_has_pinned_tasks(struct rq *rq)
  	return rq->nr_pinned;
  }
  
@@ -184,7 +184,7 @@ index e4292a848a25..8638bc286280 100644
  /*
   * Per-CPU kthreads are allowed to run on !active && online CPUs, see
   * __set_cpus_allowed_ptr() and select_fallback_rq().
-@@ -2852,7 +2848,7 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
+@@ -2850,7 +2846,7 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
  	}
  }
  
@@ -193,7 +193,7 @@ index e4292a848a25..8638bc286280 100644
  
  static inline int __set_cpus_allowed_ptr(struct task_struct *p,
  					 const struct cpumask *new_mask,
-@@ -2861,10 +2857,6 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -2859,10 +2855,6 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
  	return set_cpus_allowed_ptr(p, new_mask);
  }
  
@@ -204,7 +204,7 @@ index e4292a848a25..8638bc286280 100644
  static inline void migrate_disable_switch(struct rq *rq, struct task_struct *p) { }
  
  static inline bool rq_has_pinned_tasks(struct rq *rq)
-@@ -2872,7 +2864,7 @@ static inline bool rq_has_pinned_tasks(struct rq *rq)
+@@ -2870,7 +2862,7 @@ static inline bool rq_has_pinned_tasks(struct rq *rq)
  	return false;
  }
  
@@ -213,7 +213,7 @@ index e4292a848a25..8638bc286280 100644
  
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
-@@ -7898,6 +7890,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
+@@ -7878,6 +7870,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
  	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
  }
  EXPORT_SYMBOL_GPL(__cant_sleep);
