@@ -1,8 +1,8 @@
-From 0be82488a0c6c82ca870aed78cb515839c70dcd0 Mon Sep 17 00:00:00 2001
+From 471700ba323838167b97b9ed4e3b09024379ddf1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 24 Jul 2013 15:26:54 +0200
 Subject: [PATCH 190/338] workqueue: Use normal rcu
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.199-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
 
 There is no need for sched_rcu. The undocumented reason why sched_rcu
 is used is to avoid a few explicit rcu_read_lock()/unlock() pairs by
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 52 insertions(+), 43 deletions(-)
 
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index f278e2f584fd..fe3f5cce7728 100644
+index 1573d1bf6300..82cbcea3fdee 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -128,7 +128,7 @@ enum {
@@ -231,7 +231,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  }
  
  /**
-@@ -3512,14 +3517,14 @@ static void pwq_unbound_release_workfn(struct work_struct *work)
+@@ -3518,14 +3523,14 @@ static void pwq_unbound_release_workfn(struct work_struct *work)
  	put_unbound_pool(pool);
  	mutex_unlock(&wq_pool_mutex);
  
@@ -248,7 +248,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  }
  
  /**
-@@ -4226,7 +4231,7 @@ void destroy_workqueue(struct workqueue_struct *wq)
+@@ -4232,7 +4237,7 @@ void destroy_workqueue(struct workqueue_struct *wq)
  		 * The base ref is never dropped on per-cpu pwqs.  Directly
  		 * schedule RCU free.
  		 */
@@ -257,7 +257,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  	} else {
  		/*
  		 * We're the sole accessor of @wq at this point.  Directly
-@@ -4336,7 +4341,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
+@@ -4342,7 +4347,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
  	struct pool_workqueue *pwq;
  	bool ret;
  
@@ -267,7 +267,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  
  	if (cpu == WORK_CPU_UNBOUND)
  		cpu = smp_processor_id();
-@@ -4347,7 +4353,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
+@@ -4353,7 +4359,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
  		pwq = unbound_pwq_by_node(wq, cpu_to_node(cpu));
  
  	ret = !list_empty(&pwq->delayed_works);
@@ -277,7 +277,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  
  	return ret;
  }
-@@ -4373,15 +4380,15 @@ unsigned int work_busy(struct work_struct *work)
+@@ -4379,15 +4386,15 @@ unsigned int work_busy(struct work_struct *work)
  	if (work_pending(work))
  		ret |= WORK_BUSY_PENDING;
  
@@ -297,7 +297,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  
  	return ret;
  }
-@@ -4566,7 +4573,7 @@ void show_workqueue_state(void)
+@@ -4572,7 +4579,7 @@ void show_workqueue_state(void)
  	unsigned long flags;
  	int pi;
  
@@ -306,7 +306,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  
  	pr_info("Showing busy workqueues and worker pools:\n");
  
-@@ -4631,7 +4638,7 @@ void show_workqueue_state(void)
+@@ -4637,7 +4644,7 @@ void show_workqueue_state(void)
  		touch_nmi_watchdog();
  	}
  
@@ -315,7 +315,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  }
  
  /* used to show worker information through /proc/PID/{comm,stat,status} */
-@@ -5018,16 +5025,16 @@ bool freeze_workqueues_busy(void)
+@@ -5024,16 +5031,16 @@ bool freeze_workqueues_busy(void)
  		 * nr_active is monotonically decreasing.  It's safe
  		 * to peek without lock.
  		 */
@@ -335,7 +335,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  	}
  out_unlock:
  	mutex_unlock(&wq_pool_mutex);
-@@ -5222,7 +5229,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
+@@ -5228,7 +5235,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
  	const char *delim = "";
  	int node, written = 0;
  
@@ -345,7 +345,7 @@ index f278e2f584fd..fe3f5cce7728 100644
  	for_each_node(node) {
  		written += scnprintf(buf + written, PAGE_SIZE - written,
  				     "%s%d:%d", delim, node,
-@@ -5230,7 +5238,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
+@@ -5236,7 +5244,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
  		delim = " ";
  	}
  	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");

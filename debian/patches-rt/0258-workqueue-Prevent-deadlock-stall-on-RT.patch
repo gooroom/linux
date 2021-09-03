@@ -1,8 +1,8 @@
-From 4625475d72dedea72ac448d02cb25d8eeaefd279 Mon Sep 17 00:00:00 2001
+From 34eb8075a4805a4f838d4f696d4e3b90b5c603b9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 27 Jun 2014 16:24:52 +0200
 Subject: [PATCH 258/338] workqueue: Prevent deadlock/stall on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.199-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
 
 Austin reported a XFS deadlock/stall on RT where scheduled work gets
 never exececuted and tasks are waiting for each other for ever.
@@ -68,7 +68,7 @@ index 6286dde4af70..01006c93bc7f 100644
  	 * If we are going to sleep and we have plugged IO queued,
  	 * make sure to submit it to avoid deadlocks.
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index a7070b087890..c1f953586e1b 100644
+index dbb0d8f815ab..9154f5dba5ca 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -126,6 +126,11 @@ enum {

@@ -1,8 +1,8 @@
-From db39efc7f5ec5fd3ac95c680ad3aa1dde491c2a1 Mon Sep 17 00:00:00 2001
+From 272b9e07fb5ddbc3d44d0336ea0d453dee3a1de8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
 Subject: [PATCH 198/338] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.199-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 82 insertions(+), 8 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index bb6d72ac9ba4..d37d6fac5b87 100644
+index e2c1c454b8df..b35a946350ef 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -588,7 +588,11 @@ struct netdev_queue {
@@ -87,7 +87,7 @@ index bb6d72ac9ba4..d37d6fac5b87 100644
  
  void __netif_schedule(struct Qdisc *q);
  void netif_schedule_queue(struct netdev_queue *txq);
-@@ -3834,10 +3863,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3838,10 +3867,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1U << debug_value) - 1;
  }
  
@@ -137,7 +137,7 @@ index bb6d72ac9ba4..d37d6fac5b87 100644
  }
  
  static inline bool __netif_tx_acquire(struct netdev_queue *txq)
-@@ -3854,32 +3921,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
+@@ -3858,32 +3925,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
  static inline void __netif_tx_lock_bh(struct netdev_queue *txq)
  {
  	spin_lock_bh(&txq->_xmit_lock);
@@ -190,7 +190,7 @@ index 3a49782e50e1..d3a16fd28663 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c52107a6010f..b4a036075419 100644
+index fac781e6b8a8..689b04f8adf4 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3825,7 +3825,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
@@ -205,7 +205,7 @@ index c52107a6010f..b4a036075419 100644
  			if (dev_xmit_recursion())
  				goto recursion_alert;
  
-@@ -8582,7 +8586,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -8583,7 +8587,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);
