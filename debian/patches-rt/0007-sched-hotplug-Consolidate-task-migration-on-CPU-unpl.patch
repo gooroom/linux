@@ -1,9 +1,9 @@
-From fe36f3fb457e97092e24749426e7de23f38e98ae Mon Sep 17 00:00:00 2001
+From c08a5967bcb8061348f20acd3ea66a90891a0fb4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:04 +0200
 Subject: [PATCH 007/304] sched/hotplug: Consolidate task migration on CPU
  unplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 With the new mechanism which kicks tasks off the outgoing CPU at the end of
 schedule() the situation on an outgoing CPU right before the stopper thread
@@ -93,10 +93,10 @@ index 67c22941b5f2..016f2d0686b6 100644
  	[CPUHP_AP_SMPBOOT_THREADS] = {
  		.name			= "smpboot/threads:online",
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 8b2b728c6e53..54823d82703c 100644
+index d39908b7769f..35faa0b0c506 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6719,120 +6719,6 @@ void idle_task_exit(void)
+@@ -6732,120 +6732,6 @@ void idle_task_exit(void)
  	/* finish_cpu(), as ran on the BP, will clean up the active_mm state */
  }
  
@@ -217,7 +217,7 @@ index 8b2b728c6e53..54823d82703c 100644
  static int __balance_push_cpu_stop(void *arg)
  {
  	struct task_struct *p = arg;
-@@ -7101,10 +6987,6 @@ int sched_cpu_deactivate(unsigned int cpu)
+@@ -7114,10 +7000,6 @@ int sched_cpu_deactivate(unsigned int cpu)
  		return ret;
  	}
  	sched_domains_numa_masks_clear(cpu);
@@ -228,7 +228,7 @@ index 8b2b728c6e53..54823d82703c 100644
  	return 0;
  }
  
-@@ -7124,6 +7006,41 @@ int sched_cpu_starting(unsigned int cpu)
+@@ -7137,6 +7019,41 @@ int sched_cpu_starting(unsigned int cpu)
  }
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -270,7 +270,7 @@ index 8b2b728c6e53..54823d82703c 100644
  int sched_cpu_dying(unsigned int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -7137,7 +7054,6 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7150,7 +7067,6 @@ int sched_cpu_dying(unsigned int cpu)
  		BUG_ON(!cpumask_test_cpu(cpu, rq->rd->span));
  		set_rq_offline(rq);
  	}

@@ -1,8 +1,8 @@
-From 9000913294d30fc1c6ad3e4746beccef7a69270e Mon Sep 17 00:00:00 2001
+From 9dbdb823bf748090368a75d9d33080e05a1e463c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
 Subject: [PATCH 225/304] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -120,10 +120,10 @@ index eb4d04cb3aaf..258b599b7158 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index cda9980fefeb..b3e99d2f1aac 100644
+index 938fc8449706..7658ebeb3bc5 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2569,6 +2569,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
+@@ -2582,6 +2582,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
  }
  #endif /* CONFIG_NUMA_BALANCING */
  
@@ -142,7 +142,7 @@ index cda9980fefeb..b3e99d2f1aac 100644
  /*
   * wait_task_inactive - wait for a thread to unschedule.
   *
-@@ -2613,7 +2625,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
+@@ -2626,7 +2638,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		 * is actually now running somewhere else!
  		 */
  		while (task_running(rq, p)) {
@@ -151,7 +151,7 @@ index cda9980fefeb..b3e99d2f1aac 100644
  				return 0;
  			cpu_relax();
  		}
-@@ -2628,7 +2640,8 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
+@@ -2641,7 +2653,8 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
  		running = task_running(rq, p);
  		queued = task_on_rq_queued(p);
  		ncsw = 0;

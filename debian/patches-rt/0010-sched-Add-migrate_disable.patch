@@ -1,8 +1,8 @@
-From d2e93cd7b55d9dc26da2d1118b49d8d017a8dfeb Mon Sep 17 00:00:00 2001
+From ef98d48427a8da10f97a794e28b6c861a0359dc4 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:07 +0200
 Subject: [PATCH 010/304] sched: Add migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 Add the base migrate_disable() support (under protest).
 
@@ -119,10 +119,10 @@ index 2660ee4b08ad..30857da00adc 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 069c8e3aa524..269e35951367 100644
+index e98af329adba..bd96d5489d58 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1692,6 +1692,61 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
+@@ -1705,6 +1705,61 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
  
  #ifdef CONFIG_SMP
  
@@ -184,7 +184,7 @@ index 069c8e3aa524..269e35951367 100644
  /*
   * Per-CPU kthreads are allowed to run on !active && online CPUs, see
   * __set_cpus_allowed_ptr() and select_fallback_rq().
-@@ -1701,7 +1756,7 @@ static inline bool is_cpu_allowed(struct task_struct *p, int cpu)
+@@ -1714,7 +1769,7 @@ static inline bool is_cpu_allowed(struct task_struct *p, int cpu)
  	if (!cpumask_test_cpu(cpu, p->cpus_ptr))
  		return false;
  
@@ -193,7 +193,7 @@ index 069c8e3aa524..269e35951367 100644
  		return cpu_online(cpu);
  
  	return cpu_active(cpu);
-@@ -1822,6 +1877,11 @@ static int migration_cpu_stop(void *data)
+@@ -1835,6 +1890,11 @@ static int migration_cpu_stop(void *data)
   */
  void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask, u32 flags)
  {
@@ -205,7 +205,7 @@ index 069c8e3aa524..269e35951367 100644
  	cpumask_copy(&p->cpus_mask, new_mask);
  	p->nr_cpus_allowed = cpumask_weight(new_mask);
  }
-@@ -1832,7 +1892,22 @@ __do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask, u32
+@@ -1845,7 +1905,22 @@ __do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask, u32
  	struct rq *rq = task_rq(p);
  	bool queued, running;
  
@@ -229,7 +229,7 @@ index 069c8e3aa524..269e35951367 100644
  
  	queued = task_on_rq_queued(p);
  	running = task_current(rq, p);
-@@ -1883,9 +1958,14 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1896,9 +1971,14 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	rq = task_rq_lock(p, &rf);
  	update_rq_clock(rq);
  
@@ -246,7 +246,7 @@ index 069c8e3aa524..269e35951367 100644
  		 */
  		cpu_valid_mask = cpu_online_mask;
  	}
-@@ -1899,7 +1979,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1912,7 +1992,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  		goto out;
  	}
  
@@ -255,7 +255,7 @@ index 069c8e3aa524..269e35951367 100644
  		goto out;
  
  	/*
-@@ -1991,6 +2071,8 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
+@@ -2004,6 +2084,8 @@ void set_task_cpu(struct task_struct *p, unsigned int new_cpu)
  	 * Clearly, migrating tasks to offline CPUs is a fairly daft thing.
  	 */
  	WARN_ON_ONCE(!cpu_online(new_cpu));
@@ -264,7 +264,7 @@ index 069c8e3aa524..269e35951367 100644
  #endif
  
  	trace_sched_migrate_task(p, new_cpu);
-@@ -2321,6 +2403,12 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
+@@ -2334,6 +2416,12 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
  			}
  			fallthrough;
  		case possible:
@@ -277,7 +277,7 @@ index 069c8e3aa524..269e35951367 100644
  			do_set_cpus_allowed(p, cpu_possible_mask);
  			state = fail;
  			break;
-@@ -2355,7 +2443,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
+@@ -2368,7 +2456,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
  {
  	lockdep_assert_held(&p->pi_lock);
  
@@ -286,7 +286,7 @@ index 069c8e3aa524..269e35951367 100644
  		cpu = p->sched_class->select_task_rq(p, cpu, sd_flags, wake_flags);
  	else
  		cpu = cpumask_any(p->cpus_ptr);
-@@ -2417,6 +2505,17 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -2430,6 +2518,17 @@ static inline int __set_cpus_allowed_ptr(struct task_struct *p,
  
  #endif /* CONFIG_SMP */
  
@@ -304,7 +304,7 @@ index 069c8e3aa524..269e35951367 100644
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
  {
-@@ -4570,6 +4669,7 @@ static void __sched notrace __schedule(bool preempt)
+@@ -4583,6 +4682,7 @@ static void __sched notrace __schedule(bool preempt)
  		 */
  		++*switch_count;
  
@@ -313,10 +313,10 @@ index 069c8e3aa524..269e35951367 100644
  
  		trace_sched_switch(preempt, prev, next);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 778103fc9fcf..aeea80f12f2e 100644
+index ff5785a28b2f..770630807684 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1904,14 +1904,16 @@ static inline bool sched_fair_runnable(struct rq *rq)
+@@ -1906,14 +1906,16 @@ static inline bool sched_fair_runnable(struct rq *rq)
  extern struct task_struct *pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf);
  extern struct task_struct *pick_next_task_idle(struct rq *rq);
  

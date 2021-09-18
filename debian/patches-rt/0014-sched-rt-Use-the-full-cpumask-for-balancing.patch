@@ -1,8 +1,8 @@
-From 658964c0707d1e9ff55d76404e175ddedd6c0711 Mon Sep 17 00:00:00 2001
+From e15b8604d8271c6464421ca90ff18098df8c2227 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:11 +0200
 Subject: [PATCH 014/304] sched,rt: Use the full cpumask for balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 We want migrate_disable() tasks to get PULLs in order for them to PUSH
 away the higher priority task.
@@ -57,10 +57,10 @@ index 0033731a0797..11c4df2010de 100644
  		/*
  		 * We have to ensure that we have at least one bit
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 486ee6aeb178..9dae542af347 100644
+index 4d23e0950ef8..7ffbd00d424a 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1918,7 +1918,7 @@ static void task_fork_dl(struct task_struct *p)
+@@ -1919,7 +1919,7 @@ static void task_fork_dl(struct task_struct *p)
  static int pick_dl_task(struct rq *rq, struct task_struct *p, int cpu)
  {
  	if (!task_running(rq, p) &&
@@ -69,7 +69,7 @@ index 486ee6aeb178..9dae542af347 100644
  		return 1;
  	return 0;
  }
-@@ -2068,7 +2068,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
+@@ -2069,7 +2069,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
  		/* Retry if something changed. */
  		if (double_lock_balance(rq, later_rq)) {
  			if (unlikely(task_rq(task) != rq ||

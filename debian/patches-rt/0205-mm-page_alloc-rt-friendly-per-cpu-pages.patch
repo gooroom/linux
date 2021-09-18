@@ -1,8 +1,8 @@
-From b5bc1704995426b7729ec5a6efc6d80cd395c253 Mon Sep 17 00:00:00 2001
+From 8c418faef3359e231b27170ffe6692cb0f049635 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:37 -0500
 Subject: [PATCH 205/304] mm: page_alloc: rt-friendly per-cpu pages
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 rt-friendly per-cpu pages: convert the irqs-off per-cpu locking
 method into a preemptible, explicit-per-cpu-locks method.
@@ -18,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 28 insertions(+), 19 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index e1677637ac3b..accab201af7c 100644
+index 1099910971d7..25023e20fe17 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -61,6 +61,7 @@

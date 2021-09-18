@@ -1,8 +1,8 @@
-From 417973a21d3272dbe53b02de9ec56b7a80fc6788 Mon Sep 17 00:00:00 2001
+From cd7c34c15d8e55e5ad0e80e79c6d23698a3de16a Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:15 +0200
 Subject: [PATCH 018/304] sched: Add migrate_disable() tracepoints
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 XXX write a tracer:
 
@@ -46,10 +46,10 @@ index c96a4337afe6..e48f584abf5f 100644
  
  /* This part must be outside protection */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e6a6130f706f..2bd508d71df0 100644
+index 50a78ae780eb..68d115ad837c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1724,6 +1724,8 @@ void migrate_disable(void)
+@@ -1737,6 +1737,8 @@ void migrate_disable(void)
  		return;
  	}
  
@@ -58,7 +58,7 @@ index e6a6130f706f..2bd508d71df0 100644
  	preempt_disable();
  	this_rq()->nr_pinned++;
  	p->migration_disabled = 1;
-@@ -1756,6 +1758,8 @@ void migrate_enable(void)
+@@ -1769,6 +1771,8 @@ void migrate_enable(void)
  	p->migration_disabled = 0;
  	this_rq()->nr_pinned--;
  	preempt_enable();
@@ -68,10 +68,10 @@ index e6a6130f706f..2bd508d71df0 100644
  EXPORT_SYMBOL_GPL(migrate_enable);
  
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index dd2a8c5954b2..15b312e98e5b 100644
+index d6153fa4eeb2..d7e3adf224ac 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2278,6 +2278,7 @@ static void pull_dl_task(struct rq *this_rq)
+@@ -2279,6 +2279,7 @@ static void pull_dl_task(struct rq *this_rq)
  				goto skip;
  
  			if (is_migration_disabled(p)) {

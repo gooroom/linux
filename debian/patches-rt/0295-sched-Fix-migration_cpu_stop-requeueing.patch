@@ -1,8 +1,8 @@
-From 51b576d1a3cba4e12785fb94fa1afcf9699c1625 Mon Sep 17 00:00:00 2001
+From 95b13e5333304dae7ae9d84475ce04fe8a3ff171 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Tue, 8 Jun 2021 00:37:30 -0400
 Subject: [PATCH 295/304] sched: Fix migration_cpu_stop() requeueing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 commit 8a6edb5257e2a84720fe78cb179eca58ba76126f upstream.
 
@@ -64,10 +64,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 28 insertions(+), 11 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a450063fffcf..5be58d0c0e1a 100644
+index 16e461584af5..483961e3caac 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1956,6 +1956,24 @@ static int migration_cpu_stop(void *data)
+@@ -1969,6 +1969,24 @@ static int migration_cpu_stop(void *data)
  	rq_lock(rq, &rf);
  
  	pending = p->migration_pending;
@@ -92,7 +92,7 @@ index a450063fffcf..5be58d0c0e1a 100644
  	/*
  	 * If task_rq(p) != rq, it cannot be migrated here, because we're
  	 * holding rq->lock, if p->on_rq == 0 it cannot get enqueued because
-@@ -2228,10 +2246,6 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2241,10 +2259,6 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  			    int dest_cpu, unsigned int flags)
  {
  	struct set_affinity_pending my_pending = { }, *pending = NULL;
@@ -103,7 +103,7 @@ index a450063fffcf..5be58d0c0e1a 100644
  	bool complete = false;
  
  	/* Can the task run on the task's current CPU? If so, we're done */
-@@ -2269,6 +2283,12 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2282,6 +2296,12 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  			/* Install the request */
  			refcount_set(&my_pending.refs, 1);
  			init_completion(&my_pending.done);
@@ -116,7 +116,7 @@ index a450063fffcf..5be58d0c0e1a 100644
  			p->migration_pending = &my_pending;
  		} else {
  			pending = p->migration_pending;
-@@ -2299,12 +2319,6 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2312,12 +2332,6 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  		p->migration_flags &= ~MDF_PUSH;
  		task_rq_unlock(rq, p, rf);
  
@@ -129,7 +129,7 @@ index a450063fffcf..5be58d0c0e1a 100644
  		stop_one_cpu_nowait(cpu_of(rq), migration_cpu_stop,
  				    &pending->arg, &pending->stop_work);
  
-@@ -2317,8 +2331,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2330,8 +2344,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  		 * is_migration_disabled(p) checks to the stopper, which will
  		 * run on the same CPU as said p.
  		 */

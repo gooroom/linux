@@ -1,8 +1,8 @@
-From d907d923533ae62a31f478c0ac67132ae1300135 Mon Sep 17 00:00:00 2001
+From 61a5e634f693d983cf670bcab085f0f46e174167 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 217/304] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.59-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,7 +60,7 @@ index dc1f4dcd9a82..9796cc213b74 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index dedb702d7fdf..af0cf54b9b4b 100644
+index f61299b86f8e..2a771ce6fba0 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -84,10 +84,10 @@ index dedb702d7fdf..af0cf54b9b4b 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 64b304670d64..c0208e6904ac 100644
+index 49ceac5b0dce..2756e5605700 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4243,9 +4243,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -4256,9 +4256,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -102,7 +102,7 @@ index 64b304670d64..c0208e6904ac 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -7242,6 +7246,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -7255,6 +7259,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
