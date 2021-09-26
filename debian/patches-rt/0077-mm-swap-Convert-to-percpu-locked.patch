@@ -1,8 +1,8 @@
-From 2f42a4c2cb7e7d25e7962b45e77ab42a99d1a993 Mon Sep 17 00:00:00 2001
+From 438c461f07cfa30774e157ec41d8d023d89e3afb Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: [PATCH 077/338] mm/swap: Convert to percpu locked
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Subject: [PATCH 077/340] mm/swap: Convert to percpu locked
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -56,7 +56,7 @@ index 5079ddbec8f9..c40d3a13cbbd 100644
  				cc->last_migrated_pfn = 0;
  			}
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 9e12c615ded8..2cecacd2a618 100644
+index cea7bb46e0af..a5e3ee22abea 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -7250,8 +7250,9 @@ void __init free_area_init(unsigned long *zones_size)

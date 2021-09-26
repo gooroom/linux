@@ -1,8 +1,8 @@
-From 4c28d2cc8ec7b04866cdd838b707b65b931722d8 Mon Sep 17 00:00:00 2001
+From 70a11aee295813f92108e768cf253b592b323454 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 107/338] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Subject: [PATCH 107/340] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,7 +60,7 @@ index ef54f4b3f1e4..88e1a563f762 100644
  
  /*
 diff --git a/kernel/fork.c b/kernel/fork.c
-index e6885631bc0f..29d7430dc3c5 100644
+index f5a4c42233f0..114ff9724b02 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -642,6 +642,19 @@ void __mmdrop(struct mm_struct *mm)

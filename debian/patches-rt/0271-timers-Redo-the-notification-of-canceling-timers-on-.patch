@@ -1,9 +1,9 @@
-From 69416db99066a1da867e4529d6dad5c014f68917 Mon Sep 17 00:00:00 2001
+From e60be32082249c2b4c121b139a9cf07428134bc7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
-Subject: [PATCH 271/338] timers: Redo the notification of canceling timers on
+Subject: [PATCH 271/340] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -149,7 +149,7 @@ index f4c8cfde00b0..e7b983df6996 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index bca423281227..0d88298bfbee 100644
+index aa8f3177580a..bbc408f24f5d 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -981,33 +981,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -191,7 +191,7 @@ index bca423281227..0d88298bfbee 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1245,7 +1228,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1291,7 +1274,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -200,7 +200,7 @@ index bca423281227..0d88298bfbee 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1549,6 +1532,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1595,6 +1578,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	unsigned long flags;
  	ktime_t now;
  
@@ -208,7 +208,7 @@ index bca423281227..0d88298bfbee 100644
  	raw_spin_lock_irqsave(&cpu_base->lock, flags);
  
  	now = hrtimer_update_base(cpu_base);
-@@ -1558,7 +1542,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1604,7 +1588,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -217,7 +217,7 @@ index bca423281227..0d88298bfbee 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1968,9 +1952,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -2014,9 +1998,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;

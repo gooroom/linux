@@ -1,9 +1,9 @@
-From 5da6ed587041b38af78b659f4add70eeea329a61 Mon Sep 17 00:00:00 2001
+From 49cb2a9a85827f7abcaa6c540f47cdb5f923d8ec Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/338] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/340] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -66,7 +66,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index dd740f91de47..4e42b016c96b 100644
+index 4a8c3f5313f9..db6147b8639f 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -101,7 +101,7 @@ index a98288d56f71..e4333cfeed08 100644
  }
  #else	/* CONFIG_SCHED_HRTICK */
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 288d199005c4..01b7ef6f6a81 100644
+index 95ebbb2074c7..1a285367081c 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1086,7 +1086,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
@@ -145,10 +145,10 @@ index b6ca4a630050..aeb99395c03b 100644
  }
  
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index ae29464d18c4..d92c6db46348 100644
+index 8bbde17325c7..e947f3b344ac 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1156,7 +1156,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
+@@ -1202,7 +1202,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
  	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
  	 * match.
  	 */
@@ -158,7 +158,7 @@ index ae29464d18c4..d92c6db46348 100644
  
  	base = lock_hrtimer_base(timer, &flags);
  
-@@ -1316,10 +1318,17 @@ static inline int hrtimer_clockid_to_base(clockid_t clock_id)
+@@ -1362,10 +1364,17 @@ static inline int hrtimer_clockid_to_base(clockid_t clock_id)
  static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  			   enum hrtimer_mode mode)
  {
@@ -178,7 +178,7 @@ index ae29464d18c4..d92c6db46348 100644
  	memset(timer, 0, sizeof(struct hrtimer));
  
  	cpu_base = raw_cpu_ptr(&hrtimer_bases);
-@@ -1702,6 +1711,14 @@ static void __hrtimer_init_sleeper(struct hrtimer_sleeper *sl,
+@@ -1748,6 +1757,14 @@ static void __hrtimer_init_sleeper(struct hrtimer_sleeper *sl,
  				   enum hrtimer_mode mode,
  				   struct task_struct *task)
  {

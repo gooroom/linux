@@ -1,12 +1,12 @@
-From 3f748ff0682ffb68f5670cc68db52dfad5b0602f Mon Sep 17 00:00:00 2001
+From 3fc632b428ac1453365e0f635ea0c5d192358a76 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 026/338] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 026/340] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 In commit 4b53a3412d66 ("sched/core: Remove the tsk_nr_cpus_allowed()
 wrapper") the tsk_nr_cpus_allowed() wrapper was removed. There was not
@@ -321,7 +321,7 @@ index ff956ccbb6df..7bb129c5b412 100644
  }
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index cf535b9d5db7..f28a903e5077 100644
+index b65871600507..a18d695259af 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -850,6 +850,8 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -542,7 +542,7 @@ index daaadf939ccb..f7d2c10b4c92 100644
  			/*
  			 * We have to ensure that we have at least one bit
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index aa592dc3cb40..288d199005c4 100644
+index beec5081a55a..95ebbb2074c7 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -539,7 +539,7 @@ static struct rq *dl_task_offline_migration(struct rq *rq, struct task_struct *p
@@ -554,7 +554,7 @@ index aa592dc3cb40..288d199005c4 100644
  		if (cpu >= nr_cpu_ids) {
  			/*
  			 * Failed to find any suitable CPU.
-@@ -1856,7 +1856,7 @@ static void set_curr_task_dl(struct rq *rq)
+@@ -1857,7 +1857,7 @@ static void set_curr_task_dl(struct rq *rq)
  static int pick_dl_task(struct rq *rq, struct task_struct *p, int cpu)
  {
  	if (!task_running(rq, p) &&
@@ -563,7 +563,7 @@ index aa592dc3cb40..288d199005c4 100644
  		return 1;
  	return 0;
  }
-@@ -2006,7 +2006,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
+@@ -2007,7 +2007,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
  		/* Retry if something changed. */
  		if (double_lock_balance(rq, later_rq)) {
  			if (unlikely(task_rq(task) != rq ||

@@ -1,8 +1,8 @@
-From 69a9c48a4bfc6ef79a5bbf9586f95fde5211229a Mon Sep 17 00:00:00 2001
+From a773b9cd0159587234be3dc6ea12d1c53d5be622 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 099/338] hrtimers: Prepare full preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.206-rt87.tar.xz
+Subject: [PATCH 099/340] hrtimers: Prepare full preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Make cancellation of a running callback in softirq context safe
 against preemption.
@@ -108,7 +108,7 @@ index 6a2ba39889bd..f4c8cfde00b0 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 0f27e2db4e9b..ae29464d18c4 100644
+index 1e03d7fab81c..8bbde17325c7 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -957,6 +957,33 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -145,7 +145,7 @@ index 0f27e2db4e9b..ae29464d18c4 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1192,7 +1219,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1238,7 +1265,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -154,7 +154,7 @@ index 0f27e2db4e9b..ae29464d18c4 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1498,6 +1525,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1544,6 +1571,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -162,7 +162,7 @@ index 0f27e2db4e9b..ae29464d18c4 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1867,6 +1895,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -1913,6 +1941,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
