@@ -1,8 +1,8 @@
-From b679e4ed6ea2c643def5297195768b2e544fb5d0 Mon Sep 17 00:00:00 2001
+From 1fe30e5f2a3e673f29b186b254245cf3db44ee1b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 142/338] rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 142/340] rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -396,7 +396,7 @@ index 000000000000..3e3d8c5f7a9a
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index ca586216cb24..4562bbb218a6 100644
+index efe690af29f1..51ec12803c0b 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -900,6 +900,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -408,7 +408,7 @@ index ca586216cb24..4562bbb218a6 100644
  	account_kernel_stack(tsk, 1);
  
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 684477a38ba4..27cf5e5434e9 100644
+index 0e136045a720..a5a263a3efbf 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -1575,6 +1575,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_

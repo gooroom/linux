@@ -1,8 +1,8 @@
-From 6d13b6a6426513c5cd8d0e946bacc9ebd1820a7a Mon Sep 17 00:00:00 2001
+From aaaa96affd6c0180db37eaf37d411d9e578b7608 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 27 Jun 2014 16:24:52 +0200
-Subject: [PATCH 258/338] workqueue: Prevent deadlock/stall on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 258/340] workqueue: Prevent deadlock/stall on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Austin reported a XFS deadlock/stall on RT where scheduled work gets
 never exececuted and tasks are waiting for each other for ever.
@@ -68,10 +68,10 @@ index 6286dde4af70..01006c93bc7f 100644
  	 * If we are going to sleep and we have plugged IO queued,
  	 * make sure to submit it to avoid deadlocks.
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 1ff712808e43..68afe35333ca 100644
+index dbb0d8f815ab..9154f5dba5ca 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -125,6 +125,11 @@ enum {
+@@ -126,6 +126,11 @@ enum {
   *    cpu or grabbing pool->lock is enough for read access.  If
   *    POOL_DISASSOCIATED is set, it's identical to L.
   *
@@ -83,7 +83,7 @@ index 1ff712808e43..68afe35333ca 100644
   * A: wq_pool_attach_mutex protected.
   *
   * PL: wq_pool_mutex protected.
-@@ -430,6 +435,31 @@ static void workqueue_sysfs_unregister(struct workqueue_struct *wq);
+@@ -431,6 +436,31 @@ static void workqueue_sysfs_unregister(struct workqueue_struct *wq);
  		if (({ assert_rcu_or_wq_mutex(wq); false; })) { }	\
  		else
  
@@ -115,7 +115,7 @@ index 1ff712808e43..68afe35333ca 100644
  #ifdef CONFIG_DEBUG_OBJECTS_WORK
  
  static struct debug_obj_descr work_debug_descr;
-@@ -836,10 +866,16 @@ static struct worker *first_idle_worker(struct worker_pool *pool)
+@@ -837,10 +867,16 @@ static struct worker *first_idle_worker(struct worker_pool *pool)
   */
  static void wake_up_worker(struct worker_pool *pool)
  {
@@ -133,7 +133,7 @@ index 1ff712808e43..68afe35333ca 100644
  }
  
  /**
-@@ -868,7 +904,7 @@ void wq_worker_running(struct task_struct *task)
+@@ -869,7 +905,7 @@ void wq_worker_running(struct task_struct *task)
   */
  void wq_worker_sleeping(struct task_struct *task)
  {
@@ -142,7 +142,7 @@ index 1ff712808e43..68afe35333ca 100644
  	struct worker_pool *pool;
  
  	/*
-@@ -885,26 +921,18 @@ void wq_worker_sleeping(struct task_struct *task)
+@@ -886,26 +922,18 @@ void wq_worker_sleeping(struct task_struct *task)
  		return;
  
  	worker->sleeping = 1;
@@ -172,7 +172,7 @@ index 1ff712808e43..68afe35333ca 100644
  }
  
  /**
-@@ -1677,7 +1705,9 @@ static void worker_enter_idle(struct worker *worker)
+@@ -1678,7 +1706,9 @@ static void worker_enter_idle(struct worker *worker)
  	worker->last_active = jiffies;
  
  	/* idle_list is LIFO */
@@ -182,7 +182,7 @@ index 1ff712808e43..68afe35333ca 100644
  
  	if (too_many_workers(pool) && !timer_pending(&pool->idle_timer))
  		mod_timer(&pool->idle_timer, jiffies + IDLE_WORKER_TIMEOUT);
-@@ -1710,7 +1740,9 @@ static void worker_leave_idle(struct worker *worker)
+@@ -1711,7 +1741,9 @@ static void worker_leave_idle(struct worker *worker)
  		return;
  	worker_clr_flags(worker, WORKER_IDLE);
  	pool->nr_idle--;
@@ -192,7 +192,7 @@ index 1ff712808e43..68afe35333ca 100644
  }
  
  static struct worker *alloc_worker(int node)
-@@ -1875,7 +1907,9 @@ static void destroy_worker(struct worker *worker)
+@@ -1876,7 +1908,9 @@ static void destroy_worker(struct worker *worker)
  	pool->nr_workers--;
  	pool->nr_idle--;
  

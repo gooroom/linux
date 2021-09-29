@@ -1,8 +1,8 @@
-From cdcc4c6cb9846718ede32474fff07c3d6361ca7b Mon Sep 17 00:00:00 2001
+From 89a8e2fb11bf5e8cdae8af761fa73494fa2de627 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/338] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 095/340] completion: Use simple wait queues
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -55,12 +55,12 @@ index a04d59843022..e0046c35a0bd 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index dcb432860d06..4739cffacf58 100644
+index e6805492409f..cd0a9eee4cf9 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1631,7 +1631,7 @@ static void ffs_data_put(struct ffs_data *ffs)
- 		pr_info("%s(): freeing\n", __func__);
+@@ -1626,7 +1626,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		ffs_data_clear(ffs);
+ 		ffs_release_dev(ffs->private_data);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
 -		       waitqueue_active(&ffs->ep0req_completion.wait) ||
 +		       swait_active(&ffs->ep0req_completion.wait) ||

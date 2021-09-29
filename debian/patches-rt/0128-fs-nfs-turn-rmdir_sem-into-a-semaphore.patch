@@ -1,8 +1,8 @@
-From 8dd07de411762c4ec8251b94e6c247766f754591 Mon Sep 17 00:00:00 2001
+From 201037867306f6f0c15dc5bfd78259e9df6cb0a8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
-Subject: [PATCH 128/338] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 128/340] fs/nfs: turn rmdir_sem into a semaphore
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -50,10 +50,10 @@ index 733fd9e4f0a1..e166bc8be849 100644
  		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
  	trace_nfs_rmdir_exit(dir, dentry, error);
 diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
-index dc55ecc3bec4..d09a1eb12aae 100644
+index 2cdd8883b7c5..0b3122eb3dd9 100644
 --- a/fs/nfs/inode.c
 +++ b/fs/nfs/inode.c
-@@ -2104,7 +2104,11 @@ static void init_once(void *foo)
+@@ -2108,7 +2108,11 @@ static void init_once(void *foo)
  	atomic_long_set(&nfsi->nrequests, 0);
  	atomic_long_set(&nfsi->commit_info.ncommit, 0);
  	atomic_set(&nfsi->commit_info.rpcs_out, 0);
@@ -131,10 +131,10 @@ index fd61bf0fce63..ce9100b5604d 100644
  		 * If we'd displaced old cached devname, free it.  At that
  		 * point dentry is definitely not a root, so we won't need
 diff --git a/include/linux/nfs_fs.h b/include/linux/nfs_fs.h
-index a0831e9d19c9..94b6fefd90b0 100644
+index 0ff7dd2bf8a4..91e7bb5eb9b6 100644
 --- a/include/linux/nfs_fs.h
 +++ b/include/linux/nfs_fs.h
-@@ -163,7 +163,11 @@ struct nfs_inode {
+@@ -164,7 +164,11 @@ struct nfs_inode {
  
  	/* Readers: in-flight sillydelete RPC calls */
  	/* Writers: rmdir */

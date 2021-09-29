@@ -1,9 +1,9 @@
-From 07e575fcf9ed7fcd5403ad43f27bc32e168a3f79 Mon Sep 17 00:00:00 2001
+From 5465aa84d80a7a9c1e5dbe21bb8977888ed798d2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 109/338] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 109/340] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -92,10 +92,10 @@ index 39db9580e21d..066e616aaba5 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 7b7ba91e319b..494d21b04b1d 100644
+index 55e695080fc6..637c408fb2dc 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1446,6 +1446,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
+@@ -1448,6 +1448,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
  #define WF_SYNC			0x01		/* Waker goes to sleep after wakeup */
  #define WF_FORK			0x02		/* Child wakeup after fork */
  #define WF_MIGRATED		0x4		/* Internal use, task got migrated */
