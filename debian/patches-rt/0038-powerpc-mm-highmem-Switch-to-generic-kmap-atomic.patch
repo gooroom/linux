@@ -1,8 +1,8 @@
-From c9127f8713ccd642ff949ef684c3278ceac39f8e Mon Sep 17 00:00:00 2001
+From 88a4c93f0cfe5f1844566adb975eb2ed5503fd65 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:27 +0100
-Subject: [PATCH 038/296] powerpc/mm/highmem: Switch to generic kmap atomic
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Subject: [PATCH 038/304] powerpc/mm/highmem: Switch to generic kmap atomic
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 No reason having the same code in every architecture
 
@@ -24,9 +24,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  delete mode 100644 arch/powerpc/include/asm/kmap_types.h
  delete mode 100644 arch/powerpc/mm/highmem.c
 
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 5afa0ebd78ca..7da69f334fa4 100644
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -410,6 +410,7 @@
+@@ -410,6 +410,7 @@ menu "Kernel options"
  config HIGHMEM
  	bool "High memory support"
  	depends on PPC32
@@ -34,6 +36,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  source "kernel/Kconfig.hz"
  
+diff --git a/arch/powerpc/include/asm/fixmap.h b/arch/powerpc/include/asm/fixmap.h
+index 591b2f4deed5..947b5b9c4424 100644
 --- a/arch/powerpc/include/asm/fixmap.h
 +++ b/arch/powerpc/include/asm/fixmap.h
 @@ -20,7 +20,7 @@
@@ -45,7 +49,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  
  #ifdef CONFIG_PPC64
-@@ -61,7 +61,7 @@
+@@ -61,7 +61,7 @@ enum fixed_addresses {
  	FIX_EARLY_DEBUG_BASE = FIX_EARLY_DEBUG_TOP+(ALIGN(SZ_128K, PAGE_SIZE)/PAGE_SIZE)-1,
  #ifdef CONFIG_HIGHMEM
  	FIX_KMAP_BEGIN,	/* reserved pte's for temporary kernel mappings */
@@ -54,6 +58,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  #ifdef CONFIG_PPC_8xx
  	/* For IMMR we need an aligned 512K area */
+diff --git a/arch/powerpc/include/asm/highmem.h b/arch/powerpc/include/asm/highmem.h
+index 104026f7d6bc..80a5ae771c65 100644
 --- a/arch/powerpc/include/asm/highmem.h
 +++ b/arch/powerpc/include/asm/highmem.h
 @@ -24,12 +24,10 @@
@@ -69,7 +75,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  extern pte_t *pkmap_page_table;
  
  /*
-@@ -60,6 +58,11 @@
+@@ -60,6 +58,11 @@ extern pte_t *pkmap_page_table;
  
  #define flush_cache_kmaps()	flush_cache_all()
  
@@ -81,6 +87,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* __KERNEL__ */
  
  #endif /* _ASM_HIGHMEM_H */
+diff --git a/arch/powerpc/include/asm/kmap_types.h b/arch/powerpc/include/asm/kmap_types.h
+deleted file mode 100644
+index c8fa182d48c8..000000000000
 --- a/arch/powerpc/include/asm/kmap_types.h
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -97,9 +106,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -
 -#endif	/* __KERNEL__ */
 -#endif	/* _ASM_POWERPC_KMAP_TYPES_H */
+diff --git a/arch/powerpc/mm/Makefile b/arch/powerpc/mm/Makefile
+index 55b4a8bd408a..3b4e9e4e25ea 100644
 --- a/arch/powerpc/mm/Makefile
 +++ b/arch/powerpc/mm/Makefile
-@@ -16,7 +16,6 @@
+@@ -16,7 +16,6 @@ obj-$(CONFIG_NEED_MULTIPLE_NODES) += numa.o
  obj-$(CONFIG_PPC_MM_SLICES)	+= slice.o
  obj-$(CONFIG_HUGETLB_PAGE)	+= hugetlbpage.o
  obj-$(CONFIG_NOT_COHERENT_CACHE) += dma-noncoherent.o
@@ -107,6 +118,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  obj-$(CONFIG_PPC_COPRO_BASE)	+= copro_fault.o
  obj-$(CONFIG_PPC_PTDUMP)	+= ptdump/
  obj-$(CONFIG_KASAN)		+= kasan/
+diff --git a/arch/powerpc/mm/highmem.c b/arch/powerpc/mm/highmem.c
+deleted file mode 100644
+index 624b4438aff9..000000000000
 --- a/arch/powerpc/mm/highmem.c
 +++ /dev/null
 @@ -1,67 +0,0 @@
@@ -177,6 +191,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	kmap_atomic_idx_pop();
 -}
 -EXPORT_SYMBOL(kunmap_atomic_high);
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index 22eb1c718e62..1b74565b3e16 100644
 --- a/arch/powerpc/mm/mem.c
 +++ b/arch/powerpc/mm/mem.c
 @@ -62,11 +62,6 @@
@@ -191,7 +207,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
  			      unsigned long size, pgprot_t vma_prot)
  {
-@@ -236,8 +231,6 @@
+@@ -236,8 +231,6 @@ void __init paging_init(void)
  
  	map_kernel_page(PKMAP_BASE, 0, __pgprot(0));	/* XXX gross */
  	pkmap_page_table = virt_to_kpte(PKMAP_BASE);
@@ -200,3 +216,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif /* CONFIG_HIGHMEM */
  
  	printk(KERN_DEBUG "Top of RAM: 0x%llx, Total RAM: 0x%llx\n",
+-- 
+2.32.0
+

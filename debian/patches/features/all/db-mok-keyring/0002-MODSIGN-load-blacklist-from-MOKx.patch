@@ -14,6 +14,8 @@ to load_moklist_certs(), add parameters to that and call it once for
 each of MokListRT and MokListXRT.
 
 Signed-off-by: Ben Hutchings <benh@debian.org>
+[Salvatore Bonaccorso: Forward-port to 5.10.47: Drop upstream hunk to get the
+MokListXRT certificates as we do load via load_moklist_certs().]
 ---
  security/integrity/platform_certs/load_uefi.c |   47 +++++++++++++++++---------
  1 file changed, 31 insertions(+), 16 deletions(-)
@@ -94,10 +96,25 @@ Signed-off-by: Ben Hutchings <benh@debian.org>
  	return 0;
  }
  
-@@ -175,12 +185,17 @@ static int __init load_uefi_certs(void)
+@@ -176,27 +186,17 @@ static int __init load_uefi_certs(void)
  		kfree(dbx);
  	}
  
+-	mokx = get_cert_list(L"MokListXRT", &mok_var, &mokxsize, &status);
+-	if (!mokx) {
+-		if (status == EFI_NOT_FOUND)
+-			pr_debug("mokx variable wasn't found\n");
+-		else
+-			pr_info("Couldn't get mokx list\n");
+-	} else {
+-		rc = parse_efi_signature_list("UEFI:MokListXRT",
+-					      mokx, mokxsize,
+-					      get_handler_for_dbx);
+-		if (rc)
+-			pr_err("Couldn't parse mokx signatures %d\n", rc);
+-		kfree(mokx);
+-	}
+-
 -	/* the MOK can not be trusted when secure boot is disabled */
 +	/* the MOK and MOKx can not be trusted when secure boot is disabled */
  	if (!efi_enabled(EFI_SECURE_BOOT))

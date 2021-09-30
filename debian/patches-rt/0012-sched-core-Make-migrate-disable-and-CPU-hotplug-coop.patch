@@ -1,9 +1,9 @@
-From 9cd3e6a8b48eaad5ed8393c3cccf4e9645c95fc8 Mon Sep 17 00:00:00 2001
+From 1728cb3e1d1ce9913592d1dcf2610805137a1100 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:09 +0200
-Subject: [PATCH 012/296] sched/core: Make migrate disable and CPU hotplug
+Subject: [PATCH 012/304] sched/core: Make migrate disable and CPU hotplug
  cooperative
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.35-rt39.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
 
 On CPU unplug tasks which are in a migrate disabled region cannot be pushed
 to a different CPU until they returned to migrateable state.
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 34 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9dac9131d313..91f2985ee447 100644
+index 12023fd217b9..f4a46a2139ab 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1719,10 +1719,17 @@ static void migrate_disable_switch(struct rq *rq, struct task_struct *p)
+@@ -1730,10 +1730,17 @@ static void migrate_disable_switch(struct rq *rq, struct task_struct *p)
  
  void migrate_disable(void)
  {
@@ -43,7 +43,7 @@ index 9dac9131d313..91f2985ee447 100644
  }
  EXPORT_SYMBOL_GPL(migrate_disable);
  
-@@ -1749,6 +1756,7 @@ void migrate_enable(void)
+@@ -1760,6 +1767,7 @@ void migrate_enable(void)
  	 */
  	barrier();
  	p->migration_disabled = 0;
@@ -51,7 +51,7 @@ index 9dac9131d313..91f2985ee447 100644
  	preempt_enable();
  }
  EXPORT_SYMBOL_GPL(migrate_enable);
-@@ -1758,6 +1766,11 @@ static inline bool is_migration_disabled(struct task_struct *p)
+@@ -1769,6 +1777,11 @@ static inline bool is_migration_disabled(struct task_struct *p)
  	return p->migration_disabled;
  }
  
@@ -63,7 +63,7 @@ index 9dac9131d313..91f2985ee447 100644
  #endif
  
  /*
-@@ -2689,6 +2702,11 @@ static inline bool is_migration_disabled(struct task_struct *p)
+@@ -2700,6 +2713,11 @@ static inline bool is_migration_disabled(struct task_struct *p)
  	return false;
  }
  
@@ -75,7 +75,7 @@ index 9dac9131d313..91f2985ee447 100644
  #endif
  
  static void
-@@ -7062,15 +7080,20 @@ static void balance_push(struct rq *rq)
+@@ -7055,15 +7073,20 @@ static void balance_push(struct rq *rq)
  	 * Both the cpu-hotplug and stop task are in this case and are
  	 * required to complete the hotplug process.
  	 */
@@ -98,7 +98,7 @@ index 9dac9131d313..91f2985ee447 100644
  			raw_spin_unlock(&rq->lock);
  			rcuwait_wake_up(&rq->hotplug_wait);
  			raw_spin_lock(&rq->lock);
-@@ -7117,7 +7140,8 @@ static void balance_hotplug_wait(void)
+@@ -7110,7 +7133,8 @@ static void balance_hotplug_wait(void)
  {
  	struct rq *rq = this_rq();
  
@@ -108,7 +108,7 @@ index 9dac9131d313..91f2985ee447 100644
  			   TASK_UNINTERRUPTIBLE);
  }
  
-@@ -7362,7 +7386,7 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7355,7 +7379,7 @@ int sched_cpu_dying(unsigned int cpu)
  	sched_tick_stop(cpu);
  
  	rq_lock_irqsave(rq, &rf);
@@ -118,10 +118,10 @@ index 9dac9131d313..91f2985ee447 100644
  
  	calc_load_migrate(rq);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index d2fc1db9d3c7..3be3a1e9179f 100644
+index 770630807684..a6f1cbe24ac8 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1048,6 +1048,10 @@ struct rq {
+@@ -1057,6 +1057,10 @@ struct rq {
  	/* Must be inspected within a rcu lock section */
  	struct cpuidle_state	*idle_state;
  #endif
@@ -133,5 +133,5 @@ index d2fc1db9d3c7..3be3a1e9179f 100644
  
  #ifdef CONFIG_FAIR_GROUP_SCHED
 -- 
-2.30.2
+2.32.0
 
