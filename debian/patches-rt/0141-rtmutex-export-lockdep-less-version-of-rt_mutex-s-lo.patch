@@ -1,12 +1,9 @@
-From f51a5b6d734bea295a4130e23f73f0c9e1b7e9cd Mon Sep 17 00:00:00 2001
-Message-Id: <f51a5b6d734bea295a4130e23f73f0c9e1b7e9cd.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From d7453f5406c82704897456dc615277a263fb2c2d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:36:39 +0200
-Subject: [PATCH 141/335] rtmutex: export lockdep-less version of rt_mutex's
+Subject: [PATCH 141/338] rtmutex: export lockdep-less version of rt_mutex's
  lock, trylock and unlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Required for lock implementation ontop of rtmutex.
 
@@ -18,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 46 insertions(+), 24 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 921345c31161..d732976d0f05 100644
+index e9255b28de8f..e24699290bb7 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1494,12 +1494,33 @@ rt_mutex_fastunlock(struct rt_mutex *lock,
@@ -138,10 +135,10 @@ index 921345c31161..d732976d0f05 100644
   * rt_mutex_unlock - unlock a rt_mutex
   *
 diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
-index cb9815f0c766..5955ad2aa2a8 100644
+index 66deb94765fb..53a8c5d03d28 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
-@@ -162,6 +162,9 @@ extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
+@@ -161,6 +161,9 @@ extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
  extern void rt_mutex_postunlock(struct wake_q_head *wake_q);
  /* RW semaphore special interface */
  
@@ -152,5 +149,5 @@ index cb9815f0c766..5955ad2aa2a8 100644
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,
 -- 
-2.17.1
+2.31.1
 

@@ -1,11 +1,8 @@
-From 467ced9d443c2c14f1dc94316533e69cefdb0cc8 Mon Sep 17 00:00:00 2001
-Message-Id: <467ced9d443c2c14f1dc94316533e69cefdb0cc8.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 851c69e821d65a3608a97b390b68354d0cdd6ed1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 239/335] x86: Support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 239/338] x86: Support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Implement the x86 pieces for lazy preempt.
 
@@ -21,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 79 insertions(+), 3 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index f22e787329cf..a56f57f95993 100644
+index 0d66e66699b9..1ad2d409c50e 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -180,6 +180,7 @@ config X86
@@ -88,7 +85,7 @@ diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
 index f53d995b1370..94fccaa04bfa 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -733,7 +733,23 @@ retint_kernel:
+@@ -733,7 +733,23 @@ GLOBAL(swapgs_restore_regs_and_return_to_usermode)
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
@@ -165,7 +162,7 @@ index 7f2dbd91fc74..22992c837795 100644
  
  #ifdef CONFIG_PREEMPT
 diff --git a/arch/x86/include/asm/thread_info.h b/arch/x86/include/asm/thread_info.h
-index 82b73b75d67c..dc267291f131 100644
+index b5e4c357523e..d311dc042ddd 100644
 --- a/arch/x86/include/asm/thread_info.h
 +++ b/arch/x86/include/asm/thread_info.h
 @@ -56,17 +56,24 @@ struct task_struct;
@@ -239,5 +236,5 @@ index 01de31db300d..ce1c5b9fbd8c 100644
  	/* TLB state for the entry code */
  	OFFSET(TLB_STATE_user_pcid_flush_mask, tlb_state, user_pcid_flush_mask);
 -- 
-2.17.1
+2.31.1
 

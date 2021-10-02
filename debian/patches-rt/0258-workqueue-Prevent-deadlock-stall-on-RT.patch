@@ -1,11 +1,8 @@
-From 3956c02f5459f5e574c3cc6c7a12d6480d6314d8 Mon Sep 17 00:00:00 2001
-Message-Id: <3956c02f5459f5e574c3cc6c7a12d6480d6314d8.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 6d13b6a6426513c5cd8d0e946bacc9ebd1820a7a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 27 Jun 2014 16:24:52 +0200
-Subject: [PATCH 258/335] workqueue: Prevent deadlock/stall on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 258/338] workqueue: Prevent deadlock/stall on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Austin reported a XFS deadlock/stall on RT where scheduled work gets
 never exececuted and tasks are waiting for each other for ever.
@@ -71,7 +68,7 @@ index 6286dde4af70..01006c93bc7f 100644
  	 * If we are going to sleep and we have plugged IO queued,
  	 * make sure to submit it to avoid deadlocks.
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 77ae44a1a9ee..9c10264d2679 100644
+index 1ff712808e43..68afe35333ca 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -125,6 +125,11 @@ enum {
@@ -195,7 +192,7 @@ index 77ae44a1a9ee..9c10264d2679 100644
  }
  
  static struct worker *alloc_worker(int node)
-@@ -1878,7 +1910,9 @@ static void destroy_worker(struct worker *worker)
+@@ -1875,7 +1907,9 @@ static void destroy_worker(struct worker *worker)
  	pool->nr_workers--;
  	pool->nr_idle--;
  
@@ -206,5 +203,5 @@ index 77ae44a1a9ee..9c10264d2679 100644
  	wake_up_process(worker->task);
  }
 -- 
-2.17.1
+2.31.1
 

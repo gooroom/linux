@@ -1,11 +1,8 @@
-From 436eb469d1ce928fe97b58e2815c5041cd787907 Mon Sep 17 00:00:00 2001
-Message-Id: <436eb469d1ce928fe97b58e2815c5041cd787907.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 49fa479f586f0b926fc6775e0d0a32e4f42d8317 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 26 Sep 2012 16:21:08 +0200
-Subject: [PATCH 232/335] net: Another local_irq_disable/kmalloc headache
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 232/338] net: Another local_irq_disable/kmalloc headache
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Replace it by a local lock. Though that's pretty inefficient :(
 
@@ -15,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index b5d9c9b2c702..868f35772708 100644
+index ea9684bcc2e8..247626436755 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -63,6 +63,7 @@
@@ -47,7 +44,7 @@ index b5d9c9b2c702..868f35772708 100644
  	return data;
  }
  
-@@ -412,13 +414,13 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
+@@ -416,13 +418,13 @@ struct sk_buff *__netdev_alloc_skb(struct net_device *dev, unsigned int len,
  	if (sk_memalloc_socks())
  		gfp_mask |= __GFP_MEMALLOC;
  
@@ -64,5 +61,5 @@ index b5d9c9b2c702..868f35772708 100644
  	if (unlikely(!data))
  		return NULL;
 -- 
-2.17.1
+2.31.1
 

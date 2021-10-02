@@ -1,11 +1,8 @@
-From 307f69a0d0066010059b2059d2daa5acfce80004 Mon Sep 17 00:00:00 2001
-Message-Id: <307f69a0d0066010059b2059d2daa5acfce80004.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From fe214693dcf0433e7edf29f5a126655184f4aecc Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 107/335] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 107/338] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -41,7 +38,7 @@ index 3a9a996af229..202b736ccbfa 100644
  		atomic_long_t hugetlb_usage;
  #endif
 diff --git a/include/linux/sched/mm.h b/include/linux/sched/mm.h
-index 766bbe813861..51828764f932 100644
+index ef54f4b3f1e4..88e1a563f762 100644
 --- a/include/linux/sched/mm.h
 +++ b/include/linux/sched/mm.h
 @@ -49,6 +49,17 @@ static inline void mmdrop(struct mm_struct *mm)
@@ -63,7 +60,7 @@ index 766bbe813861..51828764f932 100644
  
  /*
 diff --git a/kernel/fork.c b/kernel/fork.c
-index be49ec9a7650..df27c7d32ba4 100644
+index e6885631bc0f..29d7430dc3c5 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -642,6 +642,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -114,5 +111,5 @@ index 74f718d17e67..c4a289b5fa5b 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.17.1
+2.31.1
 

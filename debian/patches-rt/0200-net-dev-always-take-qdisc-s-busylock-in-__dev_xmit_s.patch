@@ -1,12 +1,9 @@
-From 6e8dd33f1e2f25317dbd9dfa69ab0c929dabb6a9 Mon Sep 17 00:00:00 2001
-Message-Id: <6e8dd33f1e2f25317dbd9dfa69ab0c929dabb6a9.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 1721046d0971eed73f70108c48aff7c3e00c8d13 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 30 Mar 2016 13:36:29 +0200
-Subject: [PATCH 200/335] net: dev: always take qdisc's busylock in
+Subject: [PATCH 200/338] net: dev: always take qdisc's busylock in
  __dev_xmit_skb()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 The root-lock is dropped before dev_hard_start_xmit() is invoked and after
 setting the __QDISC___STATE_RUNNING bit. If this task is now pushed away
@@ -25,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 91040933006b..9b15c663b3f8 100644
+index dd84ff730475..fdebb966c958 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3464,7 +3464,11 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
@@ -41,5 +38,5 @@ index 91040933006b..9b15c663b3f8 100644
  		spin_lock(&q->busylock);
  
 -- 
-2.17.1
+2.31.1
 

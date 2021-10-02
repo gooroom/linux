@@ -1,12 +1,9 @@
-From 2fe6a107a7114ea916139b8f19c380efd5f8b58c Mon Sep 17 00:00:00 2001
-Message-Id: <2fe6a107a7114ea916139b8f19c380efd5f8b58c.1610128660.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From e36769b57296bff844fd627af25dbef18d976fe8 Mon Sep 17 00:00:00 2001
 From: Rasmus Villemoes <rasmus.villemoes@prevas.dk>
 Date: Tue, 28 Apr 2020 16:40:26 +0200
-Subject: [PATCH 325/335] hrtimer: fix logic for when grabbing
+Subject: [PATCH 325/338] hrtimer: fix logic for when grabbing
  softirq_expiry_lock can be elided
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 Commit
 
@@ -36,10 +33,10 @@ Signed-off-by: Tom Zanussi <zanussi@kernel.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index e54a95de8b79..c3966c090246 100644
+index cd76cd3444e7..1d99556158a3 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -953,7 +953,7 @@ void hrtimer_grab_expiry_lock(const struct hrtimer *timer)
+@@ -971,7 +971,7 @@ void hrtimer_grab_expiry_lock(const struct hrtimer *timer)
  {
  	struct hrtimer_clock_base *base = READ_ONCE(timer->base);
  
@@ -49,5 +46,5 @@ index e54a95de8b79..c3966c090246 100644
  		spin_unlock(&base->cpu_base->softirq_expiry_lock);
  	}
 -- 
-2.17.1
+2.31.1
 

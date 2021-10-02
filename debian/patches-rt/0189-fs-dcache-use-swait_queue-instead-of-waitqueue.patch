@@ -1,11 +1,8 @@
-From f8957f8bc2b7733095460848ad8a58077d412790 Mon Sep 17 00:00:00 2001
-Message-Id: <f8957f8bc2b7733095460848ad8a58077d412790.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From ece5f930ba99d3d9e67776cf9062ddf6036165fd Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 189/335] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 189/338] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -167,7 +164,7 @@ index ce9100b5604d..839bfa76f41e 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 5e705fa9a913..6cc3d66589a4 100644
+index bc736ea1192a..3694871f9b7c 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -1889,7 +1889,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
@@ -240,5 +237,5 @@ index c7cb30cdd1b7..119a56d7f739 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.17.1
+2.31.1
 

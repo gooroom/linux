@@ -1,11 +1,8 @@
-From 91b49a6e0176f2d667649d3e0773099b073e2912 Mon Sep 17 00:00:00 2001
-Message-Id: <91b49a6e0176f2d667649d3e0773099b073e2912.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 7fc5b56063c93f87974a0ec60344d36f770f6988 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 259/335] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 259/338] signals: Allow rt tasks to cache one sigqueue struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -20,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 70 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 852b1221cd40..bdae37091808 100644
+index 395dec128ca9..765cd23de594 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -895,6 +895,8 @@ struct task_struct {
@@ -45,7 +42,7 @@ index 0be5ce2375cb..6495fda18c2c 100644
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 65133ebddfad..58458edd4e97 100644
+index 908e7a33e1fc..2a414fc71b87 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -160,7 +160,7 @@ static void __exit_signal(struct task_struct *tsk)
@@ -58,10 +55,10 @@ index 65133ebddfad..58458edd4e97 100644
  	spin_unlock(&sighand->siglock);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index d056b140385a..6474f7904bbf 100644
+index 4562bbb218a6..b0f3cc3fe3d0 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1851,6 +1851,7 @@ static __latent_entropy struct task_struct *copy_process(
+@@ -1847,6 +1847,7 @@ static __latent_entropy struct task_struct *copy_process(
  	spin_lock_init(&p->alloc_lock);
  
  	init_sigpending(&p->pending);
@@ -212,5 +209,5 @@ index 2801e2ba4d84..947731042b7c 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.17.1
+2.31.1
 

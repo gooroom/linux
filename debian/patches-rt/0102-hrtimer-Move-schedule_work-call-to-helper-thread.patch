@@ -1,11 +1,8 @@
-From aa52d84d1c71f3c3bfa09b77b5327c4692907677 Mon Sep 17 00:00:00 2001
-Message-Id: <aa52d84d1c71f3c3bfa09b77b5327c4692907677.1610128658.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 779bdcc262cbab18e16201f49548ec8f2c28f87c Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@windriver.com>
 Date: Mon, 16 Sep 2013 14:09:19 -0700
-Subject: [PATCH 102/335] hrtimer: Move schedule_work call to helper thread
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 102/338] hrtimer: Move schedule_work call to helper thread
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 When run ltp leapsec_timer test, the following call trace is caught:
 
@@ -55,10 +52,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 24 insertions(+)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 1fd5ec39e7f4..9f3412acdb16 100644
+index d92c6db46348..585f8f43f53a 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -730,6 +730,29 @@ static void hrtimer_switch_to_hres(void)
+@@ -748,6 +748,29 @@ static void hrtimer_switch_to_hres(void)
  	retrigger_next_event(NULL);
  }
  
@@ -88,7 +85,7 @@ index 1fd5ec39e7f4..9f3412acdb16 100644
  static void clock_was_set_work(struct work_struct *work)
  {
  	clock_was_set();
-@@ -745,6 +768,7 @@ void clock_was_set_delayed(void)
+@@ -763,6 +786,7 @@ void clock_was_set_delayed(void)
  {
  	schedule_work(&hrtimer_work);
  }
@@ -97,5 +94,5 @@ index 1fd5ec39e7f4..9f3412acdb16 100644
  #else
  
 -- 
-2.17.1
+2.31.1
 

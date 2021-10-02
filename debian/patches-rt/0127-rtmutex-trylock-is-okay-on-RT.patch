@@ -1,11 +1,8 @@
-From 8cb8a3b754b4cf867230579ebd3575463da309e4 Mon Sep 17 00:00:00 2001
-Message-Id: <8cb8a3b754b4cf867230579ebd3575463da309e4.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 499a78e35a9aead7bdcc5d10b4c722225b0aab82 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 2 Dec 2015 11:34:07 +0100
-Subject: [PATCH 127/335] rtmutex: trylock is okay on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 127/338] rtmutex: trylock is okay on -RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 non-RT kernel could deadlock on rt_mutex_trylock() in softirq context. On
 -RT we don't run softirqs in IRQ context but in thread context so it is
@@ -17,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 9562aaa2afdc..72abe7c121fa 100644
+index a5ec4f68527e..4bec24dfafc6 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1583,7 +1583,11 @@ int __sched rt_mutex_trylock(struct rt_mutex *lock)
@@ -33,5 +30,5 @@ index 9562aaa2afdc..72abe7c121fa 100644
  
  	ret = rt_mutex_fasttrylock(lock, rt_mutex_slowtrylock);
 -- 
-2.17.1
+2.31.1
 

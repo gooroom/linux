@@ -1,11 +1,8 @@
-From 3744c4e220f794681df7357135814c8ab2ec4d80 Mon Sep 17 00:00:00 2001
-Message-Id: <3744c4e220f794681df7357135814c8ab2ec4d80.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From f876395034b851188cdecede812f7073bdf93cfe Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 19 Feb 2019 16:59:15 +0100
-Subject: [PATCH 183/335] hrtimer: Don't lose state in cpu_chill()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 183/338] hrtimer: Don't lose state in cpu_chill()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 In cpu_chill() the state is set to TASK_UNINTERRUPTIBLE and a timer is
 programmed. On return the state is always TASK_RUNNING which means we
@@ -23,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 98a771065818..21a454557c8a 100644
+index dfd6f93142ca..cec137102ecf 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1905,15 +1905,18 @@ void cpu_chill(void)
+@@ -1923,15 +1923,18 @@ void cpu_chill(void)
  {
  	ktime_t chill_time;
  	unsigned int freeze_flag = current->flags & PF_NOFREEZE;
@@ -47,5 +44,5 @@ index 98a771065818..21a454557c8a 100644
  EXPORT_SYMBOL(cpu_chill);
  #endif
 -- 
-2.17.1
+2.31.1
 

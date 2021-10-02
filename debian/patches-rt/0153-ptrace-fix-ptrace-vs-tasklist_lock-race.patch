@@ -1,11 +1,8 @@
-From 4a02f13ca47a6b43e63408ab4c91000a16f32f3d Mon Sep 17 00:00:00 2001
-Message-Id: <4a02f13ca47a6b43e63408ab4c91000a16f32f3d.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 35c4f781fcc0afc36c7fcaa5a30b925d490db53c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 153/335] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 153/338] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -34,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index a0d1a009aa56..d207f79c2ecb 100644
+index 116fc34eb965..50124bb1a17c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -101,12 +101,8 @@ struct task_group;
@@ -50,7 +47,7 @@ index a0d1a009aa56..d207f79c2ecb 100644
  #define task_contributes_to_load(task)	((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
  					 (task->flags & PF_FROZEN) == 0 && \
  					 (task->state & TASK_NOLOAD) == 0)
-@@ -1717,6 +1713,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1718,6 +1714,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -103,13 +100,13 @@ index a0d1a009aa56..d207f79c2ecb 100644
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
 diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index ecdb7402072f..d0d1a091cdf6 100644
+index af74e843221b..31cdd0bb08d2 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
-@@ -174,7 +174,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
- 
+@@ -190,7 +190,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
  	spin_lock_irq(&task->sighand->siglock);
- 	if (task_is_traced(task) && !__fatal_signal_pending(task)) {
+ 	if (task_is_traced(task) && !looks_like_a_spurious_pid(task) &&
+ 	    !__fatal_signal_pending(task)) {
 -		task->state = __TASK_TRACED;
 +		unsigned long flags;
 +
@@ -165,5 +162,5 @@ index 140228327b8c..482c1dbb2415 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.17.1
+2.31.1
 

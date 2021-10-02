@@ -1,11 +1,8 @@
-From 9df0cf8184200d4504fee16b7f30594a2adc11e1 Mon Sep 17 00:00:00 2001
-Message-Id: <9df0cf8184200d4504fee16b7f30594a2adc11e1.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 6f658da2d18b4fbd8ff897aabf06bba856025ef0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100
-Subject: [PATCH 119/335] softirq: Check preemption after reenabling interrupts
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 119/338] softirq: Check preemption after reenabling interrupts
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -120,7 +117,7 @@ index 86a709954f5a..9c069ef83d6d 100644
  	return 0;
  }
 diff --git a/net/core/dev.c b/net/core/dev.c
-index c77d12a35f92..ccedc620795c 100644
+index 7803bd9628dc..3a6a769a1fc3 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -2723,6 +2723,7 @@ static void __netif_reschedule(struct Qdisc *q)
@@ -170,7 +167,7 @@ index c77d12a35f92..ccedc620795c 100644
  }
  EXPORT_SYMBOL(__napi_schedule);
  
-@@ -9503,6 +9509,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9508,6 +9514,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
  
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();
@@ -179,5 +176,5 @@ index c77d12a35f92..ccedc620795c 100644
  #ifdef CONFIG_RPS
  	remsd = oldsd->rps_ipi_list;
 -- 
-2.17.1
+2.31.1
 

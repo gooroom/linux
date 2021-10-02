@@ -1,12 +1,9 @@
-From bca8be6c5752d9ea81ff98ed839c309f45bcf699 Mon Sep 17 00:00:00 2001
-Message-Id: <bca8be6c5752d9ea81ff98ed839c309f45bcf699.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 5f3f1ed6a8dd58231002e77b11fabcac6e1e01f0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 155/335] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 155/338] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
 anymore so it has almost no users. However the futex code has a workaround for
@@ -74,7 +71,7 @@ index 9eafc34898b4..ed8413e7140f 100644
  {
  	return 0;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 50197f5c4506..4a4f03a8d8d4 100644
+index 148588bb7137..3a49782e50e1 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -667,7 +667,7 @@ struct task_struct {
@@ -190,10 +187,10 @@ index 6ca2f8087a2e..a0b5e4914895 100644
  EXPORT_SYMBOL(migrate_enable);
  #endif
 diff --git a/kernel/sched/debug.c b/kernel/sched/debug.c
-index 5027158d3908..dd6c364d6f01 100644
+index a482a3e87796..e97d4beffb94 100644
 --- a/kernel/sched/debug.c
 +++ b/kernel/sched/debug.c
-@@ -982,7 +982,7 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,
+@@ -998,7 +998,7 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,
  		P(dl.runtime);
  		P(dl.deadline);
  	}
@@ -203,5 +200,5 @@ index 5027158d3908..dd6c364d6f01 100644
  #endif
  	P(nr_cpus_allowed);
 -- 
-2.17.1
+2.31.1
 

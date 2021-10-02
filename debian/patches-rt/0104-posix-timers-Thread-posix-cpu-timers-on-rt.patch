@@ -1,11 +1,8 @@
-From 94d1f1fd58a56bc23cd3ede4805c552ddc5c10ea Mon Sep 17 00:00:00 2001
-Message-Id: <94d1f1fd58a56bc23cd3ede4805c552ddc5c10ea.1610128658.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 9d78b9763a62602c94bb24dc0233b03c68c86864 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 104/335] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Subject: [PATCH 104/338] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -22,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 164 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 3b0a95e10939..b6fbc5aa3d5d 100644
+index 7e785a280eeb..d090eacc56c1 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -832,6 +832,9 @@ struct task_struct {
@@ -36,7 +33,7 @@ index 3b0a95e10939..b6fbc5aa3d5d 100644
  
  	/* Process credentials: */
 diff --git a/init/init_task.c b/init/init_task.c
-index 0b49b9cf5571..9e3362748214 100644
+index d71054b95528..634becebd713 100644
 --- a/init/init_task.c
 +++ b/init/init_task.c
 @@ -50,6 +50,12 @@ static struct sighand_struct init_sighand = {
@@ -61,10 +58,10 @@ index 0b49b9cf5571..9e3362748214 100644
  	.thread_group	= LIST_HEAD_INIT(init_task.thread_group),
  	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
 diff --git a/kernel/fork.c b/kernel/fork.c
-index dc9fb7000dc5..97cc80bab065 100644
+index f28a903e5077..7d075c311582 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1590,6 +1590,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1586,6 +1586,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {
@@ -75,7 +72,7 @@ index dc9fb7000dc5..97cc80bab065 100644
  	tsk->cputime_expires.virt_exp = 0;
  	tsk->cputime_expires.sched_exp = 0;
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index d62d7ae5201c..8d95e8de98b2 100644
+index bfaa44a80c03..2d29b269dc83 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
 @@ -3,8 +3,10 @@
@@ -268,5 +265,5 @@ index d62d7ae5201c..8d95e8de98b2 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.17.1
+2.31.1
 

@@ -1,12 +1,9 @@
-From 1bf1e1b508120efa0e6c3f8c7aa10f3ab6b42c23 Mon Sep 17 00:00:00 2001
-Message-Id: <1bf1e1b508120efa0e6c3f8c7aa10f3ab6b42c23.1610128659.git.zanussi@kernel.org>
-In-Reply-To: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
-References: <f6355f395156d91294a3a1cd62e05e137dda13d5.1610128658.git.zanussi@kernel.org>
+From 50002b3e89b3e752bb8314ef33967dee5dc1318a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 1 Mar 2013 11:17:42 +0100
-Subject: [PATCH 131/335] futex: Ensure lock/unlock symetry versus pi_lock and
+Subject: [PATCH 131/338] futex: Ensure lock/unlock symetry versus pi_lock and
  hash bucket lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.165-rt70.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
 
 In exit_pi_state_list() we have the following locking construct:
 
@@ -35,10 +32,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 2d9d8fb00f14..4c3df10b6edc 100644
+index 7c7d1e092643..684477a38ba4 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -939,7 +939,9 @@ void exit_pi_state_list(struct task_struct *curr)
+@@ -962,7 +962,9 @@ static void exit_pi_state_list(struct task_struct *curr)
  		if (head->next != next) {
  			/* retain curr->pi_lock for the loop invariant */
  			raw_spin_unlock(&pi_state->pi_mutex.wait_lock);
@@ -49,5 +46,5 @@ index 2d9d8fb00f14..4c3df10b6edc 100644
  			continue;
  		}
 -- 
-2.17.1
+2.31.1
 
