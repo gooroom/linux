@@ -100,6 +100,11 @@ MokListXRT certificates as we do load via load_moklist_certs().]
  		kfree(dbx);
  	}
  
+-	/* the MOK can not be trusted when secure boot is disabled */
++	/* the MOK and MOKx can not be trusted when secure boot is disabled */
+ 	if (!efi_enabled(EFI_SECURE_BOOT))
+ 		return 0;
+ 
 -	mokx = get_cert_list(L"MokListXRT", &mok_var, &mokxsize, &status);
 -	if (!mokx) {
 -		if (status == EFI_NOT_FOUND)
@@ -115,11 +120,6 @@ MokListXRT certificates as we do load via load_moklist_certs().]
 -		kfree(mokx);
 -	}
 -
--	/* the MOK can not be trusted when secure boot is disabled */
-+	/* the MOK and MOKx can not be trusted when secure boot is disabled */
- 	if (!efi_enabled(EFI_SECURE_BOOT))
- 		return 0;
- 
  	/* Load the MokListRT certs */
 -	rc = load_moklist_certs();
 +	rc = load_moklist_certs("MokListRT", L"MokListRT",
