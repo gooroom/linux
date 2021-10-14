@@ -152,30 +152,24 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  	/* base dir or too deep */
  	if (level == 0 || level > 3)
-@@ -1151,7 +1235,7 @@ int main(int argc, char *argv[])
+@@ -1152,17 +1236,17 @@ int main(int argc, char *argv[])
+ 	 */
  
  	maxfds = get_maxfds();
- 	mapfile = NULL;
 -	rc = nftw(ldirname, preprocess_arch_std_files, maxfds, 0);
 +	rc = ordered_ftw(ldirname, preprocess_arch_std_files, maxfds);
- 	if (rc && verbose) {
- 		pr_info("%s: Error preprocessing arch standard files %s\n",
- 			prog, ldirname);
-@@ -1165,7 +1249,7 @@ int main(int argc, char *argv[])
- 		goto empty_map;
- 	}
+ 	if (rc)
+ 		goto err_processing_std_arch_event_dir;
  
 -	rc = nftw(ldirname, process_one_file, maxfds, 0);
 +	rc = ordered_ftw(ldirname, process_one_file, maxfds);
- 	if (rc && verbose) {
- 		pr_info("%s: Error walking file tree %s\n", prog, ldirname);
- 		goto empty_map;
-@@ -1181,7 +1265,7 @@ int main(int argc, char *argv[])
+ 	if (rc)
+ 		goto err_processing_dir;
  
  	sprintf(ldirname, "%s/test", start_dirname);
  
 -	rc = nftw(ldirname, process_one_file, maxfds, 0);
 +	rc = ordered_ftw(ldirname, process_one_file, maxfds);
- 	if (rc && verbose) {
- 		pr_info("%s: Error walking file tree %s rc=%d for test\n",
- 			prog, ldirname, rc);
+ 	if (rc)
+ 		goto err_processing_dir;
+ 
