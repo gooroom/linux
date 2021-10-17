@@ -1,8 +1,8 @@
-From ded80029138cf4136e7abb25b2ff13a0b33c3e49 Mon Sep 17 00:00:00 2001
+From e9e7a3e14758afb3b148de8b097e93694a71af13 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 8 Sep 2020 07:32:20 +0200
 Subject: [PATCH 113/304] net: Move lockdep where it belongs
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,10 +10,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/sock.c b/net/core/sock.c
-index d638c5361ed2..a56dd73b4c76 100644
+index f9c835167391..d76a25727680 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -3039,12 +3039,11 @@ void lock_sock_nested(struct sock *sk, int subclass)
+@@ -3059,12 +3059,11 @@ void lock_sock_nested(struct sock *sk, int subclass)
  	if (sk->sk_lock.owned)
  		__lock_sock(sk);
  	sk->sk_lock.owned = 1;
@@ -27,7 +27,7 @@ index d638c5361ed2..a56dd73b4c76 100644
  }
  EXPORT_SYMBOL(lock_sock_nested);
  
-@@ -3093,12 +3092,11 @@ bool lock_sock_fast(struct sock *sk)
+@@ -3113,12 +3112,11 @@ bool lock_sock_fast(struct sock *sk)
  
  	__lock_sock(sk);
  	sk->sk_lock.owned = 1;

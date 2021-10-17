@@ -1,11 +1,11 @@
-From ad16e4605a52fba88f3b0f2d2fe3feea5148e048 Mon Sep 17 00:00:00 2001
+From a3c8888547a38260264cac3b3e0d41769371db64 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 3 Feb 2021 11:05:23 -0500
 Subject: [PATCH 076/304] tracing: Merge irqflags + preempt counter.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 The state of the interrupts (irqflags) and the preemption counter are
 both passed down to tracing_generic_entry_update(). Only one bit of
@@ -128,7 +128,7 @@ index d321fe5ad1a1..091250b0895a 100644
  };
  
 diff --git a/kernel/trace/blktrace.c b/kernel/trace/blktrace.c
-index f1022945e346..c300ac337573 100644
+index b89ff188a618..b3afd103b3aa 100644
 --- a/kernel/trace/blktrace.c
 +++ b/kernel/trace/blktrace.c
 @@ -72,17 +72,17 @@ static void trace_note(struct blk_trace *bt, pid_t pid, int action,
@@ -1467,10 +1467,10 @@ index ee4571b624bc..f11add83c108 100644
  
  static int preemptoff_tracer_init(struct trace_array *tr)
 diff --git a/kernel/trace/trace_kprobe.c b/kernel/trace/trace_kprobe.c
-index 68150b9cbde9..54b8378071d4 100644
+index 552dbc9d5226..11242ff53663 100644
 --- a/kernel/trace/trace_kprobe.c
 +++ b/kernel/trace/trace_kprobe.c
-@@ -1386,8 +1386,7 @@ __kprobe_trace_func(struct trace_kprobe *tk, struct pt_regs *regs,
+@@ -1390,8 +1390,7 @@ __kprobe_trace_func(struct trace_kprobe *tk, struct pt_regs *regs,
  	if (trace_trigger_soft_disabled(trace_file))
  		return;
  
@@ -1480,7 +1480,7 @@ index 68150b9cbde9..54b8378071d4 100644
  	fbuffer.trace_file = trace_file;
  
  	dsize = __get_data_size(&tk->tp, regs);
-@@ -1396,7 +1395,7 @@ __kprobe_trace_func(struct trace_kprobe *tk, struct pt_regs *regs,
+@@ -1400,7 +1399,7 @@ __kprobe_trace_func(struct trace_kprobe *tk, struct pt_regs *regs,
  		trace_event_buffer_lock_reserve(&fbuffer.buffer, trace_file,
  					call->event.type,
  					sizeof(*entry) + tk->tp.size + dsize,
@@ -1489,7 +1489,7 @@ index 68150b9cbde9..54b8378071d4 100644
  	if (!fbuffer.event)
  		return;
  
-@@ -1434,8 +1433,7 @@ __kretprobe_trace_func(struct trace_kprobe *tk, struct kretprobe_instance *ri,
+@@ -1438,8 +1437,7 @@ __kretprobe_trace_func(struct trace_kprobe *tk, struct kretprobe_instance *ri,
  	if (trace_trigger_soft_disabled(trace_file))
  		return;
  
@@ -1499,7 +1499,7 @@ index 68150b9cbde9..54b8378071d4 100644
  	fbuffer.trace_file = trace_file;
  
  	dsize = __get_data_size(&tk->tp, regs);
-@@ -1443,7 +1441,7 @@ __kretprobe_trace_func(struct trace_kprobe *tk, struct kretprobe_instance *ri,
+@@ -1447,7 +1445,7 @@ __kretprobe_trace_func(struct trace_kprobe *tk, struct kretprobe_instance *ri,
  		trace_event_buffer_lock_reserve(&fbuffer.buffer, trace_file,
  					call->event.type,
  					sizeof(*entry) + tk->tp.size + dsize,
@@ -1874,10 +1874,10 @@ index d85a2f0f316b..8bfcd3b09422 100644
  
  static int reg_event_syscall_enter(struct trace_event_file *file,
 diff --git a/kernel/trace/trace_uprobe.c b/kernel/trace/trace_uprobe.c
-index 3cf7128e1ad3..a1ed96a7a462 100644
+index 0dd6e286e519..a1bc68de1b29 100644
 --- a/kernel/trace/trace_uprobe.c
 +++ b/kernel/trace/trace_uprobe.c
-@@ -961,7 +961,7 @@ static void __uprobe_trace_func(struct trace_uprobe *tu,
+@@ -965,7 +965,7 @@ static void __uprobe_trace_func(struct trace_uprobe *tu,
  	esize = SIZEOF_TRACE_ENTRY(is_ret_probe(tu));
  	size = esize + tu->tp.size + dsize;
  	event = trace_event_buffer_lock_reserve(&buffer, trace_file,
@@ -1886,7 +1886,7 @@ index 3cf7128e1ad3..a1ed96a7a462 100644
  	if (!event)
  		return;
  
-@@ -977,7 +977,7 @@ static void __uprobe_trace_func(struct trace_uprobe *tu,
+@@ -981,7 +981,7 @@ static void __uprobe_trace_func(struct trace_uprobe *tu,
  
  	memcpy(data, ucb->buf, tu->tp.size + dsize);
  
