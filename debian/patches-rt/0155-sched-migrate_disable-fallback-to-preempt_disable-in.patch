@@ -1,9 +1,9 @@
-From 6805cb523020c36b012a82b41c63571a3feca1ee Mon Sep 17 00:00:00 2001
+From 1adfaa33f0679813cecaa739ec2774511d690784 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
 Subject: [PATCH 155/340] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.211-rt91.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.212-rt92.tar.xz
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
 anymore so it has almost no users. However the futex code has a workaround for
@@ -71,7 +71,7 @@ index 9eafc34898b4..ed8413e7140f 100644
  {
  	return 0;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 148588bb7137..3a49782e50e1 100644
+index 12f4a4673036..9f77df05689c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -667,7 +667,7 @@ struct task_struct {

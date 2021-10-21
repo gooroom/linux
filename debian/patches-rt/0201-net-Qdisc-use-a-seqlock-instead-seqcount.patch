@@ -1,8 +1,8 @@
-From 3a8594089fb73e671fb8b929914b7778c21189ef Mon Sep 17 00:00:00 2001
+From f1e2d5904aa8933ef54ccd67decc59118e372408 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 201/340] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.211-rt91.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.212-rt92.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -242,10 +242,10 @@ index e2fd8baec65f..8bab88738691 100644
  		      struct gnet_stats_basic_cpu __percpu *cpu,
  		      struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 1f12be9f0207..f6f88e0b3892 100644
+index 0bb4f7a94a3c..6f869575ced1 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1167,7 +1167,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+@@ -1173,7 +1173,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
  		rcu_assign_pointer(sch->stab, stab);
  	}
  	if (tca[TCA_RATE]) {

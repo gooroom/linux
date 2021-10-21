@@ -1,8 +1,8 @@
-From 7518b2991d16de5e95c823f7d79c3736701952c0 Mon Sep 17 00:00:00 2001
+From 7c22d9f10a071cdfd21da4dc3ac377c76088ecb0 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
 Subject: [PATCH 104/340] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.211-rt91.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.212-rt92.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 164 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7e785a280eeb..d090eacc56c1 100644
+index 1657092c79ef..a28fe574cf02 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -832,6 +832,9 @@ struct task_struct {

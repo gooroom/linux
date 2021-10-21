@@ -1,8 +1,8 @@
-From d48342d6817d317c88c5e3f175430cc342c5ef49 Mon Sep 17 00:00:00 2001
+From 4a80c175535aa4c10978914ccab03558444e4cc1 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
 Subject: [PATCH 153/340] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.211-rt91.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.212-rt92.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 116fc34eb965..50124bb1a17c 100644
+index 7b263ecd8a7f..9e4881099757 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -101,12 +101,8 @@ struct task_group;
