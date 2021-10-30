@@ -1,9 +1,9 @@
-From c72c2743ec74f41d4bcd3d1943ac786f41eeb383 Mon Sep 17 00:00:00 2001
+From 991195cac8299a63a6105aae81479df6d1a9b839 Mon Sep 17 00:00:00 2001
 From: Yong Zhang <yong.zhang0@gmail.com>
 Date: Tue, 15 May 2012 13:53:56 +0800
 Subject: [PATCH 170/340] mm: Protect activate_mm() by
  preempt_[disable&enable]_rt()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.212-rt92.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.214-rt93.tar.xz
 
 User preempt_*_rt instead of local_irq_*_rt or otherwise there will be
 warning on ARM like below:
@@ -38,7 +38,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 4 insertions(+)
 
 diff --git a/fs/exec.c b/fs/exec.c
-index 6eea921a7e72..b8b8109ade87 100644
+index e87e3c020c61..ede2b4be56f1 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -1028,6 +1028,7 @@ static int exec_mmap(struct mm_struct *mm)
