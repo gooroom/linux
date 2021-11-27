@@ -19,21 +19,17 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  kernel/printk/printk.c  | 625 ++++++++++++----------------------------
  2 files changed, 186 insertions(+), 441 deletions(-)
 
-diff --git a/include/linux/console.h b/include/linux/console.h
-index d0109ec4e78b..8b97a3e8f1ec 100644
 --- a/include/linux/console.h
 +++ b/include/linux/console.h
-@@ -155,6 +155,8 @@ struct console {
- #ifdef CONFIG_PRINTK
- 	char	sync_buf[CONSOLE_LOG_MAX];
+@@ -157,6 +157,8 @@
  #endif
+ 	uint	ispeed;
+ 	uint	ospeed;
 +	atomic64_t printk_seq;
 +	struct task_struct *thread;
  	void	*data;
  	struct	 console *next;
  };
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 1f225b32fcbd..23c6e3992962 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -44,6 +44,7 @@
@@ -44,19 +40,19 @@ index 1f225b32fcbd..23c6e3992962 100644
  #include <linux/clocksource.h>
  #include <linux/sched/clock.h>
  #include <linux/sched/debug.h>
-@@ -267,11 +268,6 @@ static void __up_console_sem(unsigned long ip)
-  */
+@@ -268,11 +269,6 @@
  static int console_locked, console_suspended;
  
--/*
+ /*
 - * If exclusive_console is non-NULL then only this console is to be printed to.
 - */
 -static struct console *exclusive_console;
 -
- /*
+-/*
   *	Array of consoles built from command line options (console=)
   */
-@@ -356,10 +352,10 @@ enum log_flags {
+ 
+@@ -356,10 +352,10 @@
  	LOG_CONT	= 8,	/* text is a fragment of a continuation line */
  };
  
@@ -68,7 +64,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  /* Set to enable sync mode. Once set, it is never cleared. */
  static bool sync_mode;
  
-@@ -370,13 +366,6 @@ static u64 syslog_seq;
+@@ -370,13 +366,6 @@
  static size_t syslog_partial;
  static bool syslog_time;
  
@@ -82,7 +78,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  struct latched_seq {
  	seqcount_latch_t	latch;
  	u64			val[2];
-@@ -1755,6 +1744,8 @@ static bool console_can_sync(struct console *con)
+@@ -1755,6 +1744,8 @@
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		return true;
@@ -91,7 +87,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	return false;
  }
  
-@@ -1764,6 +1755,8 @@ static bool call_sync_console_driver(struct console *con, const char *text, size
+@@ -1764,6 +1755,8 @@
  		return false;
  	if (con->write_atomic && kernel_sync_mode())
  		con->write_atomic(con, text, text_len);
@@ -100,7 +96,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	else
  		return false;
  
-@@ -1819,202 +1812,16 @@ static void print_sync_until(struct console *con, u64 seq)
+@@ -1819,202 +1812,16 @@
  
  	console_atomic_lock(&flags);
  	for (;;) {
@@ -305,7 +301,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  #ifdef CONFIG_PRINTK_NMI
  #define NUM_RECURSION_CTX 2
  #else
-@@ -2285,39 +2092,16 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -2285,39 +2092,16 @@
  			    const char *fmt, va_list args)
  {
  	int printed_len;
@@ -346,7 +342,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	wake_up_klogd();
  	return printed_len;
  }
-@@ -2369,38 +2153,158 @@ asmlinkage __visible int printk(const char *fmt, ...)
+@@ -2369,38 +2153,158 @@
  }
  EXPORT_SYMBOL(printk);
  
@@ -433,12 +429,12 @@ index 1f225b32fcbd..23c6e3992962 100644
 +		}
 +
 +		printk_seq = atomic64_read(&con->printk_seq);
++
++		console_lock();
++		console_may_schedule = 0;
  
 -static size_t record_print_text(const struct printk_record *r,
 -				bool syslog, bool time)
-+		console_lock();
-+		console_may_schedule = 0;
-+
 +		if (kernel_sync_mode() && con->write_atomic) {
 +			console_unlock();
 +			break;
@@ -528,7 +524,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  
  #endif /* CONFIG_PRINTK */
  
-@@ -2638,36 +2542,6 @@ int is_console_locked(void)
+@@ -2645,36 +2549,6 @@
  }
  EXPORT_SYMBOL(is_console_locked);
  
@@ -565,7 +561,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  /**
   * console_unlock - unlock the console system
   *
-@@ -2684,131 +2558,14 @@ static inline int can_use_console(void)
+@@ -2691,131 +2565,14 @@
   */
  void console_unlock(void)
  {
@@ -697,7 +693,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  }
  EXPORT_SYMBOL(console_unlock);
  
-@@ -2858,18 +2615,20 @@ void console_unblank(void)
+@@ -2865,18 +2622,20 @@
   */
  void console_flush_on_panic(enum con_flush_mode mode)
  {
@@ -728,7 +724,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	console_unlock();
  }
  
-@@ -3004,7 +2763,6 @@ static int try_enable_new_console(struct console *newcon, bool user_specified)
+@@ -3011,7 +2770,6 @@
   */
  void register_console(struct console *newcon)
  {
@@ -736,7 +732,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	struct console *bcon = NULL;
  	int err;
  
-@@ -3028,6 +2786,8 @@ void register_console(struct console *newcon)
+@@ -3035,6 +2793,8 @@
  		}
  	}
  
@@ -745,7 +741,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	if (console_drivers && console_drivers->flags & CON_BOOT)
  		bcon = console_drivers;
  
-@@ -3092,27 +2852,12 @@ void register_console(struct console *newcon)
+@@ -3099,27 +2859,12 @@
  	if (newcon->flags & CON_EXTENDED)
  		nr_ext_console_drivers++;
  
@@ -778,7 +774,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	console_unlock();
  	console_sysfs_notify();
  
-@@ -3186,6 +2931,9 @@ int unregister_console(struct console *console)
+@@ -3193,6 +2938,9 @@
  	console_unlock();
  	console_sysfs_notify();
  
@@ -788,7 +784,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	if (console->exit)
  		res = console->exit(console);
  
-@@ -3268,6 +3016,15 @@ static int __init printk_late_init(void)
+@@ -3275,6 +3023,15 @@
  			unregister_console(con);
  		}
  	}
@@ -804,7 +800,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  	ret = cpuhp_setup_state_nocalls(CPUHP_PRINTK_DEAD, "printk:dead", NULL,
  					console_cpu_notify);
  	WARN_ON(ret < 0);
-@@ -3283,7 +3040,6 @@ late_initcall(printk_late_init);
+@@ -3290,7 +3047,6 @@
   * Delayed printk version, for scheduler-internal messages:
   */
  #define PRINTK_PENDING_WAKEUP	0x01
@@ -812,7 +808,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  
  static DEFINE_PER_CPU(int, printk_pending);
  
-@@ -3291,14 +3047,8 @@ static void wake_up_klogd_work_func(struct irq_work *irq_work)
+@@ -3298,14 +3054,8 @@
  {
  	int pending = __this_cpu_xchg(printk_pending, 0);
  
@@ -828,7 +824,7 @@ index 1f225b32fcbd..23c6e3992962 100644
  }
  
  static DEFINE_PER_CPU(struct irq_work, wake_up_klogd_work) = {
-@@ -3321,13 +3071,6 @@ void wake_up_klogd(void)
+@@ -3328,13 +3078,6 @@
  
  void defer_console_output(void)
  {
@@ -842,6 +838,3 @@ index 1f225b32fcbd..23c6e3992962 100644
  }
  
  int vprintk_deferred(const char *fmt, va_list args)
--- 
-2.32.0
-
