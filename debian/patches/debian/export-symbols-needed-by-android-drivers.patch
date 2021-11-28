@@ -11,10 +11,8 @@ need them.
 Export the currently un-exported symbols they depend on.
 
 ---
-Index: linux/fs/file.c
-===================================================================
---- linux.orig/fs/file.c
-+++ linux/fs/file.c
+--- a/fs/file.c
++++ b/fs/file.c
 @@ -409,6 +409,7 @@ struct files_struct *get_files_struct(st
  
  	return files;
@@ -47,11 +45,9 @@ Index: linux/fs/file.c
  
  void fd_install(unsigned int fd, struct file *file)
  {
-Index: linux/kernel/fork.c
-===================================================================
---- linux.orig/kernel/fork.c
-+++ linux/kernel/fork.c
-@@ -1048,6 +1048,7 @@ void mmput_async(struct mm_struct *mm)
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -1054,6 +1054,7 @@ void mmput_async(struct mm_struct *mm)
  		schedule_work(&mm->async_put_work);
  	}
  }
@@ -59,11 +55,9 @@ Index: linux/kernel/fork.c
  #endif
  
  /**
-Index: linux/kernel/signal.c
-===================================================================
---- linux.orig/kernel/signal.c
-+++ linux/kernel/signal.c
-@@ -1353,6 +1353,7 @@ struct sighand_struct *__lock_task_sigha
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1368,6 +1368,7 @@ struct sighand_struct *__lock_task_sigha
  
  	return sighand;
  }
@@ -71,11 +65,9 @@ Index: linux/kernel/signal.c
  
  /*
   * send signal info to all the members of a group
-Index: linux/mm/memory.c
-===================================================================
---- linux.orig/mm/memory.c
-+++ linux/mm/memory.c
-@@ -1611,6 +1611,7 @@ void zap_page_range(struct vm_area_struc
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -1634,6 +1634,7 @@ void zap_page_range(struct vm_area_struc
  	mmu_notifier_invalidate_range_end(mm, start, end);
  	tlb_finish_mmu(&tlb, start, end);
  }
@@ -83,11 +75,9 @@ Index: linux/mm/memory.c
  
  /**
   * zap_page_range_single - remove user pages in a given range
-Index: linux/mm/shmem.c
-===================================================================
---- linux.orig/mm/shmem.c
-+++ linux/mm/shmem.c
-@@ -4039,6 +4039,7 @@ int shmem_zero_setup(struct vm_area_stru
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -4053,6 +4053,7 @@ int shmem_zero_setup(struct vm_area_stru
  
  	return 0;
  }
@@ -95,11 +85,9 @@ Index: linux/mm/shmem.c
  
  /**
   * shmem_read_mapping_page_gfp - read into page cache, using specified page allocation flags.
-Index: linux/mm/vmalloc.c
-===================================================================
---- linux.orig/mm/vmalloc.c
-+++ linux/mm/vmalloc.c
-@@ -1299,6 +1299,7 @@ int map_kernel_range_noflush(unsigned lo
+--- a/mm/vmalloc.c
++++ b/mm/vmalloc.c
+@@ -1300,6 +1300,7 @@ int map_kernel_range_noflush(unsigned lo
  {
  	return vmap_page_range_noflush(addr, addr + size, prot, pages);
  }
@@ -107,7 +95,7 @@ Index: linux/mm/vmalloc.c
  
  /**
   * unmap_kernel_range_noflush - unmap kernel VM area
-@@ -1439,6 +1440,7 @@ struct vm_struct *get_vm_area(unsigned l
+@@ -1440,6 +1441,7 @@ struct vm_struct *get_vm_area(unsigned l
  				  NUMA_NO_NODE, GFP_KERNEL,
  				  __builtin_return_address(0));
  }
@@ -115,32 +103,30 @@ Index: linux/mm/vmalloc.c
  
  struct vm_struct *get_vm_area_caller(unsigned long size, unsigned long flags,
  				const void *caller)
-Index: linux/security/security.c
-===================================================================
---- linux.orig/security/security.c
-+++ linux/security/security.c
-@@ -236,24 +236,28 @@ int security_binder_set_context_mgr(stru
+--- a/security/security.c
++++ b/security/security.c
+@@ -236,24 +236,28 @@ int security_binder_set_context_mgr(cons
  {
  	return call_int_hook(binder_set_context_mgr, 0, mgr);
  }
 +EXPORT_SYMBOL_GPL(security_binder_set_context_mgr);
  
- int security_binder_transaction(struct task_struct *from,
- 				struct task_struct *to)
+ int security_binder_transaction(const struct cred *from,
+ 				const struct cred *to)
  {
  	return call_int_hook(binder_transaction, 0, from, to);
  }
 +EXPORT_SYMBOL_GPL(security_binder_transaction);
  
- int security_binder_transfer_binder(struct task_struct *from,
- 				    struct task_struct *to)
+ int security_binder_transfer_binder(const struct cred *from,
+ 				    const struct cred *to)
  {
  	return call_int_hook(binder_transfer_binder, 0, from, to);
  }
 +EXPORT_SYMBOL_GPL(security_binder_transfer_binder);
  
- int security_binder_transfer_file(struct task_struct *from,
- 				  struct task_struct *to, struct file *file)
+ int security_binder_transfer_file(const struct cred *from,
+ 				  const struct cred *to, struct file *file)
  {
  	return call_int_hook(binder_transfer_file, 0, from, to, file);
  }
@@ -148,11 +134,9 @@ Index: linux/security/security.c
  
  int security_ptrace_access_check(struct task_struct *child, unsigned int mode)
  {
-Index: linux/kernel/sched/core.c
-===================================================================
---- linux.orig/kernel/sched/core.c
-+++ linux/kernel/sched/core.c
-@@ -3973,6 +3973,7 @@ int can_nice(const struct task_struct *p
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -3979,6 +3979,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }
