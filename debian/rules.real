@@ -66,7 +66,6 @@ build-arch-arch: \
 	$(call if_package, linux-bootwrapper-$(ABINAME), build-bootwrapper) \
 	$(call if_package, usbip,                        build-usbip) \
 	$(call if_package, linux-cpupower,               build-cpupower) \
-	$(call if_package, liblockdep-dev,               build-liblockdep) \
 	$(call if_package, libbpf-dev,                   build-libbpf) \
 	$(call if_package, hyperv-daemons,               build-hyperv-daemons)
 binary-arch-arch: \
@@ -78,7 +77,6 @@ binary-arch-arch: \
 	$(call if_package, linux-bootwrapper-$(ABINAME), install-bootwrapper) \
 	$(call if_package, usbip,                        install-usbip) \
 	$(call if_package, linux-cpupower,               install-cpupower) \
-	$(call if_package, liblockdep-dev,               install-liblockdep) \
 	$(call if_package, libbpf-dev,                   install-libbpf) \
 	$(call if_package, hyperv-daemons,               install-hyperv-daemons)
 
@@ -88,7 +86,6 @@ binary-indep: \
 	$(call if_package, $(SOURCE_BASENAME)-doc-$(VERSION), install-doc) \
 	$(call if_package, $(SOURCE_BASENAME)-source-$(VERSION), install-source) \
 	$(call if_package, $(SOURCE_BASENAME)-support-$(ABINAME), install-support) \
-	$(call if_package, lockdep,                      install-lockdep)
 
 binary-arch-flavour: \
 	$(call if_package, $(IMAGE_PACKAGE_NAME),        install-image_$(ARCH)_$(FEATURESET)_$(FLAVOUR)) \
@@ -787,57 +784,6 @@ endif
 		libbpf$(VERSION)
 	dh_installdeb
 	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-build-liblockdep: $(STAMPS_DIR)/build-tools-headers
-	$(call make-tools,tools/lib/lockdep)
-
-install-liblockdep: DH_OPTIONS = -pliblockdep$(VERSION) -pliblockdep-dev
-install-liblockdep: DIR = $(CURDIR)/debian/liblockdep-tmp
-install-liblockdep: build-liblockdep
-	dh_testdir
-	dh_testroot
-	dh_prep
-	$(call make-tools,tools/lib/lockdep) install DESTDIR=$(DIR)
-	env -u DH_OPTIONS dh_install -pliblockdep$(VERSION) --sourcedir=$(DIR) \
-		'usr/lib/*/liblockdep.so.*'
-	dh_install --sourcedir=$(DIR)
-	dh_installchangelogs
-ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-	dh_installdocs
-endif
-	dh_strip
-	dh_compress
-	dh_fixperms
-	env -u DH_OPTIONS dh_makeshlibs -pliblockdep$(VERSION) \
-		liblockdep$(VERSION)
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
-
-install-lockdep: PACKAGE_NAME = lockdep
-install-lockdep: DH_OPTIONS = -p$(PACKAGE_NAME)
-install-lockdep: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
-install-lockdep:
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-# Upstream lockdep preload script is not suitable for installation
-	sed 's/@VERSION@/$(VERSION)/' debian/rules.d/tools/lib/lockdep/lockdep.in \
-		> $(DIR)/usr/bin/lockdep
-	chmod 755 $(DIR)/usr/bin/lockdep
-	dh_installchangelogs
-ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
-	dh_installdocs
-endif
-	dh_compress
-	dh_fixperms
-	dh_installdeb
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
