@@ -1,9 +1,9 @@
-From abe7fc736a626cce43039b62c33fbfb13afcd6e9 Mon Sep 17 00:00:00 2001
+From 34b2a7c809f332a825f01e4603a302b10a097587 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
 Subject: [PATCH 247/342] drivers/zram: Don't disable preemption in
  zcomp_stream_get/put()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 In v4.7, the driver switched to percpu compression streams, disabling
 preemption via get/put_cpu_ptr(). Use a per-zcomp_strm lock here. We
@@ -67,7 +67,7 @@ index 41c1002a7d7d..d424eafcbf8e 100644
  
  /* dynamic per-device compression frontend */
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index bf11553b161e..6a39ec45f09e 100644
+index 04e4297f8318..2919ad13bce9 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -1028,6 +1028,7 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,

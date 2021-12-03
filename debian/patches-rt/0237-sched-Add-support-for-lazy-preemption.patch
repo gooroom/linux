@@ -1,8 +1,8 @@
-From 780db216b52a7d3fcb694e16ff0336fcf52b0c65 Mon Sep 17 00:00:00 2001
+From 6e33ff7a970a58fc0a95cf5eef459ea47ad7869a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 237/342] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -263,7 +263,7 @@ index f6511c62c9a4..11f48774b129 100644
  		__read_rt_unlock(cpuhp_pin);
  		goto again;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index da1176ee324e..6286dde4af70 100644
+index dba425296275..0995748a3a1d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -493,6 +493,48 @@ void resched_curr(struct rq *rq)
@@ -315,7 +315,7 @@ index da1176ee324e..6286dde4af70 100644
  void resched_cpu(int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -2406,6 +2448,9 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
+@@ -2409,6 +2451,9 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
  	p->on_cpu = 0;
  #endif
  	init_task_preempt_count(p);
@@ -325,7 +325,7 @@ index da1176ee324e..6286dde4af70 100644
  #ifdef CONFIG_SMP
  	plist_node_init(&p->pushable_tasks, MAX_PRIO);
  	RB_CLEAR_NODE(&p->pushable_dl_tasks);
-@@ -3515,6 +3560,7 @@ static void __sched notrace __schedule(bool preempt)
+@@ -3518,6 +3563,7 @@ static void __sched notrace __schedule(bool preempt)
  
  	next = pick_next_task(rq, prev, &rf);
  	clear_tsk_need_resched(prev);
@@ -333,7 +333,7 @@ index da1176ee324e..6286dde4af70 100644
  	clear_preempt_need_resched();
  
  	if (likely(prev != next)) {
-@@ -3695,6 +3741,30 @@ static void __sched notrace preempt_schedule_common(void)
+@@ -3698,6 +3744,30 @@ static void __sched notrace preempt_schedule_common(void)
  	} while (need_resched());
  }
  
@@ -364,7 +364,7 @@ index da1176ee324e..6286dde4af70 100644
  #ifdef CONFIG_PREEMPT
  /*
   * this is the entry point to schedule() from in-kernel preemption
-@@ -3709,7 +3779,8 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
+@@ -3712,7 +3782,8 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
  	 */
  	if (likely(!preemptible()))
  		return;
@@ -374,7 +374,7 @@ index da1176ee324e..6286dde4af70 100644
  	preempt_schedule_common();
  }
  NOKPROBE_SYMBOL(preempt_schedule);
-@@ -3736,6 +3807,9 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
+@@ -3739,6 +3810,9 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
  	if (likely(!preemptible()))
  		return;
  
@@ -384,7 +384,7 @@ index da1176ee324e..6286dde4af70 100644
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -5502,7 +5576,9 @@ void init_idle(struct task_struct *idle, int cpu)
+@@ -5505,7 +5579,9 @@ void init_idle(struct task_struct *idle, int cpu)
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -395,7 +395,7 @@ index da1176ee324e..6286dde4af70 100644
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -7219,6 +7295,7 @@ void migrate_disable(void)
+@@ -7222,6 +7298,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -403,7 +403,7 @@ index da1176ee324e..6286dde4af70 100644
  	pin_current_cpu();
  
  	migrate_disable_update_cpus_allowed(p);
-@@ -7286,6 +7363,7 @@ void migrate_enable(void)
+@@ -7289,6 +7366,7 @@ void migrate_enable(void)
  			arg.dest_cpu = dest_cpu;
  
  			unpin_current_cpu();
@@ -411,7 +411,7 @@ index da1176ee324e..6286dde4af70 100644
  			preempt_enable();
  			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
  			tlb_migrate_finish(p->mm);
-@@ -7294,6 +7372,7 @@ void migrate_enable(void)
+@@ -7297,6 +7375,7 @@ void migrate_enable(void)
  		}
  	}
  	unpin_current_cpu();

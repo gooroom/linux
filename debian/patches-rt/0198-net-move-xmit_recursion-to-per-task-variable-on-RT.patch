@@ -1,8 +1,8 @@
-From 50bc678ed60e2411250e8091a876b7b7e858b774 Mon Sep 17 00:00:00 2001
+From c4bb0d2c0126cfd113fcede2d66cebdb6c85918d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
 Subject: [PATCH 198/342] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -190,10 +190,10 @@ index 9f77df05689c..644e9cc35428 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index ba2842cb7892..32fff632b584 100644
+index 278ecd11da52..549af9692445 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3831,7 +3831,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
+@@ -3833,7 +3833,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, struct net_device *sb_dev)
  	if (dev->flags & IFF_UP) {
  		int cpu = smp_processor_id(); /* ok because BHs are off */
  
@@ -205,7 +205,7 @@ index ba2842cb7892..32fff632b584 100644
  			if (dev_xmit_recursion())
  				goto recursion_alert;
  
-@@ -8589,7 +8593,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -8591,7 +8595,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);

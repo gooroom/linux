@@ -1,4 +1,4 @@
-From 2edf4037430f528f5b3a66ee8882499a834398cd Mon Sep 17 00:00:00 2001
+From 1379f5994dbbe76e6f199839e74ae8d62a2e16a8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
 Subject: [PATCH 026/342] kernel: sched: Provide a pointer to the valid CPU
@@ -6,7 +6,7 @@ Subject: [PATCH 026/342] kernel: sched: Provide a pointer to the valid CPU
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 In commit 4b53a3412d66 ("sched/core: Remove the tsk_nr_cpus_allowed()
 wrapper") the tsk_nr_cpus_allowed() wrapper was removed. There was not
@@ -334,7 +334,7 @@ index b65871600507..a18d695259af 100644
  	/*
  	 * One for us, one for whoever does the "release_task()" (usually
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 013b1c6cb4ed..5a852bdb3f3b 100644
+index 32af895bd86b..3fb7638a8863 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -878,7 +878,7 @@ static inline bool is_per_cpu_kthread(struct task_struct *p)
@@ -448,7 +448,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  	 * CPU.
  	 *
  	 * Since this is common to all placement strategies, this lives here.
-@@ -2403,7 +2403,7 @@ void wake_up_new_task(struct task_struct *p)
+@@ -2406,7 +2406,7 @@ void wake_up_new_task(struct task_struct *p)
  #ifdef CONFIG_SMP
  	/*
  	 * Fork balancing, do it here and not earlier because:
@@ -457,7 +457,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  	 *  - any previously selected CPU might disappear through hotplug
  	 *
  	 * Use __set_task_cpu() to avoid calling sched_class::migrate_task_rq,
-@@ -4319,7 +4319,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -4322,7 +4322,7 @@ static int __sched_setscheduler(struct task_struct *p,
  			 * the entire root_domain to become SCHED_DEADLINE. We
  			 * will also fail if there's no bandwidth available.
  			 */
@@ -466,7 +466,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  			    rq->rd->dl_bw.bw == 0) {
  				task_rq_unlock(rq, p, &rf);
  				return -EPERM;
-@@ -4918,7 +4918,7 @@ long sched_getaffinity(pid_t pid, struct cpumask *mask)
+@@ -4921,7 +4921,7 @@ long sched_getaffinity(pid_t pid, struct cpumask *mask)
  		goto out_unlock;
  
  	raw_spin_lock_irqsave(&p->pi_lock, flags);
@@ -475,7 +475,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  	raw_spin_unlock_irqrestore(&p->pi_lock, flags);
  
  out_unlock:
-@@ -5495,7 +5495,7 @@ int task_can_attach(struct task_struct *p,
+@@ -5498,7 +5498,7 @@ int task_can_attach(struct task_struct *p,
  	 * allowed nodes is unnecessary.  Thus, cpusets are not
  	 * applicable for such threads.  This prevents checking for
  	 * success of set_cpus_allowed_ptr() on all attached tasks
@@ -484,7 +484,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  	 */
  	if (p->flags & PF_NO_SETAFFINITY) {
  		ret = -EINVAL;
-@@ -5522,7 +5522,7 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
+@@ -5525,7 +5525,7 @@ int migrate_task_to(struct task_struct *p, int target_cpu)
  	if (curr_cpu == target_cpu)
  		return 0;
  
@@ -493,7 +493,7 @@ index 013b1c6cb4ed..5a852bdb3f3b 100644
  		return -EINVAL;
  
  	/* TODO: This is not properly updating schedstats */
-@@ -5661,7 +5661,7 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
+@@ -5664,7 +5664,7 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
  		put_prev_task(rq, next);
  
  		/*

@@ -1,9 +1,9 @@
-From 13961f3fa88aa61542227eb1541fea2515440b18 Mon Sep 17 00:00:00 2001
+From 0a421e75e7334029c815a7d02a477e3253909b96 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Dec 2019 10:53:59 +0100
 Subject: [PATCH 314/342] sched: migrate_enable: Busy loop until the migration
  request is completed
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 [ Upstream commit 140d7f54a5fff02898d2ca9802b39548bf7455f1 ]
 
@@ -28,10 +28,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5cb45221bf38..43125b51332d 100644
+index 270adb525d93..d190d9e6b10f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7320,7 +7320,7 @@ void migrate_enable(void)
+@@ -7323,7 +7323,7 @@ void migrate_enable(void)
  
  	WARN_ON(smp_processor_id() != cpu);
  	if (!is_cpu_allowed(p, cpu)) {
@@ -40,7 +40,7 @@ index 5cb45221bf38..43125b51332d 100644
  		struct cpu_stop_work work;
  		struct rq_flags rf;
  
-@@ -7333,7 +7333,10 @@ void migrate_enable(void)
+@@ -7336,7 +7336,10 @@ void migrate_enable(void)
  				    &arg, &work);
  		tlb_migrate_finish(p->mm);
  		__schedule(true);

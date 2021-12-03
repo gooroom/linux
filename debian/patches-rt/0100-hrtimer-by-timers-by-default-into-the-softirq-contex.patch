@@ -1,9 +1,9 @@
-From 1e8e0236163b29043f8139f0dd53308eb3c79728 Mon Sep 17 00:00:00 2001
+From 3747d73a5f0e203ad1fc62f8db8168a86e2a5a75 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 100/342] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -66,7 +66,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 4a8c3f5313f9..db6147b8639f 100644
+index e6e11b598438..d221880a5197 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -88,7 +88,7 @@ index 4a8c3f5313f9..db6147b8639f 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a98288d56f71..e4333cfeed08 100644
+index 3c5999476609..0f949b7738fd 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)

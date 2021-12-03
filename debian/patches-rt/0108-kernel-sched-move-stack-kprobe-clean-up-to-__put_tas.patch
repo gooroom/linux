@@ -1,9 +1,9 @@
-From b1ce6fceddf799ef57cdba182b1e27298f50588d Mon Sep 17 00:00:00 2001
+From c57d78f4c6624a4ec3c7c2582e1f60407ec6286b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
 Subject: [PATCH 108/342] kernel/sched: move stack + kprobe clean up to
  __put_task_struct()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 There is no need to free the stack before the task struct (except for reasons
 mentioned in commit 68f24b08ee89 ("sched/core: Free the stack early if
@@ -46,10 +46,10 @@ index 114ff9724b02..efe690af29f1 100644
  	task_numa_free(tsk, true);
  	security_task_free(tsk);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index c4a289b5fa5b..39db9580e21d 100644
+index 676b9b213991..089779e18440 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2743,15 +2743,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2746,15 +2746,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  		if (prev->sched_class->task_dead)
  			prev->sched_class->task_dead(prev);
  

@@ -1,8 +1,8 @@
-From f6c4ad6c7e92da34ace65fbb7069a5a54a31c54f Mon Sep 17 00:00:00 2001
+From 5e20c65e6f7288802a64d444c4e6e0aa8332e572 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 095/342] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.217-rt95.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.218-rt96.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -320,10 +320,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f07c6f53312a..a98288d56f71 100644
+index 974d92afd23e..3c5999476609 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7154,7 +7154,10 @@ void migrate_disable(void)
+@@ -7157,7 +7157,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -335,7 +335,7 @@ index f07c6f53312a..a98288d56f71 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7184,7 +7187,10 @@ void migrate_enable(void)
+@@ -7187,7 +7190,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
