@@ -1,8 +1,8 @@
-From 33c06e586732f53f92deb32180996614fe2325f5 Mon Sep 17 00:00:00 2001
+From 48e7d037c50485ae8c30f940a2ac3e5ec42bfbd5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
 Subject: [PATCH 047/304] sched: highmem: Store local kmaps in task struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -52,7 +52,7 @@ index 6ceed907b14e..c5a22177db85 100644
  
  #ifdef CONFIG_HIGHMEM
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1cf7938ce643..2083a2d42851 100644
+index aa5ea62bd121..226d6c8a5726 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -34,6 +34,7 @@
@@ -106,7 +106,7 @@ index e289e6773292..59c666d9d43c 100644
  	lockdep_sys_exit();
  }
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 9705439439fe..1d03c4bf4003 100644
+index 3f96400a0ac6..a09c525bfb5f 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -930,6 +930,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)

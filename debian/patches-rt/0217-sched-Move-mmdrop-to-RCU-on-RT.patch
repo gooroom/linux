@@ -1,8 +1,8 @@
-From 61a5e634f693d983cf670bcab085f0f46e174167 Mon Sep 17 00:00:00 2001
+From 2c9de0f1525e6bcf83f4e3e6c931fa013505a1d0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 217/304] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,7 +60,7 @@ index dc1f4dcd9a82..9796cc213b74 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index f61299b86f8e..2a771ce6fba0 100644
+index 55d3f80aedcb..5151541b10b0 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)

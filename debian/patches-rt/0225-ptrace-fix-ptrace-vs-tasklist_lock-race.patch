@@ -1,8 +1,8 @@
-From 9dbdb823bf748090368a75d9d33080e05a1e463c Mon Sep 17 00:00:00 2001
+From 776511ad1071415c2915ae5a7e65b972740324bd Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
 Subject: [PATCH 225/304] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b91001c85982..bd05b8cf4663 100644
+index 65f06d8df50a..bbadf24d4ff1 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -112,12 +112,8 @@ struct io_uring_task;
@@ -47,7 +47,7 @@ index b91001c85982..bd05b8cf4663 100644
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  
  /*
-@@ -1884,6 +1880,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1885,6 +1881,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  

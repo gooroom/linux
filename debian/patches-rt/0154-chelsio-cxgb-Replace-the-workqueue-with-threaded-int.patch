@@ -1,9 +1,9 @@
-From ef3ca08fb992693d4a630ec876ae65addd5bc1ef Mon Sep 17 00:00:00 2001
+From 4af6b19b8a6f9606ef72cb412ec0ebb628e2e007 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 2 Feb 2021 18:01:03 +0100
 Subject: [PATCH 154/304] chelsio: cxgb: Replace the workqueue with threaded
  interrupt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 The external interrupt (F_PL_INTR_EXT) needs to be handled in a process
 context and this is accomplished by utilizing a workqueue.
@@ -60,7 +60,7 @@ index 6475060649e9..e999a9b9fe6c 100644
  int t1_link_start(struct cphy *phy, struct cmac *mac, struct link_config *lc);
  const struct board_info *t1_get_board_info(unsigned int board_id);
 diff --git a/drivers/net/ethernet/chelsio/cxgb/cxgb2.c b/drivers/net/ethernet/chelsio/cxgb/cxgb2.c
-index 0e4a0f413960..bd6f3c532d72 100644
+index c6db85fe1629..737c24136e2f 100644
 --- a/drivers/net/ethernet/chelsio/cxgb/cxgb2.c
 +++ b/drivers/net/ethernet/chelsio/cxgb/cxgb2.c
 @@ -211,9 +211,10 @@ static int cxgb_up(struct adapter *adapter)

@@ -1,8 +1,8 @@
-From d6d8cef32fdac361c0ebf3268eb1200f03c9f80f Mon Sep 17 00:00:00 2001
+From dc85e8e9f4f660867ac0576a1fcbaecd9da04ba5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 172/304] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.65-rt53.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -109,7 +109,7 @@ index b828b938c876..b02009f53026 100644
  #define DEFINE_RT_MUTEX(mutexname) \
  	struct rt_mutex mutexname = __RT_MUTEX_INITIALIZER(mutexname)
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index f8d30d5c85e8..091e439dee31 100644
+index b6e2e287037c..64cb2073d134 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -141,6 +141,9 @@ struct io_uring_task;
@@ -369,7 +369,7 @@ index 000000000000..446da786e5d5
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 1d03c4bf4003..f61299b86f8e 100644
+index a09c525bfb5f..55d3f80aedcb 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -926,6 +926,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
