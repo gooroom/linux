@@ -1,8 +1,7 @@
-From ce7bd4759b7e96bd3a166d4835d642426c44391e Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:13 +0200
-Subject: [PATCH 016/304] sched: Fix migrate_disable() vs rt/dl balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 016/315] sched: Fix migrate_disable() vs rt/dl balancing
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4084323d279f80d4df5f212748f9f9067dd1942c
 
 In order to minimize the interference of migrate_disable() on lower
 priority tasks, which can be deprived of runtime due to being stuck
@@ -86,7 +85,7 @@ index 97ba7c920653..8b43922e65df 100644
   *
   * The reason we have it anyway.
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 85b8afbe8a71..fb8a1e5ca537 100644
+index e6d33a18c6a1..6b8eac7aae77 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -732,8 +732,9 @@ struct task_struct {
@@ -101,7 +100,7 @@ index 85b8afbe8a71..fb8a1e5ca537 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index c6a90a4df947..50a78ae780eb 100644
+index cfaf03d5c301..e9359fa752fc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1772,11 +1772,6 @@ void migrate_enable(void)
@@ -116,7 +115,7 @@ index c6a90a4df947..50a78ae780eb 100644
  static inline bool rq_has_pinned_tasks(struct rq *rq)
  {
  	return rq->nr_pinned;
-@@ -1981,6 +1976,49 @@ static int migration_cpu_stop(void *data)
+@@ -1981,6 +1976,49 @@ out:
  	return 0;
  }
  
@@ -334,7 +333,7 @@ index 37a6758e2b99..d7b33935e22a 100644
  	if (WARN_ON(next_task == rq->curr))
  		return 0;
  
-@@ -1927,12 +1955,10 @@ static int push_rt_task(struct rq *rq)
+@@ -1927,12 +1955,10 @@ retry:
  	deactivate_task(rq, next_task, 0);
  	set_task_cpu(next_task, lowest_rq->cpu);
  	activate_task(lowest_rq, next_task, 0);
@@ -348,7 +347,7 @@ index 37a6758e2b99..d7b33935e22a 100644
  out:
  	put_task_struct(next_task);
  
-@@ -1942,7 +1968,7 @@ static int push_rt_task(struct rq *rq)
+@@ -1942,7 +1968,7 @@ out:
  static void push_rt_tasks(struct rq *rq)
  {
  	/* push_rt_task will return true if it moved an RT */
@@ -491,5 +490,5 @@ index a6f1cbe24ac8..56f18c016a87 100644
  
  #ifdef CONFIG_CPU_IDLE
 -- 
-2.32.0
+2.34.1
 

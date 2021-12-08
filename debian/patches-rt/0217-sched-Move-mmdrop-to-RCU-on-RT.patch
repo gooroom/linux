@@ -1,8 +1,7 @@
-From 2c9de0f1525e6bcf83f4e3e6c931fa013505a1d0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 217/304] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 217/315] sched: Move mmdrop to RCU on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=133cd8f4cbdb6903a4a2fade437d1e7a571b516d
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,7 +59,7 @@ index dc1f4dcd9a82..9796cc213b74 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 55d3f80aedcb..5151541b10b0 100644
+index 2b48627472e6..1bd856a3bbbd 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -84,10 +83,10 @@ index 55d3f80aedcb..5151541b10b0 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 49ceac5b0dce..2756e5605700 100644
+index 7ce9d03dd1d3..84ed4bd81cbe 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4256,9 +4256,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -4260,9 +4260,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -102,7 +101,7 @@ index 49ceac5b0dce..2756e5605700 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -7255,6 +7259,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -7256,6 +7260,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -111,5 +110,5 @@ index 49ceac5b0dce..2756e5605700 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.32.0
+2.34.1
 

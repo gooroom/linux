@@ -1,9 +1,8 @@
-From 0654de75611e7014931d1ce83d4711d02d767510 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:35 +0100
-Subject: [PATCH 046/304] sched: Make migrate_disable/enable() independent of
+Subject: [PATCH 046/315] sched: Make migrate_disable/enable() independent of
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a466d6217d303bd17ae4a6022e01b63f6d0ba657
 
 Now that the scheduler can deal with migrate disable properly, there is no
 real compelling reason to make it only available for RT.
@@ -150,7 +149,7 @@ index 8b43922e65df..6df63cbe8bb0 100644
  
  #endif /* __LINUX_PREEMPT_H */
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index fb8a1e5ca537..aa5ea62bd121 100644
+index 6b8eac7aae77..283336ae8399 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -731,7 +731,7 @@ struct task_struct {
@@ -163,7 +162,7 @@ index fb8a1e5ca537..aa5ea62bd121 100644
  #endif
  	unsigned short			migration_flags;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 950bc889f90a..fbdf0a8a253b 100644
+index 342297ad4f09..6761f53fa3a0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1705,8 +1705,6 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -213,7 +212,7 @@ index 950bc889f90a..fbdf0a8a253b 100644
  
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
-@@ -7891,6 +7883,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
+@@ -7892,6 +7884,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
  	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
  }
  EXPORT_SYMBOL_GPL(__cant_sleep);
@@ -289,5 +288,5 @@ index faaa927ac2c8..1c1dbd300325 100644
  		goto out;
  #endif
 -- 
-2.32.0
+2.34.1
 

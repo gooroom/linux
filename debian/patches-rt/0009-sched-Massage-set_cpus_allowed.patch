@@ -1,8 +1,7 @@
-From 1e34d6462789ebede9e841bb1f52ac4b80edf2e8 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/304] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 009/315] sched: Massage set_cpus_allowed()
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8fc80a4e3b51d49daf43e6ea807403e53c2de0e1
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5e357a930a5a..e98af329adba 100644
+index a23f86cd06d2..16c6341bcb4a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1833,13 +1833,14 @@ static int migration_cpu_stop(void *data)
@@ -85,7 +84,7 @@ index 5e357a930a5a..e98af329adba 100644
  
  	if (p->flags & PF_KTHREAD) {
  		/*
-@@ -1956,7 +1963,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1956,7 +1963,7 @@ out:
  
  int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
  {
@@ -104,7 +103,7 @@ index 5e357a930a5a..e98af329adba 100644
  {
  	return set_cpus_allowed_ptr(p, new_mask);
  }
-@@ -6002,7 +6010,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+@@ -6006,7 +6014,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
  	}
  #endif
  again:
@@ -113,7 +112,7 @@ index 5e357a930a5a..e98af329adba 100644
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6581,7 +6589,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
+@@ -6582,7 +6590,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -171,5 +170,5 @@ index a2b7bcf406ca..ff5785a28b2f 100644
  #endif
  
 -- 
-2.32.0
+2.34.1
 

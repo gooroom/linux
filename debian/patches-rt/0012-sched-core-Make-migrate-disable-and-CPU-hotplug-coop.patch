@@ -1,9 +1,8 @@
-From 7ccdc5a2308caf3da6c4f36893a9ef2e30d23e85 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:09 +0200
-Subject: [PATCH 012/304] sched/core: Make migrate disable and CPU hotplug
+Subject: [PATCH 012/315] sched/core: Make migrate disable and CPU hotplug
  cooperative
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f8fcf34861dd2a88101b639295535943ddf534ab
 
 On CPU unplug tasks which are in a migrate disabled region cannot be pushed
 to a different CPU until they returned to migrateable state.
@@ -20,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 34 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 12023fd217b9..f4a46a2139ab 100644
+index eea759a433e9..7f587c37d928 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1730,10 +1730,17 @@ static void migrate_disable_switch(struct rq *rq, struct task_struct *p)
@@ -75,7 +74,7 @@ index 12023fd217b9..f4a46a2139ab 100644
  #endif
  
  static void
-@@ -7055,15 +7073,20 @@ static void balance_push(struct rq *rq)
+@@ -7056,15 +7074,20 @@ static void balance_push(struct rq *rq)
  	 * Both the cpu-hotplug and stop task are in this case and are
  	 * required to complete the hotplug process.
  	 */
@@ -98,7 +97,7 @@ index 12023fd217b9..f4a46a2139ab 100644
  			raw_spin_unlock(&rq->lock);
  			rcuwait_wake_up(&rq->hotplug_wait);
  			raw_spin_lock(&rq->lock);
-@@ -7110,7 +7133,8 @@ static void balance_hotplug_wait(void)
+@@ -7111,7 +7134,8 @@ static void balance_hotplug_wait(void)
  {
  	struct rq *rq = this_rq();
  
@@ -108,7 +107,7 @@ index 12023fd217b9..f4a46a2139ab 100644
  			   TASK_UNINTERRUPTIBLE);
  }
  
-@@ -7355,7 +7379,7 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7356,7 +7380,7 @@ int sched_cpu_dying(unsigned int cpu)
  	sched_tick_stop(cpu);
  
  	rq_lock_irqsave(rq, &rf);
@@ -133,5 +132,5 @@ index 770630807684..a6f1cbe24ac8 100644
  
  #ifdef CONFIG_FAIR_GROUP_SCHED
 -- 
-2.32.0
+2.34.1
 

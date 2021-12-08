@@ -1,8 +1,7 @@
-From 75e5fe8527dad2572b88a8c85e83cc7c30fca3d4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:08:15 +0100
-Subject: [PATCH 207/304] slub: Enable irqs for __GFP_WAIT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 207/315] slub: Enable irqs for __GFP_WAIT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7daf9433c8f1b7993b7632019fe5ea407a5b3d6c
 
 SYSTEM_RUNNING might be too late for enabling interrupts. Allocations
 with GFP_WAIT can happen before that. So use this as an indicator.
@@ -18,10 +17,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 17 insertions(+), 1 deletion(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index e277df3925c8..da20831cff01 100644
+index 0718562d909b..d90d8f9fc0d8 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
-@@ -1743,10 +1743,18 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1750,10 +1750,18 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	void *start, *p, *next;
  	int idx;
  	bool shuffle;
@@ -40,7 +39,7 @@ index e277df3925c8..da20831cff01 100644
  		local_irq_enable();
  
  	flags |= s->allocflags;
-@@ -1805,7 +1813,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
+@@ -1812,7 +1820,7 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
  	page->frozen = 1;
  
  out:
@@ -49,7 +48,7 @@ index e277df3925c8..da20831cff01 100644
  		local_irq_disable();
  	if (!page)
  		return NULL;
-@@ -2863,6 +2871,10 @@ static __always_inline void *slab_alloc_node(struct kmem_cache *s,
+@@ -2870,6 +2878,10 @@ static __always_inline void *slab_alloc_node(struct kmem_cache *s,
  	unsigned long tid;
  	struct obj_cgroup *objcg = NULL;
  
@@ -60,7 +59,7 @@ index e277df3925c8..da20831cff01 100644
  	s = slab_pre_alloc_hook(s, &objcg, 1, gfpflags);
  	if (!s)
  		return NULL;
-@@ -3329,6 +3341,10 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
+@@ -3338,6 +3350,10 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
  	int i;
  	struct obj_cgroup *objcg = NULL;
  
@@ -72,5 +71,5 @@ index e277df3925c8..da20831cff01 100644
  	s = slab_pre_alloc_hook(s, &objcg, size, flags);
  	if (unlikely(!s))
 -- 
-2.32.0
+2.34.1
 

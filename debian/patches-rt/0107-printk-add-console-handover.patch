@@ -1,8 +1,7 @@
-From 2e9472de8a0953a4593463168be9b4e4db15b0a9 Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:09 +0106
-Subject: [PATCH 107/304] printk: add console handover
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 107/315] printk: add console handover
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=dd5db04f632734126220158f51fb54730e236c0d
 
 If earlyprintk is used, a boot console will print directly to the
 console immediately. The boot console will unregister itself as soon
@@ -26,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/console.h b/include/linux/console.h
-index 8b97a3e8f1ec..e6ff51883dee 100644
+index 3e99359e0660..027278792eea 100644
 --- a/include/linux/console.h
 +++ b/include/linux/console.h
 @@ -138,6 +138,7 @@ static inline int con_debug_leave(void)
@@ -38,7 +37,7 @@ index 8b97a3e8f1ec..e6ff51883dee 100644
  struct console {
  	char	name[16];
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index f5fd3e1671fe..18e3aabb2c5b 100644
+index 7edf05647258..d3b115cef544 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -1727,6 +1727,8 @@ static bool console_can_sync(struct console *con)
@@ -59,7 +58,7 @@ index f5fd3e1671fe..18e3aabb2c5b 100644
  	else if (con->write && (con->flags & CON_BOOT) && !con->thread)
  		con->write(con, text, text_len);
  	else
-@@ -2823,8 +2827,10 @@ void register_console(struct console *newcon)
+@@ -2830,8 +2834,10 @@ void register_console(struct console *newcon)
  	 * the real console are the same physical device, it's annoying to
  	 * see the beginning boot messages twice
  	 */
@@ -72,5 +71,5 @@ index f5fd3e1671fe..18e3aabb2c5b 100644
  	/*
  	 *	Put this console in the list - keep the
 -- 
-2.32.0
+2.34.1
 

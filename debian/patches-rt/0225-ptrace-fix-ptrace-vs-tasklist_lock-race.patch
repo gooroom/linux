@@ -1,8 +1,7 @@
-From 776511ad1071415c2915ae5a7e65b972740324bd Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 225/304] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 225/315] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=92143f26302595c1e4137428d5508b4ad031f065
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +30,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 65f06d8df50a..bbadf24d4ff1 100644
+index 35aa59506b1c..80b6bb7588d1 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -112,12 +112,8 @@ struct io_uring_task;
@@ -120,10 +119,10 @@ index eb4d04cb3aaf..258b599b7158 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 938fc8449706..7658ebeb3bc5 100644
+index b2671307cca8..d675e6a07dba 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2582,6 +2582,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
+@@ -2582,6 +2582,18 @@ out:
  }
  #endif /* CONFIG_NUMA_BALANCING */
  
@@ -162,5 +161,5 @@ index 938fc8449706..7658ebeb3bc5 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.32.0
+2.34.1
 

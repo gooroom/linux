@@ -1,8 +1,7 @@
-From dc85e8e9f4f660867ac0576a1fcbaecd9da04ba5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 172/304] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Subject: [PATCH 172/315] locking/rtmutex: add sleeping lock implementation
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ae20f5e25bd118c80d7c58f8199c234e761d954a
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -109,7 +108,7 @@ index b828b938c876..b02009f53026 100644
  #define DEFINE_RT_MUTEX(mutexname) \
  	struct rt_mutex mutexname = __RT_MUTEX_INITIALIZER(mutexname)
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b6e2e287037c..64cb2073d134 100644
+index b8328f252a1f..9228d805e988 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -141,6 +141,9 @@ struct io_uring_task;
@@ -369,7 +368,7 @@ index 000000000000..446da786e5d5
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index a09c525bfb5f..55d3f80aedcb 100644
+index ad6f613b7276..2b48627472e6 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -926,6 +926,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -410,7 +409,7 @@ index c2fe58c34409..b2b275bc1958 100644
  
  	return ret;
  }
-@@ -2857,7 +2859,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2857,7 +2859,7 @@ retry_private:
  		goto no_block;
  	}
  
@@ -564,7 +563,7 @@ index e59243a6d7f4..7a38472b35ec 100644
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -922,6 +958,289 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
+@@ -922,6 +958,289 @@ takeit:
  	return 1;
  }
  
@@ -1140,7 +1139,7 @@ index 9d1e974ca9c3..c1a280167e3c 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b7ca5238d567..590f24fbebf2 100644
+index 7a80d641316e..f3f8b7aa7552 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -510,9 +510,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1222,5 +1221,5 @@ index b7ca5238d567..590f24fbebf2 100644
  	}
  }
 -- 
-2.32.0
+2.34.1
 

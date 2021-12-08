@@ -1,9 +1,8 @@
-From 3e44a72168687c92635c9ae3b6b9fa4ec55d7328 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 171/304] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 171/315] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.73-rt54.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2df01b0e4a0c05aaa8041a9205c236cbde51022b
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -19,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 36 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index abf6aea996c3..b6e2e287037c 100644
+index ebae8a6f59ea..b8328f252a1f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -663,6 +663,8 @@ struct task_struct {
@@ -40,10 +39,10 @@ index abf6aea996c3..b6e2e287037c 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7e56007b24de..b7ca5238d567 100644
+index b447298cde7e..7a80d641316e 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3293,7 +3293,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+@@ -3296,7 +3296,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
  	int cpu, success = 0;
  
  	preempt_disable();
@@ -52,7 +51,7 @@ index 7e56007b24de..b7ca5238d567 100644
  		/*
  		 * We're waking current, this means 'p->on_rq' and 'task_cpu(p)
  		 * == smp_processor_id()'. Together this means we can special
-@@ -3323,8 +3323,26 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+@@ -3326,8 +3326,26 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
  	 */
  	raw_spin_lock_irqsave(&p->pi_lock, flags);
  	smp_mb__after_spinlock();
@@ -80,7 +79,7 @@ index 7e56007b24de..b7ca5238d567 100644
  
  	trace_sched_waking(p);
  
-@@ -3513,6 +3531,18 @@ int wake_up_process(struct task_struct *p)
+@@ -3516,6 +3534,18 @@ int wake_up_process(struct task_struct *p)
  }
  EXPORT_SYMBOL(wake_up_process);
  
@@ -112,5 +111,5 @@ index c70213172d3e..9bfd2e1a6f28 100644
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
 -- 
-2.32.0
+2.34.1
 
