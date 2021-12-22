@@ -1,7 +1,8 @@
+From 966303f71fa46f28008b289da8ccf7e0f164594a Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 8 Jan 2017 09:32:25 +0100
 Subject: [PATCH 260/315] cpuset: Convert callback_lock to raw_spinlock_t
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b65e0f609f484a0f7497c0d2b709a2365eed3223
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 The two commits below add up to a cpuset might_sleep() splat for RT:
 
@@ -260,7 +261,7 @@ index 1999fcec45c7..2c27d80ac59f 100644
  
  	if (cpus_updated)
  		update_tasks_cpumask(cs);
-@@ -3088,10 +3088,10 @@ retry:
+@@ -3088,10 +3088,10 @@ static void cpuset_hotplug_update_tasks(struct cpuset *cs, struct tmpmasks *tmp)
  	if (is_partition_root(cs) && (cpumask_empty(&new_cpus) ||
  	   (parent->partition_root_state == PRS_ERROR))) {
  		if (cs->nr_subparts_cpus) {
@@ -273,7 +274,7 @@ index 1999fcec45c7..2c27d80ac59f 100644
  			compute_effective_cpumask(&new_cpus, cs, parent);
  		}
  
-@@ -3105,9 +3105,9 @@ retry:
+@@ -3105,9 +3105,9 @@ static void cpuset_hotplug_update_tasks(struct cpuset *cs, struct tmpmasks *tmp)
  		     cpumask_empty(&new_cpus)) {
  			update_parent_subparts_cpumask(cs, partcmd_disable,
  						       NULL, tmp);
@@ -361,5 +362,5 @@ index 1999fcec45c7..2c27d80ac59f 100644
  }
  
 -- 
-2.34.1
+2.33.1
 

@@ -1,10 +1,11 @@
+From 443c661ff8ef5817615baaa370cfcef7e4060884 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 3 Feb 2021 11:05:23 -0500
 Subject: [PATCH 076/315] tracing: Merge irqflags + preempt counter.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9e9d463852627c4edec6a93699ac5941f10bec5c
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 The state of the interrupts (irqflags) and the preemption counter are
 both passed down to tracing_generic_entry_update(). Only one bit of
@@ -151,7 +152,7 @@ index b89ff188a618..b3afd103b3aa 100644
  		if (!event)
  			return;
  		t = ring_buffer_event_data(event);
-@@ -107,7 +107,7 @@ record_it:
+@@ -107,7 +107,7 @@ static void trace_note(struct blk_trace *bt, pid_t pid, int action,
  		memcpy((void *) t + sizeof(*t) + cgid_len, data, len);
  
  		if (blk_tracer)
@@ -184,7 +185,7 @@ index b89ff188a618..b3afd103b3aa 100644
  		if (!event)
  			return;
  		t = ring_buffer_event_data(event);
-@@ -301,7 +302,7 @@ record_it:
+@@ -301,7 +302,7 @@ static void __blk_add_trace(struct blk_trace *bt, sector_t sector, int bytes,
  			memcpy((void *)t + sizeof(*t) + cgid_len, pdu_data, pdu_len);
  
  		if (blk_tracer) {
@@ -1337,7 +1338,7 @@ index ee4571b624bc..f11add83c108 100644
  
  	if (data->critical_sequence != max_sequence)
  		goto out_unlock;
-@@ -363,16 +364,15 @@ out_unlock:
+@@ -363,16 +364,15 @@ check_critical_timing(struct trace_array *tr,
  out:
  	data->critical_sequence = max_sequence;
  	data->preempt_timestamp = ftrace_now(cpu);
@@ -1895,5 +1896,5 @@ index 9900d4e3808c..7be4f5d673a6 100644
  
  /* uprobe handler */
 -- 
-2.34.1
+2.33.1
 

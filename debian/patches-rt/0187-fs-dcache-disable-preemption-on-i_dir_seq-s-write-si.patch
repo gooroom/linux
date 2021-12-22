@@ -1,8 +1,9 @@
+From 27e978231f26acfb3d2246fcc16848193741e676 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 20 Oct 2017 11:29:53 +0200
 Subject: [PATCH 187/315] fs/dcache: disable preemption on i_dir_seq's write
  side
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1648d43f1fa605d20528fffa3984f482a862411f
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 i_dir_seq is an opencoded seqcounter. Based on the code it looks like we
 could have two writers in parallel despite the fact that the d_lock is
@@ -58,7 +59,7 @@ index 1f4255ef8722..26a187abf13a 100644
  	r_seq = read_seqbegin(&rename_lock);
  	dentry = __d_lookup_rcu(parent, name, &d_seq);
  	if (unlikely(dentry)) {
-@@ -2577,7 +2579,7 @@ retry:
+@@ -2577,7 +2579,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
  	}
  
  	hlist_bl_lock(b);
@@ -94,5 +95,5 @@ index 42d246a94228..5b8759dad560 100644
  
  	__u32			i_generation;
 -- 
-2.34.1
+2.33.1
 

@@ -1,7 +1,8 @@
+From df4de4aec4c3c970294cb19156e6c02948eba834 Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Tue, 26 Jan 2021 17:43:19 +0106
 Subject: [PATCH 092/315] printk: remove logbuf_lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d8fd5bee735739eb1c3260a2d4f590a325f9dbec
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Since the ringbuffer is lockless, there is no need for it to be
 protected by @logbuf_lock. Remove @logbuf_lock.
@@ -281,7 +282,7 @@ index c3edac824428..0b679290f693 100644
  		break;
  	/* Size of the log buffer */
  	case SYSLOG_ACTION_SIZE_BUFFER:
-@@ -2628,7 +2594,6 @@ again:
+@@ -2628,7 +2594,6 @@ void console_unlock(void)
  		size_t len;
  
  		printk_safe_enter_irqsave(flags);
@@ -289,7 +290,7 @@ index c3edac824428..0b679290f693 100644
  skip:
  		if (!prb_read_valid(prb, console_seq, &r))
  			break;
-@@ -2672,7 +2637,6 @@ skip:
+@@ -2672,7 +2637,6 @@ void console_unlock(void)
  				console_msg_format & MSG_FORMAT_SYSLOG,
  				printk_time);
  		console_seq++;
@@ -297,7 +298,7 @@ index c3edac824428..0b679290f693 100644
  
  		/*
  		 * While actively printing out messages, if another printk()
-@@ -2699,8 +2663,6 @@ skip:
+@@ -2699,8 +2663,6 @@ void console_unlock(void)
  
  	console_locked = 0;
  
@@ -306,7 +307,7 @@ index c3edac824428..0b679290f693 100644
  	up_console_sem();
  
  	/*
-@@ -2709,9 +2671,7 @@ skip:
+@@ -2709,9 +2671,7 @@ void console_unlock(void)
  	 * there's a new owner and the console_unlock() from them will do the
  	 * flush, no worries.
  	 */
@@ -481,5 +482,5 @@ index 2e9e3ed7d63e..7df8a88d4115 100644
  		return vprintk_nmi(fmt, args);
  
 -- 
-2.34.1
+2.33.1
 

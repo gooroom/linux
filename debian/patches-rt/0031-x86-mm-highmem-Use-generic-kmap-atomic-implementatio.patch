@@ -1,8 +1,9 @@
+From 69f1c8b3b25daba0125391a2f9ee25e36705e8de Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:20 +0100
 Subject: [PATCH 031/315] x86/mm/highmem: Use generic kmap atomic
  implementation
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b57a0d3f97c81f5c0d6bc55161baf7dc3601a2f0
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Convert X86 to the generic kmap atomic implementation and make the
 iomap_atomic() naming convention consistent while at it.
@@ -27,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  delete mode 100644 arch/x86/include/asm/kmap_types.h
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index a853ed7240ee..f200596caed7 100644
+index fb873a7bb65c..2dfc9ff57feb 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -15,6 +15,7 @@ config X86_32
@@ -155,7 +156,7 @@ index 04ab8266e347..000000000000
 -
 -#endif /* _ASM_X86_KMAP_TYPES_H */
 diff --git a/arch/x86/include/asm/paravirt_types.h b/arch/x86/include/asm/paravirt_types.h
-index 0fad9f61c76a..b6b02b7c19cc 100644
+index 903d71884fa2..130f428b0cc8 100644
 --- a/arch/x86/include/asm/paravirt_types.h
 +++ b/arch/x86/include/asm/paravirt_types.h
 @@ -41,7 +41,6 @@
@@ -240,7 +241,7 @@ diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
 index 7c055259de3a..da31c2635ee4 100644
 --- a/arch/x86/mm/init_32.c
 +++ b/arch/x86/mm/init_32.c
-@@ -394,19 +394,6 @@ repeat:
+@@ -394,19 +394,6 @@ kernel_physical_mapping_init(unsigned long start,
  	return last_map_addr;
  }
  
@@ -384,5 +385,5 @@ index 67d2d5983cb0..77677c6844f7 100644
  #endif
  #endif
 -- 
-2.34.1
+2.33.1
 

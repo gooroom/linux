@@ -1,7 +1,8 @@
+From e3450ebc3a370a3496369c8f77e5c67a7b0fbbee Mon Sep 17 00:00:00 2001
 From: "Ahmed S. Darwish" <a.darwish@linutronix.de>
 Date: Thu, 28 Jan 2021 20:48:02 +0100
 Subject: [PATCH 133/315] net: arcnet: Fix RESET flag handling
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=61899076f613637c8c14ee0b534c349464cd1f56
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 The main arcnet interrupt handler calls arcnet_close() then
 arcnet_open(), if the RESET status flag is encountered.
@@ -287,7 +288,7 @@ diff --git a/drivers/net/arcnet/com90xx.c b/drivers/net/arcnet/com90xx.c
 index 3dc3d533cb19..d8dfb9ea0de8 100644
 --- a/drivers/net/arcnet/com90xx.c
 +++ b/drivers/net/arcnet/com90xx.c
-@@ -554,7 +554,7 @@ err_free_irq:
+@@ -554,7 +554,7 @@ static int __init com90xx_found(int ioaddr, int airq, u_long shmem,
  err_release_mem:
  	release_mem_region(dev->mem_start, dev->mem_end - dev->mem_start + 1);
  err_free_dev:
@@ -306,5 +307,5 @@ index 3dc3d533cb19..d8dfb9ea0de8 100644
  }
  
 -- 
-2.34.1
+2.33.1
 

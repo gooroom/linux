@@ -1,7 +1,8 @@
+From 8ebbec2810e8501317ae8f99815200b8b72c3fbf Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 217/315] sched: Move mmdrop to RCU on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=133cd8f4cbdb6903a4a2fade437d1e7a571b516d
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -83,7 +84,7 @@ index 2b48627472e6..1bd856a3bbbd 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7ce9d03dd1d3..84ed4bd81cbe 100644
+index 910746b80327..94b6be76cc01 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4260,9 +4260,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -110,5 +111,5 @@ index 7ce9d03dd1d3..84ed4bd81cbe 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.34.1
+2.33.1
 

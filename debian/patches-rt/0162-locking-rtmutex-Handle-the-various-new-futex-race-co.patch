@@ -1,8 +1,9 @@
+From e1d30843480906056edb4e467e03cb31fd4ca443 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 10 Jun 2011 11:04:15 +0200
 Subject: [PATCH 162/315] locking/rtmutex: Handle the various new futex race
  conditions
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=76c32d45f547c0a50909e905955a50d3cd0f278a
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 RT opens a few new interesting race conditions in the rtmutex/futex
 combo due to futex hash bucket lock being a 'sleeping' spinlock and
@@ -19,7 +20,7 @@ diff --git a/kernel/futex.c b/kernel/futex.c
 index 98a6e1b80bfe..c2fe58c34409 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2155,6 +2155,16 @@ retry_private:
+@@ -2155,6 +2155,16 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  				 */
  				requeue_pi_wake_futex(this, &key2, hb2);
  				continue;
@@ -250,5 +251,5 @@ index b1455dc2366f..096b16cfb096 100644
  extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  				       struct task_struct *proxy_owner);
 -- 
-2.34.1
+2.33.1
 

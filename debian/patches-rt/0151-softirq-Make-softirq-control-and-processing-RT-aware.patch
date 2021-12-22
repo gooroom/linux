@@ -1,7 +1,8 @@
+From 316b9e98bed81acdc83885f3fb1020d9aee56cf2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:55:56 +0100
 Subject: [PATCH 151/315] softirq: Make softirq control and processing RT aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=68061f9d399e302e7f61096cbd95be1c773ba9b9
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Provide a local lock based serialization for soft interrupts on RT which
 allows the local_bh_disabled() sections and servicing soft interrupts to be
@@ -249,7 +250,7 @@ index 87fac6ac0c32..ed13f6097de8 100644
  /*
   * We restart softirq processing for at most MAX_SOFTIRQ_RESTART times,
   * but break the loop if need_resched() is set or after 2 ms.
-@@ -379,8 +551,10 @@ restart:
+@@ -379,8 +551,10 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
  		pending >>= softirq_bit;
  	}
  
@@ -262,5 +263,5 @@ index 87fac6ac0c32..ed13f6097de8 100644
  
  	pending = local_softirq_pending();
 -- 
-2.34.1
+2.33.1
 

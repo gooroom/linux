@@ -1,7 +1,8 @@
+From 775f50f18d7c357efb4fde624cc097b182e3231b Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:05 +0106
 Subject: [PATCH 103/315] printk: change @console_seq to atomic64_t
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=074c3fc0ec7a5f69e88e1ad8b8ab7b80f1007a56
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 In preparation for atomic printing, change @console_seq to atomic
 so that it can be accessed without requiring @console_sem.
@@ -50,7 +51,7 @@ index a28e4b9985d4..aedda5277eab 100644
  
  	if (console_suspended) {
  		up_console_sem();
-@@ -2628,12 +2630,14 @@ again:
+@@ -2628,12 +2630,14 @@ void console_unlock(void)
  		size_t len;
  
  skip:
@@ -69,7 +70,7 @@ index a28e4b9985d4..aedda5277eab 100644
  		}
  
  		if (suppress_message_printing(r.info->level)) {
-@@ -2642,13 +2646,13 @@ skip:
+@@ -2642,13 +2646,13 @@ void console_unlock(void)
  			 * directly to the console when we received it, and
  			 * record that has level above the console loglevel.
  			 */
@@ -85,7 +86,7 @@ index a28e4b9985d4..aedda5277eab 100644
  			exclusive_console = NULL;
  		}
  
-@@ -2669,7 +2673,7 @@ skip:
+@@ -2669,7 +2673,7 @@ void console_unlock(void)
  		len = record_print_text(&r,
  				console_msg_format & MSG_FORMAT_SYSLOG,
  				printk_time);
@@ -94,7 +95,7 @@ index a28e4b9985d4..aedda5277eab 100644
  
  		/*
  		 * While actively printing out messages, if another printk()
-@@ -2700,7 +2704,7 @@ skip:
+@@ -2700,7 +2704,7 @@ void console_unlock(void)
  	 * there's a new owner and the console_unlock() from them will do the
  	 * flush, no worries.
  	 */
@@ -127,5 +128,5 @@ index a28e4b9985d4..aedda5277eab 100644
  	}
  	console_unlock();
 -- 
-2.34.1
+2.33.1
 

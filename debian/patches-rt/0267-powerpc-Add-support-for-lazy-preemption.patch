@@ -1,7 +1,8 @@
+From f43b3d4514fffeae0f6e4fc93e18a0ab64d3def1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
 Subject: [PATCH 267/315] powerpc: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=046890be10a151b16aa3eae6c7d6b5c13c1ce5af
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -226,7 +227,7 @@ diff --git a/arch/powerpc/kernel/syscall_64.c b/arch/powerpc/kernel/syscall_64.c
 index 310bcd768cd5..ae3212dcf562 100644
 --- a/arch/powerpc/kernel/syscall_64.c
 +++ b/arch/powerpc/kernel/syscall_64.c
-@@ -193,7 +193,7 @@ again:
+@@ -193,7 +193,7 @@ notrace unsigned long syscall_exit_prepare(unsigned long r3,
  	ti_flags = READ_ONCE(*ti_flagsp);
  	while (unlikely(ti_flags & (_TIF_USER_WORK_MASK & ~_TIF_RESTORE_TM))) {
  		local_irq_enable();
@@ -235,7 +236,7 @@ index 310bcd768cd5..ae3212dcf562 100644
  			schedule();
  		} else {
  			/*
-@@ -277,7 +277,7 @@ again:
+@@ -277,7 +277,7 @@ notrace unsigned long interrupt_exit_user_prepare(struct pt_regs *regs, unsigned
  	ti_flags = READ_ONCE(*ti_flagsp);
  	while (unlikely(ti_flags & (_TIF_USER_WORK_MASK & ~_TIF_RESTORE_TM))) {
  		local_irq_enable(); /* returning to user: may enable */
@@ -262,5 +263,5 @@ index 310bcd768cd5..ae3212dcf562 100644
  		}
  
 -- 
-2.34.1
+2.33.1
 

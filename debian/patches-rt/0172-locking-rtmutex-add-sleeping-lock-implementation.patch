@@ -1,7 +1,8 @@
+From 4849e4068bda632d8db50e32a784567fa51fe839 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 172/315] locking/rtmutex: add sleeping lock implementation
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ae20f5e25bd118c80d7c58f8199c234e761d954a
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -409,7 +410,7 @@ index c2fe58c34409..b2b275bc1958 100644
  
  	return ret;
  }
-@@ -2857,7 +2859,7 @@ retry_private:
+@@ -2857,7 +2859,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		goto no_block;
  	}
  
@@ -563,7 +564,7 @@ index e59243a6d7f4..7a38472b35ec 100644
  			/*
  			 * The current top waiter stays enqueued. We
  			 * don't have to change anything in the lock
-@@ -922,6 +958,289 @@ takeit:
+@@ -922,6 +958,289 @@ static int try_to_take_rt_mutex(struct rt_mutex *lock, struct task_struct *task,
  	return 1;
  }
  
@@ -1139,7 +1140,7 @@ index 9d1e974ca9c3..c1a280167e3c 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7a80d641316e..f3f8b7aa7552 100644
+index a9ddccc7aa6f..be02beb39b26 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -510,9 +510,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1221,5 +1222,5 @@ index 7a80d641316e..f3f8b7aa7552 100644
  	}
  }
 -- 
-2.34.1
+2.33.1
 

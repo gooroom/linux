@@ -1,8 +1,9 @@
+From 8890b88f63a2b81567bf8f183b23fa43c0e21dd9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 30 Mar 2016 13:36:29 +0200
 Subject: [PATCH 241/315] net: dev: always take qdisc's busylock in
  __dev_xmit_skb()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9b00e83f1dc8cc82994bd33e0ffb4826b994420c
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
 
 The root-lock is dropped before dev_hard_start_xmit() is invoked and after
 setting the __QDISC___STATE_RUNNING bit. If this task is now pushed away
@@ -21,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 1e77964898b0..dd3c12f9e446 100644
+index 9c78176263a9..f33a447d9d1f 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3788,7 +3788,11 @@ static inline int __dev_xmit_skb(struct sk_buff *skb, struct Qdisc *q,
@@ -37,5 +38,5 @@ index 1e77964898b0..dd3c12f9e446 100644
  		spin_lock(&q->busylock);
  
 -- 
-2.34.1
+2.33.1
 
