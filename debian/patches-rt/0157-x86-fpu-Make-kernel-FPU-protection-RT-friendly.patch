@@ -1,8 +1,8 @@
-From 673240253535f1fd2e33cdcb31729b1b23ae5a02 Mon Sep 17 00:00:00 2001
+From 86f0b3d868f3763055d4c5e619bd27686155fedf Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 27 Oct 2020 11:09:51 +0100
 Subject: [PATCH 157/315] x86/fpu: Make kernel FPU protection RT friendly
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 Non RT kernels need to protect FPU against preemption and bottom half
 processing. This is achieved by disabling bottom halfs via
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 16 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/include/asm/fpu/api.h b/arch/x86/include/asm/fpu/api.h
-index 5174c0a640ef..ad2fee785310 100644
+index 5174c0a640ef3..ad2fee7853108 100644
 --- a/arch/x86/include/asm/fpu/api.h
 +++ b/arch/x86/include/asm/fpu/api.h
 @@ -43,15 +43,29 @@ static inline void kernel_fpu_begin(void)

@@ -1,8 +1,8 @@
-From 9731d04db882b80c96c31bc630e80a859b8b5566 Mon Sep 17 00:00:00 2001
+From 389574285e05e6c92bcd152e08906531471eb9c3 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:55:55 +0100
 Subject: [PATCH 150/315] softirq: Move various protections into inline helpers
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 To allow reuse of the bulk of softirq processing code for RT and to avoid
 #ifdeffery all over the place, split protections for various code sections
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 32 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index fcb201ceed71..87fac6ac0c32 100644
+index fcb201ceed712..87fac6ac0c32e 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -205,6 +205,32 @@ void __local_bh_enable_ip(unsigned long ip, unsigned int cnt)

@@ -1,8 +1,8 @@
-From 5facaf16e0d6092c14cf38242ed7ff45ac227e6e Mon Sep 17 00:00:00 2001
+From 190ed9bced01d635d92a5e54e829c0fa85ece9b9 Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 197/315] signal/x86: Delay calling signals in atomic
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 53 insertions(+)
 
 diff --git a/arch/x86/include/asm/signal.h b/arch/x86/include/asm/signal.h
-index 6fd8410a3910..f3bf2f515edb 100644
+index 6fd8410a3910c..f3bf2f515edb3 100644
 --- a/arch/x86/include/asm/signal.h
 +++ b/arch/x86/include/asm/signal.h
 @@ -28,6 +28,19 @@ typedef struct {
@@ -64,7 +64,7 @@ index 6fd8410a3910..f3bf2f515edb 100644
  typedef sigset_t compat_sigset_t;
  #endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 9228d805e988..35aa59506b1c 100644
+index 9228d805e988e..35aa59506b1cf 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1002,6 +1002,10 @@ struct task_struct {
@@ -79,7 +79,7 @@ index 9228d805e988..35aa59506b1c 100644
  	size_t				sas_ss_size;
  	unsigned int			sas_ss_flags;
 diff --git a/kernel/entry/common.c b/kernel/entry/common.c
-index 59c666d9d43c..c4e495b04178 100644
+index 59c666d9d43c7..c4e495b04178e 100644
 --- a/kernel/entry/common.c
 +++ b/kernel/entry/common.c
 @@ -152,6 +152,14 @@ static unsigned long exit_to_user_mode_loop(struct pt_regs *regs,
@@ -98,7 +98,7 @@ index 59c666d9d43c..c4e495b04178 100644
  			uprobe_notify_resume(regs);
  
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 0ea1f857963d..a97a07f7cab0 100644
+index 0ea1f857963dc..a97a07f7cab0c 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -1314,6 +1314,34 @@ force_sig_info_to_task(struct kernel_siginfo *info, struct task_struct *t)

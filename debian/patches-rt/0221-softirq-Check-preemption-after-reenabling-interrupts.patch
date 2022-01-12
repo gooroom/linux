@@ -1,8 +1,8 @@
-From 067acfc514d969445d5754dcb68fad0db32b00ee Mon Sep 17 00:00:00 2001
+From 33429279a88f4c9e979cc692dd8ec221240dac8d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100
 Subject: [PATCH 221/315] softirq: Check preemption after reenabling interrupts
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -21,7 +21,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 15 insertions(+)
 
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 5ceac863e729..fb140e00f74d 100644
+index 5ceac863e7298..fb140e00f74dc 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -190,8 +190,10 @@ do { \
@@ -44,7 +44,7 @@ index 5ceac863e729..fb140e00f74d 100644
  
  #endif /* CONFIG_PREEMPT_COUNT */
 diff --git a/lib/irq_poll.c b/lib/irq_poll.c
-index 2f17b488d58e..7557bf7ecf1f 100644
+index 2f17b488d58e1..7557bf7ecf1f1 100644
 --- a/lib/irq_poll.c
 +++ b/lib/irq_poll.c
 @@ -37,6 +37,7 @@ void irq_poll_sched(struct irq_poll *iop)
@@ -88,7 +88,7 @@ index 2f17b488d58e..7557bf7ecf1f 100644
  	return 0;
  }
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 60cf3cd0c282..9f097a57a4fa 100644
+index 60cf3cd0c282f..9f097a57a4fa9 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3050,6 +3050,7 @@ static void __netif_reschedule(struct Qdisc *q)

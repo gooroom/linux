@@ -1,8 +1,8 @@
-From 80e216be7de9578452cae484f3b26430ad9b1a73 Mon Sep 17 00:00:00 2001
+From 508676511dade0dbba963472faaff0bd445d4b61 Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: [PATCH 268/315] arch/arm64: Add lazy preempt support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -22,7 +22,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  6 files changed, 44 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 5e5cf3af6351..048f50fbcf89 100644
+index 3da71fe56b922..4237866fce271 100644
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
 @@ -173,6 +173,7 @@ config ARM64
@@ -34,7 +34,7 @@ index 5e5cf3af6351..048f50fbcf89 100644
  	select HAVE_FUNCTION_ARG_ACCESS_API
  	select HAVE_FUTEX_CMPXCHG if FUTEX
 diff --git a/arch/arm64/include/asm/preempt.h b/arch/arm64/include/asm/preempt.h
-index f1486b32502c..7a5770d825b9 100644
+index f1486b32502c1..7a5770d825b91 100644
 --- a/arch/arm64/include/asm/preempt.h
 +++ b/arch/arm64/include/asm/preempt.h
 @@ -70,13 +70,36 @@ static inline bool __preempt_count_dec_and_test(void)
@@ -76,7 +76,7 @@ index f1486b32502c..7a5770d825b9 100644
  
  #ifdef CONFIG_PREEMPTION
 diff --git a/arch/arm64/include/asm/thread_info.h b/arch/arm64/include/asm/thread_info.h
-index 1fbab854a51b..148b53dc2840 100644
+index 1fbab854a51b0..148b53dc2840e 100644
 --- a/arch/arm64/include/asm/thread_info.h
 +++ b/arch/arm64/include/asm/thread_info.h
 @@ -29,6 +29,7 @@ struct thread_info {
@@ -112,7 +112,7 @@ index 1fbab854a51b..148b53dc2840 100644
  				 _TIF_SYSCALL_TRACEPOINT | _TIF_SECCOMP | \
  				 _TIF_SYSCALL_EMU)
 diff --git a/arch/arm64/kernel/asm-offsets.c b/arch/arm64/kernel/asm-offsets.c
-index 7d32fc959b1a..b2f29bd2ae87 100644
+index 7d32fc959b1a0..b2f29bd2ae871 100644
 --- a/arch/arm64/kernel/asm-offsets.c
 +++ b/arch/arm64/kernel/asm-offsets.c
 @@ -30,6 +30,7 @@ int main(void)
@@ -124,7 +124,7 @@ index 7d32fc959b1a..b2f29bd2ae87 100644
  #ifdef CONFIG_ARM64_SW_TTBR0_PAN
    DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
 diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
-index fe83d6d67ec3..cd2fc5556c8d 100644
+index fe83d6d67ec3d..cd2fc5556c8db 100644
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
 @@ -515,9 +515,18 @@ alternative_if ARM64_HAS_IRQ_PRIO_MASKING
@@ -149,7 +149,7 @@ index fe83d6d67ec3..cd2fc5556c8d 100644
  
  	mov	x0, sp
 diff --git a/arch/arm64/kernel/signal.c b/arch/arm64/kernel/signal.c
-index e62005317ce2..fe94a3e1f849 100644
+index e62005317ce29..fe94a3e1f849b 100644
 --- a/arch/arm64/kernel/signal.c
 +++ b/arch/arm64/kernel/signal.c
 @@ -919,7 +919,7 @@ asmlinkage void do_notify_resume(struct pt_regs *regs,

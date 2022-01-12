@@ -1,8 +1,8 @@
-From bb4c7ba4d64b2ba421ec9564df6d67a603bbd3b6 Mon Sep 17 00:00:00 2001
+From c4d9241f2d2e664531e151555b958b63e174e082 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 18:51:23 +0200
 Subject: [PATCH 251/315] lockdep: Make it RT aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 teach lockdep that we don't really do softirqs on -RT.
 
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 17 insertions(+), 8 deletions(-)
 
 diff --git a/include/linux/irqflags.h b/include/linux/irqflags.h
-index 3ed4e8771b64..a437b2e70d37 100644
+index 3ed4e8771b64e..a437b2e70d379 100644
 --- a/include/linux/irqflags.h
 +++ b/include/linux/irqflags.h
 @@ -71,14 +71,6 @@ do {						\
@@ -54,7 +54,7 @@ index 3ed4e8771b64..a437b2e70d37 100644
  	defined(CONFIG_PREEMPT_TRACER)
   extern void stop_critical_timings(void);
 diff --git a/kernel/locking/lockdep.c b/kernel/locking/lockdep.c
-index 1f6a2f1226fa..cfd0164f8188 100644
+index 1f6a2f1226fa9..cfd0164f81889 100644
 --- a/kernel/locking/lockdep.c
 +++ b/kernel/locking/lockdep.c
 @@ -5410,6 +5410,7 @@ static noinstr void check_flags(unsigned long flags)

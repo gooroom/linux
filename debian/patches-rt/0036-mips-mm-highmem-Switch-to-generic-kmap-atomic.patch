@@ -1,8 +1,8 @@
-From 710a7be956d0cbed4d1178b137d99afa4c96209a Mon Sep 17 00:00:00 2001
+From bf5877d0ccd79a9702a9f226bf0d6447cd54c2f4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:25 +0100
 Subject: [PATCH 036/315] mips/mm/highmem: Switch to generic kmap atomic
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.87-rt59.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 No reason having the same code in every architecture
 
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  delete mode 100644 arch/mips/include/asm/kmap_types.h
 
 diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 23d756fe0fd6..4ea224e9add2 100644
+index 23d756fe0fd6c..4ea224e9add20 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -2726,6 +2726,7 @@ config WAR_MIPS34K_MISSED_ITLB
@@ -33,7 +33,7 @@ index 23d756fe0fd6..4ea224e9add2 100644
  config CPU_SUPPORTS_HIGHMEM
  	bool
 diff --git a/arch/mips/include/asm/fixmap.h b/arch/mips/include/asm/fixmap.h
-index 743535be7528..beea14761cef 100644
+index 743535be7528c..beea14761cef0 100644
 --- a/arch/mips/include/asm/fixmap.h
 +++ b/arch/mips/include/asm/fixmap.h
 @@ -17,7 +17,7 @@
@@ -55,7 +55,7 @@ index 743535be7528..beea14761cef 100644
  	__end_of_fixed_addresses
  };
 diff --git a/arch/mips/include/asm/highmem.h b/arch/mips/include/asm/highmem.h
-index 9f021cf51aa7..1716181ea66d 100644
+index 9f021cf51aa71..1716181ea66dd 100644
 --- a/arch/mips/include/asm/highmem.h
 +++ b/arch/mips/include/asm/highmem.h
 @@ -24,7 +24,7 @@
@@ -83,7 +83,7 @@ index 9f021cf51aa7..1716181ea66d 100644
  
 diff --git a/arch/mips/include/asm/kmap_types.h b/arch/mips/include/asm/kmap_types.h
 deleted file mode 100644
-index 16665dc2431b..000000000000
+index 16665dc2431b6..0000000000000
 --- a/arch/mips/include/asm/kmap_types.h
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -101,7 +101,7 @@ index 16665dc2431b..000000000000
 -
 -#endif
 diff --git a/arch/mips/mm/highmem.c b/arch/mips/mm/highmem.c
-index 5fec7f45d79a..57e2f08f00d0 100644
+index 5fec7f45d79a8..57e2f08f00d0c 100644
 --- a/arch/mips/mm/highmem.c
 +++ b/arch/mips/mm/highmem.c
 @@ -8,8 +8,6 @@
@@ -193,7 +193,7 @@ index 5fec7f45d79a..57e2f08f00d0 100644
 -	kmap_pte = virt_to_kpte(kmap_vstart);
 -}
 diff --git a/arch/mips/mm/init.c b/arch/mips/mm/init.c
-index 07e84a774938..bc80893e5c0f 100644
+index 07e84a7749387..bc80893e5c0f8 100644
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
 @@ -36,7 +36,6 @@
