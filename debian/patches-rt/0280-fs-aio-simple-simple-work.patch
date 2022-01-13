@@ -1,8 +1,8 @@
-From d523b7d20f4b161fe9281fa361404d3c79cca874 Mon Sep 17 00:00:00 2001
+From 679a045e45d01189383c798292f65a440ace1248 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 16 Feb 2015 18:49:10 +0100
 Subject: [PATCH 280/342] fs/aio: simple simple work
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.219-rt97.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
 
 [ Upstream commit 1a142116f6435ef070ecebb66d2d599507c10601 ]
 
@@ -33,7 +33,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/fs/aio.c b/fs/aio.c
-index 413ec289bfa1..5b3462fb3433 100644
+index 9635c29b83da..303e85033965 100644
 --- a/fs/aio.c
 +++ b/fs/aio.c
 @@ -121,6 +121,7 @@ struct kioctx {
@@ -44,7 +44,7 @@ index 413ec289bfa1..5b3462fb3433 100644
  
  	/*
  	 * signals when all in-flight requests are done
-@@ -607,9 +608,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
+@@ -608,9 +609,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
   * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
   * now it's safe to cancel any that need to be.
   */
@@ -56,7 +56,7 @@ index 413ec289bfa1..5b3462fb3433 100644
  	struct aio_kiocb *req;
  
  	spin_lock_irq(&ctx->ctx_lock);
-@@ -627,6 +628,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
+@@ -628,6 +629,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
  	percpu_ref_put(&ctx->reqs);
  }
  

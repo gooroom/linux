@@ -1,8 +1,8 @@
-From 7ca1145aefd12a58e493e623f96d4aa680b7edd1 Mon Sep 17 00:00:00 2001
+From 9884947102b0e09271d2770a4992b9c204057318 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 8 Jan 2013 21:36:51 +0100
 Subject: [PATCH 165/342] tty/serial/pl011: Make the locking work on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.219-rt97.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the optimsation
 we are looking for. Redo it to make it work on -RT and non-RT.
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 10 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 1306ce5c5d9b..f9103eb566d0 100644
+index 3d63e9a71c37..fcce3c5f8702 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
 @@ -2217,13 +2217,19 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)

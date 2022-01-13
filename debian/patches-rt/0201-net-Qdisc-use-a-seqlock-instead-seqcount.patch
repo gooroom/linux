@@ -1,8 +1,8 @@
-From 0c1a3834955e1919b4a5ccdf45381c2da5a0a391 Mon Sep 17 00:00:00 2001
+From 4b1223e3263e1a54308d933acff5f1126248a965 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 201/342] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.219-rt97.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -106,7 +106,7 @@ index 000000000000..a7034298a82a
 +
 +#endif
 diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index 286bc674a6e7..1c5e2d8ff63b 100644
+index c0147888b155..bc5b077710da 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -10,6 +10,7 @@
@@ -126,7 +126,7 @@ index 286bc674a6e7..1c5e2d8ff63b 100644
  	struct gnet_stats_queue	qstats;
  	unsigned long		state;
  	struct Qdisc            *next_sched;
-@@ -121,7 +122,11 @@ static inline bool qdisc_is_running(struct Qdisc *qdisc)
+@@ -135,7 +136,11 @@ static inline bool qdisc_is_running(struct Qdisc *qdisc)
  {
  	if (qdisc->flags & TCQ_F_NOLOCK)
  		return spin_is_locked(&qdisc->seqlock);
@@ -138,7 +138,7 @@ index 286bc674a6e7..1c5e2d8ff63b 100644
  }
  
  static inline bool qdisc_run_begin(struct Qdisc *qdisc)
-@@ -132,17 +137,27 @@ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
+@@ -146,17 +151,27 @@ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
  	} else if (qdisc_is_running(qdisc)) {
  		return false;
  	}
@@ -166,7 +166,7 @@ index 286bc674a6e7..1c5e2d8ff63b 100644
  	if (qdisc->flags & TCQ_F_NOLOCK)
  		spin_unlock(&qdisc->seqlock);
  }
-@@ -461,7 +476,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
+@@ -475,7 +490,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
  	return qdisc_lock(root);
  }
  
@@ -242,10 +242,10 @@ index e2fd8baec65f..8bab88738691 100644
  		      struct gnet_stats_basic_cpu __percpu *cpu,
  		      struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 0bb4f7a94a3c..6f869575ced1 100644
+index af035431bec6..b40b960c34fc 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1173,7 +1173,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+@@ -1191,7 +1191,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
  		rcu_assign_pointer(sch->stab, stab);
  	}
  	if (tca[TCA_RATE]) {
@@ -255,7 +255,7 @@ index 0bb4f7a94a3c..6f869575ced1 100644
  		err = -EOPNOTSUPP;
  		if (sch->flags & TCQ_F_MQROOT) {
 diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index 19b33640baec..cd7904bd3527 100644
+index c5ca0b2f9f90..76b63e0acd9d 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
 @@ -576,7 +576,11 @@ struct Qdisc noop_qdisc = {

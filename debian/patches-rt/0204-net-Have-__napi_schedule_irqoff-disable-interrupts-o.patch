@@ -1,9 +1,9 @@
-From 9682072104bc27e51206479f1a8316ba8b6c9c82 Mon Sep 17 00:00:00 2001
+From 3c7c787f5c3b362ab197f708d2c60fe98d0438d7 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
 Subject: [PATCH 204/342] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.219-rt97.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index b35a946350ef..7fc6a6298e16 100644
+index a77b679ba87c..7b34ce34114a 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -423,7 +423,19 @@ typedef enum rx_handler_result rx_handler_result_t;
@@ -53,10 +53,10 @@ index b35a946350ef..7fc6a6298e16 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b7bd7bfbec18..68e6ba170d3d 100644
+index 7c59fa4d3ecf..e65dc7a7cc13 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5950,6 +5950,7 @@ bool napi_schedule_prep(struct napi_struct *n)
+@@ -5953,6 +5953,7 @@ bool napi_schedule_prep(struct napi_struct *n)
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -64,7 +64,7 @@ index b7bd7bfbec18..68e6ba170d3d 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5968,6 +5969,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5971,6 +5972,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  		__napi_schedule(n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);

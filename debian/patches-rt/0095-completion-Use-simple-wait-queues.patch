@@ -1,8 +1,8 @@
-From e781532f5c5ae437d4f19cca8123d6698b4a9157 Mon Sep 17 00:00:00 2001
+From 2221b1c0d902ea70ab9860af691f5bca0a1b59a1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
 Subject: [PATCH 095/342] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.219-rt97.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -55,7 +55,7 @@ index a04d59843022..e0046c35a0bd 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index e6805492409f..cd0a9eee4cf9 100644
+index f07008212474..0e5ce7b6f7ea 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
 @@ -1626,7 +1626,7 @@ static void ffs_data_put(struct ffs_data *ffs)
@@ -68,10 +68,10 @@ index e6805492409f..cd0a9eee4cf9 100644
  		destroy_workqueue(ffs->io_completion_wq);
  		kfree(ffs->dev_name);
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index 09ed5f02c24f..84094164f8ad 100644
+index a456267b6b78..adb84b0bdd64 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
-@@ -343,7 +343,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
+@@ -345,7 +345,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
  	spin_unlock_irq (&epdata->dev->lock);
  
  	if (likely (value == 0)) {
@@ -80,7 +80,7 @@ index 09ed5f02c24f..84094164f8ad 100644
  		if (value != 0) {
  			spin_lock_irq (&epdata->dev->lock);
  			if (likely (epdata->ep != NULL)) {
-@@ -352,7 +352,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
+@@ -354,7 +354,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
  				usb_ep_dequeue (epdata->ep, epdata->req);
  				spin_unlock_irq (&epdata->dev->lock);
  
