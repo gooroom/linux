@@ -1,7 +1,8 @@
+From cc241f9c369fcc15bf862462ff57a8f5d9677db3 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:37 -0500
 Subject: [PATCH 205/315] mm: page_alloc: rt-friendly per-cpu pages
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f0930b56b0b7a972fad34b46299a7e9851da1c5a
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 rt-friendly per-cpu pages: convert the irqs-off per-cpu locking
 method into a preemptible, explicit-per-cpu-locks method.
@@ -17,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 28 insertions(+), 19 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 1099910971d7..25023e20fe17 100644
+index 1099910971d78..25023e20fe17d 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -61,6 +61,7 @@
@@ -164,7 +165,7 @@ index 1099910971d7..25023e20fe17 100644
  
  out:
  	/* Separate test+clear to avoid unnecessary atomics */
-@@ -3549,7 +3558,7 @@ out:
+@@ -3549,7 +3558,7 @@ struct page *rmqueue(struct zone *preferred_zone,
  	return page;
  
  failed:
@@ -192,5 +193,5 @@ index 1099910971d7..25023e20fe17 100644
  
  #ifdef CONFIG_MEMORY_HOTREMOVE
 -- 
-2.34.1
+2.33.1
 

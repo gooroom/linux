@@ -1,7 +1,8 @@
+From 7c37535f4b3de712519cb6138d54dbf6364ee8cf Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
 Subject: [PATCH 200/315] mm/SLxB: change list_lock to raw_spinlock_t
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3a9dee009b6490a3e5fbbd878ff9058fe1ce91c2
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -18,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 71 insertions(+), 71 deletions(-)
 
 diff --git a/mm/slab.c b/mm/slab.c
-index b2cc2cf7d8a3..677c0651ef66 100644
+index b2cc2cf7d8a33..677c0651ef669 100644
 --- a/mm/slab.c
 +++ b/mm/slab.c
 @@ -233,7 +233,7 @@ static void kmem_cache_node_init(struct kmem_cache_node *parent)
@@ -317,7 +318,7 @@ index b2cc2cf7d8a3..677c0651ef66 100644
  	if (n->shared) {
  		struct array_cache *shared_array = n->shared;
  		int max = shared_array->limit - shared_array->avail;
-@@ -3402,7 +3402,7 @@ free_done:
+@@ -3402,7 +3402,7 @@ static void cache_flusharray(struct kmem_cache *cachep, struct array_cache *ac)
  		STATS_SET_FREEABLE(cachep, i);
  	}
  #endif
@@ -369,7 +370,7 @@ index b2cc2cf7d8a3..677c0651ef66 100644
  	num_objs = total_slabs * cachep->num;
  	active_slabs = total_slabs - free_slabs;
 diff --git a/mm/slab.h b/mm/slab.h
-index 6952e10cf33b..ed5dd6e9e0cc 100644
+index 6952e10cf33b4..ed5dd6e9e0cca 100644
 --- a/mm/slab.h
 +++ b/mm/slab.h
 @@ -543,7 +543,7 @@ static inline void slab_post_alloc_hook(struct kmem_cache *s,
@@ -382,7 +383,7 @@ index 6952e10cf33b..ed5dd6e9e0cc 100644
  #ifdef CONFIG_SLAB
  	struct list_head slabs_partial;	/* partial list first, better asm code */
 diff --git a/mm/slub.c b/mm/slub.c
-index 1384dc906833..2b2e623007ca 100644
+index 1384dc9068337..2b2e623007ca9 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1214,7 +1214,7 @@ static noinline int free_debug_processing(
@@ -394,7 +395,7 @@ index 1384dc906833..2b2e623007ca 100644
  	slab_lock(page);
  
  	if (s->flags & SLAB_CONSISTENCY_CHECKS) {
-@@ -1249,7 +1249,7 @@ out:
+@@ -1249,7 +1249,7 @@ static noinline int free_debug_processing(
  			 bulk_cnt, cnt);
  
  	slab_unlock(page);
@@ -421,7 +422,7 @@ index 1384dc906833..2b2e623007ca 100644
  	return object;
  }
  
-@@ -2246,7 +2246,7 @@ redo:
+@@ -2246,7 +2246,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
  			 * that acquire_slab() will see a slab page that
  			 * is frozen
  			 */
@@ -430,7 +431,7 @@ index 1384dc906833..2b2e623007ca 100644
  		}
  	} else {
  		m = M_FULL;
-@@ -2258,7 +2258,7 @@ redo:
+@@ -2258,7 +2258,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
  			 * slabs from diagnostic functions will not see
  			 * any frozen slabs.
  			 */
@@ -439,7 +440,7 @@ index 1384dc906833..2b2e623007ca 100644
  		}
  #endif
  	}
-@@ -2283,7 +2283,7 @@ redo:
+@@ -2283,7 +2283,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page,
  		goto redo;
  
  	if (lock)
@@ -510,7 +511,7 @@ index 1384dc906833..2b2e623007ca 100644
  	return;
  
  slab_empty:
-@@ -3072,7 +3072,7 @@ slab_empty:
+@@ -3072,7 +3072,7 @@ static void __slab_free(struct kmem_cache *s, struct page *page,
  		remove_full(s, n, page);
  	}
  
@@ -598,5 +599,5 @@ index 1384dc906833..2b2e623007ca 100644
  
  	for (i = 0; i < t.count; i++) {
 -- 
-2.34.1
+2.33.1
 

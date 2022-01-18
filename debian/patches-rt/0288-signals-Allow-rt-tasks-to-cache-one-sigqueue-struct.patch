@@ -1,7 +1,8 @@
+From 9db8a9663a385b328ec360298086b4fcc23a745d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
 Subject: [PATCH 288/315] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f2f13e3cc211497e0cb0af11ceac8d6e8a081257
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -16,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 69 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 2f0c1dddb375..409a24036952 100644
+index 2f0c1dddb375d..409a24036952c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -993,6 +993,7 @@ struct task_struct {
@@ -28,7 +29,7 @@ index 2f0c1dddb375..409a24036952 100644
  	sigset_t			real_blocked;
  	/* Restored if set_restore_sigmask() was used: */
 diff --git a/include/linux/signal.h b/include/linux/signal.h
-index b256f9c65661..ebf6c515a7b2 100644
+index b256f9c65661c..ebf6c515a7b20 100644
 --- a/include/linux/signal.h
 +++ b/include/linux/signal.h
 @@ -265,6 +265,7 @@ static inline void init_sigpending(struct sigpending *sig)
@@ -40,7 +41,7 @@ index b256f9c65661..ebf6c515a7b2 100644
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
 diff --git a/kernel/exit.c b/kernel/exit.c
-index d13d67fc5f4e..f5933bd07932 100644
+index d13d67fc5f4e2..f5933bd07932f 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -152,7 +152,7 @@ static void __exit_signal(struct task_struct *tsk)
@@ -53,7 +54,7 @@ index d13d67fc5f4e..f5933bd07932 100644
  	spin_unlock(&sighand->siglock);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index a666ddb00cce..bc8f048b2dca 100644
+index a666ddb00cce2..bc8f048b2dca2 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -2026,6 +2026,7 @@ static __latent_entropy struct task_struct *copy_process(
@@ -65,7 +66,7 @@ index a666ddb00cce..bc8f048b2dca 100644
  	p->utime = p->stime = p->gtime = 0;
  #ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
 diff --git a/kernel/signal.c b/kernel/signal.c
-index a97a07f7cab0..b584e5ac9317 100644
+index a97a07f7cab0c..b584e5ac9317c 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -20,6 +20,7 @@
@@ -178,7 +179,7 @@ index a97a07f7cab0..b584e5ac9317 100644
  /*
   * Flush all pending signals for this kthread.
   */
-@@ -594,7 +652,7 @@ still_pending:
+@@ -594,7 +652,7 @@ static void collect_signal(int sig, struct sigpending *list, kernel_siginfo_t *i
  			(info->si_code == SI_TIMER) &&
  			(info->si_sys_private);
  
@@ -207,5 +208,5 @@ index a97a07f7cab0..b584e5ac9317 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.34.1
+2.33.1
 

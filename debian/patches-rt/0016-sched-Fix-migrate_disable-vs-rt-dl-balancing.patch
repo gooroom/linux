@@ -1,7 +1,8 @@
+From 7481a17d3f9dfde02afe162b4d215100ad81ce58 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:13 +0200
 Subject: [PATCH 016/315] sched: Fix migrate_disable() vs rt/dl balancing
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4084323d279f80d4df5f212748f9f9067dd1942c
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 In order to minimize the interference of migrate_disable() on lower
 priority tasks, which can be deprived of runtime due to being stuck
@@ -34,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 186 insertions(+), 48 deletions(-)
 
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 97ba7c920653..8b43922e65df 100644
+index 97ba7c920653d..8b43922e65dfe 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -325,24 +325,28 @@ static inline void preempt_notifier_init(struct preempt_notifier *notifier,
@@ -85,7 +86,7 @@ index 97ba7c920653..8b43922e65df 100644
   *
   * The reason we have it anyway.
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e6d33a18c6a1..6b8eac7aae77 100644
+index e6d33a18c6a11..6b8eac7aae777 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -732,8 +732,9 @@ struct task_struct {
@@ -100,7 +101,7 @@ index e6d33a18c6a1..6b8eac7aae77 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index cfaf03d5c301..e9359fa752fc 100644
+index 38fb880689f14..3847c7f75baa1 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1772,11 +1772,6 @@ void migrate_enable(void)
@@ -115,7 +116,7 @@ index cfaf03d5c301..e9359fa752fc 100644
  static inline bool rq_has_pinned_tasks(struct rq *rq)
  {
  	return rq->nr_pinned;
-@@ -1981,6 +1976,49 @@ out:
+@@ -1981,6 +1976,49 @@ static int migration_cpu_stop(void *data)
  	return 0;
  }
  
@@ -213,7 +214,7 @@ index cfaf03d5c301..e9359fa752fc 100644
  {
  	return false;
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 7ffbd00d424a..d6153fa4eeb2 100644
+index 7ffbd00d424ae..d6153fa4eeb24 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -2136,6 +2136,9 @@ static int push_dl_task(struct rq *rq)
@@ -286,7 +287,7 @@ index 7ffbd00d424a..d6153fa4eeb2 100644
  
  	.task_tick		= task_tick_dl,
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index 37a6758e2b99..d7b33935e22a 100644
+index 37a6758e2b99b..d7b33935e22ad 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -1859,7 +1859,7 @@ static struct task_struct *pick_next_pushable_task(struct rq *rq)
@@ -333,7 +334,7 @@ index 37a6758e2b99..d7b33935e22a 100644
  	if (WARN_ON(next_task == rq->curr))
  		return 0;
  
-@@ -1927,12 +1955,10 @@ retry:
+@@ -1927,12 +1955,10 @@ static int push_rt_task(struct rq *rq)
  	deactivate_task(rq, next_task, 0);
  	set_task_cpu(next_task, lowest_rq->cpu);
  	activate_task(lowest_rq, next_task, 0);
@@ -347,7 +348,7 @@ index 37a6758e2b99..d7b33935e22a 100644
  out:
  	put_task_struct(next_task);
  
-@@ -1942,7 +1968,7 @@ out:
+@@ -1942,7 +1968,7 @@ static int push_rt_task(struct rq *rq)
  static void push_rt_tasks(struct rq *rq)
  {
  	/* push_rt_task will return true if it moved an RT */
@@ -426,7 +427,7 @@ index 37a6758e2b99..d7b33935e22a 100644
  
  	.task_tick		= task_tick_rt,
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index a6f1cbe24ac8..56f18c016a87 100644
+index a6f1cbe24ac8f..56f18c016a879 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1061,6 +1061,8 @@ struct rq {
@@ -490,5 +491,5 @@ index a6f1cbe24ac8..56f18c016a87 100644
  
  #ifdef CONFIG_CPU_IDLE
 -- 
-2.34.1
+2.33.1
 

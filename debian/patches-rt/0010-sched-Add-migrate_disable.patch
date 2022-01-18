@@ -1,7 +1,8 @@
+From e17464a3788f3b536407cfad83b9d7971652cfc3 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:07 +0200
 Subject: [PATCH 010/315] sched: Add migrate_disable()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6da8d335eaba5d0db3c31717dbea317398df6dfd
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 Add the base migrate_disable() support (under protest).
 
@@ -23,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  5 files changed, 183 insertions(+), 8 deletions(-)
 
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 7d9c1c0e149c..97ba7c920653 100644
+index 7d9c1c0e149c0..97ba7c920653d 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -322,6 +322,69 @@ static inline void preempt_notifier_init(struct preempt_notifier *notifier,
@@ -104,7 +105,7 @@ index 7d9c1c0e149c..97ba7c920653 100644
 +
  #endif /* __LINUX_PREEMPT_H */
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b85b26d9ccef..ce6cfc0b44af 100644
+index b85b26d9ccefe..ce6cfc0b44af8 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -730,6 +730,9 @@ struct task_struct {
@@ -118,7 +119,7 @@ index b85b26d9ccef..ce6cfc0b44af 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 16c6341bcb4a..78bd09038b39 100644
+index 844530ba3c092..2b4cc7fb6df08 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1705,6 +1705,61 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -312,7 +313,7 @@ index 16c6341bcb4a..78bd09038b39 100644
  
  		trace_sched_switch(preempt, prev, next);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index ff5785a28b2f..770630807684 100644
+index ff5785a28b2f4..7706308076844 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1906,14 +1906,16 @@ static inline bool sched_fair_runnable(struct rq *rq)
@@ -335,7 +336,7 @@ index ff5785a28b2f..770630807684 100644
  
  #endif
 diff --git a/lib/smp_processor_id.c b/lib/smp_processor_id.c
-index 525222e4f409..faaa927ac2c8 100644
+index 525222e4f4099..faaa927ac2c8b 100644
 --- a/lib/smp_processor_id.c
 +++ b/lib/smp_processor_id.c
 @@ -26,6 +26,11 @@ unsigned int check_preemption_disabled(const char *what1, const char *what2)
@@ -351,5 +352,5 @@ index 525222e4f409..faaa927ac2c8 100644
  	 * It is valid to assume CPU-locality during early bootup:
  	 */
 -- 
-2.34.1
+2.33.1
 

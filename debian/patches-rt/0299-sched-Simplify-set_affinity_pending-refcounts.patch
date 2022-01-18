@@ -1,7 +1,8 @@
+From 92be624f92fa4b6a9d1d0f9c0e1d2b8a3bb518d2 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Tue, 8 Jun 2021 00:37:35 -0400
 Subject: [PATCH 299/315] sched: Simplify set_affinity_pending refcounts
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4ae7bb1723c2067401bb51cd16b8d1c04d207b6d
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 commit 50caf9c14b1498c90cf808dbba2ca29bd32ccba4 upstream.
 
@@ -23,7 +24,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 20 insertions(+), 12 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b8ca4caae7ad..09e0dc9c3156 100644
+index d6abb1ae6cc7f..c0aec8bd5303c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1909,6 +1909,10 @@ struct migration_arg {
@@ -37,7 +38,7 @@ index b8ca4caae7ad..09e0dc9c3156 100644
  struct set_affinity_pending {
  	refcount_t		refs;
  	unsigned int		stop_pending;
-@@ -2044,10 +2048,6 @@ out:
+@@ -2044,10 +2048,6 @@ static int migration_cpu_stop(void *data)
  	if (complete)
  		complete_all(&pending->done);
  
@@ -104,7 +105,7 @@ index b8ca4caae7ad..09e0dc9c3156 100644
  		if (complete)
  			complete_all(&pending->done);
  	}
-@@ -2342,7 +2347,7 @@ do_complete:
+@@ -2342,7 +2347,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	wait_for_completion(&pending->done);
  
  	if (refcount_dec_and_test(&pending->refs))
@@ -113,7 +114,7 @@ index b8ca4caae7ad..09e0dc9c3156 100644
  
  	/*
  	 * Block the original owner of &pending until all subsequent callers
-@@ -2350,6 +2355,9 @@ do_complete:
+@@ -2350,6 +2355,9 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	 */
  	wait_var_event(&my_pending.refs, !refcount_read(&my_pending.refs));
  
@@ -124,5 +125,5 @@ index b8ca4caae7ad..09e0dc9c3156 100644
  }
  
 -- 
-2.34.1
+2.33.1
 

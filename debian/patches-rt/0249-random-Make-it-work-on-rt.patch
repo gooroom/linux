@@ -1,7 +1,8 @@
+From a3496b1649ad840ce5d23720fbf4265209dbe973 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
 Subject: [PATCH 249/315] random: Make it work on rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=57d212c3a43229878fd45b30aa548a344f9c49b6
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -21,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  8 files changed, 27 insertions(+), 10 deletions(-)
 
 diff --git a/arch/x86/kernel/cpu/mshyperv.c b/arch/x86/kernel/cpu/mshyperv.c
-index 65d11711cd7b..180981654c83 100644
+index 65d11711cd7bb..180981654c835 100644
 --- a/arch/x86/kernel/cpu/mshyperv.c
 +++ b/arch/x86/kernel/cpu/mshyperv.c
 @@ -80,11 +80,12 @@ EXPORT_SYMBOL_GPL(hv_remove_vmbus_irq);
@@ -39,7 +40,7 @@ index 65d11711cd7b..180981654c83 100644
  
  	set_irq_regs(old_regs);
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 340ad21491e2..209220eca36f 100644
+index 340ad21491e28..209220eca36f7 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -1252,28 +1252,27 @@ static __u32 get_reg(struct fast_pool *f, struct pt_regs *regs)
@@ -77,7 +78,7 @@ index 340ad21491e2..209220eca36f 100644
  	fast_mix(fast_pool);
  	add_interrupt_bench(cycles);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 7845fa5de79e..043e058bb27c 100644
+index 7845fa5de79e9..043e058bb27cb 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -19,6 +19,7 @@
@@ -89,7 +90,7 @@ index 7845fa5de79e..043e058bb27c 100644
  #include "hv_trace.h"
  
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index d5cc74ecc582..d0763ea99ded 100644
+index d5cc74ecc582e..d0763ea99ded4 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -22,6 +22,7 @@
@@ -119,7 +120,7 @@ index d5cc74ecc582..d0763ea99ded 100644
  
  /*
 diff --git a/include/linux/irqdesc.h b/include/linux/irqdesc.h
-index 5745491303e0..2b9caf39fb07 100644
+index 5745491303e03..2b9caf39fb075 100644
 --- a/include/linux/irqdesc.h
 +++ b/include/linux/irqdesc.h
 @@ -68,6 +68,7 @@ struct irq_desc {
@@ -131,7 +132,7 @@ index 5745491303e0..2b9caf39fb07 100644
  	struct cpumask		*percpu_enabled;
  	const struct cpumask	*percpu_affinity;
 diff --git a/include/linux/random.h b/include/linux/random.h
-index f45b8be3e3c4..0e41d0527809 100644
+index f45b8be3e3c4e..0e41d05278091 100644
 --- a/include/linux/random.h
 +++ b/include/linux/random.h
 @@ -35,7 +35,7 @@ static inline void add_latent_entropy(void) {}
@@ -144,7 +145,7 @@ index f45b8be3e3c4..0e41d0527809 100644
  extern void get_random_bytes(void *buf, int nbytes);
  extern int wait_for_random_bytes(void);
 diff --git a/kernel/irq/handle.c b/kernel/irq/handle.c
-index 762a928e18f9..7929fcdb7817 100644
+index 762a928e18f92..7929fcdb78174 100644
 --- a/kernel/irq/handle.c
 +++ b/kernel/irq/handle.c
 @@ -192,10 +192,16 @@ irqreturn_t handle_irq_event_percpu(struct irq_desc *desc)
@@ -166,7 +167,7 @@ index 762a928e18f9..7929fcdb7817 100644
  	if (!noirqdebug)
  		note_interrupt(desc, retval);
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 0558f75c0b85..8857ffa6e0e1 100644
+index 0558f75c0b858..8857ffa6e0e14 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
 @@ -1181,6 +1181,12 @@ static int irq_thread(void *data)
@@ -183,5 +184,5 @@ index 0558f75c0b85..8857ffa6e0e1 100644
  	}
  
 -- 
-2.34.1
+2.33.1
 

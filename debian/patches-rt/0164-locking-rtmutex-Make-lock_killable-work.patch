@@ -1,7 +1,8 @@
+From 4c1d84cd3b2c7791e3e3c3aed34fc3c30631b0da Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 1 Apr 2017 12:50:59 +0200
 Subject: [PATCH 164/315] locking/rtmutex: Make lock_killable work
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7c72ad43e816285293867694def42a399edf27f1
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
 
 Locking an rt mutex killable does not work because signal handling is
 restricted to TASK_INTERRUPTIBLE.
@@ -15,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 7 insertions(+), 12 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 17718a5ebdb2..5148a2b49c55 100644
+index 17718a5ebdb2e..5148a2b49c55b 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1197,18 +1197,13 @@ __rt_mutex_slowlock(struct rt_mutex *lock, int state,
@@ -45,5 +46,5 @@ index 17718a5ebdb2..5148a2b49c55 100644
  
  		raw_spin_unlock_irq(&lock->wait_lock);
 -- 
-2.34.1
+2.33.1
 
