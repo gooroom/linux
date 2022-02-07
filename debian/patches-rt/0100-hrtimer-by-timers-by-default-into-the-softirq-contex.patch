@@ -1,9 +1,9 @@
-From 76802a802947b7ba80910958433188c44ff496cb Mon Sep 17 00:00:00 2001
+From 78baac724a89d3aa07d2aded4ec016fa7e0266a0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/342] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/345] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.225-rt101.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.227-rt102.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -130,7 +130,7 @@ index 16940416d526..d804b5443bb9 100644
  	cfs_b->distribute_running = 0;
  }
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index b6ca4a630050..aeb99395c03b 100644
+index 52b55144d8ad..a2f2c6c91e05 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -45,8 +45,8 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
@@ -233,5 +233,5 @@ index 6d60701dc636..328620fe85f6 100644
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
 -- 
-2.33.1
+2.34.1
 
