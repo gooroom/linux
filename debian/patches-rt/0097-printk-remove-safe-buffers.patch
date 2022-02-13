@@ -1,8 +1,8 @@
-From f173da9814d71fb95e309b8016ba817f073466f8 Mon Sep 17 00:00:00 2001
+From 6824b8e995fcbea3ecdcd6e8e1dc100574f9427a Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:00 +0106
-Subject: [PATCH 097/315] printk: remove safe buffers
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
+Subject: [PATCH 097/318] printk: remove safe buffers
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.100-rt62.tar.xz
 
 With @logbuf_lock removed, the high level printk functions for
 storing messages are lockless. Messages can be stored from any
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  9 files changed, 17 insertions(+), 425 deletions(-)
 
 diff --git a/arch/powerpc/kernel/traps.c b/arch/powerpc/kernel/traps.c
-index 77dffea3d5373..fc82a7670d37c 100644
+index 069d451240fa4..c053c5acd6741 100644
 --- a/arch/powerpc/kernel/traps.c
 +++ b/arch/powerpc/kernel/traps.c
 @@ -170,7 +170,6 @@ extern void panic_flush_kmsg_start(void)
@@ -39,10 +39,10 @@ index 77dffea3d5373..fc82a7670d37c 100644
  	bust_spinlocks(0);
  	debug_locks_off();
 diff --git a/arch/powerpc/kernel/watchdog.c b/arch/powerpc/kernel/watchdog.c
-index af3c15a1d41eb..8ae46c5945d07 100644
+index 75b2a6c4db5a5..db40e20d0c54a 100644
 --- a/arch/powerpc/kernel/watchdog.c
 +++ b/arch/powerpc/kernel/watchdog.c
-@@ -181,11 +181,6 @@ static void watchdog_smp_panic(int cpu, u64 tb)
+@@ -185,11 +185,6 @@ static void watchdog_smp_panic(int cpu, u64 tb)
  
  	wd_smp_unlock(&flags);
  
@@ -873,5 +873,5 @@ index 8abe1870dba4e..b09a490f5f706 100644
  	put_cpu();
  }
 -- 
-2.33.1
+2.34.1
 

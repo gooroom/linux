@@ -1,8 +1,8 @@
-From e6a9f87f4d9bb5c7e126f1732cde343e20533b51 Mon Sep 17 00:00:00 2001
+From 7223761a02d826b2bf91467f7a6cdfbf532ae057 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:05 +0200
-Subject: [PATCH 008/315] sched: Fix hotplug vs CPU bandwidth control
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
+Subject: [PATCH 008/318] sched: Fix hotplug vs CPU bandwidth control
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.100-rt62.tar.xz
 
 Since we now migrate tasks away before DYING, we should also move
 bandwidth unthrottle, otherwise we can gain tasks from unthrottle
@@ -77,10 +77,10 @@ index a3ae00c348a8b..a47e32fcd18be 100644
  
  static DEFINE_PER_CPU(struct callback_head, dl_push_head);
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index b5cf418e2e3fe..7aeaa21ee580e 100644
+index 41b14d9242039..0e9a10c500906 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
-@@ -265,7 +265,7 @@ static void pull_rt_task(struct rq *this_rq);
+@@ -270,7 +270,7 @@ static void pull_rt_task(struct rq *this_rq);
  static inline bool need_pull_rt_task(struct rq *rq, struct task_struct *prev)
  {
  	/* Try to pull RT tasks here if we lower this rq's prio */
@@ -90,5 +90,5 @@ index b5cf418e2e3fe..7aeaa21ee580e 100644
  
  static inline int rt_overloaded(struct rq *rq)
 -- 
-2.33.1
+2.34.1
 
