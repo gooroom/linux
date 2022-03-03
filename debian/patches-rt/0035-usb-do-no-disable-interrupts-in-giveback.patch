@@ -1,8 +1,8 @@
-From 17312b00620c2ad9bce37140f50ae05d7821f8e0 Mon Sep 17 00:00:00 2001
+From de2a3301052bf7abd1327a378a60669d401cdc78 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 8 Nov 2013 17:34:54 +0100
 Subject: [PATCH 035/345] usb: do no disable interrupts in giveback
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.227-rt102.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Since commit 94dfd7ed ("USB: HCD: support giveback of URB in tasklet
 context") the USB code disables interrupts before invoking the complete
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 deletions(-)
 
 diff --git a/drivers/usb/core/hcd.c b/drivers/usb/core/hcd.c
-index 11cc189bf105..deaf6d5d40f0 100644
+index df661460e9f9..1a1487d312d0 100644
 --- a/drivers/usb/core/hcd.c
 +++ b/drivers/usb/core/hcd.c
-@@ -1745,7 +1745,6 @@ static void __usb_hcd_giveback_urb(struct urb *urb)
+@@ -1752,7 +1752,6 @@ static void __usb_hcd_giveback_urb(struct urb *urb)
  	struct usb_hcd *hcd = bus_to_hcd(urb->dev->bus);
  	struct usb_anchor *anchor = urb->anchor;
  	int status = urb->unlinked;
@@ -31,7 +31,7 @@ index 11cc189bf105..deaf6d5d40f0 100644
  
  	urb->hcpriv = NULL;
  	if (unlikely((urb->transfer_flags & URB_SHORT_NOT_OK) &&
-@@ -1773,9 +1772,7 @@ static void __usb_hcd_giveback_urb(struct urb *urb)
+@@ -1780,9 +1779,7 @@ static void __usb_hcd_giveback_urb(struct urb *urb)
  	 * and no one may trigger the above deadlock situation when
  	 * running complete() in tasklet.
  	 */

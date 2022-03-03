@@ -1,8 +1,8 @@
-From 3d66e1b8fa952b97beb7417c4454921f54e9bbb5 Mon Sep 17 00:00:00 2001
+From ad3e3fbf06180384a8af0638b50cd8d03aa5ada2 Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Fri, 17 Dec 2021 14:31:31 -0600
 Subject: [PATCH 198/345] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.227-rt102.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -25,7 +25,7 @@ Signed-off-by: Clark Williams <williams@redhat.com>
  3 files changed, 77 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 80b895262675..a77b679ba87c 100644
+index 1057828c82a8..cfb95d1d69b6 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -588,7 +588,11 @@ struct netdev_queue {
@@ -40,7 +40,7 @@ index 80b895262675..a77b679ba87c 100644
  	/*
  	 * Time (in jiffies) of last Tx
  	 */
-@@ -3008,14 +3012,38 @@ static inline void input_queue_tail_incr_save(struct softnet_data *sd,
+@@ -3009,14 +3013,38 @@ static inline void input_queue_tail_incr_save(struct softnet_data *sd,
  #endif
  }
  
@@ -80,7 +80,7 @@ index 80b895262675..a77b679ba87c 100644
  static inline bool dev_xmit_recursion(void)
  {
  	return unlikely(__this_cpu_read(softnet_data.xmit.recursion) >
-@@ -3031,6 +3059,7 @@ static inline void dev_xmit_recursion_dec(void)
+@@ -3032,6 +3060,7 @@ static inline void dev_xmit_recursion_dec(void)
  {
  	__this_cpu_dec(softnet_data.xmit.recursion);
  }
@@ -88,7 +88,7 @@ index 80b895262675..a77b679ba87c 100644
  
  void __netif_schedule(struct Qdisc *q);
  void netif_schedule_queue(struct netdev_queue *txq);
-@@ -3838,6 +3867,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3839,6 +3868,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1U << debug_value) - 1;
  }
  
@@ -133,7 +133,7 @@ index 80b895262675..a77b679ba87c 100644
  static inline void __netif_tx_lock(struct netdev_queue *txq, int cpu)
  {
  	spin_lock(&txq->_xmit_lock);
-@@ -3890,7 +3957,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
+@@ -3891,7 +3958,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
  
  static inline void txq_trans_update(struct netdev_queue *txq)
  {
