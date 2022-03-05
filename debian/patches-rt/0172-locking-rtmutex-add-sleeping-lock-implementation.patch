@@ -1,8 +1,8 @@
-From 56d18da7699a5f39a84159b82c9b87a3da3d29af Mon Sep 17 00:00:00 2001
+From 5321225209796ed995fa92354f9a4642e428d128 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 172/315] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.90-rt60.tar.xz
+Subject: [PATCH 172/318] locking/rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.100-rt62.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -429,7 +429,7 @@ index c2fe58c34409a..b2b275bc1958a 100644
  	ret = get_futex_key(uaddr2, flags & FLAGS_SHARED, &key2, FUTEX_WRITE);
  	if (unlikely(ret != 0))
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index e59243a6d7f49..7a38472b35ec6 100644
+index 40ae934c6caa7..35cdbbb5daa93 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -8,6 +8,11 @@
@@ -929,7 +929,7 @@ index e59243a6d7f49..7a38472b35ec6 100644
  	return true; /* call rt_mutex_postunlock() */
 @@ -1447,9 +1772,11 @@ rt_mutex_fasttrylock(struct rt_mutex *lock,
  /*
-  * Performs the wakeup of the the top-waiter and re-enables preemption.
+  * Performs the wakeup of the top-waiter and re-enables preemption.
   */
 -void rt_mutex_postunlock(struct wake_q_head *wake_q)
 +void rt_mutex_postunlock(struct wake_q_head *wake_q,
@@ -1222,5 +1222,5 @@ index a9ddccc7aa6f6..be02beb39b267 100644
  	}
  }
 -- 
-2.33.1
+2.34.1
 
