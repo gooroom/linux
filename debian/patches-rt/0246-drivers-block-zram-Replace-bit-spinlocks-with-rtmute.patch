@@ -1,9 +1,9 @@
-From 168f2cade78a1d44a71d921acb324a12dbbe2ac6 Mon Sep 17 00:00:00 2001
+From 31fce0e0c5a3c6240b5b921c4ffca798bf6f572f Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
-Subject: [PATCH 246/340] drivers/block/zram: Replace bit spinlocks with
+Subject: [PATCH 246/345] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
 OTOH, they're a lot less wasteful than an rtmutex per page.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 41 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 104206a79501..bf11553b161e 100644
+index 5e05bfcecd7b..04e4297f8318 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -53,6 +53,40 @@ static size_t huge_class_size;
@@ -100,5 +100,5 @@ index d1095dfdffa8..144e91061df8 100644
  	ktime_t ac_time;
  #endif
 -- 
-2.31.1
+2.34.1
 

@@ -1,8 +1,8 @@
-From 70a11aee295813f92108e768cf253b592b323454 Mon Sep 17 00:00:00 2001
+From 4b07716791d6961a8e413819986f103199e67b36 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 107/340] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Subject: [PATCH 107/345] sched: Move mmdrop to RCU on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -84,10 +84,10 @@ index f5a4c42233f0..114ff9724b02 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 74f718d17e67..c4a289b5fa5b 100644
+index 4cc39856c4c6..676b9b213991 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2731,9 +2731,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -2734,9 +2734,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -102,7 +102,7 @@ index 74f718d17e67..c4a289b5fa5b 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -5600,6 +5604,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5603,6 +5607,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -111,5 +111,5 @@ index 74f718d17e67..c4a289b5fa5b 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.31.1
+2.34.1
 

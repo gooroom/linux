@@ -1,8 +1,8 @@
-From 88b5db53759eefd1c4c899cc535247cee3bf5d6d Mon Sep 17 00:00:00 2001
+From 6187d9e646a0c24e3e08ba02f516d7117024c641 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
-Subject: [PATCH 154/340] rtmutex: annotate sleeping lock context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Subject: [PATCH 154/345] rtmutex: annotate sleeping lock context
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -54,7 +54,7 @@ index 27c3176d88d2..9eafc34898b4 100644
  #define migrate_disable()		barrier()
  #define migrate_enable()		barrier()
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 50124bb1a17c..148588bb7137 100644
+index 9e4881099757..12f4a4673036 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -673,6 +673,15 @@ struct task_struct {
@@ -250,10 +250,10 @@ index 5f6de49dc78e..35f3552b7463 100644
  	    !t->rcu_read_unlock_special.b.blocked) {
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 482c1dbb2415..6ca2f8087a2e 100644
+index 9494e2007118..555dea10764e 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7345,4 +7345,49 @@ void migrate_enable(void)
+@@ -7348,4 +7348,49 @@ void migrate_enable(void)
  	preempt_enable();
  }
  EXPORT_SYMBOL(migrate_enable);
@@ -304,5 +304,5 @@ index 482c1dbb2415..6ca2f8087a2e 100644
 +EXPORT_SYMBOL(migrate_enable);
  #endif
 -- 
-2.31.1
+2.34.1
 

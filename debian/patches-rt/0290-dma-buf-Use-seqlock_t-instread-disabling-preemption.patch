@@ -1,8 +1,8 @@
-From 6bc205f47e75e1ebbf3324599ba8425773b9b9b7 Mon Sep 17 00:00:00 2001
+From e1a56298eb3801926d3a2b7b660a4943bc4fe47c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Aug 2019 16:38:43 +0200
-Subject: [PATCH 290/340] dma-buf: Use seqlock_t instread disabling preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Subject: [PATCH 290/345] dma-buf: Use seqlock_t instread disabling preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 [ Upstream commit 240610aa31094f51f299f06eb8dae8d4cd8d4500 ]
 
@@ -227,7 +227,7 @@ index f92597c292fe..10c675850aac 100644
  	/* Drop the references to the removed fences or move them to ef_list */
  	for (i = j, k = 0; i < old->shared_count; ++i) {
 diff --git a/drivers/gpu/drm/i915/i915_gem.c b/drivers/gpu/drm/i915/i915_gem.c
-index c7d05ac7af3c..d484e79316bf 100644
+index 5b0d6d8b3ab8..3fe4a1e93a1a 100644
 --- a/drivers/gpu/drm/i915/i915_gem.c
 +++ b/drivers/gpu/drm/i915/i915_gem.c
 @@ -516,7 +516,7 @@ i915_gem_object_wait_reservation(struct reservation_object *resv,
@@ -251,7 +251,7 @@ index c7d05ac7af3c..d484e79316bf 100644
  				reservation_object_add_excl_fence(resv, NULL);
  			reservation_object_unlock(resv);
  		}
-@@ -4615,7 +4615,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
+@@ -4696,7 +4696,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
  	 *
  	 */
  retry:
@@ -260,7 +260,7 @@ index c7d05ac7af3c..d484e79316bf 100644
  
  	/* Translate the exclusive fence to the READ *and* WRITE engine */
  	args->busy = busy_check_writer(rcu_dereference(obj->resv->fence_excl));
-@@ -4633,7 +4633,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
+@@ -4714,7 +4714,7 @@ i915_gem_busy_ioctl(struct drm_device *dev, void *data,
  		}
  	}
  
@@ -292,5 +292,5 @@ index 02166e815afb..0b31df1af698 100644
  	RCU_INIT_POINTER(obj->fence_excl, NULL);
  	obj->staged = NULL;
 -- 
-2.31.1
+2.34.1
 

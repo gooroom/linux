@@ -1,9 +1,9 @@
-From b9a9b7cfca0e35907ff4c4d91cb61fb3fb7d810a Mon Sep 17 00:00:00 2001
+From b91594110876c01e76706cc1848231693cdef6be Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 26 Jun 2017 17:07:15 +0200
-Subject: [PATCH 114/340] rt: Increase/decrease the nr of migratory tasks when
+Subject: [PATCH 114/345] rt: Increase/decrease the nr of migratory tasks when
  enabling/disabling migration
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 There is a problem in the migrate_disable()/enable() implementation
 regarding the number of migratory tasks in the rt/dl RQs. The problem
@@ -82,10 +82,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 44 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 0915e400eff8..d9e80ccb4dbf 100644
+index dadf92046f01..ba6f445ac9e8 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7176,6 +7176,47 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7179,6 +7179,47 @@ const u32 sched_prio_to_wmult[40] = {
  
  #if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
  
@@ -133,7 +133,7 @@ index 0915e400eff8..d9e80ccb4dbf 100644
  void migrate_disable(void)
  {
  	struct task_struct *p = current;
-@@ -7199,10 +7240,9 @@ void migrate_disable(void)
+@@ -7202,10 +7243,9 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -146,7 +146,7 @@ index 0915e400eff8..d9e80ccb4dbf 100644
  
  	preempt_enable();
  }
-@@ -7234,9 +7274,8 @@ void migrate_enable(void)
+@@ -7237,9 +7277,8 @@ void migrate_enable(void)
  
  	preempt_disable();
  
@@ -158,5 +158,5 @@ index 0915e400eff8..d9e80ccb4dbf 100644
  	if (p->migrate_disable_update) {
  		struct rq *rq;
 -- 
-2.31.1
+2.34.1
 

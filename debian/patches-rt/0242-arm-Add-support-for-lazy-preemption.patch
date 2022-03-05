@@ -1,8 +1,8 @@
-From 159f13524f651df4f9ab614a06c98d7580de1201 Mon Sep 17 00:00:00 2001
+From 17ffe6584591917782ede5c82dbfeeafa98d0846 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 242/340] arm: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Subject: [PATCH 242/345] arm: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
@@ -17,10 +17,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  6 files changed, 33 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 63ca5b08493b..ba7f66d42b3e 100644
+index ec99422059e3..2607cae04885 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -90,6 +90,7 @@ config ARM
+@@ -91,6 +91,7 @@ config ARM
  	select HAVE_PERF_EVENTS
  	select HAVE_PERF_REGS
  	select HAVE_PERF_USER_STACK_DUMP
@@ -81,7 +81,7 @@ index 40afe953a0e2..d634d6f36140 100644
    DEFINE(TI_TASK,		offsetof(struct thread_info, task));
    DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
 diff --git a/arch/arm/kernel/entry-armv.S b/arch/arm/kernel/entry-armv.S
-index 89e551eebff1..4fba92bcebfe 100644
+index cde22c04ad2b..857c9cda90ed 100644
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
 @@ -209,11 +209,18 @@ ENDPROC(__dabt_svc)
@@ -164,5 +164,5 @@ index 1c01358b9b6d..263b0321dc50 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.31.1
+2.34.1
 

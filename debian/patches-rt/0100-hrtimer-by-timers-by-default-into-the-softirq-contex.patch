@@ -1,9 +1,9 @@
-From 49cb2a9a85827f7abcaa6c540f47cdb5f923d8ec Mon Sep 17 00:00:00 2001
+From 4be1e74136e129124f8b2e7e88a0b404db7515cf Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/340] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/345] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -66,7 +66,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 4a8c3f5313f9..db6147b8639f 100644
+index 2adde229d1af..db396b3b1c7e 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -88,7 +88,7 @@ index 4a8c3f5313f9..db6147b8639f 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a98288d56f71..e4333cfeed08 100644
+index 3c5999476609..0f949b7738fd 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)
@@ -130,7 +130,7 @@ index 16940416d526..d804b5443bb9 100644
  	cfs_b->distribute_running = 0;
  }
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index b6ca4a630050..aeb99395c03b 100644
+index 52b55144d8ad..a2f2c6c91e05 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -45,8 +45,8 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
@@ -233,5 +233,5 @@ index 6d60701dc636..328620fe85f6 100644
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
 -- 
-2.31.1
+2.34.1
 

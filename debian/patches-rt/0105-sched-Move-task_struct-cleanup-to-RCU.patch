@@ -1,8 +1,8 @@
-From 4a302b7462358b749616fbb7c2dc1c4da2dd79d2 Mon Sep 17 00:00:00 2001
+From dffc1336c2a8576ad7d056385df46e2152c9a41e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 105/340] sched: Move task_struct cleanup to RCU
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.207-rt88.tar.xz
+Subject: [PATCH 105/345] sched: Move task_struct cleanup to RCU
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index d090eacc56c1..10586984049a 100644
+index a28fe574cf02..8e17a85b3345 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1196,6 +1196,9 @@ struct task_struct {
@@ -29,7 +29,7 @@ index d090eacc56c1..10586984049a 100644
  	unsigned long			task_state_change;
  #endif
 diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
-index 44c6f15800ff..d2b33e57c636 100644
+index 91401309b1aa..5f8c1d53bc11 100644
 --- a/include/linux/sched/task.h
 +++ b/include/linux/sched/task.h
 @@ -90,6 +90,15 @@ extern void sched_exec(void);
@@ -92,5 +92,5 @@ index c27c196fd70e..f5a4c42233f0 100644
  void __init __weak arch_task_cache_init(void) { }
  
 -- 
-2.31.1
+2.34.1
 
