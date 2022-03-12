@@ -1,8 +1,8 @@
-From da0e0d8c7766707851083cd6c1d5a630e3dabbbb Mon Sep 17 00:00:00 2001
+From 63b96eb530addaee48174ea678a37fe1e830ca48 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
 Subject: [PATCH 227/345] random: Make it work on rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -77,10 +77,10 @@ index 12bc9fa21111..278f03f50147 100644
  
  static int hv_ce_set_next_event(unsigned long delta,
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 0699c6018889..cb106e256fc6 100644
+index 51fe219c91fc..0df4a074a806 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -1074,6 +1074,8 @@ static void vmbus_isr(void)
+@@ -1103,6 +1103,8 @@ static void vmbus_isr(void)
  	void *page_addr = hv_cpu->synic_event_page;
  	struct hv_message *msg;
  	union hv_synic_event_flags *event;
@@ -89,7 +89,7 @@ index 0699c6018889..cb106e256fc6 100644
  	bool handled = false;
  
  	if (unlikely(page_addr == NULL))
-@@ -1117,7 +1119,7 @@ static void vmbus_isr(void)
+@@ -1146,7 +1148,7 @@ static void vmbus_isr(void)
  			tasklet_schedule(&hv_cpu->msg_dpc);
  	}
  
@@ -163,5 +163,5 @@ index 5909bcad9023..c21bd00f0cc3 100644
  	}
  
 -- 
-2.34.1
+2.35.1
 

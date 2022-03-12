@@ -1,8 +1,8 @@
-From 42acc25dc02ee76fea185362ae51aac3edf5190c Mon Sep 17 00:00:00 2001
+From f0acf1ac2e9bfa2c825a8a1447cd5ccfcd60734a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 22 Dec 2021 20:35:22 +0100
 Subject: [PATCH 344/345] net: Add missing xmit_lock_owner hunks.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
 
 The patch
 	net: move xmit_recursion to per-task variable on -RT
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 16 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index f2bec9374a84..3d7ecae789d1 100644
+index f2bec9374a84..276b8d1edff8 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -3883,17 +3883,17 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
@@ -61,7 +61,7 @@ index f2bec9374a84..3d7ecae789d1 100644
  static inline bool netdev_queue_has_owner(struct netdev_queue *txq)
  {
 -	if (txq->xmit_lock_owner != -1)
-+	if (READ_ONCE(txq->xmit_lock_owner != -1))
++	if (READ_ONCE(txq->xmit_lock_owner) != -1)
  		return true;
  	return false;
  }
@@ -113,5 +113,5 @@ index f2bec9374a84..3d7ecae789d1 100644
  }
  
 -- 
-2.34.1
+2.35.1
 
