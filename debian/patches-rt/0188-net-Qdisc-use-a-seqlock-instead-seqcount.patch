@@ -1,8 +1,8 @@
-From 7b639ae9b477c343b719960754a6011026dec077 Mon Sep 17 00:00:00 2001
+From 808c1bc3ce242f4125a76192fbb13836543f75d9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 188/318] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.100-rt62.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.104-rt63.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -250,7 +250,7 @@ index e491b083b3485..ef432cea2e105 100644
  			 struct gnet_stats_basic_cpu __percpu *cpu,
  			 struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 7b24582a8a164..99390f2622b84 100644
+index 6e18aa4177828..2d538f14edf8c 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
 @@ -1264,7 +1264,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
@@ -263,7 +263,7 @@ index 7b24582a8a164..99390f2622b84 100644
  		err = -EOPNOTSUPP;
  		if (sch->flags & TCQ_F_MQROOT) {
 diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index b5005abc84ec2..60013a6229e4c 100644
+index 5d5391adb667c..8fe206c7b6889 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
 @@ -578,7 +578,11 @@ struct Qdisc noop_qdisc = {
@@ -295,5 +295,5 @@ index b5005abc84ec2..60013a6229e4c 100644
  	sch->ops = ops;
  	sch->flags = ops->static_flags;
 -- 
-2.34.1
+2.35.1
 
