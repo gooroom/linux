@@ -1,8 +1,8 @@
-From 5ef309fae41b5f7f4589d471075bea83254478e4 Mon Sep 17 00:00:00 2001
+From cf19b93e5f86d038775d03b5ecd73c87ef295675 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
 Subject: [PATCH 288/318] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.100-rt62.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 69 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 2f0c1dddb375d..409a24036952c 100644
+index e27ae033502b8..f2dd5bef24ab4 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -993,6 +993,7 @@ struct task_struct {
@@ -54,7 +54,7 @@ index d13d67fc5f4e2..f5933bd07932f 100644
  	spin_unlock(&sighand->siglock);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index a666ddb00cce2..bc8f048b2dca2 100644
+index d69da05337fd3..bcb558beb8579 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -2026,6 +2026,7 @@ static __latent_entropy struct task_struct *copy_process(
@@ -208,5 +208,5 @@ index a97a07f7cab0c..b584e5ac9317c 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.34.1
+2.35.1
 
