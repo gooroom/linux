@@ -1,8 +1,8 @@
-From 1b413ee3a4f5b84d19969c4bff4e9202fcbe6b76 Mon Sep 17 00:00:00 2001
+From cecfcb63554788c1d1152ae906b42b06d847e636 Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: [PATCH 244/345] arch/arm64: Add lazy preempt support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -21,7 +21,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  5 files changed, 17 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
-index 1daefa57e274..76e12718c547 100644
+index a101f5d2fbed..84f53dc1a75b 100644
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
 @@ -141,6 +141,7 @@ config ARM64
@@ -84,10 +84,10 @@ index 92fba851ce53..844c71bc865b 100644
  #ifdef CONFIG_ARM64_SW_TTBR0_PAN
    DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
 diff --git a/arch/arm64/kernel/entry.S b/arch/arm64/kernel/entry.S
-index 5f800384cb9a..b582580c8c4c 100644
+index 85433a84783b..201f412b556e 100644
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
-@@ -623,11 +623,16 @@ ENDPROC(el1_sync)
+@@ -634,11 +634,16 @@ ENDPROC(el1_sync)
  
  #ifdef CONFIG_PREEMPT
  	ldr	w24, [tsk, #TSK_TI_PREEMPT]	// get preempt count
@@ -107,7 +107,7 @@ index 5f800384cb9a..b582580c8c4c 100644
  #endif
  #ifdef CONFIG_TRACE_IRQFLAGS
  	bl	trace_hardirqs_on
-@@ -641,6 +646,7 @@ ENDPROC(el1_irq)
+@@ -652,6 +657,7 @@ ENDPROC(el1_irq)
  1:	bl	preempt_schedule_irq		// irq en/disable is done inside
  	ldr	x0, [tsk, #TSK_TI_FLAGS]	// get new tasks TI_FLAGS
  	tbnz	x0, #TIF_NEED_RESCHED, 1b	// needs rescheduling?
