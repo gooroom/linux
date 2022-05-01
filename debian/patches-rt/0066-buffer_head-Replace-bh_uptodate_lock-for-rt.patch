@@ -15,11 +15,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  include/linux/buffer_head.h | 34 ++++++++++++++++++++++++++++++++++
  4 files changed, 46 insertions(+), 25 deletions(-)
 
-diff --git a/fs/buffer.c b/fs/buffer.c
-index 356e289d19f2..ab18ec733ed3 100644
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
-@@ -274,8 +274,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -274,8 +274,7 @@
  	 * decide that the page is now completely done.
  	 */
  	first = page_buffers(page);
@@ -29,7 +27,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  	clear_buffer_async_read(bh);
  	unlock_buffer(bh);
  	tmp = bh;
-@@ -288,8 +287,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -288,8 +287,7 @@
  		}
  		tmp = tmp->b_this_page;
  	} while (tmp != bh);
@@ -39,7 +37,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  
  	/*
  	 * If none of the buffers had errors and they are all
-@@ -301,9 +299,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -301,9 +299,7 @@
  	return;
  
  still_busy:
@@ -50,7 +48,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  }
  
  /*
-@@ -330,8 +326,7 @@ void end_buffer_async_write(struct buffer_head *bh, int uptodate)
+@@ -330,8 +326,7 @@
  	}
  
  	first = page_buffers(page);
@@ -60,7 +58,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  
  	clear_buffer_async_write(bh);
  	unlock_buffer(bh);
-@@ -343,15 +338,12 @@ void end_buffer_async_write(struct buffer_head *bh, int uptodate)
+@@ -343,15 +338,12 @@
  		}
  		tmp = tmp->b_this_page;
  	}
@@ -78,7 +76,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  }
  EXPORT_SYMBOL(end_buffer_async_write);
  
-@@ -3372,6 +3364,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags)
+@@ -3372,6 +3364,7 @@
  	struct buffer_head *ret = kmem_cache_zalloc(bh_cachep, gfp_flags);
  	if (ret) {
  		INIT_LIST_HEAD(&ret->b_assoc_buffers);
@@ -86,11 +84,9 @@ index 356e289d19f2..ab18ec733ed3 100644
  		preempt_disable();
  		__this_cpu_inc(bh_accounting.nr);
  		recalc_bh_state();
-diff --git a/fs/ext4/page-io.c b/fs/ext4/page-io.c
-index 9cc79b7b0df1..3f4ba2011499 100644
 --- a/fs/ext4/page-io.c
 +++ b/fs/ext4/page-io.c
-@@ -95,8 +95,7 @@ static void ext4_finish_bio(struct bio *bio)
+@@ -95,8 +95,7 @@
  		 * We check all buffers in the page under BH_Uptodate_Lock
  		 * to avoid races with other end io clearing async_write flags
  		 */
@@ -100,9 +96,9 @@ index 9cc79b7b0df1..3f4ba2011499 100644
  		do {
  			if (bh_offset(bh) < bio_start ||
  			    bh_offset(bh) + bh->b_size > bio_end) {
-@@ -108,8 +107,7 @@ static void ext4_finish_bio(struct bio *bio)
- 			if (bio->bi_status)
+@@ -110,8 +109,7 @@
  				buffer_io_error(bh);
+ 			}
  		} while ((bh = bh->b_this_page) != head);
 -		bit_spin_unlock(BH_Uptodate_Lock, &head->b_state);
 -		local_irq_restore(flags);
@@ -110,11 +106,9 @@ index 9cc79b7b0df1..3f4ba2011499 100644
  		if (!under_io) {
  #ifdef CONFIG_EXT4_FS_ENCRYPTION
  			if (data_page)
-diff --git a/fs/ntfs/aops.c b/fs/ntfs/aops.c
-index 8946130c87ad..71d0b3ba70f8 100644
 --- a/fs/ntfs/aops.c
 +++ b/fs/ntfs/aops.c
-@@ -106,8 +106,7 @@ static void ntfs_end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -106,8 +106,7 @@
  				"0x%llx.", (unsigned long long)bh->b_blocknr);
  	}
  	first = page_buffers(page);
@@ -124,7 +118,7 @@ index 8946130c87ad..71d0b3ba70f8 100644
  	clear_buffer_async_read(bh);
  	unlock_buffer(bh);
  	tmp = bh;
-@@ -122,8 +121,7 @@ static void ntfs_end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -122,8 +121,7 @@
  		}
  		tmp = tmp->b_this_page;
  	} while (tmp != bh);
@@ -134,7 +128,7 @@ index 8946130c87ad..71d0b3ba70f8 100644
  	/*
  	 * If none of the buffers had errors then we can set the page uptodate,
  	 * but we first have to perform the post read mst fixups, if the
-@@ -156,9 +154,7 @@ static void ntfs_end_buffer_async_read(struct buffer_head *bh, int uptodate)
+@@ -156,9 +154,7 @@
  	unlock_page(page);
  	return;
  still_busy:
@@ -145,11 +139,9 @@ index 8946130c87ad..71d0b3ba70f8 100644
  }
  
  /**
-diff --git a/include/linux/buffer_head.h b/include/linux/buffer_head.h
-index 9168fc33a4f7..572541d6cc90 100644
 --- a/include/linux/buffer_head.h
 +++ b/include/linux/buffer_head.h
-@@ -76,8 +76,42 @@ struct buffer_head {
+@@ -76,8 +76,42 @@
  	struct address_space *b_assoc_map;	/* mapping this buffer is
  						   associated with */
  	atomic_t b_count;		/* users using this buffer_head */
@@ -192,6 +184,3 @@ index 9168fc33a4f7..572541d6cc90 100644
  /*
   * macro tricks to expand the set_buffer_foo(), clear_buffer_foo()
   * and buffer_foo() functions.
--- 
-2.35.1
-
