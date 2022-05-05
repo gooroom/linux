@@ -1,9 +1,9 @@
-From 6d3087c0382ffff90beab0b212028eb630066306 Mon Sep 17 00:00:00 2001
+From 4ce7dc42ab9a0a4042eeb3c0ddb5ed19ab8f2c02 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 25 Jul 2018 14:02:38 +0200
-Subject: [PATCH 212/338] arm64: fpsimd: use preemp_disable in addition to
+Subject: [PATCH 212/345] arm64: fpsimd: use preemp_disable in addition to
  local_bh_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 In v4.16-RT I noticed a number of warnings from task_fpsimd_load(). The
 code disables BH and expects that it is not preemptible. On -RT the
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 29 insertions(+), 2 deletions(-)
 
 diff --git a/arch/arm64/kernel/fpsimd.c b/arch/arm64/kernel/fpsimd.c
-index 19c87b52c001..203245dad743 100644
+index 89ab68cb35bb..481793a5adc1 100644
 --- a/arch/arm64/kernel/fpsimd.c
 +++ b/arch/arm64/kernel/fpsimd.c
 @@ -159,6 +159,16 @@ static void sve_free(struct task_struct *task)
@@ -167,5 +167,5 @@ index 19c87b52c001..203245dad743 100644
  EXPORT_SYMBOL(kernel_neon_begin);
  
 -- 
-2.31.1
+2.34.1
 

@@ -1,8 +1,8 @@
-From 35c4f781fcc0afc36c7fcaa5a30b925d490db53c Mon Sep 17 00:00:00 2001
+From e6cae8ab89302c630e7cd4f202e3ac241d7d969a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 153/338] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 153/345] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 116fc34eb965..50124bb1a17c 100644
+index 7b263ecd8a7f..9e4881099757 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -101,12 +101,8 @@ struct task_group;
@@ -120,7 +120,7 @@ index af74e843221b..31cdd0bb08d2 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 140228327b8c..482c1dbb2415 100644
+index 1f450a7649f0..9494e2007118 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1349,6 +1349,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
@@ -162,5 +162,5 @@ index 140228327b8c..482c1dbb2415 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.31.1
+2.34.1
 

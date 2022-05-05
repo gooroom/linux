@@ -1,8 +1,8 @@
-From 9d78b9763a62602c94bb24dc0233b03c68c86864 Mon Sep 17 00:00:00 2001
+From 5bd436a7741a981878ead7ba6bf94c0eb646f8c0 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 104/338] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 104/345] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 164 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7e785a280eeb..d090eacc56c1 100644
+index 1657092c79ef..a28fe574cf02 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -832,6 +832,9 @@ struct task_struct {
@@ -58,10 +58,10 @@ index d71054b95528..634becebd713 100644
  	.thread_group	= LIST_HEAD_INIT(init_task.thread_group),
  	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
 diff --git a/kernel/fork.c b/kernel/fork.c
-index f28a903e5077..7d075c311582 100644
+index a18d695259af..c27c196fd70e 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1586,6 +1586,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1587,6 +1587,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {
@@ -265,5 +265,5 @@ index bfaa44a80c03..2d29b269dc83 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.31.1
+2.34.1
 

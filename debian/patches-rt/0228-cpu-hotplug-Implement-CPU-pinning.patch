@@ -1,8 +1,8 @@
-From eb85ef7eff2f6b8c6ff684be08c6da1cac7dd215 Mon Sep 17 00:00:00 2001
+From 37625c665360496c7064a7d916408fb0ad9d9e4e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Subject: [PATCH 228/338] cpu/hotplug: Implement CPU pinning
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 228/345] cpu/hotplug: Implement CPU pinning
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 39 insertions(+)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 90ee6b304402..4030629af031 100644
+index 25436bdf34d0..d2dd159d7145 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -671,6 +671,7 @@ struct task_struct {
@@ -23,10 +23,10 @@ index 90ee6b304402..4030629af031 100644
  	int				migrate_disable_atomic;
  # endif
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 3e67b131ecac..67b1e5aa5476 100644
+index 89a96cc14b39..797216a0b4c6 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -76,6 +76,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
+@@ -77,6 +77,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
  	.fail = CPUHP_INVALID,
  };
  
@@ -38,7 +38,7 @@ index 3e67b131ecac..67b1e5aa5476 100644
  #if defined(CONFIG_LOCKDEP) && defined(CONFIG_SMP)
  static struct lockdep_map cpuhp_state_up_map =
  	STATIC_LOCKDEP_MAP_INIT("cpuhp_state-up", &cpuhp_state_up_map);
-@@ -287,7 +292,28 @@ static int cpu_hotplug_disabled;
+@@ -288,7 +293,28 @@ static int cpu_hotplug_disabled;
   */
  void pin_current_cpu(void)
  {
@@ -67,7 +67,7 @@ index 3e67b131ecac..67b1e5aa5476 100644
  }
  
  /**
-@@ -295,6 +321,13 @@ void pin_current_cpu(void)
+@@ -296,6 +322,13 @@ void pin_current_cpu(void)
   */
  void unpin_current_cpu(void)
  {
@@ -81,7 +81,7 @@ index 3e67b131ecac..67b1e5aa5476 100644
  }
  
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
-@@ -873,6 +906,7 @@ static int take_cpu_down(void *_param)
+@@ -920,6 +953,7 @@ static int take_cpu_down(void *_param)
  
  static int takedown_cpu(unsigned int cpu)
  {
@@ -89,7 +89,7 @@ index 3e67b131ecac..67b1e5aa5476 100644
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -885,11 +919,14 @@ static int takedown_cpu(unsigned int cpu)
+@@ -932,11 +966,14 @@ static int takedown_cpu(unsigned int cpu)
  	 */
  	irq_lock_sparse();
  
@@ -104,7 +104,7 @@ index 3e67b131ecac..67b1e5aa5476 100644
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -908,6 +945,7 @@ static int takedown_cpu(unsigned int cpu)
+@@ -955,6 +992,7 @@ static int takedown_cpu(unsigned int cpu)
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  
@@ -113,5 +113,5 @@ index 3e67b131ecac..67b1e5aa5476 100644
  	irq_unlock_sparse();
  
 -- 
-2.31.1
+2.34.1
 

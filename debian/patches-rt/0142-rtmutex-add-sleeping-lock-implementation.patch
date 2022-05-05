@@ -1,8 +1,8 @@
-From b679e4ed6ea2c643def5297195768b2e544fb5d0 Mon Sep 17 00:00:00 2001
+From 4ac8ebe763bcae845910091822b051e4af070310 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 142/338] rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 142/345] rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -103,7 +103,7 @@ index a355289b1fa1..138bd1e183e0 100644
   * rt_mutex_is_locked - is the mutex locked
   * @lock: the mutex to be queried
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 8552c7c3f863..116fc34eb965 100644
+index f08b868c7b56..7b263ecd8a7f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -134,6 +134,9 @@ struct task_group;
@@ -396,7 +396,7 @@ index 000000000000..3e3d8c5f7a9a
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index ca586216cb24..4562bbb218a6 100644
+index efe690af29f1..51ec12803c0b 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -900,6 +900,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -408,7 +408,7 @@ index ca586216cb24..4562bbb218a6 100644
  	account_kernel_stack(tsk, 1);
  
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 684477a38ba4..27cf5e5434e9 100644
+index 0e136045a720..a5a263a3efbf 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -1575,6 +1575,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
@@ -1145,7 +1145,7 @@ index 53a8c5d03d28..7c1dd1bd95c7 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 66f99dc4dac3..140228327b8c 100644
+index ed79f921a84e..1f450a7649f0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1205,5 +1205,5 @@ index 66f99dc4dac3..140228327b8c 100644
  	}
  }
 -- 
-2.31.1
+2.34.1
 

@@ -1,8 +1,8 @@
-From cdcc4c6cb9846718ede32474fff07c3d6361ca7b Mon Sep 17 00:00:00 2001
+From 78c33a6f74b6072425b391d4588c5e3eab5c939d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/338] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 095/345] completion: Use simple wait queues
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -55,12 +55,12 @@ index a04d59843022..e0046c35a0bd 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index dcb432860d06..4739cffacf58 100644
+index 49eb4e3c760f..49fc75368aa2 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1631,7 +1631,7 @@ static void ffs_data_put(struct ffs_data *ffs)
- 		pr_info("%s(): freeing\n", __func__);
+@@ -1626,7 +1626,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		ffs_data_clear(ffs);
+ 		ffs_release_dev(ffs->private_data);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
 -		       waitqueue_active(&ffs->ep0req_completion.wait) ||
 +		       swait_active(&ffs->ep0req_completion.wait) ||
@@ -68,10 +68,10 @@ index dcb432860d06..4739cffacf58 100644
  		destroy_workqueue(ffs->io_completion_wq);
  		kfree(ffs->dev_name);
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index 09ed5f02c24f..84094164f8ad 100644
+index a456267b6b78..adb84b0bdd64 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
-@@ -343,7 +343,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
+@@ -345,7 +345,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
  	spin_unlock_irq (&epdata->dev->lock);
  
  	if (likely (value == 0)) {
@@ -80,7 +80,7 @@ index 09ed5f02c24f..84094164f8ad 100644
  		if (value != 0) {
  			spin_lock_irq (&epdata->dev->lock);
  			if (likely (epdata->ep != NULL)) {
-@@ -352,7 +352,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
+@@ -354,7 +354,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
  				usb_ep_dequeue (epdata->ep, epdata->req);
  				spin_unlock_irq (&epdata->dev->lock);
  
@@ -161,7 +161,7 @@ index 73e06e9986d4..f426a0661aa0 100644
  extern long prepare_to_swait_event(struct swait_queue_head *q, struct swait_queue *wait, int state);
  
 diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
-index 28db51274ed0..66a3c99e2a57 100644
+index 6670a44ec5d4..25cd36d16702 100644
 --- a/kernel/power/hibernate.c
 +++ b/kernel/power/hibernate.c
 @@ -690,6 +690,10 @@ static int load_image_and_restore(void)
@@ -320,10 +320,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f07c6f53312a..a98288d56f71 100644
+index 974d92afd23e..3c5999476609 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7154,7 +7154,10 @@ void migrate_disable(void)
+@@ -7157,7 +7157,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -335,7 +335,7 @@ index f07c6f53312a..a98288d56f71 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7184,7 +7187,10 @@ void migrate_enable(void)
+@@ -7187,7 +7190,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
@@ -387,5 +387,5 @@ index 66b59ac77c22..c7cb30cdd1b7 100644
  	wait->task = current;
  	if (list_empty(&wait->task_list))
 -- 
-2.31.1
+2.34.1
 

@@ -1,8 +1,8 @@
-From 8c877447569c9c0ecfbbe67d8f4330b7a19e5738 Mon Sep 17 00:00:00 2001
+From a4fb9b4b2fa05d1a3b8c6692c88f70d3d5c126c2 Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Tue, 3 Jul 2018 13:34:30 -0500
-Subject: [PATCH 015/338] fscache: initialize cookie hash table raw spinlocks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Subject: [PATCH 015/345] fscache: initialize cookie hash table raw spinlocks
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 The fscache cookie mechanism uses a hash table of hlist_bl_head structures. The
 PREEMPT_RT patcheset adds a raw spinlock to this structure and so on PREEMPT_RT
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 10 insertions(+)
 
 diff --git a/fs/fscache/cookie.c b/fs/fscache/cookie.c
-index c550512ce335..d5d57da32ffa 100644
+index 2ff05adfc22a..b2b9a85a4ba5 100644
 --- a/fs/fscache/cookie.c
 +++ b/fs/fscache/cookie.c
-@@ -962,3 +962,11 @@ int __fscache_check_consistency(struct fscache_cookie *cookie,
+@@ -950,3 +950,11 @@ int __fscache_check_consistency(struct fscache_cookie *cookie,
  	return -ESTALE;
  }
  EXPORT_SYMBOL(__fscache_check_consistency);
@@ -36,10 +36,10 @@ index c550512ce335..d5d57da32ffa 100644
 +		INIT_HLIST_BL_HEAD(&fscache_cookie_hash[i]);
 +}
 diff --git a/fs/fscache/main.c b/fs/fscache/main.c
-index 30ad89db1efc..1d5f1d679ffa 100644
+index aa49234e9520..95a0798de381 100644
 --- a/fs/fscache/main.c
 +++ b/fs/fscache/main.c
-@@ -149,6 +149,7 @@ static int __init fscache_init(void)
+@@ -188,6 +188,7 @@ static int __init fscache_init(void)
  		ret = -ENOMEM;
  		goto error_cookie_jar;
  	}
@@ -60,5 +60,5 @@ index 84b90a79d75a..87a9330eafa2 100644
  /**
   * fscache_register_netfs - Register a filesystem as desiring caching services
 -- 
-2.31.1
+2.34.1
 

@@ -1,9 +1,9 @@
-From 5a47e3caeeda17011c335291f0fe3afe2f698ccd Mon Sep 17 00:00:00 2001
+From 4b4147d1679f0a2802b8c8e46cfd4ad0ac7dc284 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 8 Mar 2017 14:23:35 +0100
-Subject: [PATCH 060/338] futex: workaround migrate_disable/enable in different
+Subject: [PATCH 060/345] futex: workaround migrate_disable/enable in different
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.193-rt81.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
 
 migrate_disable()/migrate_enable() takes a different path in atomic() vs
 !atomic() context. These little hacks ensure that we don't underflow / overflow
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 19 insertions(+)
 
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 526ebcff5a0a..ed2f180f1225 100644
+index 3c67da9b8408..fac994367189 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -2998,6 +2998,14 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
@@ -66,5 +66,5 @@ index 526ebcff5a0a..ed2f180f1225 100644
  
  		/*
 -- 
-2.31.1
+2.34.1
 
