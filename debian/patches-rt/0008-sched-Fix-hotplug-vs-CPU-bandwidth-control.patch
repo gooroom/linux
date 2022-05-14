@@ -1,8 +1,8 @@
-From 5176f5d7182699df2bc0d3a59b1b0d31e7eee8f3 Mon Sep 17 00:00:00 2001
+From eb49466a59d113e4e7d0c7503299bae87d5c6926 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:05 +0200
-Subject: [PATCH 008/318] sched: Fix hotplug vs CPU bandwidth control
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Subject: [PATCH 008/319] sched: Fix hotplug vs CPU bandwidth control
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 Since we now migrate tasks away before DYING, we should also move
 bandwidth unthrottle, otherwise we can gain tasks from unthrottle
@@ -25,10 +25,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 12 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 8bbd60d5b0e05..5a776b6b6f1a4 100644
+index 52d671eb0756d..e82c02da5f612 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6969,6 +6969,8 @@ int sched_cpu_activate(unsigned int cpu)
+@@ -6970,6 +6970,8 @@ int sched_cpu_activate(unsigned int cpu)
  
  int sched_cpu_deactivate(unsigned int cpu)
  {
@@ -37,7 +37,7 @@ index 8bbd60d5b0e05..5a776b6b6f1a4 100644
  	int ret;
  
  	set_cpu_active(cpu, false);
-@@ -6983,6 +6985,14 @@ int sched_cpu_deactivate(unsigned int cpu)
+@@ -6984,6 +6986,14 @@ int sched_cpu_deactivate(unsigned int cpu)
  
  	balance_push_set(cpu, true);
  
@@ -52,7 +52,7 @@ index 8bbd60d5b0e05..5a776b6b6f1a4 100644
  #ifdef CONFIG_SCHED_SMT
  	/*
  	 * When going down, decrement the number of cores with SMT present.
-@@ -7064,10 +7074,6 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7065,10 +7075,6 @@ int sched_cpu_dying(unsigned int cpu)
  	sched_tick_stop(cpu);
  
  	rq_lock_irqsave(rq, &rf);
@@ -90,5 +90,5 @@ index 41b14d9242039..0e9a10c500906 100644
  
  static inline int rt_overloaded(struct rq *rq)
 -- 
-2.35.1
+2.35.3
 

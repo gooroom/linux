@@ -1,8 +1,8 @@
-From 8576a3ee7a32e89859736546bf83076d78008922 Mon Sep 17 00:00:00 2001
+From b57aa94dca794e6e20063f120cc9b5fabf98ce28 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/318] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Subject: [PATCH 009/319] sched: Massage set_cpus_allowed()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5a776b6b6f1a4..844530ba3c092 100644
+index e82c02da5f612..f91f41dd39f57 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1833,13 +1833,14 @@ static int migration_cpu_stop(void *data)
+@@ -1834,13 +1834,14 @@ static int migration_cpu_stop(void *data)
   * sched_class::set_cpus_allowed must do the below, but is not required to
   * actually call this function.
   */
@@ -36,7 +36,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  {
  	struct rq *rq = task_rq(p);
  	bool queued, running;
-@@ -1860,7 +1861,7 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1861,7 +1862,7 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  	if (running)
  		put_prev_task(rq, p);
  
@@ -45,7 +45,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  
  	if (queued)
  		enqueue_task(rq, p, ENQUEUE_RESTORE | ENQUEUE_NOCLOCK);
-@@ -1868,6 +1869,11 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1869,6 +1870,11 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  		set_next_task(rq, p);
  }
  
@@ -57,7 +57,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
-@@ -1878,7 +1884,8 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1879,7 +1885,8 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
   * call is not atomic; no spinlocks may be held.
   */
  static int __set_cpus_allowed_ptr(struct task_struct *p,
@@ -67,7 +67,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  {
  	const struct cpumask *cpu_valid_mask = cpu_active_mask;
  	unsigned int dest_cpu;
-@@ -1900,7 +1907,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1901,7 +1908,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	 * Must re-check here, to close a race against __kthread_bind(),
  	 * sched_setaffinity() is not guaranteed to observe the flag.
  	 */
@@ -76,7 +76,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  		ret = -EINVAL;
  		goto out;
  	}
-@@ -1919,7 +1926,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1920,7 +1927,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  		goto out;
  	}
  
@@ -85,7 +85,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  
  	if (p->flags & PF_KTHREAD) {
  		/*
-@@ -1956,7 +1963,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1957,7 +1964,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  
  int set_cpus_allowed_ptr(struct task_struct *p, const struct cpumask *new_mask)
  {
@@ -94,7 +94,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  }
  EXPORT_SYMBOL_GPL(set_cpus_allowed_ptr);
  
-@@ -2415,7 +2422,8 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
+@@ -2416,7 +2423,8 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
  #else
  
  static inline int __set_cpus_allowed_ptr(struct task_struct *p,
@@ -104,7 +104,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  {
  	return set_cpus_allowed_ptr(p, new_mask);
  }
-@@ -6006,7 +6014,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+@@ -6007,7 +6015,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
  	}
  #endif
  again:
@@ -113,7 +113,7 @@ index 5a776b6b6f1a4..844530ba3c092 100644
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6582,7 +6590,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
+@@ -6583,7 +6591,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -171,5 +171,5 @@ index a2b7bcf406ca1..ff5785a28b2f4 100644
  #endif
  
 -- 
-2.35.1
+2.35.3
 

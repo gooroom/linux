@@ -1,9 +1,9 @@
-From 410260a892739e033d3cc56942bd0bfd1821035f Mon Sep 17 00:00:00 2001
+From 9080ad04a5f7b1245c747441cb0edc5873078fc7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 28 Oct 2020 18:55:27 +0100
-Subject: [PATCH 066/318] lib/test_lockup: Minimum fix to get it compiled on
+Subject: [PATCH 066/319] lib/test_lockup: Minimum fix to get it compiled on
  PREEMPT_RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 On PREEMPT_RT the locks are quite different so they can't be tested as
 it is done below. The alternative is test for the waitlock within
@@ -27,10 +27,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 16 insertions(+)
 
 diff --git a/lib/test_lockup.c b/lib/test_lockup.c
-index f1a020bcc763e..864554e769738 100644
+index 78a630bbd03df..d27a80502204b 100644
 --- a/lib/test_lockup.c
 +++ b/lib/test_lockup.c
-@@ -480,6 +480,21 @@ static int __init test_lockup_init(void)
+@@ -485,6 +485,21 @@ static int __init test_lockup_init(void)
  		return -EINVAL;
  
  #ifdef CONFIG_DEBUG_SPINLOCK
@@ -52,7 +52,7 @@ index f1a020bcc763e..864554e769738 100644
  	if (test_magic(lock_spinlock_ptr,
  		       offsetof(spinlock_t, rlock.magic),
  		       SPINLOCK_MAGIC) ||
-@@ -493,6 +508,7 @@ static int __init test_lockup_init(void)
+@@ -498,6 +513,7 @@ static int __init test_lockup_init(void)
  		       offsetof(struct rw_semaphore, wait_lock.magic),
  		       SPINLOCK_MAGIC))
  		return -EINVAL;
@@ -61,5 +61,5 @@ index f1a020bcc763e..864554e769738 100644
  
  	if ((wait_state != TASK_RUNNING ||
 -- 
-2.35.1
+2.35.3
 
