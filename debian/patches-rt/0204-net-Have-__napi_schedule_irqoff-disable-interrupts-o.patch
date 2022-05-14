@@ -1,9 +1,9 @@
-From b4a0381cbb30b0be5d3bc73a5ffe189ea5b5972b Mon Sep 17 00:00:00 2001
+From 04cfa3a416b5d2c89f92f0c33fd40c872bd473e8 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 204/345] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 204/347] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
 The customer had the bnx2x driver, which does a
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index cfb95d1d69b6..f2bec9374a84 100644
+index dfec34087039..c4713217b20e 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -423,7 +423,19 @@ typedef enum rx_handler_result rx_handler_result_t;

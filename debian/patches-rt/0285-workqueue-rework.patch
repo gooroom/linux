@@ -1,8 +1,8 @@
-From 696f40eba0189d6de8dfa487c5ab3569f2bed981 Mon Sep 17 00:00:00 2001
+From 3e6e0fe68483d4b4846fd058860933f1a82bcb24 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 29 May 2019 18:52:27 +0200
-Subject: [PATCH 285/345] workqueue: rework
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Subject: [PATCH 285/347] workqueue: rework
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 [ Upstream commit d15a862f24df983458533aebd6fa207ecdd1095a ]
 
@@ -66,7 +66,7 @@ index a67a50dd714a..ed6ae335756d 100644
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
 diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index 629589a36b0a..19042b42a8ba 100644
+index d24660961343..c31a76485c9c 100644
 --- a/drivers/block/loop.c
 +++ b/drivers/block/loop.c
 @@ -70,7 +70,7 @@
@@ -189,7 +189,7 @@ index 303e85033965..6deff68b92c7 100644
  
  static int ioctx_add_table(struct kioctx *ctx, struct mm_struct *mm)
 diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
-index 0473efda4c65..da587e60fe86 100644
+index dc26ce6d840d..53f63f18ecdf 100644
 --- a/include/linux/blk-cgroup.h
 +++ b/include/linux/blk-cgroup.h
 @@ -14,7 +14,7 @@
@@ -202,10 +202,10 @@ index 0473efda4c65..da587e60fe86 100644
  #include <linux/seq_file.h>
  #include <linux/radix-tree.h>
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index dcc599a125e3..0c3cbe82f5e5 100644
+index 5566d0049c22..c01e5d9597f9 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -657,7 +657,7 @@ struct request_queue {
+@@ -665,7 +665,7 @@ struct request_queue {
  #endif
  	struct rcu_head		rcu_head;
  	wait_queue_head_t	mq_freeze_wq;
@@ -309,10 +309,10 @@ index 60d673e15632..546aa73fba6a 100644
  
  extern bool queue_work_on(int cpu, struct workqueue_struct *wq,
 diff --git a/init/main.c b/init/main.c
-index f54b290ac810..094726cce32c 100644
+index f5d0917a4d4b..0d5763c5da28 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -1130,7 +1130,6 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1132,7 +1132,6 @@ static noinline void __init kernel_init_freeable(void)
  	smp_prepare_cpus(setup_max_cpus);
  
  	workqueue_init();

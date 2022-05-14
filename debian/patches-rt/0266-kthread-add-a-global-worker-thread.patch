@@ -1,8 +1,8 @@
-From d8b9877b2bf80628d0fefbe835fbfaa5cc228ad6 Mon Sep 17 00:00:00 2001
+From cb66c74bba8456a4ffc459a6536c504547f71881 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 12 Feb 2019 15:09:38 +0100
-Subject: [PATCH 266/345] kthread: add a global worker thread.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Subject: [PATCH 266/347] kthread: add a global worker thread.
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 [ Upstream commit 0532e87d9d44795221aa921ba7024bde689cc894 ]
 
@@ -29,7 +29,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  create mode 100644 include/linux/kthread-cgroup.h
 
 diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index 19042b42a8ba..629589a36b0a 100644
+index c31a76485c9c..d24660961343 100644
 --- a/drivers/block/loop.c
 +++ b/drivers/block/loop.c
 @@ -70,7 +70,7 @@
@@ -54,7 +54,7 @@ index 185bbdce62b1..63b10236eb05 100644
  #define DRIVER_NAME "rockchip-spi"
  
 diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
-index 6d766a19f2bb..0473efda4c65 100644
+index 8f1be8b49391..dc26ce6d840d 100644
 --- a/include/linux/blk-cgroup.h
 +++ b/include/linux/blk-cgroup.h
 @@ -14,7 +14,7 @@
@@ -132,10 +132,10 @@ index e0498e46d642..31140f0a6c2c 100644
 +
  #endif /* _LINUX_KTHREAD_H */
 diff --git a/init/main.c b/init/main.c
-index 094726cce32c..f54b290ac810 100644
+index 0d5763c5da28..f5d0917a4d4b 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -1130,6 +1130,7 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1132,6 +1132,7 @@ static noinline void __init kernel_init_freeable(void)
  	smp_prepare_cpus(setup_max_cpus);
  
  	workqueue_init();

@@ -1,9 +1,9 @@
-From db2c034286a6cfa46fbd45eb8463d17331f19b91 Mon Sep 17 00:00:00 2001
+From 77c844fd4ac0faa4891fd1cdbd2116fb589c1f63 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 155/345] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 155/347] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
 anymore so it has almost no users. However the futex code has a workaround for
@@ -187,10 +187,10 @@ index 555dea10764e..0c44c16244a1 100644
  EXPORT_SYMBOL(migrate_enable);
  #endif
 diff --git a/kernel/sched/debug.c b/kernel/sched/debug.c
-index a482a3e87796..e97d4beffb94 100644
+index dc3f3e6fa0bd..169b98c12da7 100644
 --- a/kernel/sched/debug.c
 +++ b/kernel/sched/debug.c
-@@ -998,7 +998,7 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,
+@@ -988,7 +988,7 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,
  		P(dl.runtime);
  		P(dl.deadline);
  	}

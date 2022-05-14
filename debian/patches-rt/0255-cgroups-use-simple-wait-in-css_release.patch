@@ -1,8 +1,8 @@
-From 467a6f9547a5a5ab2c5abfd6e14f126df9886762 Mon Sep 17 00:00:00 2001
+From ca5015f78ccee690b1cc2f64029facd04678d030 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 15:52:24 +0100
-Subject: [PATCH 255/345] cgroups: use simple wait in css_release()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Subject: [PATCH 255/347] cgroups: use simple wait in css_release()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 To avoid:
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -55,10 +55,10 @@ index f92264d1ed4f..cc912f3dc203 100644
  
  	/*
 diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-index 63eff85f251f..d371620a9da3 100644
+index 4e8284d8cacc..86b10cb1d68a 100644
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -4703,10 +4703,10 @@ static void css_free_rwork_fn(struct work_struct *work)
+@@ -4738,10 +4738,10 @@ static void css_free_rwork_fn(struct work_struct *work)
  	}
  }
  
@@ -71,7 +71,7 @@ index 63eff85f251f..d371620a9da3 100644
  	struct cgroup_subsys *ss = css->ss;
  	struct cgroup *cgrp = css->cgroup;
  
-@@ -4768,8 +4768,8 @@ static void css_release(struct percpu_ref *ref)
+@@ -4803,8 +4803,8 @@ static void css_release(struct percpu_ref *ref)
  	struct cgroup_subsys_state *css =
  		container_of(ref, struct cgroup_subsys_state, refcnt);
  
@@ -82,7 +82,7 @@ index 63eff85f251f..d371620a9da3 100644
  }
  
  static void init_and_link_css(struct cgroup_subsys_state *css,
-@@ -5489,6 +5489,7 @@ static int __init cgroup_wq_init(void)
+@@ -5524,6 +5524,7 @@ static int __init cgroup_wq_init(void)
  	 */
  	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
  	BUG_ON(!cgroup_destroy_wq);

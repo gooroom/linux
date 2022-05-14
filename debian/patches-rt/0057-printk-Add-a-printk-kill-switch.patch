@@ -1,8 +1,8 @@
-From 9023805ed00d72f640dba8981a708d2008055501 Mon Sep 17 00:00:00 2001
+From 166b16c3e03e24d30d2ebfab1b4c67959e4756f9 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 22 Jul 2011 17:58:40 +0200
-Subject: [PATCH 057/345] printk: Add a printk kill switch
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Subject: [PATCH 057/347] printk: Add a printk kill switch
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
 it does not dead-lock with the early printk code.
@@ -31,10 +31,10 @@ index 6dd867e39365..b9d050428456 100644
  
  #ifdef CONFIG_PRINTK_NMI
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 57742e193214..8722315c2871 100644
+index 2ba16c426ba5..963c20ab9548 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -405,6 +405,58 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
+@@ -407,6 +407,58 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
  		printk_safe_exit_irqrestore(flags);	\
  	} while (0)
  
@@ -93,7 +93,7 @@ index 57742e193214..8722315c2871 100644
  #ifdef CONFIG_PRINTK
  DECLARE_WAIT_QUEUE_HEAD(log_wait);
  /* the next printk record to read by syslog(READ) or /proc/kmsg */
-@@ -1933,6 +1985,13 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -1935,6 +1987,13 @@ asmlinkage int vprintk_emit(int facility, int level,
  	unsigned long flags;
  	u64 curr_log_seq;
  
@@ -107,7 +107,7 @@ index 57742e193214..8722315c2871 100644
  	if (level == LOGLEVEL_SCHED) {
  		level = LOGLEVEL_DEFAULT;
  		in_sched = true;
-@@ -2077,26 +2136,6 @@ static bool suppress_message_printing(int level) { return false; }
+@@ -2079,26 +2138,6 @@ static bool suppress_message_printing(int level) { return false; }
  
  #endif /* CONFIG_PRINTK */
  

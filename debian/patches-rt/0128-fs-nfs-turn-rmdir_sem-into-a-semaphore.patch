@@ -1,8 +1,8 @@
-From 3e951bdfd2ca1a786d8d31b40419292bea8d726e Mon Sep 17 00:00:00 2001
+From 71583878eb49b1c4e7431448a991d4a3768e7e9f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
-Subject: [PATCH 128/345] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.237-rt107.tar.xz
+Subject: [PATCH 128/347] fs/nfs: turn rmdir_sem into a semaphore
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -131,7 +131,7 @@ index fd61bf0fce63..ce9100b5604d 100644
  		 * If we'd displaced old cached devname, free it.  At that
  		 * point dentry is definitely not a root, so we won't need
 diff --git a/include/linux/nfs_fs.h b/include/linux/nfs_fs.h
-index 0ff7dd2bf8a4..91e7bb5eb9b6 100644
+index 8ea7ceed8285..d52dfae05d2a 100644
 --- a/include/linux/nfs_fs.h
 +++ b/include/linux/nfs_fs.h
 @@ -164,7 +164,11 @@ struct nfs_inode {
