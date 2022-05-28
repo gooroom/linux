@@ -1,9 +1,9 @@
-From 052d489e81dfb9edeefd8fe0a7ed6ad420965905 Mon Sep 17 00:00:00 2001
+From dafe38eaf04b3e443988a4b5efa6970f6a3f92a8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 Jan 2012 13:01:27 +0100
 Subject: [PATCH 123/347] genirq: Allow disabling of softirq processing in irq
  thread context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.245-rt109.tar.xz
 
 The processing of softirqs in irq thread context is a performance gain
 for the non-rt workloads of a system, but it's counterproductive for
@@ -69,10 +69,10 @@ index 9504267414a4..0f1babb9775a 100644
  #define IRQ_NO_BALANCING_MASK	(IRQ_PER_CPU | IRQ_NO_BALANCING)
  
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 540c8bb063f5..93e8590b7574 100644
+index f12f50f5b605..2bb77b0ebac8 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -1508,6 +1508,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
+@@ -1533,6 +1533,9 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
  			irqd_set(&desc->irq_data, IRQD_NO_BALANCING);
  		}
  
@@ -140,5 +140,5 @@ index fd89f8ab85ac..3e9333d148ad 100644
  {
  	return current->flags & PF_IN_SOFTIRQ;
 -- 
-2.35.1
+2.36.1
 

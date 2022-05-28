@@ -1,8 +1,8 @@
-From 51568952440346ad61d97c904e2dbf181821dc1e Mon Sep 17 00:00:00 2001
+From 2f6c08d4246ce5c85caf4989ecb709849330f2b9 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 8 Jan 2017 09:32:25 +0100
 Subject: [PATCH 256/347] cpuset: Convert callback_lock to raw_spinlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.245-rt109.tar.xz
 
 The two commits below add up to a cpuset might_sleep() splat for RT:
 
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 33 insertions(+), 33 deletions(-)
 
 diff --git a/kernel/cgroup/cpuset.c b/kernel/cgroup/cpuset.c
-index 6c5ab5479384..53d6f0dc4ec8 100644
+index 35541e1dfad9..42ed4e497336 100644
 --- a/kernel/cgroup/cpuset.c
 +++ b/kernel/cgroup/cpuset.c
 @@ -288,7 +288,7 @@ static struct cpuset top_cpuset = {
@@ -243,7 +243,7 @@ index 6c5ab5479384..53d6f0dc4ec8 100644
  		update_tasks_nodemask(&top_cpuset);
  	}
  
-@@ -2431,11 +2431,11 @@ void cpuset_cpus_allowed(struct task_struct *tsk, struct cpumask *pmask)
+@@ -2434,11 +2434,11 @@ void cpuset_cpus_allowed(struct task_struct *tsk, struct cpumask *pmask)
  {
  	unsigned long flags;
  
@@ -257,7 +257,7 @@ index 6c5ab5479384..53d6f0dc4ec8 100644
  }
  
  /**
-@@ -2496,11 +2496,11 @@ nodemask_t cpuset_mems_allowed(struct task_struct *tsk)
+@@ -2499,11 +2499,11 @@ nodemask_t cpuset_mems_allowed(struct task_struct *tsk)
  	nodemask_t mask;
  	unsigned long flags;
  
@@ -271,7 +271,7 @@ index 6c5ab5479384..53d6f0dc4ec8 100644
  
  	return mask;
  }
-@@ -2592,14 +2592,14 @@ bool __cpuset_node_allowed(int node, gfp_t gfp_mask)
+@@ -2595,14 +2595,14 @@ bool __cpuset_node_allowed(int node, gfp_t gfp_mask)
  		return true;
  
  	/* Not hardwall and node outside mems_allowed: scan up cpusets */
@@ -289,5 +289,5 @@ index 6c5ab5479384..53d6f0dc4ec8 100644
  }
  
 -- 
-2.35.1
+2.36.1
 

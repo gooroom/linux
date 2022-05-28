@@ -1,8 +1,8 @@
-From b08df429ae6a7a5cb14804c256807301bea23a4b Mon Sep 17 00:00:00 2001
+From 46b8291b253bfa3908d730f4b11146155f0a2ce7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
 Subject: [PATCH 187/347] fs: dcache: Use cpu_chill() in trylock loops
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.240-rt108.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.245-rt109.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -36,7 +36,7 @@ index 70e9afe589fb..1a6b88ad4fe0 100644
  			}
  			spin_unlock(&p->d_lock);
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 2f3c6a0350a8..983676f15a54 100644
+index 396ff1bcfdad..2c0ff275e978 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -14,6 +14,7 @@
@@ -62,5 +62,5 @@ index 2f3c6a0350a8..983676f15a54 100644
  	 * After the slowpath clears MNT_WRITE_HOLD, mnt_is_readonly will
  	 * be set to match its requirements. So we must not load that until
 -- 
-2.35.1
+2.36.1
 
