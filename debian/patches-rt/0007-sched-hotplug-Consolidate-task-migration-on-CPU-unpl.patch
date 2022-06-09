@@ -1,9 +1,9 @@
-From bfb709323522a82ba250b7f979f822e8d7c9f2b1 Mon Sep 17 00:00:00 2001
+From 11c1f6da63b9ddf18796af70998db13742ef73a0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:04 +0200
-Subject: [PATCH 007/318] sched/hotplug: Consolidate task migration on CPU
+Subject: [PATCH 007/319] sched/hotplug: Consolidate task migration on CPU
  unplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 With the new mechanism which kicks tasks off the outgoing CPU at the end of
 schedule() the situation on an outgoing CPU right before the stopper thread
@@ -93,10 +93,10 @@ index c06ced18f78ad..10b6287afe975 100644
  	[CPUHP_AP_SMPBOOT_THREADS] = {
  		.name			= "smpboot/threads:online",
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1e2ea2bf0ddad..8bbd60d5b0e05 100644
+index b3561a233d727..52d671eb0756d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6733,120 +6733,6 @@ void idle_task_exit(void)
+@@ -6734,120 +6734,6 @@ void idle_task_exit(void)
  	/* finish_cpu(), as ran on the BP, will clean up the active_mm state */
  }
  
@@ -217,7 +217,7 @@ index 1e2ea2bf0ddad..8bbd60d5b0e05 100644
  static int __balance_push_cpu_stop(void *arg)
  {
  	struct task_struct *p = arg;
-@@ -7115,10 +7001,6 @@ int sched_cpu_deactivate(unsigned int cpu)
+@@ -7116,10 +7002,6 @@ int sched_cpu_deactivate(unsigned int cpu)
  		return ret;
  	}
  	sched_domains_numa_masks_clear(cpu);
@@ -228,7 +228,7 @@ index 1e2ea2bf0ddad..8bbd60d5b0e05 100644
  	return 0;
  }
  
-@@ -7138,6 +7020,41 @@ int sched_cpu_starting(unsigned int cpu)
+@@ -7139,6 +7021,41 @@ int sched_cpu_starting(unsigned int cpu)
  }
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -270,7 +270,7 @@ index 1e2ea2bf0ddad..8bbd60d5b0e05 100644
  int sched_cpu_dying(unsigned int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -7151,7 +7068,6 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -7152,7 +7069,6 @@ int sched_cpu_dying(unsigned int cpu)
  		BUG_ON(!cpumask_test_cpu(cpu, rq->rd->span));
  		set_rq_offline(rq);
  	}
@@ -279,5 +279,5 @@ index 1e2ea2bf0ddad..8bbd60d5b0e05 100644
  	rq_unlock_irqrestore(rq, &rf);
  
 -- 
-2.35.1
+2.35.3
 

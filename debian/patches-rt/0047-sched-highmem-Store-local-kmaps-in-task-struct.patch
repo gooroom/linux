@@ -1,8 +1,8 @@
-From 7fe665e4f65bcd92c718bf15d91ee3b794a6ead1 Mon Sep 17 00:00:00 2001
+From a1dd135711f06f64b34facb61d204597c56ac4ec Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
-Subject: [PATCH 047/318] sched: highmem: Store local kmaps in task struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Subject: [PATCH 047/319] sched: highmem: Store local kmaps in task struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -52,7 +52,7 @@ index 6ceed907b14e2..c5a22177db85b 100644
  
  #ifdef CONFIG_HIGHMEM
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e9b05525ca763..7d7cb1b6c5c36 100644
+index bedd83a68c21d..9599a71cea6d0 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -34,6 +34,7 @@
@@ -118,10 +118,10 @@ index a78c0b02edd55..22d4518cafb61 100644
  #ifdef CONFIG_FAULT_INJECTION
  	tsk->fail_nth = 0;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1e70e8f026da8..79364d2fd9b6e 100644
+index 52b39d1e1602f..d9e8c070b3f42 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4083,6 +4083,22 @@ static inline void finish_lock_switch(struct rq *rq)
+@@ -4084,6 +4084,22 @@ static inline void finish_lock_switch(struct rq *rq)
  # define finish_arch_post_lock_switch()	do { } while (0)
  #endif
  
@@ -144,7 +144,7 @@ index 1e70e8f026da8..79364d2fd9b6e 100644
  /**
   * prepare_task_switch - prepare to switch tasks
   * @rq: the runqueue preparing to switch
-@@ -4105,6 +4121,7 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
+@@ -4106,6 +4122,7 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
  	perf_event_task_sched_out(prev, next);
  	rseq_preempt(prev);
  	fire_sched_out_preempt_notifiers(prev, next);
@@ -152,7 +152,7 @@ index 1e70e8f026da8..79364d2fd9b6e 100644
  	prepare_task(next);
  	prepare_arch_switch(next);
  }
-@@ -4171,6 +4188,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -4172,6 +4189,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	finish_lock_switch(rq);
  	finish_arch_post_lock_switch();
  	kcov_finish_switch(current);
@@ -305,5 +305,5 @@ index 54bd233846c90..d7a1c80001d02 100644
  
  #if defined(HASHED_PAGE_VIRTUAL)
 -- 
-2.35.1
+2.35.3
 
