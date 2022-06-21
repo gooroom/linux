@@ -573,7 +573,7 @@ class Gencontrol(Base):
         if build_debug:
             makeflags['KCONFIG_OPTIONS'] += ' -o DEBUG_INFO=y'
         if build_signed:
-            makeflags['KCONFIG_OPTIONS'] += ' -o MODULE_SIG=y'
+            makeflags['KCONFIG_OPTIONS'] += ' -o LOCK_DOWN_IN_EFI_SECURE_BOOT=y -o MODULE_SIG=y'
         # Add "salt" to fix #872263
         makeflags['KCONFIG_OPTIONS'] += (' -o "BUILD_SALT=\\"%s%s\\""' %
                                          (vars['abiname'],
