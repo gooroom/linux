@@ -1,8 +1,8 @@
-From 2d4d0b1f07a720eb10927d95e9d7f95d392196d5 Mon Sep 17 00:00:00 2001
+From ae0d27c9fcc3396bf0c2f954dec5e8bd3e3080b8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 16 Sep 2020 16:15:39 +0200
-Subject: [PATCH 239/319] net: Dequeue in dev_cpu_dead() without the lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Subject: [PATCH 239/318] net: Dequeue in dev_cpu_dead() without the lock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.120-rt70.tar.xz
 
 Upstream uses skb_dequeue() to acquire lock of `input_pkt_queue'. The reason is
 to synchronize against a remote CPU which still thinks that the CPU is online
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 7c0f3fd93069a..a257e3584e75b 100644
+index 7c0f3fd93069..a257e3584e75 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -10987,7 +10987,7 @@ static int dev_cpu_dead(unsigned int oldcpu)

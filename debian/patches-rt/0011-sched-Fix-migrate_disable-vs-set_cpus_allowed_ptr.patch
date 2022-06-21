@@ -1,9 +1,9 @@
-From a67556f01bfd2874e3e00a424a2b44ec4eb5354d Mon Sep 17 00:00:00 2001
+From 8af695c347db72f1ff0ae8bcfab96d7d54d8f99f Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:08 +0200
-Subject: [PATCH 011/319] sched: Fix migrate_disable() vs
+Subject: [PATCH 011/318] sched: Fix migrate_disable() vs
  set_cpus_allowed_ptr()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.120-rt70.tar.xz
 
 Concurrent migrate_disable() and set_cpus_allowed_ptr() has
 interesting features. We rely on set_cpus_allowed_ptr() to not return
@@ -44,7 +44,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 205 insertions(+), 30 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index f49d3ec4bef66..d1e278d0b65d4 100644
+index f49d3ec4bef6..d1e278d0b65d 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -730,6 +730,7 @@ struct task_struct {
@@ -56,7 +56,7 @@ index f49d3ec4bef66..d1e278d0b65d4 100644
  	int				migration_disabled;
  #endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 49a854edd843c..3f3003634d328 100644
+index 49a854edd843..3f3003634d32 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1742,15 +1742,26 @@ void migrate_enable(void)

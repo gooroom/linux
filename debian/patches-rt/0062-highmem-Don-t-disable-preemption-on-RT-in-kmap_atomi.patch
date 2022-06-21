@@ -1,9 +1,9 @@
-From ccd831b1817288ad8a414714d33d34f59511473d Mon Sep 17 00:00:00 2001
+From 325981879f88a22a3743e173d5af77d0eb6467d3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 30 Oct 2020 13:59:06 +0100
-Subject: [PATCH 062/319] highmem: Don't disable preemption on RT in
+Subject: [PATCH 062/318] highmem: Don't disable preemption on RT in
  kmap_atomic()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.120-rt70.tar.xz
 
 Disabling preemption makes it impossible to acquire sleeping locks within
 kmap_atomic() section.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 16 insertions(+), 4 deletions(-)
 
 diff --git a/include/linux/highmem-internal.h b/include/linux/highmem-internal.h
-index bd15bf9164c23..f9bc6acd36798 100644
+index bd15bf9164c2..f9bc6acd3679 100644
 --- a/include/linux/highmem-internal.h
 +++ b/include/linux/highmem-internal.h
 @@ -90,7 +90,10 @@ static inline void __kunmap_local(void *vaddr)
