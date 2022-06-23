@@ -1,8 +1,8 @@
-From 2923ac81924052fed9194f2f7c9602d7202a217a Mon Sep 17 00:00:00 2001
+From 1cd22ea41976ef0c5f4b19af3a177acbe7e4e9e5 Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Fri, 11 Dec 2020 00:55:25 +0106
-Subject: [PATCH 096/318] printk: track/limit recursion
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.106-rt64.tar.xz
+Subject: [PATCH 096/319] printk: track/limit recursion
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
 
 Limit printk() recursion to 1 level. This is enough to print a
 stacktrace for the printk call, should a WARN or BUG occur.
@@ -14,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 71 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 6be1b50efcd99..8f357abf0b49e 100644
+index aebc9e31b36ac..31a2b7a116a7a 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1941,6 +1941,65 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1943,6 +1943,65 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	}
  }
  
@@ -83,7 +83,7 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  int printk_delay_msec __read_mostly;
  
  static inline void printk_delay(void)
-@@ -2041,11 +2100,13 @@ int vprintk_store(int facility, int level,
+@@ -2043,11 +2102,13 @@ int vprintk_store(int facility, int level,
  	struct prb_reserved_entry e;
  	enum log_flags lflags = 0;
  	struct printk_record r;
@@ -97,7 +97,7 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  	u64 ts_nsec;
  
  	/*
-@@ -2056,6 +2117,9 @@ int vprintk_store(int facility, int level,
+@@ -2058,6 +2119,9 @@ int vprintk_store(int facility, int level,
  	 */
  	ts_nsec = local_clock();
  
@@ -107,7 +107,7 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  	/*
  	 * The sprintf needs to come first since the syslog prefix might be
  	 * passed in as a parameter. An extra byte must be reserved so that
-@@ -2093,7 +2157,8 @@ int vprintk_store(int facility, int level,
+@@ -2095,7 +2159,8 @@ int vprintk_store(int facility, int level,
  				prb_commit(&e);
  			}
  
@@ -117,7 +117,7 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  		}
  	}
  
-@@ -2109,7 +2174,7 @@ int vprintk_store(int facility, int level,
+@@ -2111,7 +2176,7 @@ int vprintk_store(int facility, int level,
  
  		prb_rec_init_wr(&r, reserve_size + trunc_msg_len);
  		if (!prb_reserve(&e, prb, &r))
@@ -126,7 +126,7 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  	}
  
  	/* fill message */
-@@ -2131,7 +2196,10 @@ int vprintk_store(int facility, int level,
+@@ -2133,7 +2198,10 @@ int vprintk_store(int facility, int level,
  	else
  		prb_final_commit(&e);
  
@@ -139,5 +139,5 @@ index 6be1b50efcd99..8f357abf0b49e 100644
  
  asmlinkage int vprintk_emit(int facility, int level,
 -- 
-2.35.1
+2.35.3
 
