@@ -1,8 +1,8 @@
-From 911af333faa8aeae9006e8214ca494a7c8d75b35 Mon Sep 17 00:00:00 2001
+From a309856cae0c403bb844c9c89bd345168c2f6ee1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
-Subject: [PATCH 066/345] buffer_head: Replace bh_uptodate_lock for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
+Subject: [PATCH 066/347] buffer_head: Replace bh_uptodate_lock for -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -87,7 +87,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  		__this_cpu_inc(bh_accounting.nr);
  		recalc_bh_state();
 diff --git a/fs/ext4/page-io.c b/fs/ext4/page-io.c
-index 9cc79b7b0df1..3f4ba2011499 100644
+index 3de933354a08..838d9f4fc554 100644
 --- a/fs/ext4/page-io.c
 +++ b/fs/ext4/page-io.c
 @@ -95,8 +95,7 @@ static void ext4_finish_bio(struct bio *bio)
@@ -100,9 +100,9 @@ index 9cc79b7b0df1..3f4ba2011499 100644
  		do {
  			if (bh_offset(bh) < bio_start ||
  			    bh_offset(bh) + bh->b_size > bio_end) {
-@@ -108,8 +107,7 @@ static void ext4_finish_bio(struct bio *bio)
- 			if (bio->bi_status)
+@@ -110,8 +109,7 @@ static void ext4_finish_bio(struct bio *bio)
  				buffer_io_error(bh);
+ 			}
  		} while ((bh = bh->b_this_page) != head);
 -		bit_spin_unlock(BH_Uptodate_Lock, &head->b_state);
 -		local_irq_restore(flags);
@@ -193,5 +193,5 @@ index 9168fc33a4f7..572541d6cc90 100644
   * macro tricks to expand the set_buffer_foo(), clear_buffer_foo()
   * and buffer_foo() functions.
 -- 
-2.35.1
+2.36.1
 

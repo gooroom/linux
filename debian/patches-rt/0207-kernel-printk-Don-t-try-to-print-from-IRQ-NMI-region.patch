@@ -1,8 +1,8 @@
-From 31324d918443a92c08c84c57126339b6d19c0142 Mon Sep 17 00:00:00 2001
+From 5ff42463701b87deff98424f5417e808d69fd327 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 19 May 2016 17:45:27 +0200
-Subject: [PATCH 207/345] kernel/printk: Don't try to print from IRQ/NMI region
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
+Subject: [PATCH 207/347] kernel/printk: Don't try to print from IRQ/NMI region
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 On -RT we try to acquire sleeping locks which might lead to warnings
 from lockdep or a warn_on() from spin_try_lock() (which is a rtmutex on
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 10 insertions(+)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index c59ad9f936ae..4e0ec0b6ac82 100644
+index c06b1e00448d..273f2c7864b5 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1817,6 +1817,11 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1819,6 +1819,11 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	if (!console_drivers)
  		return;
  
@@ -31,7 +31,7 @@ index c59ad9f936ae..4e0ec0b6ac82 100644
  	migrate_disable();
  	for_each_console(con) {
  		if (exclusive_console && con != exclusive_console)
-@@ -2593,6 +2598,11 @@ void console_unblank(void)
+@@ -2595,6 +2600,11 @@ void console_unblank(void)
  {
  	struct console *c;
  
@@ -44,5 +44,5 @@ index c59ad9f936ae..4e0ec0b6ac82 100644
  	 * console_unblank can no longer be called in interrupt context unless
  	 * oops_in_progress is set to 1..
 -- 
-2.35.1
+2.36.1
 

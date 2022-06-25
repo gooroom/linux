@@ -1,8 +1,8 @@
-From f0acf1ac2e9bfa2c825a8a1447cd5ccfcd60734a Mon Sep 17 00:00:00 2001
+From 1a0157a8d087c0c5bdf88ad97e2d4db77bee63aa Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 22 Dec 2021 20:35:22 +0100
-Subject: [PATCH 344/345] net: Add missing xmit_lock_owner hunks.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.233-rt105.tar.xz
+Subject: [PATCH 344/347] net: Add missing xmit_lock_owner hunks.
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 The patch
 	net: move xmit_recursion to per-task variable on -RT
@@ -18,10 +18,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 16 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index f2bec9374a84..276b8d1edff8 100644
+index c4713217b20e..bd73117e2636 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -3883,17 +3883,17 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3885,17 +3885,17 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  #ifdef CONFIG_PREEMPT_RT_FULL
  static inline void netdev_queue_set_owner(struct netdev_queue *txq, int cpu)
  {
@@ -42,7 +42,7 @@ index f2bec9374a84..276b8d1edff8 100644
  		return true;
  	return false;
  }
-@@ -3902,17 +3902,19 @@ static inline bool netdev_queue_has_owner(struct netdev_queue *txq)
+@@ -3904,17 +3904,19 @@ static inline bool netdev_queue_has_owner(struct netdev_queue *txq)
  
  static inline void netdev_queue_set_owner(struct netdev_queue *txq, int cpu)
  {
@@ -65,7 +65,7 @@ index f2bec9374a84..276b8d1edff8 100644
  		return true;
  	return false;
  }
-@@ -3921,8 +3923,7 @@ static inline bool netdev_queue_has_owner(struct netdev_queue *txq)
+@@ -3923,8 +3925,7 @@ static inline bool netdev_queue_has_owner(struct netdev_queue *txq)
  static inline void __netif_tx_lock(struct netdev_queue *txq, int cpu)
  {
  	spin_lock(&txq->_xmit_lock);
@@ -75,7 +75,7 @@ index f2bec9374a84..276b8d1edff8 100644
  }
  
  static inline bool __netif_tx_acquire(struct netdev_queue *txq)
-@@ -3939,8 +3940,7 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
+@@ -3941,8 +3942,7 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
  static inline void __netif_tx_lock_bh(struct netdev_queue *txq)
  {
  	spin_lock_bh(&txq->_xmit_lock);
@@ -85,7 +85,7 @@ index f2bec9374a84..276b8d1edff8 100644
  }
  
  static inline bool __netif_tx_trylock(struct netdev_queue *txq)
-@@ -3948,23 +3948,20 @@ static inline bool __netif_tx_trylock(struct netdev_queue *txq)
+@@ -3950,23 +3950,20 @@ static inline bool __netif_tx_trylock(struct netdev_queue *txq)
  	bool ok = spin_trylock(&txq->_xmit_lock);
  
  	if (likely(ok)) {
@@ -113,5 +113,5 @@ index f2bec9374a84..276b8d1edff8 100644
  }
  
 -- 
-2.35.1
+2.36.1
 
