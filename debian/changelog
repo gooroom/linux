@@ -1,4 +1,4 @@
-linux (4.19.248-1) UNRELEASED; urgency=medium
+linux (4.19.249-1) UNRELEASED; urgency=medium
 
   * New upstream stable update:
     https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.19.236
@@ -646,7 +646,6 @@ linux (4.19.248-1) UNRELEASED; urgency=medium
     - nvme-pci: fix a NULL pointer dereference in nvme_alloc_admin_tags
     - ASoC: rt5645: Fix errorenous cleanup order
     - net: phy: micrel: Allow probing without .driver_data
-    - hwmon: Make chip parameter for with_info API mandatory
     - rxrpc: Return an error to sendmsg if call failed
     - [arm64] PM / devfreq: rk3399_dmc: Disable edev on remove()
     - fs: jfs: fix possible NULL pointer dereference in dbFree()
@@ -850,6 +849,94 @@ linux (4.19.248-1) UNRELEASED; urgency=medium
       + x86/speculation/mmio: Reuse SRBDS mitigation for SBDS
       + KVM: x86/speculation: Disable Fill buffer clear within guests
       + x86/speculation/mmio: Print SMT warning
+    https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.19.249
+    - 9p: missing chunk of "fs/9p: Don't update file type when updating file
+      attributes"
+    - crypto: blake2s - generic C library implementation and selftest
+    - lib/crypto: blake2s: move hmac construction into wireguard
+    - lib/crypto: sha1: re-roll loops to reduce code size
+    - random: Backport from 5.19, fixing several weaknesses and
+      peformance issues, including:
+      + fdt: add support for rng-seed
+      + random: add GRND_INSECURE to return best-effort non-cryptographic bytes
+      + random: ignore GRND_RANDOM in getentropy(2)
+      + random: make /dev/random be almost like /dev/urandom
+      + random: use BLAKE2s instead of SHA1 in extraction
+      + random: avoid superfluous call to RDRAND in CRNG extraction
+      + random: continually use hwgenerator randomness
+      + random: use computational hash for entropy extraction
+      + random: use RDSEED instead of RDRAND in entropy extraction
+      + random: do not xor RDRAND when writing into /dev/random
+      + random: absorb fast pool into input pool after fast load
+      + random: use hash function for crng_slow_load()
+      + random: zero buffer after reading entropy from userspace
+      + random: defer fast pool mixing to worker
+      + random: do crng pre-init loading in worker rather than irq
+      + random: don't let 644 read-only sysctls be written to
+      + random: use SipHash as interrupt entropy accumulator
+      + random: reseed more often immediately after booting
+      + random: check for signal and try earlier when generating entropy
+      + random: treat bootloader trust toggle the same way as cpu trust toggle
+      + random: do not allow user to keep crng key around on stack
+      + random: check for signal_pending() outside of need_resched() check
+      + random: check for signals every PAGE_SIZE chunk of /dev/[u]random
+      + init: call time_init() before rand_initialize()
+      + [ppc64el,s390x] define get_cycles macro for arch-override
+      + timekeeping: Add raw clock fallback for random_get_entropy()
+      + [armel,armhf,mips*] use fallback for random_get_entropy() instead of
+        just c0 random
+      + [x86] tsc: Use fallback for random_get_entropy() instead of zero
+      + random: do not use batches when !crng_ready()
+      + random: do not pretend to handle premature next security model
+      + random: do not use input pool from hard IRQs
+      + random: avoid initializing twice in credit race
+      + random: wire up fops->splice_{read,write}_iter()
+      + random: credit cpu and bootloader seeds by default
+    - crypto: drbg - add FIPS 140-2 CTRNG for noise source
+    - crypto: drbg - always seeded with SP800-90B compliant noise source
+    - crypto: drbg - prepare for more fine-grained tracking of seeding state
+    - crypto: drbg - track whether DRBG was seeded with !rng_is_initialized()
+    - crypto: drbg - move dynamic ->reseed_threshold adjustments to
+      __drbg_seed()
+    - crypto: drbg - always try to free Jitter RNG instance
+    - crypto: drbg - make reseeding from get_random_bytes() synchronous
+    - ata: libata-core: fix NULL pointer deref in ata_host_alloc_pinfo()
+    - [armhf] ASoC: es8328: Fix event generation for deemphasis control
+    - [x86] scsi: vmw_pvscsi: Expand vcpuHint to 16 bits
+    - scsi: lpfc: Fix port stuck in bypassed state after LIP in PT2PT topology
+    - scsi: ipr: Fix missing/incorrect resource cleanup in error case
+    - scsi: pmcraid: Fix missing resource cleanup in error case
+    - virtio-mmio: fix missing put_device() when vm_cmdline_parent registration
+      failed
+    - ipv6: Fix signed integer overflow in l2tp_ip6_sendmsg
+    - pNFS: Don't keep retrying if the server replied NFS4ERR_LAYOUTUNAVAILABLE
+    - i40e: Fix adding ADQ filter to TC0
+    - i40e: Fix call trace in setup_tx_descriptors
+    - [arm64] ftrace: fix branch range checks
+    - [arm64,armhf] irqchip/gic-v3: Fix refcount leak in
+      gic_populate_ppi_partitions
+    - [x86] comedi: vmk80xx: fix expression for tx buffer size
+    - USB: serial: option: add support for Cinterion MV31 with new baseline
+    - USB: serial: io_ti: add Agilent E5805A support
+    - [arm*] usb: dwc2: Fix memory leak in dwc2_hcd_init
+    - serial: 8250: Store to lsr_save_flags after lsr read
+    - ext4: fix bug_on ext4_mb_use_inode_pa
+    - ext4: make variable "count" signed
+    - ext4: add reserved GDT blocks check
+    - virtio-pci: Remove wrong address verification in vp_del_vqs()
+    - net: openvswitch: fix misuse of the cached connection on tuple changes
+    - net: openvswitch: fix leak of nested actions
+    - [s390x] mm: use non-quiescing sske for KVM switch to keyed guest
+    - usb: gadget: u_ether: fix regression in setting fixed MAC address
+      (regression in 4.19.223)
+    - xprtrdma: fix incorrect header size calculations
+    - tcp: Improve source port randomisation (CVE-2022-1012, CVE-2022-32296):
+      + tcp: add some entropy in __inet_hash_connect()
+      + tcp: use different parts of the port_offset for index and offset
+      + tcp: add small random increments to the source port
+      + tcp: dynamically allocate the perturb table used by source ports
+      + tcp: increase source port perturb table to 2^16
+      + tcp: drop the hash_32() part from the index calculation
 
   [ Salvatore Bonaccorso ]
   * Bump ABI to 21
@@ -861,6 +948,10 @@ linux (4.19.248-1) UNRELEASED; urgency=medium
   * [rt] Update to 4.19.246-rt110:
     - genirq: Add lost hunk to irq_forced_thread_fn(). (regression in
       4.19.184-rt75)
+
+  [ Ben Hutchings ]
+  * [rt] Drop "random: Make it work on rt", since the upstream version is now
+    RT-aware
 
  -- Salvatore Bonaccorso <carnil@debian.org>  Sat, 26 Mar 2022 13:51:55 +0100
 
