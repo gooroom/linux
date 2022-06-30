@@ -1,8 +1,8 @@
-From b57aa94dca794e6e20063f120cc9b5fabf98ce28 Mon Sep 17 00:00:00 2001
+From 7fdad2ec35c8a029d2b4273c333538e131e95a5c Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/319] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Subject: [PATCH 009/318] sched: Massage set_cpus_allowed()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.120-rt70.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e82c02da5f612..f91f41dd39f57 100644
+index e82c02da5f61..f91f41dd39f5 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1834,13 +1834,14 @@ static int migration_cpu_stop(void *data)
@@ -123,7 +123,7 @@ index e82c02da5f612..f91f41dd39f57 100644
  	/*
  	 * We're having a chicken and egg problem, even though we are
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index a47e32fcd18be..23089fa04f232 100644
+index a47e32fcd18b..23089fa04f23 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -2308,7 +2308,8 @@ static void task_woken_dl(struct rq *rq, struct task_struct *p)
@@ -146,7 +146,7 @@ index a47e32fcd18be..23089fa04f232 100644
  
  /* Assumes rq->lock is held */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index a2b7bcf406ca1..ff5785a28b2f4 100644
+index a2b7bcf406ca..ff5785a28b2f 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1818,7 +1818,8 @@ struct sched_class {
