@@ -1,0 +1,56 @@
+From 023f2c5c4b55f6a86d00d5fb73ee8d3786d1ffb5 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Tue, 8 Mar 2022 16:30:14 +0100
+Subject: [PATCH 069/129] objtool: Default ignore INT3 for unreachable
+
+commit 1ffbe4e935f9b7308615c75be990aec07464d1e7 upstream.
+
+Ignore all INT3 instructions for unreachable code warnings, similar to NOP.
+This allows using INT3 for various paddings instead of NOPs.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Acked-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Link: https://lore.kernel.org/r/20220308154317.343312938@infradead.org
+Signed-off-by: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/check.c | 12 +++++-------
+ 1 file changed, 5 insertions(+), 7 deletions(-)
+
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index 9943987b24a9..fdf96eef6e00 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -2775,9 +2775,8 @@ static int validate_branch(struct objtool_file *file, struct symbol *func,
+ 		switch (insn->type) {
+ 
+ 		case INSN_RETURN:
+-			if (next_insn && next_insn->type == INSN_TRAP) {
+-				next_insn->ignore = true;
+-			} else if (sls && !insn->retpoline_safe) {
++			if (sls && !insn->retpoline_safe &&
++			    next_insn && next_insn->type != INSN_TRAP) {
+ 				WARN_FUNC("missing int3 after ret",
+ 					  insn->sec, insn->offset);
+ 			}
+@@ -2824,9 +2823,8 @@ static int validate_branch(struct objtool_file *file, struct symbol *func,
+ 			break;
+ 
+ 		case INSN_JUMP_DYNAMIC:
+-			if (next_insn && next_insn->type == INSN_TRAP) {
+-				next_insn->ignore = true;
+-			} else if (sls && !insn->retpoline_safe) {
++			if (sls && !insn->retpoline_safe &&
++			    next_insn && next_insn->type != INSN_TRAP) {
+ 				WARN_FUNC("missing int3 after indirect jump",
+ 					  insn->sec, insn->offset);
+ 			}
+@@ -2997,7 +2995,7 @@ static bool ignore_unreachable_insn(struct objtool_file *file, struct instructio
+ 	int i;
+ 	struct instruction *prev_insn;
+ 
+-	if (insn->ignore || insn->type == INSN_NOP)
++	if (insn->ignore || insn->type == INSN_NOP || insn->type == INSN_TRAP)
+ 		return true;
+ 
+ 	/*

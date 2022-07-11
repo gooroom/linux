@@ -1,0 +1,28 @@
+From 6a8effb6c95407f4658493e6c2a18e8eea69663d Mon Sep 17 00:00:00 2001
+From: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
+Date: Fri, 1 Jul 2022 11:21:20 -0300
+Subject: [PATCH 077/129] x86/realmode: build with -D__DISABLE_EXPORTS
+
+Commit 156ff4a544ae ("x86/ibt: Base IBT bits") added this option when
+building realmode in order to disable IBT there. This is also needed in
+order to disable return thunks.
+
+Signed-off-by: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 05f5d28b75eb..1f796050c6dd 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -31,7 +31,7 @@ endif
+ CODE16GCC_CFLAGS := -m32 -Wa,$(srctree)/arch/x86/boot/code16gcc.h
+ M16_CFLAGS	 := $(call cc-option, -m16, $(CODE16GCC_CFLAGS))
+ 
+-REALMODE_CFLAGS	:= $(M16_CFLAGS) -g -Os -DDISABLE_BRANCH_PROFILING \
++REALMODE_CFLAGS	:= $(M16_CFLAGS) -g -Os -DDISABLE_BRANCH_PROFILING -D__DISABLE_EXPORTS \
+ 		   -Wall -Wstrict-prototypes -march=i386 -mregparm=3 \
+ 		   -fno-strict-aliasing -fomit-frame-pointer -fno-pic \
+ 		   -mno-mmx -mno-sse $(call cc-option,-fcf-protection=none)

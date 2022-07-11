@@ -1,0 +1,42 @@
+From 2fa7b4cb566f8d38eb480cf4dec535c9087ceb2b Mon Sep 17 00:00:00 2001
+From: Josh Poimboeuf <jpoimboe@redhat.com>
+Date: Thu, 21 Jan 2021 15:29:29 -0600
+Subject: [PATCH 010/129] x86/xen: Support objtool vmlinux.o validation in
+ xen-head.S
+
+commit f4b4bc10b0b85ec66f1a9bf5dddf475e6695b6d2 upstream.
+
+The Xen hypercall page is filled with zeros, causing objtool to fall
+through all the empty hypercall functions until it reaches a real
+function, resulting in a stack state mismatch.
+
+The build-time contents of the hypercall page don't matter because the
+page gets rewritten by the hypervisor.  Make it more palatable to
+objtool by making each hypervisor function a true empty function, with
+nops and a return.
+
+Cc: Juergen Gross <jgross@suse.com>
+Reviewed-by: Boris Ostrovsky <boris.ostrovsky@oracle.com>
+Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Link: https://lore.kernel.org/r/0883bde1d7a1fb3b6a4c952bc0200e873752f609.1611263462.git.jpoimboe@redhat.com
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/xen/xen-head.S | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/xen/xen-head.S b/arch/x86/xen/xen-head.S
+index 2d7c8f34f56c..cb6538ae2fe0 100644
+--- a/arch/x86/xen/xen-head.S
++++ b/arch/x86/xen/xen-head.S
+@@ -68,8 +68,9 @@ SYM_CODE_END(asm_cpu_bringup_and_idle)
+ 	.balign PAGE_SIZE
+ SYM_CODE_START(hypercall_page)
+ 	.rept (PAGE_SIZE / 32)
+-		UNWIND_HINT_EMPTY
+-		.skip 32
++		UNWIND_HINT_FUNC
++		.skip 31, 0x90
++		ret
+ 	.endr
+ 
+ #define HYPERCALL(n) \

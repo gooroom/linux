@@ -1,0 +1,131 @@
+From 308d3d43df71c44bbcd83fd8bfbe6f5708dfbdc1 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 26 Mar 2021 16:12:06 +0100
+Subject: [PATCH 025/129] objtool: Rework the elf_rebuild_reloc_section() logic
+
+commit 3a647607b57ad8346e659ddd3b951ac292c83690 upstream.
+
+Instead of manually calling elf_rebuild_reloc_section() on sections
+we've called elf_add_reloc() on, have elf_write() DTRT.
+
+This makes it easier to add random relocations in places without
+carefully tracking when we're done and need to flush what section.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Miroslav Benes <mbenes@suse.cz>
+Link: https://lkml.kernel.org/r/20210326151259.754213408@infradead.org
+[bwh: Backported to 5.10: drop changes in create_mcount_loc_sections()]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/check.c   |  3 ---
+ tools/objtool/elf.c     | 20 ++++++++++++++------
+ tools/objtool/elf.h     |  1 -
+ tools/objtool/orc_gen.c |  3 ---
+ 4 files changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index 5e407ec95949..fb9be8ec893d 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -542,9 +542,6 @@ static int create_static_call_sections(struct objtool_file *file)
+ 		idx++;
+ 	}
+ 
+-	if (elf_rebuild_reloc_section(file->elf, reloc_sec))
+-		return -1;
+-
+ 	return 0;
+ }
+ 
+diff --git a/tools/objtool/elf.c b/tools/objtool/elf.c
+index d8421e1d06be..ce08aafa7da0 100644
+--- a/tools/objtool/elf.c
++++ b/tools/objtool/elf.c
+@@ -530,6 +530,8 @@ void elf_add_reloc(struct elf *elf, struct reloc *reloc)
+ 
+ 	list_add_tail(&reloc->list, &sec->reloc_list);
+ 	elf_hash_add(elf->reloc_hash, &reloc->hash, reloc_hash(reloc));
++
++	sec->changed = true;
+ }
+ 
+ static int read_rel_reloc(struct section *sec, int i, struct reloc *reloc, unsigned int *symndx)
+@@ -609,7 +611,9 @@ static int read_relocs(struct elf *elf)
+ 				return -1;
+ 			}
+ 
+-			elf_add_reloc(elf, reloc);
++			list_add_tail(&reloc->list, &sec->reloc_list);
++			elf_hash_add(elf->reloc_hash, &reloc->hash, reloc_hash(reloc));
++
+ 			nr_reloc++;
+ 		}
+ 		max_reloc = max(max_reloc, nr_reloc);
+@@ -920,14 +924,11 @@ static int elf_rebuild_rela_reloc_section(struct section *sec, int nr)
+ 	return 0;
+ }
+ 
+-int elf_rebuild_reloc_section(struct elf *elf, struct section *sec)
++static int elf_rebuild_reloc_section(struct elf *elf, struct section *sec)
+ {
+ 	struct reloc *reloc;
+ 	int nr;
+ 
+-	sec->changed = true;
+-	elf->changed = true;
+-
+ 	nr = 0;
+ 	list_for_each_entry(reloc, &sec->reloc_list, list)
+ 		nr++;
+@@ -991,9 +992,15 @@ int elf_write(struct elf *elf)
+ 	struct section *sec;
+ 	Elf_Scn *s;
+ 
+-	/* Update section headers for changed sections: */
++	/* Update changed relocation sections and section headers: */
+ 	list_for_each_entry(sec, &elf->sections, list) {
+ 		if (sec->changed) {
++			if (sec->base &&
++			    elf_rebuild_reloc_section(elf, sec)) {
++				WARN("elf_rebuild_reloc_section");
++				return -1;
++			}
++
+ 			s = elf_getscn(elf->elf, sec->idx);
+ 			if (!s) {
+ 				WARN_ELF("elf_getscn");
+@@ -1005,6 +1012,7 @@ int elf_write(struct elf *elf)
+ 			}
+ 
+ 			sec->changed = false;
++			elf->changed = true;
+ 		}
+ 	}
+ 
+diff --git a/tools/objtool/elf.h b/tools/objtool/elf.h
+index e6890cc70a25..fc576edacfc4 100644
+--- a/tools/objtool/elf.h
++++ b/tools/objtool/elf.h
+@@ -142,7 +142,6 @@ struct reloc *find_reloc_by_dest_range(const struct elf *elf, struct section *se
+ struct symbol *find_func_containing(struct section *sec, unsigned long offset);
+ void insn_to_reloc_sym_addend(struct section *sec, unsigned long offset,
+ 			      struct reloc *reloc);
+-int elf_rebuild_reloc_section(struct elf *elf, struct section *sec);
+ 
+ #define for_each_sec(file, sec)						\
+ 	list_for_each_entry(sec, &file->elf->sections, list)
+diff --git a/tools/objtool/orc_gen.c b/tools/objtool/orc_gen.c
+index 0d62f958dbea..02e02fc49bbd 100644
+--- a/tools/objtool/orc_gen.c
++++ b/tools/objtool/orc_gen.c
+@@ -251,8 +251,5 @@ int orc_create(struct objtool_file *file)
+ 			return -1;
+ 	}
+ 
+-	if (elf_rebuild_reloc_section(file->elf, ip_rsec))
+-		return -1;
+-
+ 	return 0;
+ }

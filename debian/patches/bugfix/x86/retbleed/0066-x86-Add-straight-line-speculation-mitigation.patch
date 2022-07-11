@@ -1,0 +1,217 @@
+From d4fda1ec62fa8796634c554ed43da63a9a2ffded Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Sat, 4 Dec 2021 14:43:44 +0100
+Subject: [PATCH 066/129] x86: Add straight-line-speculation mitigation
+
+commit e463a09af2f0677b9485a7e8e4e70b396b2ffb6f upstream.
+
+Make use of an upcoming GCC feature to mitigate
+straight-line-speculation for x86:
+
+  https://gcc.gnu.org/g:53a643f8568067d7700a9f2facc8ba39974973d3
+  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=102952
+  https://bugs.llvm.org/show_bug.cgi?id=52323
+
+It's built tested on x86_64-allyesconfig using GCC-12 and GCC-11.
+
+Maintenance overhead of this should be fairly low due to objtool
+validation.
+
+Size overhead of all these additional int3 instructions comes to:
+
+     text	   data	    bss	    dec	    hex	filename
+  22267751	6933356	2011368	31212475	1dc43bb	defconfig-build/vmlinux
+  22804126	6933356	1470696	31208178	1dc32f2	defconfig-build/vmlinux.sls
+
+Or roughly 2.4% additional text.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Link: https://lore.kernel.org/r/20211204134908.140103474@infradead.org
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+[bwh: Backported to 5.10:
+ - In scripts/Makefile.build, add the objtool option with an ifdef
+   block, same as for other options
+ - Adjust context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/Kconfig                   | 12 ++++++++++++
+ arch/x86/Makefile                  |  6 +++++-
+ arch/x86/include/asm/linkage.h     | 10 ++++++++++
+ arch/x86/include/asm/static_call.h |  2 +-
+ arch/x86/kernel/ftrace.c           |  2 +-
+ arch/x86/kernel/static_call.c      |  5 +++--
+ arch/x86/lib/memmove_64.S          |  2 +-
+ arch/x86/lib/retpoline.S           |  2 +-
+ scripts/Makefile.build             |  3 +++
+ scripts/link-vmlinux.sh            |  3 +++
+ 10 files changed, 40 insertions(+), 7 deletions(-)
+
+diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
+index ed713840d469..68d46a648f6e 100644
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -462,6 +462,18 @@ config RETPOLINE
+ 	  branches. Requires a compiler with -mindirect-branch=thunk-extern
+ 	  support for full protection. The kernel may run slower.
+ 
++config CC_HAS_SLS
++	def_bool $(cc-option,-mharden-sls=all)
++
++config SLS
++	bool "Mitigate Straight-Line-Speculation"
++	depends on CC_HAS_SLS && X86_64
++	default n
++	help
++	  Compile the kernel with straight-line-speculation options to guard
++	  against straight line speculation. The kernel image might be slightly
++	  larger.
++
+ config X86_CPU_RESCTRL
+ 	bool "x86 CPU resource control support"
+ 	depends on X86 && (CPU_SUP_INTEL || CPU_SUP_AMD)
+diff --git a/arch/x86/Makefile b/arch/x86/Makefile
+index 8ed757d06f77..05f5d28b75eb 100644
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -196,7 +196,11 @@ ifdef CONFIG_RETPOLINE
+   endif
+ endif
+ 
+-KBUILD_LDFLAGS := -m elf_$(UTS_MACHINE)
++ifdef CONFIG_SLS
++  KBUILD_CFLAGS += -mharden-sls=all
++endif
++
++KBUILD_LDFLAGS += -m elf_$(UTS_MACHINE)
+ 
+ ifdef CONFIG_X86_NEED_RELOCS
+ LDFLAGS_vmlinux := --emit-relocs --discard-none
+diff --git a/arch/x86/include/asm/linkage.h b/arch/x86/include/asm/linkage.h
+index ebddec2f3ba8..030907922bd0 100644
+--- a/arch/x86/include/asm/linkage.h
++++ b/arch/x86/include/asm/linkage.h
+@@ -18,9 +18,19 @@
+ #define __ALIGN_STR	__stringify(__ALIGN)
+ #endif
+ 
++#ifdef CONFIG_SLS
++#define RET	ret; int3
++#else
++#define RET	ret
++#endif
++
+ #else /* __ASSEMBLY__ */
+ 
++#ifdef CONFIG_SLS
++#define ASM_RET	"ret; int3\n\t"
++#else
+ #define ASM_RET	"ret\n\t"
++#endif
+ 
+ #endif /* __ASSEMBLY__ */
+ 
+diff --git a/arch/x86/include/asm/static_call.h b/arch/x86/include/asm/static_call.h
+index cbb67b6030f9..343234569392 100644
+--- a/arch/x86/include/asm/static_call.h
++++ b/arch/x86/include/asm/static_call.h
+@@ -35,7 +35,7 @@
+ 	__ARCH_DEFINE_STATIC_CALL_TRAMP(name, ".byte 0xe9; .long " #func " - (. + 4)")
+ 
+ #define ARCH_DEFINE_STATIC_CALL_NULL_TRAMP(name)			\
+-	__ARCH_DEFINE_STATIC_CALL_TRAMP(name, "ret; nop; nop; nop; nop")
++	__ARCH_DEFINE_STATIC_CALL_TRAMP(name, "ret; int3; nop; nop; nop")
+ 
+ 
+ #define ARCH_ADD_TRAMP_KEY(name)					\
+diff --git a/arch/x86/kernel/ftrace.c b/arch/x86/kernel/ftrace.c
+index 7edbd5ee5ed4..fbcd144260ac 100644
+--- a/arch/x86/kernel/ftrace.c
++++ b/arch/x86/kernel/ftrace.c
+@@ -308,7 +308,7 @@ union ftrace_op_code_union {
+ 	} __attribute__((packed));
+ };
+ 
+-#define RET_SIZE		1
++#define RET_SIZE		1 + IS_ENABLED(CONFIG_SLS)
+ 
+ static unsigned long
+ create_trampoline(struct ftrace_ops *ops, unsigned int *tramp_size)
+diff --git a/arch/x86/kernel/static_call.c b/arch/x86/kernel/static_call.c
+index ca9a380d9c0b..32d673bbc3ef 100644
+--- a/arch/x86/kernel/static_call.c
++++ b/arch/x86/kernel/static_call.c
+@@ -11,6 +11,8 @@ enum insn_type {
+ 	RET = 3,  /* tramp / site cond-tail-call */
+ };
+ 
++static const u8 retinsn[] = { RET_INSN_OPCODE, 0xcc, 0xcc, 0xcc, 0xcc };
++
+ static void __ref __static_call_transform(void *insn, enum insn_type type, void *func)
+ {
+ 	int size = CALL_INSN_SIZE;
+@@ -30,8 +32,7 @@ static void __ref __static_call_transform(void *insn, enum insn_type type, void
+ 		break;
+ 
+ 	case RET:
+-		code = text_gen_insn(RET_INSN_OPCODE, insn, func);
+-		size = RET_INSN_SIZE;
++		code = &retinsn;
+ 		break;
+ 	}
+ 
+diff --git a/arch/x86/lib/memmove_64.S b/arch/x86/lib/memmove_64.S
+index e84d649620c4..50ea390df712 100644
+--- a/arch/x86/lib/memmove_64.S
++++ b/arch/x86/lib/memmove_64.S
+@@ -40,7 +40,7 @@ SYM_FUNC_START(__memmove)
+ 	/* FSRM implies ERMS => no length checks, do the copy directly */
+ .Lmemmove_begin_forward:
+ 	ALTERNATIVE "cmp $0x20, %rdx; jb 1f", "", X86_FEATURE_FSRM
+-	ALTERNATIVE "", "movq %rdx, %rcx; rep movsb; RET", X86_FEATURE_ERMS
++	ALTERNATIVE "", __stringify(movq %rdx, %rcx; rep movsb; RET), X86_FEATURE_ERMS
+ 
+ 	/*
+ 	 * movsq instruction have many startup latency
+diff --git a/arch/x86/lib/retpoline.S b/arch/x86/lib/retpoline.S
+index 8904c076a1df..afbdda539b80 100644
+--- a/arch/x86/lib/retpoline.S
++++ b/arch/x86/lib/retpoline.S
+@@ -34,7 +34,7 @@ SYM_INNER_LABEL(__x86_indirect_thunk_\reg, SYM_L_GLOBAL)
+ 
+ 	ALTERNATIVE_2 __stringify(ANNOTATE_RETPOLINE_SAFE; jmp *%\reg), \
+ 		      __stringify(RETPOLINE \reg), X86_FEATURE_RETPOLINE, \
+-		      __stringify(lfence; ANNOTATE_RETPOLINE_SAFE; jmp *%\reg), X86_FEATURE_RETPOLINE_LFENCE
++		      __stringify(lfence; ANNOTATE_RETPOLINE_SAFE; jmp *%\reg; int3), X86_FEATURE_RETPOLINE_LFENCE
+ 
+ .endm
+ 
+diff --git a/scripts/Makefile.build b/scripts/Makefile.build
+index 8bd4e673383f..bea7e54b2ab9 100644
+--- a/scripts/Makefile.build
++++ b/scripts/Makefile.build
+@@ -230,6 +230,9 @@ endif
+ ifdef CONFIG_X86_SMAP
+   objtool_args += --uaccess
+ endif
++ifdef CONFIG_SLS
++  objtool_args += --sls
++endif
+ 
+ # 'OBJECT_FILES_NON_STANDARD := y': skip objtool checking for a directory
+ # 'OBJECT_FILES_NON_STANDARD_foo.o := 'y': skip objtool checking for a file
+diff --git a/scripts/link-vmlinux.sh b/scripts/link-vmlinux.sh
+index 6eded325c837..b184d94b9052 100755
+--- a/scripts/link-vmlinux.sh
++++ b/scripts/link-vmlinux.sh
+@@ -77,6 +77,9 @@ objtool_link()
+ 		if [ -n "${CONFIG_X86_SMAP}" ]; then
+ 			objtoolopt="${objtoolopt} --uaccess"
+ 		fi
++		if [ -n "${CONFIG_SLS}" ]; then
++			objtoolopt="${objtoolopt} --sls"
++		fi
+ 		info OBJTOOL ${1}
+ 		tools/objtool/objtool ${objtoolopt} ${1}
+ 	fi

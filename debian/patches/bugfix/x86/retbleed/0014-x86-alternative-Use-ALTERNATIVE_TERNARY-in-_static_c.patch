@@ -1,0 +1,79 @@
+From 58abce710f288ee34aa4773cd2d4021fd96a5f6e Mon Sep 17 00:00:00 2001
+From: Juergen Gross <jgross@suse.com>
+Date: Thu, 11 Mar 2021 15:23:12 +0100
+Subject: [PATCH 014/129] x86/alternative: Use ALTERNATIVE_TERNARY() in
+ _static_cpu_has()
+
+commit 2fe2a2c7a97c9bc32acc79154b75e754280f7867 upstream.
+
+_static_cpu_has() contains a completely open coded version of
+ALTERNATIVE_TERNARY(). Replace that with the macro instead.
+
+Signed-off-by: Juergen Gross <jgross@suse.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Link: https://lkml.kernel.org/r/20210311142319.4723-8-jgross@suse.com
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/include/asm/cpufeature.h | 41 +++++++------------------------
+ 1 file changed, 9 insertions(+), 32 deletions(-)
+
+diff --git a/arch/x86/include/asm/cpufeature.h b/arch/x86/include/asm/cpufeature.h
+index 619c1f80a2ab..f4cbc01c0bc4 100644
+--- a/arch/x86/include/asm/cpufeature.h
++++ b/arch/x86/include/asm/cpufeature.h
+@@ -8,6 +8,7 @@
+ 
+ #include <asm/asm.h>
+ #include <linux/bitops.h>
++#include <asm/alternative.h>
+ 
+ enum cpuid_leafs
+ {
+@@ -172,39 +173,15 @@ extern void clear_cpu_cap(struct cpuinfo_x86 *c, unsigned int bit);
+  */
+ static __always_inline bool _static_cpu_has(u16 bit)
+ {
+-	asm_volatile_goto("1: jmp 6f\n"
+-		 "2:\n"
+-		 ".skip -(((5f-4f) - (2b-1b)) > 0) * "
+-			 "((5f-4f) - (2b-1b)),0x90\n"
+-		 "3:\n"
+-		 ".section .altinstructions,\"a\"\n"
+-		 " .long 1b - .\n"		/* src offset */
+-		 " .long 4f - .\n"		/* repl offset */
+-		 " .word %P[always]\n"		/* always replace */
+-		 " .byte 3b - 1b\n"		/* src len */
+-		 " .byte 5f - 4f\n"		/* repl len */
+-		 " .byte 3b - 2b\n"		/* pad len */
+-		 ".previous\n"
+-		 ".section .altinstr_replacement,\"ax\"\n"
+-		 "4: jmp %l[t_no]\n"
+-		 "5:\n"
+-		 ".previous\n"
+-		 ".section .altinstructions,\"a\"\n"
+-		 " .long 1b - .\n"		/* src offset */
+-		 " .long 0\n"			/* no replacement */
+-		 " .word %P[feature]\n"		/* feature bit */
+-		 " .byte 3b - 1b\n"		/* src len */
+-		 " .byte 0\n"			/* repl len */
+-		 " .byte 0\n"			/* pad len */
+-		 ".previous\n"
+-		 ".section .altinstr_aux,\"ax\"\n"
+-		 "6:\n"
+-		 " testb %[bitnum],%[cap_byte]\n"
+-		 " jnz %l[t_yes]\n"
+-		 " jmp %l[t_no]\n"
+-		 ".previous\n"
++	asm_volatile_goto(
++		ALTERNATIVE_TERNARY("jmp 6f", %P[feature], "", "jmp %l[t_no]")
++		".section .altinstr_aux,\"ax\"\n"
++		"6:\n"
++		" testb %[bitnum],%[cap_byte]\n"
++		" jnz %l[t_yes]\n"
++		" jmp %l[t_no]\n"
++		".previous\n"
+ 		 : : [feature]  "i" (bit),
+-		     [always]   "i" (X86_FEATURE_ALWAYS),
+ 		     [bitnum]   "i" (1 << (bit & 7)),
+ 		     [cap_byte] "m" (((const char *)boot_cpu_data.x86_capability)[bit >> 3])
+ 		 : : t_yes, t_no);

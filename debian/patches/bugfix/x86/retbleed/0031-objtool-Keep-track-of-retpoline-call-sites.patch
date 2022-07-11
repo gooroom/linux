@@ -1,0 +1,184 @@
+From 802b43aa162a17b4f8662260866ba9749deace08 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 26 Mar 2021 16:12:12 +0100
+Subject: [PATCH 031/129] objtool: Keep track of retpoline call sites
+
+commit 43d5430ad74ef5156353af7aec352426ec7a8e57 upstream.
+
+Provide infrastructure for architectures to rewrite/augment compiler
+generated retpoline calls. Similar to what we do for static_call()s,
+keep track of the instructions that are retpoline calls.
+
+Use the same list_head, since a retpoline call cannot also be a
+static_call.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Miroslav Benes <mbenes@suse.cz>
+Link: https://lkml.kernel.org/r/20210326151300.130805730@infradead.org
+[bwh: Backported to 5.10: adjust context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/arch.h    |  2 ++
+ tools/objtool/check.c   | 34 +++++++++++++++++++++++++++++-----
+ tools/objtool/check.h   |  2 +-
+ tools/objtool/objtool.c |  1 +
+ tools/objtool/objtool.h |  1 +
+ 5 files changed, 34 insertions(+), 6 deletions(-)
+
+diff --git a/tools/objtool/arch.h b/tools/objtool/arch.h
+index 82896d7615f5..8918de4f8189 100644
+--- a/tools/objtool/arch.h
++++ b/tools/objtool/arch.h
+@@ -88,4 +88,6 @@ int arch_decode_hint_reg(struct instruction *insn, u8 sp_reg);
+ 
+ bool arch_is_retpoline(struct symbol *sym);
+ 
++int arch_rewrite_retpolines(struct objtool_file *file);
++
+ #endif /* _ARCH_H */
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index 2cb409859081..f87a8782c817 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -451,7 +451,7 @@ static int create_static_call_sections(struct objtool_file *file)
+ 		return 0;
+ 
+ 	idx = 0;
+-	list_for_each_entry(insn, &file->static_call_list, static_call_node)
++	list_for_each_entry(insn, &file->static_call_list, call_node)
+ 		idx++;
+ 
+ 	sec = elf_create_section(file->elf, ".static_call_sites", SHF_WRITE,
+@@ -460,7 +460,7 @@ static int create_static_call_sections(struct objtool_file *file)
+ 		return -1;
+ 
+ 	idx = 0;
+-	list_for_each_entry(insn, &file->static_call_list, static_call_node) {
++	list_for_each_entry(insn, &file->static_call_list, call_node) {
+ 
+ 		site = (struct static_call_site *)sec->data->d_buf + idx;
+ 		memset(site, 0, sizeof(struct static_call_site));
+@@ -786,13 +786,16 @@ static int add_jump_destinations(struct objtool_file *file)
+ 			else
+ 				insn->type = INSN_JUMP_DYNAMIC_CONDITIONAL;
+ 
++			list_add_tail(&insn->call_node,
++				      &file->retpoline_call_list);
++
+ 			insn->retpoline_safe = true;
+ 			continue;
+ 		} else if (insn->func) {
+ 			/* internal or external sibling call (with reloc) */
+ 			insn->call_dest = reloc->sym;
+ 			if (insn->call_dest->static_call_tramp) {
+-				list_add_tail(&insn->static_call_node,
++				list_add_tail(&insn->call_node,
+ 					      &file->static_call_list);
+ 			}
+ 			continue;
+@@ -854,7 +857,7 @@ static int add_jump_destinations(struct objtool_file *file)
+ 				/* internal sibling call (without reloc) */
+ 				insn->call_dest = insn->jump_dest->func;
+ 				if (insn->call_dest->static_call_tramp) {
+-					list_add_tail(&insn->static_call_node,
++					list_add_tail(&insn->call_node,
+ 						      &file->static_call_list);
+ 				}
+ 			}
+@@ -938,6 +941,9 @@ static int add_call_destinations(struct objtool_file *file)
+ 			insn->type = INSN_CALL_DYNAMIC;
+ 			insn->retpoline_safe = true;
+ 
++			list_add_tail(&insn->call_node,
++				      &file->retpoline_call_list);
++
+ 			remove_insn_ops(insn);
+ 			continue;
+ 
+@@ -945,7 +951,7 @@ static int add_call_destinations(struct objtool_file *file)
+ 			insn->call_dest = reloc->sym;
+ 
+ 		if (insn->call_dest && insn->call_dest->static_call_tramp) {
+-			list_add_tail(&insn->static_call_node,
++			list_add_tail(&insn->call_node,
+ 				      &file->static_call_list);
+ 		}
+ 
+@@ -1655,6 +1661,11 @@ static void mark_rodata(struct objtool_file *file)
+ 	file->rodata = found;
+ }
+ 
++__weak int arch_rewrite_retpolines(struct objtool_file *file)
++{
++	return 0;
++}
++
+ static int decode_sections(struct objtool_file *file)
+ {
+ 	int ret;
+@@ -1683,6 +1694,10 @@ static int decode_sections(struct objtool_file *file)
+ 	if (ret)
+ 		return ret;
+ 
++	/*
++	 * Must be before add_special_section_alts() as that depends on
++	 * jump_dest being set.
++	 */
+ 	ret = add_jump_destinations(file);
+ 	if (ret)
+ 		return ret;
+@@ -1719,6 +1734,15 @@ static int decode_sections(struct objtool_file *file)
+ 	if (ret)
+ 		return ret;
+ 
++	/*
++	 * Must be after add_special_section_alts(), since this will emit
++	 * alternatives. Must be after add_{jump,call}_destination(), since
++	 * those create the call insn lists.
++	 */
++	ret = arch_rewrite_retpolines(file);
++	if (ret)
++		return ret;
++
+ 	return 0;
+ }
+ 
+diff --git a/tools/objtool/check.h b/tools/objtool/check.h
+index d255c43b134a..e0ae2fc13e67 100644
+--- a/tools/objtool/check.h
++++ b/tools/objtool/check.h
+@@ -39,7 +39,7 @@ struct alt_group {
+ struct instruction {
+ 	struct list_head list;
+ 	struct hlist_node hash;
+-	struct list_head static_call_node;
++	struct list_head call_node;
+ 	struct section *sec;
+ 	unsigned long offset;
+ 	unsigned int len;
+diff --git a/tools/objtool/objtool.c b/tools/objtool/objtool.c
+index 9df0cd86d310..c0b1f5a99df9 100644
+--- a/tools/objtool/objtool.c
++++ b/tools/objtool/objtool.c
+@@ -61,6 +61,7 @@ struct objtool_file *objtool_open_read(const char *_objname)
+ 
+ 	INIT_LIST_HEAD(&file.insn_list);
+ 	hash_init(file.insn_hash);
++	INIT_LIST_HEAD(&file.retpoline_call_list);
+ 	INIT_LIST_HEAD(&file.static_call_list);
+ 	file.c_file = !vmlinux && find_section_by_name(file.elf, ".comment");
+ 	file.ignore_unreachables = no_unreachable;
+diff --git a/tools/objtool/objtool.h b/tools/objtool/objtool.h
+index 5e58d3537e2f..0b57150ea0fe 100644
+--- a/tools/objtool/objtool.h
++++ b/tools/objtool/objtool.h
+@@ -18,6 +18,7 @@ struct objtool_file {
+ 	struct elf *elf;
+ 	struct list_head insn_list;
+ 	DECLARE_HASHTABLE(insn_hash, 20);
++	struct list_head retpoline_call_list;
+ 	struct list_head static_call_list;
+ 	bool ignore_unreachables, c_file, hints, rodata;
+ };

@@ -1,0 +1,92 @@
+From 14cd54c391df6bacbf5bad5bbf98efc7fa500fda Mon Sep 17 00:00:00 2001
+From: Juergen Gross <jgross@suse.com>
+Date: Thu, 11 Mar 2021 15:23:10 +0100
+Subject: [PATCH 012/129] x86/alternative: Support not-feature
+
+commit dda7bb76484978316bb412a353789ebc5901de36 upstream.
+
+Add support for alternative patching for the case a feature is not
+present on the current CPU. For users of ALTERNATIVE() and friends, an
+inverted feature is specified by applying the ALT_NOT() macro to it,
+e.g.:
+
+  ALTERNATIVE(old, new, ALT_NOT(feature));
+
+Committer note:
+
+The decision to encode the NOT-bit in the feature bit itself is because
+a future change which would make objtool generate such alternative
+calls, would keep the code in objtool itself fairly simple.
+
+Also, this allows for the alternative macros to support the NOT feature
+without having to change them.
+
+Finally, the u16 cpuid member encoding the X86_FEATURE_ flags is not an
+ABI so if more bits are needed, cpuid itself can be enlarged or a flags
+field can be added to struct alt_instr after having considered the size
+growth in either cases.
+
+Signed-off-by: Juergen Gross <jgross@suse.com>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Link: https://lkml.kernel.org/r/20210311142319.4723-6-jgross@suse.com
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/include/asm/alternative.h |  3 +++
+ arch/x86/kernel/alternative.c      | 20 +++++++++++++++-----
+ 2 files changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/arch/x86/include/asm/alternative.h b/arch/x86/include/asm/alternative.h
+index aa5f246fdc07..c6690d1e1de6 100644
+--- a/arch/x86/include/asm/alternative.h
++++ b/arch/x86/include/asm/alternative.h
+@@ -6,6 +6,9 @@
+ #include <linux/stringify.h>
+ #include <asm/asm.h>
+ 
++#define ALTINSTR_FLAG_INV	(1 << 15)
++#define ALT_NOT(feat)		((feat) | ALTINSTR_FLAG_INV)
++
+ #ifndef __ASSEMBLY__
+ 
+ #include <linux/stddef.h>
+diff --git a/arch/x86/kernel/alternative.c b/arch/x86/kernel/alternative.c
+index 2400ad62f330..ff2987d5aeed 100644
+--- a/arch/x86/kernel/alternative.c
++++ b/arch/x86/kernel/alternative.c
+@@ -388,21 +388,31 @@ void __init_or_module noinline apply_alternatives(struct alt_instr *start,
+ 	 */
+ 	for (a = start; a < end; a++) {
+ 		int insn_buff_sz = 0;
++		/* Mask away "NOT" flag bit for feature to test. */
++		u16 feature = a->cpuid & ~ALTINSTR_FLAG_INV;
+ 
+ 		instr = (u8 *)&a->instr_offset + a->instr_offset;
+ 		replacement = (u8 *)&a->repl_offset + a->repl_offset;
+ 		BUG_ON(a->instrlen > sizeof(insn_buff));
+-		BUG_ON(a->cpuid >= (NCAPINTS + NBUGINTS) * 32);
+-		if (!boot_cpu_has(a->cpuid)) {
++		BUG_ON(feature >= (NCAPINTS + NBUGINTS) * 32);
++
++		/*
++		 * Patch if either:
++		 * - feature is present
++		 * - feature not present but ALTINSTR_FLAG_INV is set to mean,
++		 *   patch if feature is *NOT* present.
++		 */
++		if (!boot_cpu_has(feature) == !(a->cpuid & ALTINSTR_FLAG_INV)) {
+ 			if (a->padlen > 1)
+ 				optimize_nops(a, instr);
+ 
+ 			continue;
+ 		}
+ 
+-		DPRINTK("feat: %d*32+%d, old: (%pS (%px) len: %d), repl: (%px, len: %d), pad: %d",
+-			a->cpuid >> 5,
+-			a->cpuid & 0x1f,
++		DPRINTK("feat: %s%d*32+%d, old: (%pS (%px) len: %d), repl: (%px, len: %d), pad: %d",
++			(a->cpuid & ALTINSTR_FLAG_INV) ? "!" : "",
++			feature >> 5,
++			feature & 0x1f,
+ 			instr, instr, a->instrlen,
+ 			replacement, a->replacementlen, a->padlen);
+ 

@@ -1,0 +1,253 @@
+From 02e00b602d2e7eded0bff378560dbf83b6eb4b02 Mon Sep 17 00:00:00 2001
+From: Josh Poimboeuf <jpoimboe@redhat.com>
+Date: Thu, 21 Jan 2021 15:29:24 -0600
+Subject: [PATCH 008/129] objtool: Combine UNWIND_HINT_RET_OFFSET and
+ UNWIND_HINT_FUNC
+
+commit b735bd3e68824316655252a931a3353a6ebc036f upstream.
+
+The ORC metadata generated for UNWIND_HINT_FUNC isn't actually very
+func-like.  With certain usages it can cause stack state mismatches
+because it doesn't set the return address (CFI_RA).
+
+Also, users of UNWIND_HINT_RET_OFFSET no longer need to set a custom
+return stack offset.  Instead they just need to specify a func-like
+situation, so the current ret_offset code is hacky for no good reason.
+
+Solve both problems by simplifying the RET_OFFSET handling and
+converting it into a more useful UNWIND_HINT_FUNC.
+
+If we end up needing the old 'ret_offset' functionality again in the
+future, we should be able to support it pretty easily with the addition
+of a custom 'sp_offset' in UNWIND_HINT_FUNC.
+
+Signed-off-by: Josh Poimboeuf <jpoimboe@redhat.com>
+Link: https://lore.kernel.org/r/db9d1f5d79dddfbb3725ef6d8ec3477ad199948d.1611263462.git.jpoimboe@redhat.com
+[bwh: Backported to 5.10:
+ - Don't use bswap_if_needed() since we don't have any of the other fixes
+   for mixed-endian cross-compilation
+ - Adjust context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/include/asm/unwind_hints.h | 13 ++--------
+ arch/x86/kernel/ftrace_64.S         |  2 +-
+ arch/x86/lib/retpoline.S            |  2 +-
+ include/linux/objtool.h             |  5 +++-
+ tools/include/linux/objtool.h       |  5 +++-
+ tools/objtool/arch/x86/decode.c     |  4 ++--
+ tools/objtool/check.c               | 37 ++++++++++++-----------------
+ tools/objtool/check.h               |  1 -
+ 8 files changed, 29 insertions(+), 40 deletions(-)
+
+diff --git a/arch/x86/include/asm/unwind_hints.h b/arch/x86/include/asm/unwind_hints.h
+index 664d4610d700..8e574c0afef8 100644
+--- a/arch/x86/include/asm/unwind_hints.h
++++ b/arch/x86/include/asm/unwind_hints.h
+@@ -48,17 +48,8 @@
+ 	UNWIND_HINT_REGS base=\base offset=\offset partial=1
+ .endm
+ 
+-.macro UNWIND_HINT_FUNC sp_offset=8
+-	UNWIND_HINT sp_reg=ORC_REG_SP sp_offset=\sp_offset type=UNWIND_HINT_TYPE_CALL
+-.endm
+-
+-/*
+- * RET_OFFSET: Used on instructions that terminate a function; mostly RETURN
+- * and sibling calls. On these, sp_offset denotes the expected offset from
+- * initial_func_cfi.
+- */
+-.macro UNWIND_HINT_RET_OFFSET sp_offset=8
+-	UNWIND_HINT sp_reg=ORC_REG_SP type=UNWIND_HINT_TYPE_RET_OFFSET sp_offset=\sp_offset
++.macro UNWIND_HINT_FUNC
++	UNWIND_HINT sp_reg=ORC_REG_SP sp_offset=8 type=UNWIND_HINT_TYPE_FUNC
+ .endm
+ 
+ #endif /* __ASSEMBLY__ */
+diff --git a/arch/x86/kernel/ftrace_64.S b/arch/x86/kernel/ftrace_64.S
+index ac3d5f22fe64..ad1da5e85aeb 100644
+--- a/arch/x86/kernel/ftrace_64.S
++++ b/arch/x86/kernel/ftrace_64.S
+@@ -265,7 +265,7 @@ SYM_INNER_LABEL(ftrace_regs_caller_end, SYM_L_GLOBAL)
+ 	restore_mcount_regs 8
+ 	/* Restore flags */
+ 	popfq
+-	UNWIND_HINT_RET_OFFSET
++	UNWIND_HINT_FUNC
+ 	jmp	ftrace_epilogue
+ 
+ SYM_FUNC_END(ftrace_regs_caller)
+diff --git a/arch/x86/lib/retpoline.S b/arch/x86/lib/retpoline.S
+index b4c43a9b1483..f6fb1d218dcc 100644
+--- a/arch/x86/lib/retpoline.S
++++ b/arch/x86/lib/retpoline.S
+@@ -28,7 +28,7 @@ SYM_FUNC_START_NOALIGN(__x86_retpoline_\reg)
+ 	jmp	.Lspec_trap_\@
+ .Ldo_rop_\@:
+ 	mov	%\reg, (%_ASM_SP)
+-	UNWIND_HINT_RET_OFFSET
++	UNWIND_HINT_FUNC
+ 	ret
+ SYM_FUNC_END(__x86_retpoline_\reg)
+ 
+diff --git a/include/linux/objtool.h b/include/linux/objtool.h
+index 577f51436cf9..8ed079c52c47 100644
+--- a/include/linux/objtool.h
++++ b/include/linux/objtool.h
+@@ -29,11 +29,14 @@ struct unwind_hint {
+  *
+  * UNWIND_HINT_TYPE_REGS_PARTIAL: Used in entry code to indicate that
+  * sp_reg+sp_offset points to the iret return frame.
++ *
++ * UNWIND_HINT_FUNC: Generate the unwind metadata of a callable function.
++ * Useful for code which doesn't have an ELF function annotation.
+  */
+ #define UNWIND_HINT_TYPE_CALL		0
+ #define UNWIND_HINT_TYPE_REGS		1
+ #define UNWIND_HINT_TYPE_REGS_PARTIAL	2
+-#define UNWIND_HINT_TYPE_RET_OFFSET	3
++#define UNWIND_HINT_TYPE_FUNC		3
+ 
+ #ifdef CONFIG_STACK_VALIDATION
+ 
+diff --git a/tools/include/linux/objtool.h b/tools/include/linux/objtool.h
+index 577f51436cf9..8ed079c52c47 100644
+--- a/tools/include/linux/objtool.h
++++ b/tools/include/linux/objtool.h
+@@ -29,11 +29,14 @@ struct unwind_hint {
+  *
+  * UNWIND_HINT_TYPE_REGS_PARTIAL: Used in entry code to indicate that
+  * sp_reg+sp_offset points to the iret return frame.
++ *
++ * UNWIND_HINT_FUNC: Generate the unwind metadata of a callable function.
++ * Useful for code which doesn't have an ELF function annotation.
+  */
+ #define UNWIND_HINT_TYPE_CALL		0
+ #define UNWIND_HINT_TYPE_REGS		1
+ #define UNWIND_HINT_TYPE_REGS_PARTIAL	2
+-#define UNWIND_HINT_TYPE_RET_OFFSET	3
++#define UNWIND_HINT_TYPE_FUNC		3
+ 
+ #ifdef CONFIG_STACK_VALIDATION
+ 
+diff --git a/tools/objtool/arch/x86/decode.c b/tools/objtool/arch/x86/decode.c
+index cde9c36e40ae..6f5a45754ad8 100644
+--- a/tools/objtool/arch/x86/decode.c
++++ b/tools/objtool/arch/x86/decode.c
+@@ -563,8 +563,8 @@ void arch_initial_func_cfi_state(struct cfi_init_state *state)
+ 	state->cfa.offset = 8;
+ 
+ 	/* initial RA (return address) */
+-	state->regs[16].base = CFI_CFA;
+-	state->regs[16].offset = -8;
++	state->regs[CFI_RA].base = CFI_CFA;
++	state->regs[CFI_RA].offset = -8;
+ }
+ 
+ const char *arch_nop_insn(int len)
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index 29e4fca80258..ed5e4b04f508 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -1423,13 +1423,20 @@ static int add_jump_table_alts(struct objtool_file *file)
+ 	return 0;
+ }
+ 
++static void set_func_state(struct cfi_state *state)
++{
++	state->cfa = initial_func_cfi.cfa;
++	memcpy(&state->regs, &initial_func_cfi.regs,
++	       CFI_NUM_REGS * sizeof(struct cfi_reg));
++	state->stack_size = initial_func_cfi.cfa.offset;
++}
++
+ static int read_unwind_hints(struct objtool_file *file)
+ {
+ 	struct section *sec, *relocsec;
+ 	struct reloc *reloc;
+ 	struct unwind_hint *hint;
+ 	struct instruction *insn;
+-	struct cfi_reg *cfa;
+ 	int i;
+ 
+ 	sec = find_section_by_name(file->elf, ".discard.unwind_hints");
+@@ -1464,22 +1471,20 @@ static int read_unwind_hints(struct objtool_file *file)
+ 			return -1;
+ 		}
+ 
+-		cfa = &insn->cfi.cfa;
++		insn->hint = true;
+ 
+-		if (hint->type == UNWIND_HINT_TYPE_RET_OFFSET) {
+-			insn->ret_offset = hint->sp_offset;
++		if (hint->type == UNWIND_HINT_TYPE_FUNC) {
++			set_func_state(&insn->cfi);
+ 			continue;
+ 		}
+ 
+-		insn->hint = true;
+-
+ 		if (arch_decode_hint_reg(insn, hint->sp_reg)) {
+ 			WARN_FUNC("unsupported unwind_hint sp base reg %d",
+ 				  insn->sec, insn->offset, hint->sp_reg);
+ 			return -1;
+ 		}
+ 
+-		cfa->offset = hint->sp_offset;
++		insn->cfi.cfa.offset = hint->sp_offset;
+ 		insn->cfi.type = hint->type;
+ 		insn->cfi.end = hint->end;
+ 	}
+@@ -1742,27 +1747,18 @@ static bool is_fentry_call(struct instruction *insn)
+ 
+ static bool has_modified_stack_frame(struct instruction *insn, struct insn_state *state)
+ {
+-	u8 ret_offset = insn->ret_offset;
+ 	struct cfi_state *cfi = &state->cfi;
+ 	int i;
+ 
+ 	if (cfi->cfa.base != initial_func_cfi.cfa.base || cfi->drap)
+ 		return true;
+ 
+-	if (cfi->cfa.offset != initial_func_cfi.cfa.offset + ret_offset)
++	if (cfi->cfa.offset != initial_func_cfi.cfa.offset)
+ 		return true;
+ 
+-	if (cfi->stack_size != initial_func_cfi.cfa.offset + ret_offset)
++	if (cfi->stack_size != initial_func_cfi.cfa.offset)
+ 		return true;
+ 
+-	/*
+-	 * If there is a ret offset hint then don't check registers
+-	 * because a callee-saved register might have been pushed on
+-	 * the stack.
+-	 */
+-	if (ret_offset)
+-		return false;
+-
+ 	for (i = 0; i < CFI_NUM_REGS; i++) {
+ 		if (cfi->regs[i].base != initial_func_cfi.regs[i].base ||
+ 		    cfi->regs[i].offset != initial_func_cfi.regs[i].offset)
+@@ -2863,10 +2859,7 @@ static int validate_section(struct objtool_file *file, struct section *sec)
+ 			continue;
+ 
+ 		init_insn_state(&state, sec);
+-		state.cfi.cfa = initial_func_cfi.cfa;
+-		memcpy(&state.cfi.regs, &initial_func_cfi.regs,
+-		       CFI_NUM_REGS * sizeof(struct cfi_reg));
+-		state.cfi.stack_size = initial_func_cfi.cfa.offset;
++		set_func_state(&state.cfi);
+ 
+ 		warnings += validate_symbol(file, sec, func, &state);
+ 	}
+diff --git a/tools/objtool/check.h b/tools/objtool/check.h
+index 995a0436d543..d255c43b134a 100644
+--- a/tools/objtool/check.h
++++ b/tools/objtool/check.h
+@@ -50,7 +50,6 @@ struct instruction {
+ 	bool retpoline_safe;
+ 	s8 instr;
+ 	u8 visited;
+-	u8 ret_offset;
+ 	struct alt_group *alt_group;
+ 	struct symbol *call_dest;
+ 	struct instruction *jump_dest;

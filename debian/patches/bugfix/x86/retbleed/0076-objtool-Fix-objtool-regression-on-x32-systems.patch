@@ -1,0 +1,106 @@
+From b2bc0e3f4f086f70eeb9633ebabb73e737b34bb9 Mon Sep 17 00:00:00 2001
+From: Mikulas Patocka <mpatocka@redhat.com>
+Date: Mon, 16 May 2022 11:06:36 -0400
+Subject: [PATCH 076/129] objtool: Fix objtool regression on x32 systems
+
+commit 22682a07acc308ef78681572e19502ce8893c4d4 upstream.
+
+Commit c087c6e7b551 ("objtool: Fix type of reloc::addend") failed to
+appreciate cross building from ILP32 hosts, where 'int' == 'long' and
+the issue persists.
+
+As such, use s64/int64_t/Elf64_Sxword for this field and suffer the
+pain that is ISO C99 printf formats for it.
+
+Fixes: c087c6e7b551 ("objtool: Fix type of reloc::addend")
+Signed-off-by: Mikulas Patocka <mpatocka@redhat.com>
+[peterz: reword changelog, s/long long/s64/]
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Cc: <stable@vger.kernel.org>
+Link: https://lkml.kernel.org/r/alpine.LRH.2.02.2205161041260.11556@file01.intranet.prod.int.rdu2.redhat.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/check.c | 9 +++++----
+ tools/objtool/elf.c   | 2 +-
+ tools/objtool/elf.h   | 4 ++--
+ 3 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index e8fcbdeefb89..c5419db93140 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -5,6 +5,7 @@
+ 
+ #include <string.h>
+ #include <stdlib.h>
++#include <inttypes.h>
+ #include <sys/mman.h>
+ 
+ #include "builtin.h"
+@@ -467,12 +468,12 @@ static int add_dead_ends(struct objtool_file *file)
+ 		else if (reloc->addend == reloc->sym->sec->len) {
+ 			insn = find_last_insn(file, reloc->sym->sec);
+ 			if (!insn) {
+-				WARN("can't find unreachable insn at %s+0x%lx",
++				WARN("can't find unreachable insn at %s+0x%" PRIx64,
+ 				     reloc->sym->sec->name, reloc->addend);
+ 				return -1;
+ 			}
+ 		} else {
+-			WARN("can't find unreachable insn at %s+0x%lx",
++			WARN("can't find unreachable insn at %s+0x%" PRIx64,
+ 			     reloc->sym->sec->name, reloc->addend);
+ 			return -1;
+ 		}
+@@ -502,12 +503,12 @@ static int add_dead_ends(struct objtool_file *file)
+ 		else if (reloc->addend == reloc->sym->sec->len) {
+ 			insn = find_last_insn(file, reloc->sym->sec);
+ 			if (!insn) {
+-				WARN("can't find reachable insn at %s+0x%lx",
++				WARN("can't find reachable insn at %s+0x%" PRIx64,
+ 				     reloc->sym->sec->name, reloc->addend);
+ 				return -1;
+ 			}
+ 		} else {
+-			WARN("can't find reachable insn at %s+0x%lx",
++			WARN("can't find reachable insn at %s+0x%" PRIx64,
+ 			     reloc->sym->sec->name, reloc->addend);
+ 			return -1;
+ 		}
+diff --git a/tools/objtool/elf.c b/tools/objtool/elf.c
+index 155e84875bd7..0fb5b45aec53 100644
+--- a/tools/objtool/elf.c
++++ b/tools/objtool/elf.c
+@@ -510,7 +510,7 @@ static struct section *elf_create_reloc_section(struct elf *elf,
+ 						int reltype);
+ 
+ int elf_add_reloc(struct elf *elf, struct section *sec, unsigned long offset,
+-		  unsigned int type, struct symbol *sym, long addend)
++		  unsigned int type, struct symbol *sym, s64 addend)
+ {
+ 	struct reloc *reloc;
+ 
+diff --git a/tools/objtool/elf.h b/tools/objtool/elf.h
+index 63bcfee82033..875f9f475851 100644
+--- a/tools/objtool/elf.h
++++ b/tools/objtool/elf.h
+@@ -73,7 +73,7 @@ struct reloc {
+ 	struct symbol *sym;
+ 	unsigned long offset;
+ 	unsigned int type;
+-	long addend;
++	s64 addend;
+ 	int idx;
+ 	bool jump_table_start;
+ };
+@@ -127,7 +127,7 @@ struct elf *elf_open_read(const char *name, int flags);
+ struct section *elf_create_section(struct elf *elf, const char *name, unsigned int sh_flags, size_t entsize, int nr);
+ 
+ int elf_add_reloc(struct elf *elf, struct section *sec, unsigned long offset,
+-		  unsigned int type, struct symbol *sym, long addend);
++		  unsigned int type, struct symbol *sym, s64 addend);
+ int elf_add_reloc_to_insn(struct elf *elf, struct section *sec,
+ 			  unsigned long offset, unsigned int type,
+ 			  struct section *insn_sec, unsigned long insn_off);

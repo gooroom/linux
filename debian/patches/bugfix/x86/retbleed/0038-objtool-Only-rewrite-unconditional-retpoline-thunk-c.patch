@@ -1,0 +1,43 @@
+From 3715687abfa7201e81e81549fbac22af978d74dd Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Thu, 10 Jun 2021 09:04:29 +0200
+Subject: [PATCH 038/129] objtool: Only rewrite unconditional retpoline thunk
+ calls
+
+commit 2d49b721dc18c113d5221f4cf5a6104eb66cb7f2 upstream.
+
+It turns out that the compilers generate conditional branches to the
+retpoline thunks like:
+
+  5d5:   0f 85 00 00 00 00       jne    5db <cpuidle_reflect+0x22>
+	5d7: R_X86_64_PLT32     __x86_indirect_thunk_r11-0x4
+
+while the rewrite can only handle JMP/CALL to the thunks. The result
+is the alternative wrecking the code. Make sure to skip writing the
+alternatives for conditional branches.
+
+Fixes: 9bc0bb50727c ("objtool/x86: Rewrite retpoline thunk calls")
+Reported-by: Lukasz Majczak <lma@semihalf.com>
+Reported-by: Nathan Chancellor <nathan@kernel.org>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Tested-by: Nathan Chancellor <nathan@kernel.org>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/arch/x86/decode.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tools/objtool/arch/x86/decode.c b/tools/objtool/arch/x86/decode.c
+index 4154921291d0..09035e28f472 100644
+--- a/tools/objtool/arch/x86/decode.c
++++ b/tools/objtool/arch/x86/decode.c
+@@ -674,6 +674,10 @@ int arch_rewrite_retpolines(struct objtool_file *file)
+ 
+ 	list_for_each_entry(insn, &file->retpoline_call_list, call_node) {
+ 
++		if (insn->type != INSN_JUMP_DYNAMIC &&
++		    insn->type != INSN_CALL_DYNAMIC)
++			continue;
++
+ 		if (!strcmp(insn->sec->name, ".text.__x86.indirect_thunk"))
+ 			continue;
+ 

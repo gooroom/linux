@@ -1,0 +1,118 @@
+From 4754c2f6de27d20cf764445ea41266bdff87271d Mon Sep 17 00:00:00 2001
+From: Uros Bizjak <ubizjak@gmail.com>
+Date: Wed, 30 Dec 2020 16:26:57 -0800
+Subject: [PATCH 002/129] KVM/nVMX: Use __vmx_vcpu_run in
+ nested_vmx_check_vmentry_hw
+
+commit 150f17bfab37e981ba03b37440638138ff2aa9ec upstream.
+
+Replace inline assembly in nested_vmx_check_vmentry_hw
+with a call to __vmx_vcpu_run.  The function is not
+performance critical, so (double) GPR save/restore
+in __vmx_vcpu_run can be tolerated, as far as performance
+effects are concerned.
+
+Cc: Paolo Bonzini <pbonzini@redhat.com>
+Cc: Sean Christopherson <seanjc@google.com>
+Reviewed-and-tested-by: Sean Christopherson <seanjc@google.com>
+Signed-off-by: Uros Bizjak <ubizjak@gmail.com>
+[sean: dropped versioning info from changelog]
+Signed-off-by: Sean Christopherson <seanjc@google.com>
+Message-Id: <20201231002702.2223707-5-seanjc@google.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/kvm/vmx/nested.c  | 32 +++-----------------------------
+ arch/x86/kvm/vmx/vmenter.S |  2 +-
+ arch/x86/kvm/vmx/vmx.c     |  2 --
+ arch/x86/kvm/vmx/vmx.h     |  1 +
+ 4 files changed, 5 insertions(+), 32 deletions(-)
+
+diff --git a/arch/x86/kvm/vmx/nested.c b/arch/x86/kvm/vmx/nested.c
+index 90881d7b42ea..67fe1cf79caf 100644
+--- a/arch/x86/kvm/vmx/nested.c
++++ b/arch/x86/kvm/vmx/nested.c
+@@ -12,6 +12,7 @@
+ #include "nested.h"
+ #include "pmu.h"
+ #include "trace.h"
++#include "vmx.h"
+ #include "x86.h"
+ 
+ static bool __read_mostly enable_shadow_vmcs = 1;
+@@ -3075,35 +3076,8 @@ static int nested_vmx_check_vmentry_hw(struct kvm_vcpu *vcpu)
+ 		vmx->loaded_vmcs->host_state.cr4 = cr4;
+ 	}
+ 
+-	asm(
+-		"sub $%c[wordsize], %%" _ASM_SP "\n\t" /* temporarily adjust RSP for CALL */
+-		"cmp %%" _ASM_SP ", %c[host_state_rsp](%[loaded_vmcs]) \n\t"
+-		"je 1f \n\t"
+-		__ex("vmwrite %%" _ASM_SP ", %[HOST_RSP]") "\n\t"
+-		"mov %%" _ASM_SP ", %c[host_state_rsp](%[loaded_vmcs]) \n\t"
+-		"1: \n\t"
+-		"add $%c[wordsize], %%" _ASM_SP "\n\t" /* un-adjust RSP */
+-
+-		/* Check if vmlaunch or vmresume is needed */
+-		"cmpb $0, %c[launched](%[loaded_vmcs])\n\t"
+-
+-		/*
+-		 * VMLAUNCH and VMRESUME clear RFLAGS.{CF,ZF} on VM-Exit, set
+-		 * RFLAGS.CF on VM-Fail Invalid and set RFLAGS.ZF on VM-Fail
+-		 * Valid.  vmx_vmenter() directly "returns" RFLAGS, and so the
+-		 * results of VM-Enter is captured via CC_{SET,OUT} to vm_fail.
+-		 */
+-		"call vmx_vmenter\n\t"
+-
+-		CC_SET(be)
+-	      : ASM_CALL_CONSTRAINT, CC_OUT(be) (vm_fail)
+-	      :	[HOST_RSP]"r"((unsigned long)HOST_RSP),
+-		[loaded_vmcs]"r"(vmx->loaded_vmcs),
+-		[launched]"i"(offsetof(struct loaded_vmcs, launched)),
+-		[host_state_rsp]"i"(offsetof(struct loaded_vmcs, host_state.rsp)),
+-		[wordsize]"i"(sizeof(ulong))
+-	      : "memory"
+-	);
++	vm_fail = __vmx_vcpu_run(vmx, (unsigned long *)&vcpu->arch.regs,
++				 vmx->loaded_vmcs->launched);
+ 
+ 	if (vmx->msr_autoload.host.nr)
+ 		vmcs_write32(VM_EXIT_MSR_LOAD_COUNT, vmx->msr_autoload.host.nr);
+diff --git a/arch/x86/kvm/vmx/vmenter.S b/arch/x86/kvm/vmx/vmenter.S
+index e85aa5faa22d..3a6461694fc2 100644
+--- a/arch/x86/kvm/vmx/vmenter.S
++++ b/arch/x86/kvm/vmx/vmenter.S
+@@ -44,7 +44,7 @@
+  * they VM-Fail, whereas a successful VM-Enter + VM-Exit will jump
+  * to vmx_vmexit.
+  */
+-SYM_FUNC_START(vmx_vmenter)
++SYM_FUNC_START_LOCAL(vmx_vmenter)
+ 	/* EFLAGS.ZF is set if VMCS.LAUNCHED == 0 */
+ 	je 2f
+ 
+diff --git a/arch/x86/kvm/vmx/vmx.c b/arch/x86/kvm/vmx/vmx.c
+index cc647dcc228b..e71e81b2ea52 100644
+--- a/arch/x86/kvm/vmx/vmx.c
++++ b/arch/x86/kvm/vmx/vmx.c
+@@ -6687,8 +6687,6 @@ static fastpath_t vmx_exit_handlers_fastpath(struct kvm_vcpu *vcpu)
+ 	}
+ }
+ 
+-bool __vmx_vcpu_run(struct vcpu_vmx *vmx, unsigned long *regs, bool launched);
+-
+ static noinstr void vmx_vcpu_enter_exit(struct kvm_vcpu *vcpu,
+ 					struct vcpu_vmx *vmx)
+ {
+diff --git a/arch/x86/kvm/vmx/vmx.h b/arch/x86/kvm/vmx/vmx.h
+index 31317c8915e4..08835468314f 100644
+--- a/arch/x86/kvm/vmx/vmx.h
++++ b/arch/x86/kvm/vmx/vmx.h
+@@ -365,6 +365,7 @@ void vmx_set_virtual_apic_mode(struct kvm_vcpu *vcpu);
+ struct vmx_uret_msr *vmx_find_uret_msr(struct vcpu_vmx *vmx, u32 msr);
+ void pt_update_intercept_for_msr(struct kvm_vcpu *vcpu);
+ void vmx_update_host_rsp(struct vcpu_vmx *vmx, unsigned long host_rsp);
++bool __vmx_vcpu_run(struct vcpu_vmx *vmx, unsigned long *regs, bool launched);
+ int vmx_find_loadstore_msr_slot(struct vmx_msrs *m, u32 msr);
+ void vmx_ept_load_pdptrs(struct kvm_vcpu *vcpu);
+ 

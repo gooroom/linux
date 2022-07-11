@@ -1,0 +1,96 @@
+From b35e65e5a4bf70ad90ea578f0171f004c7b02b35 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 26 Mar 2021 16:12:13 +0100
+Subject: [PATCH 032/129] objtool: Cache instruction relocs
+
+commit 7bd2a600f3e9d27286bbf23c83d599e9cc7cf245 upstream.
+
+Track the reloc of instructions in the new instruction->reloc field
+to avoid having to look them up again later.
+
+( Technically x86 instructions can have two relocations, but not jumps
+  and calls, for which we're using this. )
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Reviewed-by: Miroslav Benes <mbenes@suse.cz>
+Link: https://lkml.kernel.org/r/20210326151300.195441549@infradead.org
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/check.c | 28 ++++++++++++++++++++++------
+ tools/objtool/check.h |  1 +
+ 2 files changed, 23 insertions(+), 6 deletions(-)
+
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index f87a8782c817..6d62ad940fce 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -754,6 +754,25 @@ __weak bool arch_is_retpoline(struct symbol *sym)
+ 	return false;
+ }
+ 
++#define NEGATIVE_RELOC	((void *)-1L)
++
++static struct reloc *insn_reloc(struct objtool_file *file, struct instruction *insn)
++{
++	if (insn->reloc == NEGATIVE_RELOC)
++		return NULL;
++
++	if (!insn->reloc) {
++		insn->reloc = find_reloc_by_dest_range(file->elf, insn->sec,
++						       insn->offset, insn->len);
++		if (!insn->reloc) {
++			insn->reloc = NEGATIVE_RELOC;
++			return NULL;
++		}
++	}
++
++	return insn->reloc;
++}
++
+ /*
+  * Find the destination instructions for all jumps.
+  */
+@@ -768,8 +787,7 @@ static int add_jump_destinations(struct objtool_file *file)
+ 		if (!is_static_jump(insn))
+ 			continue;
+ 
+-		reloc = find_reloc_by_dest_range(file->elf, insn->sec,
+-						 insn->offset, insn->len);
++		reloc = insn_reloc(file, insn);
+ 		if (!reloc) {
+ 			dest_sec = insn->sec;
+ 			dest_off = arch_jump_destination(insn);
+@@ -901,8 +919,7 @@ static int add_call_destinations(struct objtool_file *file)
+ 		if (insn->type != INSN_CALL)
+ 			continue;
+ 
+-		reloc = find_reloc_by_dest_range(file->elf, insn->sec,
+-					       insn->offset, insn->len);
++		reloc = insn_reloc(file, insn);
+ 		if (!reloc) {
+ 			dest_off = arch_jump_destination(insn);
+ 			insn->call_dest = find_call_destination(insn->sec, dest_off);
+@@ -1085,8 +1102,7 @@ static int handle_group_alt(struct objtool_file *file,
+ 		 * alternatives code can adjust the relative offsets
+ 		 * accordingly.
+ 		 */
+-		alt_reloc = find_reloc_by_dest_range(file->elf, insn->sec,
+-						   insn->offset, insn->len);
++		alt_reloc = insn_reloc(file, insn);
+ 		if (alt_reloc &&
+ 		    !arch_support_alt_relocation(special_alt, insn, alt_reloc)) {
+ 
+diff --git a/tools/objtool/check.h b/tools/objtool/check.h
+index e0ae2fc13e67..ca3259eebac8 100644
+--- a/tools/objtool/check.h
++++ b/tools/objtool/check.h
+@@ -55,6 +55,7 @@ struct instruction {
+ 	struct instruction *jump_dest;
+ 	struct instruction *first_jump_src;
+ 	struct reloc *jump_table;
++	struct reloc *reloc;
+ 	struct list_head alts;
+ 	struct symbol *func;
+ 	struct list_head stack_ops;

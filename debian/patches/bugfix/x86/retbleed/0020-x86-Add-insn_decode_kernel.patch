@@ -1,0 +1,55 @@
+From 6a18c60ddccfa8a78d54089a25f355becc5181e2 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 11 Jul 2022 00:43:31 +0200
+Subject: [PATCH 020/129] x86: Add insn_decode_kernel()
+
+This was done by commit 52fa82c21f64e900a72437269a5cc9e0034b424e
+upstream, but this backport avoids changing all callers of the
+old decoder API.
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ arch/x86/include/asm/insn.h       | 2 ++
+ arch/x86/kernel/alternative.c     | 2 +-
+ tools/arch/x86/include/asm/insn.h | 2 ++
+ 3 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/include/asm/insn.h b/arch/x86/include/asm/insn.h
+index 546436b3c215..0da37756917a 100644
+--- a/arch/x86/include/asm/insn.h
++++ b/arch/x86/include/asm/insn.h
+@@ -105,6 +105,8 @@ enum insn_mode {
+ 
+ extern int insn_decode(struct insn *insn, const void *kaddr, int buf_len, enum insn_mode m);
+ 
++#define insn_decode_kernel(_insn, _ptr) insn_decode((_insn), (_ptr), MAX_INSN_SIZE, INSN_MODE_KERN)
++
+ /* Attribute will be determined after getting ModRM (for opcode groups) */
+ static inline void insn_get_attribute(struct insn *insn)
+ {
+diff --git a/arch/x86/kernel/alternative.c b/arch/x86/kernel/alternative.c
+index 9da3267ec3b5..75b9ab3d7099 100644
+--- a/arch/x86/kernel/alternative.c
++++ b/arch/x86/kernel/alternative.c
+@@ -1290,7 +1290,7 @@ static void text_poke_loc_init(struct text_poke_loc *tp, void *addr,
+ 	if (!emulate)
+ 		emulate = opcode;
+ 
+-	ret = insn_decode(&insn, emulate, MAX_INSN_SIZE, INSN_MODE_KERN);
++	ret = insn_decode_kernel(&insn, emulate);
+ 
+ 	BUG_ON(ret < 0);
+ 	BUG_ON(len != insn.length);
+diff --git a/tools/arch/x86/include/asm/insn.h b/tools/arch/x86/include/asm/insn.h
+index 621ab64a6d27..636ec02793a7 100644
+--- a/tools/arch/x86/include/asm/insn.h
++++ b/tools/arch/x86/include/asm/insn.h
+@@ -105,6 +105,8 @@ enum insn_mode {
+ 
+ extern int insn_decode(struct insn *insn, const void *kaddr, int buf_len, enum insn_mode m);
+ 
++#define insn_decode_kernel(_insn, _ptr) insn_decode((_insn), (_ptr), MAX_INSN_SIZE, INSN_MODE_KERN)
++
+ /* Attribute will be determined after getting ModRM (for opcode groups) */
+ static inline void insn_get_attribute(struct insn *insn)
+ {

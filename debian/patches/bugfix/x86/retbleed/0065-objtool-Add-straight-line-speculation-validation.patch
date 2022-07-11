@@ -1,0 +1,142 @@
+From c927254d1cd7a39856012d65ce839372850b7d89 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Sat, 4 Dec 2021 14:43:42 +0100
+Subject: [PATCH 065/129] objtool: Add straight-line-speculation validation
+
+commit 1cc1e4c8aab4213bd4e6353dec2620476a233d6d upstream.
+
+Teach objtool to validate the straight-line-speculation constraints:
+
+ - speculation trap after indirect calls
+ - speculation trap after RET
+
+Notable: when an instruction is annotated RETPOLINE_SAFE, indicating
+  speculation isn't a problem, also don't care about sls for that
+  instruction.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Borislav Petkov <bp@suse.de>
+Link: https://lore.kernel.org/r/20211204134908.023037659@infradead.org
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+[bwh: Backported to 5.10: adjust filenames, context]
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ tools/objtool/arch.h            |  1 +
+ tools/objtool/arch/x86/decode.c | 13 +++++++++----
+ tools/objtool/builtin-check.c   |  4 +++-
+ tools/objtool/builtin.h         |  3 ++-
+ tools/objtool/check.c           | 14 ++++++++++++++
+ 5 files changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/tools/objtool/arch.h b/tools/objtool/arch.h
+index 0031a27b6ad0..e15f6e932b4f 100644
+--- a/tools/objtool/arch.h
++++ b/tools/objtool/arch.h
+@@ -26,6 +26,7 @@ enum insn_type {
+ 	INSN_CLAC,
+ 	INSN_STD,
+ 	INSN_CLD,
++	INSN_TRAP,
+ 	INSN_OTHER,
+ };
+ 
+diff --git a/tools/objtool/arch/x86/decode.c b/tools/objtool/arch/x86/decode.c
+index 32a810429306..f7154241a2a5 100644
+--- a/tools/objtool/arch/x86/decode.c
++++ b/tools/objtool/arch/x86/decode.c
+@@ -456,6 +456,11 @@ int arch_decode_instruction(const struct elf *elf, const struct section *sec,
+ 
+ 		break;
+ 
++	case 0xcc:
++		/* int3 */
++		*type = INSN_TRAP;
++		break;
++
+ 	case 0xe3:
+ 		/* jecxz/jrcxz */
+ 		*type = INSN_JUMP_CONDITIONAL;
+@@ -592,10 +597,10 @@ const char *arch_ret_insn(int len)
+ {
+ 	static const char ret[5][5] = {
+ 		{ BYTE_RET },
+-		{ BYTE_RET, 0x90 },
+-		{ BYTE_RET, 0x66, 0x90 },
+-		{ BYTE_RET, 0x0f, 0x1f, 0x00 },
+-		{ BYTE_RET, 0x0f, 0x1f, 0x40, 0x00 },
++		{ BYTE_RET, 0xcc },
++		{ BYTE_RET, 0xcc, 0x90 },
++		{ BYTE_RET, 0xcc, 0x66, 0x90 },
++		{ BYTE_RET, 0xcc, 0x0f, 0x1f, 0x00 },
+ 	};
+ 
+ 	if (len < 1 || len > 5) {
+diff --git a/tools/objtool/builtin-check.c b/tools/objtool/builtin-check.c
+index c6d199bfd0ae..758baf918d83 100644
+--- a/tools/objtool/builtin-check.c
++++ b/tools/objtool/builtin-check.c
+@@ -18,7 +18,8 @@
+ #include "builtin.h"
+ #include "objtool.h"
+ 
+-bool no_fp, no_unreachable, retpoline, module, backtrace, uaccess, stats, validate_dup, vmlinux;
++bool no_fp, no_unreachable, retpoline, module, backtrace, uaccess, stats,
++     validate_dup, vmlinux, sls;
+ 
+ static const char * const check_usage[] = {
+ 	"objtool check [<options>] file.o",
+@@ -35,6 +36,7 @@ const struct option check_options[] = {
+ 	OPT_BOOLEAN('s', "stats", &stats, "print statistics"),
+ 	OPT_BOOLEAN('d', "duplicate", &validate_dup, "duplicate validation for vmlinux.o"),
+ 	OPT_BOOLEAN('l', "vmlinux", &vmlinux, "vmlinux.o validation"),
++	OPT_BOOLEAN('S', "sls", &sls, "validate straight-line-speculation"),
+ 	OPT_END(),
+ };
+ 
+diff --git a/tools/objtool/builtin.h b/tools/objtool/builtin.h
+index 85c979caa367..33043fcb16db 100644
+--- a/tools/objtool/builtin.h
++++ b/tools/objtool/builtin.h
+@@ -8,7 +8,8 @@
+ #include <subcmd/parse-options.h>
+ 
+ extern const struct option check_options[];
+-extern bool no_fp, no_unreachable, retpoline, module, backtrace, uaccess, stats, validate_dup, vmlinux;
++extern bool no_fp, no_unreachable, retpoline, module, backtrace, uaccess, stats,
++            validate_dup, vmlinux, sls;
+ 
+ extern int cmd_check(int argc, const char **argv);
+ extern int cmd_orc(int argc, const char **argv);
+diff --git a/tools/objtool/check.c b/tools/objtool/check.c
+index 09e7807f83ee..9943987b24a9 100644
+--- a/tools/objtool/check.c
++++ b/tools/objtool/check.c
+@@ -2775,6 +2775,12 @@ static int validate_branch(struct objtool_file *file, struct symbol *func,
+ 		switch (insn->type) {
+ 
+ 		case INSN_RETURN:
++			if (next_insn && next_insn->type == INSN_TRAP) {
++				next_insn->ignore = true;
++			} else if (sls && !insn->retpoline_safe) {
++				WARN_FUNC("missing int3 after ret",
++					  insn->sec, insn->offset);
++			}
+ 			return validate_return(func, insn, &state);
+ 
+ 		case INSN_CALL:
+@@ -2818,6 +2824,14 @@ static int validate_branch(struct objtool_file *file, struct symbol *func,
+ 			break;
+ 
+ 		case INSN_JUMP_DYNAMIC:
++			if (next_insn && next_insn->type == INSN_TRAP) {
++				next_insn->ignore = true;
++			} else if (sls && !insn->retpoline_safe) {
++				WARN_FUNC("missing int3 after indirect jump",
++					  insn->sec, insn->offset);
++			}
++
++			/* fallthrough */
+ 		case INSN_JUMP_DYNAMIC_CONDITIONAL:
+ 			if (is_sibling_call(insn)) {
+ 				ret = validate_sibling_call(insn, &state);
