@@ -1,8 +1,8 @@
-From 3e8b37b77db38c83eaff3b8fdcd23e91f8d78613 Mon Sep 17 00:00:00 2001
+From 814e3dee849b3d2e4181807db039a0b698df2c8c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
-Subject: [PATCH 074/347] mm/SLxB: change list_lock to raw_spinlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Subject: [PATCH 074/342] mm/SLxB: change list_lock to raw_spinlock_t
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.252-rt112.tar.xz
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -399,7 +399,7 @@ index 0ed7a463f476..12b7da32bcd0 100644
  #ifdef CONFIG_SLAB
  	struct list_head slabs_partial;	/* partial list first, better asm code */
 diff --git a/mm/slub.c b/mm/slub.c
-index 499fb073d1ff..0e4670add1e9 100644
+index 0fefe0ad8f57..ef6fc4df3ed5 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1182,7 +1182,7 @@ static noinline int free_debug_processing(
@@ -465,7 +465,7 @@ index 499fb073d1ff..0e4670add1e9 100644
  
  	if (m == M_FREE) {
  		stat(s, DEACTIVATE_EMPTY);
-@@ -2187,10 +2187,10 @@ static void unfreeze_partials(struct kmem_cache *s,
+@@ -2188,10 +2188,10 @@ static void unfreeze_partials(struct kmem_cache *s,
  		n2 = get_node(s, page_to_nid(page));
  		if (n != n2) {
  			if (n)
@@ -478,7 +478,7 @@ index 499fb073d1ff..0e4670add1e9 100644
  		}
  
  		do {
-@@ -2219,7 +2219,7 @@ static void unfreeze_partials(struct kmem_cache *s,
+@@ -2220,7 +2220,7 @@ static void unfreeze_partials(struct kmem_cache *s,
  	}
  
  	if (n)
@@ -487,7 +487,7 @@ index 499fb073d1ff..0e4670add1e9 100644
  
  	while (discard_page) {
  		page = discard_page;
-@@ -2388,10 +2388,10 @@ static unsigned long count_partial(struct kmem_cache_node *n,
+@@ -2387,10 +2387,10 @@ static unsigned long count_partial(struct kmem_cache_node *n,
  	unsigned long x = 0;
  	struct page *page;
  
@@ -615,5 +615,5 @@ index 499fb073d1ff..0e4670add1e9 100644
  
  	for (i = 0; i < t.count; i++) {
 -- 
-2.36.1
+2.37.0
 
