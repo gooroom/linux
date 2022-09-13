@@ -1,9 +1,8 @@
-From a919ca528cf9bdc8d176a25a71d49b3a31072149 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 100/342] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.252-rt112.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f68468a5cbe2c273bed160e13102b7ed2a2dc653
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -66,7 +65,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 88dd1398ae88..7f2441f671d3 100644
+index ba66ea3ca705..11e9bbad4878 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -232,6 +231,3 @@ index 6d60701dc636..328620fe85f6 100644
  	hrtimer->function = watchdog_timer_fn;
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
--- 
-2.37.0
-
