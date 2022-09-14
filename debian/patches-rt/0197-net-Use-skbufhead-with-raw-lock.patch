@@ -8,14 +8,13 @@ latency. However we can't kfree() from this context therefore we defer this
 to the softirq and use the tofree_queue list for it (similar to process_queue).
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bwh: Adjust context to apply on top of 4.19.257]
 ---
  include/linux/netdevice.h |  1 +
  include/linux/skbuff.h    |  7 +++++++
  net/core/dev.c            | 26 ++++++++++++++++++++------
  3 files changed, 28 insertions(+), 6 deletions(-)
 
-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 8d48b352ee74..d893dc112afc 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -2990,6 +2990,7 @@ struct softnet_data {
@@ -26,8 +25,6 @@ index 8d48b352ee74..d893dc112afc 100644
  
  };
  
-diff --git a/include/linux/skbuff.h b/include/linux/skbuff.h
-index f97734f34746..3ede4f0eac10 100644
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -287,6 +287,7 @@ struct sk_buff_head {
@@ -38,7 +35,7 @@ index f97734f34746..3ede4f0eac10 100644
  };
  
  struct sk_buff;
-@@ -1735,6 +1736,12 @@ static inline void skb_queue_head_init(struct sk_buff_head *list)
+@@ -1735,6 +1736,12 @@ static inline void skb_queue_head_init(s
  	__skb_queue_head_init(list);
  }
  
@@ -51,11 +48,9 @@ index f97734f34746..3ede4f0eac10 100644
  static inline void skb_queue_head_init_class(struct sk_buff_head *list,
  		struct lock_class_key *class)
  {
-diff --git a/net/core/dev.c b/net/core/dev.c
-index 315bdaf00ac8..c279375fa5b9 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -219,14 +219,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
+@@ -219,14 +219,14 @@ static inline struct hlist_head *dev_ind
  static inline void rps_lock(struct softnet_data *sd)
  {
  #ifdef CONFIG_RPS
@@ -72,7 +67,7 @@ index 315bdaf00ac8..c279375fa5b9 100644
  #endif
  }
  
-@@ -5858,7 +5858,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
+@@ -5858,7 +5858,9 @@ static int process_backlog(struct napi_s
  	while (again) {
  		struct sk_buff *skb;
  
@@ -82,7 +77,7 @@ index 315bdaf00ac8..c279375fa5b9 100644
  			rcu_read_lock();
  			__netif_receive_skb(skb);
  			rcu_read_unlock();
-@@ -5866,9 +5868,9 @@ static int process_backlog(struct napi_struct *napi, int quota)
+@@ -5866,9 +5868,9 @@ static int process_backlog(struct napi_s
  			if (++work >= quota)
  				return work;
  
@@ -93,10 +88,10 @@ index 315bdaf00ac8..c279375fa5b9 100644
  		rps_lock(sd);
  		if (skb_queue_empty(&sd->input_pkt_queue)) {
  			/*
-@@ -6341,13 +6343,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
+@@ -6341,13 +6343,21 @@ static __latent_entropy void net_rx_acti
  	unsigned long time_limit = jiffies +
- 		usecs_to_jiffies(netdev_budget_usecs);
- 	int budget = netdev_budget;
+ 		usecs_to_jiffies(READ_ONCE(netdev_budget_usecs));
+ 	int budget = READ_ONCE(netdev_budget);
 +	struct sk_buff_head tofree_q;
 +	struct sk_buff *skb;
  	LIST_HEAD(list);
@@ -115,7 +110,7 @@ index 315bdaf00ac8..c279375fa5b9 100644
  	for (;;) {
  		struct napi_struct *n;
  
-@@ -9545,10 +9555,13 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9545,10 +9555,13 @@ static int dev_cpu_dead(unsigned int old
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
