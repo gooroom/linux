@@ -12,8 +12,8 @@ Export the currently un-exported symbols they depend on.
 
 ---
  fs/file.c           | 1 +
- kernel/fork.c       | 1 +
  kernel/sched/core.c | 1 +
+ kernel/sched/wait.c | 1 +
  kernel/task_work.c  | 1 +
  mm/memory.c         | 1 +
  mm/shmem.c          | 1 +
@@ -22,7 +22,7 @@ Export the currently un-exported symbols they depend on.
 
 --- a/fs/file.c
 +++ b/fs/file.c
-@@ -780,6 +780,7 @@ out_unlock:
+@@ -809,6 +809,7 @@ out_unlock:
  	*res = NULL;
  	return -ENOENT;
  }
@@ -30,19 +30,9 @@ Export the currently un-exported symbols they depend on.
  
  void do_close_on_exec(struct files_struct *files)
  {
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -1127,6 +1127,7 @@ void mmput_async(struct mm_struct *mm)
- 		schedule_work(&mm->async_put_work);
- 	}
- }
-+EXPORT_SYMBOL_GPL(mmput_async);
- #endif
- 
- /**
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -5043,6 +5043,7 @@ int can_nice(const struct task_struct *p
+@@ -5049,6 +5049,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }
@@ -62,7 +52,7 @@ Export the currently un-exported symbols they depend on.
   * task_work_cancel - cancel a pending work added by task_work_add()
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1554,6 +1554,7 @@ void zap_page_range(struct vm_area_struc
+@@ -1567,6 +1567,7 @@ void zap_page_range(struct vm_area_struc
  	mmu_notifier_invalidate_range_end(&range);
  	tlb_finish_mmu(&tlb, start, range.end);
  }
@@ -72,7 +62,7 @@ Export the currently un-exported symbols they depend on.
   * zap_page_range_single - remove user pages in a given range
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -4283,6 +4283,7 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -4288,6 +4288,7 @@ int shmem_zero_setup(struct vm_area_stru
  
  	return 0;
  }
@@ -82,7 +72,7 @@ Export the currently un-exported symbols they depend on.
   * shmem_read_mapping_page_gfp - read into page cache, using specified page allocation flags.
 --- a/security/security.c
 +++ b/security/security.c
-@@ -727,24 +727,28 @@ int security_binder_set_context_mgr(cons
+@@ -729,24 +729,28 @@ int security_binder_set_context_mgr(cons
  {
  	return call_int_hook(binder_set_context_mgr, 0, mgr);
  }
