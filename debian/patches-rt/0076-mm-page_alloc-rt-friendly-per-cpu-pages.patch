@@ -1,8 +1,8 @@
-From a8626a5de8edb54d08823c9a1636f9a5d438e251 Mon Sep 17 00:00:00 2001
+From 85f14b575e2fadf9ab80ef7b3e5158833d79939e Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:37 -0500
-Subject: [PATCH 076/345] mm: page_alloc: rt-friendly per-cpu pages
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 076/347] mm: page_alloc: rt-friendly per-cpu pages
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 rt-friendly per-cpu pages: convert the irqs-off per-cpu locking
 method into a preemptible, explicit-per-cpu-locks method.
@@ -18,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 43 insertions(+), 20 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 08eaa70a15e9..cea7bb46e0af 100644
+index ba6f9b334073..59ea701ecfe0 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -60,6 +60,7 @@
@@ -216,7 +216,7 @@ index 08eaa70a15e9..cea7bb46e0af 100644
  	return NULL;
  }
  
-@@ -8139,7 +8162,7 @@ void zone_pcp_reset(struct zone *zone)
+@@ -8146,7 +8169,7 @@ void zone_pcp_reset(struct zone *zone)
  	struct per_cpu_pageset *pset;
  
  	/* avoid races with drain_pages()  */
@@ -225,7 +225,7 @@ index 08eaa70a15e9..cea7bb46e0af 100644
  	if (zone->pageset != &boot_pageset) {
  		for_each_online_cpu(cpu) {
  			pset = per_cpu_ptr(zone->pageset, cpu);
-@@ -8148,7 +8171,7 @@ void zone_pcp_reset(struct zone *zone)
+@@ -8155,7 +8178,7 @@ void zone_pcp_reset(struct zone *zone)
  		free_percpu(zone->pageset);
  		zone->pageset = &boot_pageset;
  	}
@@ -235,5 +235,5 @@ index 08eaa70a15e9..cea7bb46e0af 100644
  
  #ifdef CONFIG_MEMORY_HOTREMOVE
 -- 
-2.34.1
+2.36.1
 

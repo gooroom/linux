@@ -1,8 +1,8 @@
-From 5bd436a7741a981878ead7ba6bf94c0eb646f8c0 Mon Sep 17 00:00:00 2001
+From 59ac8673b0cb63baa55b3058ba0cb36ecb14a9d7 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 104/345] posix-timers: Thread posix-cpu-timers on -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 104/347] posix-timers: Thread posix-cpu-timers on -rt
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 164 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1657092c79ef..a28fe574cf02 100644
+index 56047f57ebc7..5369eb1fd456 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -832,6 +832,9 @@ struct task_struct {
@@ -265,5 +265,5 @@ index bfaa44a80c03..2d29b269dc83 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.34.1
+2.36.1
 

@@ -1,8 +1,8 @@
-From f61ccac6c43fcad38c840be4036908bc2ef0dc25 Mon Sep 17 00:00:00 2001
+From 229760413c4138a40587def4f9420bdb432fa502 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
-Subject: [PATCH 180/345] block/mq: don't complete requests via IPI
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 180/347] block/mq: don't complete requests via IPI
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -101,10 +101,10 @@ index 2885dce1ad49..8dbb9ecf9993 100644
  void blk_mq_start_request(struct request *rq);
  void blk_mq_end_request(struct request *rq, blk_status_t error);
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 209ba8e7bd31..8c38c1428c76 100644
+index 56fe682d9beb..39d90bf9b5fa 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -149,6 +149,9 @@ enum mq_rq_state {
+@@ -157,6 +157,9 @@ enum mq_rq_state {
   */
  struct request {
  	struct request_queue *q;
@@ -115,5 +115,5 @@ index 209ba8e7bd31..8c38c1428c76 100644
  
  	int cpu;
 -- 
-2.34.1
+2.36.1
 

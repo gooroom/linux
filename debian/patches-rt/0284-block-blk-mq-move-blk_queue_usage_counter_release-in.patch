@@ -1,9 +1,9 @@
-From 69246fb69312e95166393bd402633d8f1fa8b1f7 Mon Sep 17 00:00:00 2001
+From 8ba3db6f9244e6911ac88380cd133f39aaba95ab Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
-Subject: [PATCH 284/345] block: blk-mq: move blk_queue_usage_counter_release()
+Subject: [PATCH 284/347] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 [ Upstream commit 61c928ecf4fe200bda9b49a0813b5ba0f43995b5 ]
 
@@ -90,7 +90,7 @@ index 461a93c08c14..a67a50dd714a 100644
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 8c38c1428c76..dcc599a125e3 100644
+index 39d90bf9b5fa..5566d0049c22 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -13,6 +13,7 @@
@@ -101,7 +101,7 @@ index 8c38c1428c76..dcc599a125e3 100644
  #include <linux/pagemap.h>
  #include <linux/backing-dev-defs.h>
  #include <linux/wait.h>
-@@ -656,6 +657,7 @@ struct request_queue {
+@@ -664,6 +665,7 @@ struct request_queue {
  #endif
  	struct rcu_head		rcu_head;
  	wait_queue_head_t	mq_freeze_wq;
@@ -110,5 +110,5 @@ index 8c38c1428c76..dcc599a125e3 100644
  	struct list_head	all_q_node;
  
 -- 
-2.34.1
+2.36.1
 

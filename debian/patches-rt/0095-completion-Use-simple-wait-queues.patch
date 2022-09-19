@@ -1,8 +1,8 @@
-From 78c33a6f74b6072425b391d4588c5e3eab5c939d Mon Sep 17 00:00:00 2001
+From 6a60230ca64d58b651171ad00c84b251a7fd2046 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/345] completion: Use simple wait queues
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 095/347] completion: Use simple wait queues
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -68,7 +68,7 @@ index 49eb4e3c760f..49fc75368aa2 100644
  		destroy_workqueue(ffs->io_completion_wq);
  		kfree(ffs->dev_name);
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index a456267b6b78..adb84b0bdd64 100644
+index 3ebcbd199a79..a2240aa9f4ab 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
 @@ -345,7 +345,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
@@ -161,7 +161,7 @@ index 73e06e9986d4..f426a0661aa0 100644
  extern long prepare_to_swait_event(struct swait_queue_head *q, struct swait_queue *wait, int state);
  
 diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
-index 6670a44ec5d4..25cd36d16702 100644
+index 6abdfdf571ee..7020a6582a4c 100644
 --- a/kernel/power/hibernate.c
 +++ b/kernel/power/hibernate.c
 @@ -690,6 +690,10 @@ static int load_image_and_restore(void)
@@ -387,5 +387,5 @@ index 66b59ac77c22..c7cb30cdd1b7 100644
  	wait->task = current;
  	if (list_empty(&wait->task_list))
 -- 
-2.34.1
+2.36.1
 

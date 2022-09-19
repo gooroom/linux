@@ -1,8 +1,8 @@
-From e8b7bf891c8f9614c4f00a82809bd3932b2b2c2a Mon Sep 17 00:00:00 2001
+From dbfda01f7e6e30541e35b49f6972022917fd685a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 15 Sep 2016 10:51:27 +0200
-Subject: [PATCH 128/345] fs/nfs: turn rmdir_sem into a semaphore
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 128/347] fs/nfs: turn rmdir_sem into a semaphore
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 The RW semaphore had a reader side which used the _non_owner version
 because it most likely took the reader lock in one thread and released it
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 43 insertions(+), 4 deletions(-)
 
 diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index a968b8b4b982..24a077252c7b 100644
+index 10bc04af2882..4999bd148491 100644
 --- a/fs/nfs/dir.c
 +++ b/fs/nfs/dir.c
 @@ -1857,7 +1857,11 @@ int nfs_rmdir(struct inode *dir, struct dentry *dentry)
@@ -50,10 +50,10 @@ index a968b8b4b982..24a077252c7b 100644
  		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
  	trace_nfs_rmdir_exit(dir, dentry, error);
 diff --git a/fs/nfs/inode.c b/fs/nfs/inode.c
-index 2cdd8883b7c5..0b3122eb3dd9 100644
+index 592b95ab378b..4fc14fb50068 100644
 --- a/fs/nfs/inode.c
 +++ b/fs/nfs/inode.c
-@@ -2108,7 +2108,11 @@ static void init_once(void *foo)
+@@ -2105,7 +2105,11 @@ static void init_once(void *foo)
  	atomic_long_set(&nfsi->nrequests, 0);
  	atomic_long_set(&nfsi->commit_info.ncommit, 0);
  	atomic_set(&nfsi->commit_info.rpcs_out, 0);
@@ -131,7 +131,7 @@ index fd61bf0fce63..ce9100b5604d 100644
  		 * If we'd displaced old cached devname, free it.  At that
  		 * point dentry is definitely not a root, so we won't need
 diff --git a/include/linux/nfs_fs.h b/include/linux/nfs_fs.h
-index 0ff7dd2bf8a4..91e7bb5eb9b6 100644
+index 8ea7ceed8285..d52dfae05d2a 100644
 --- a/include/linux/nfs_fs.h
 +++ b/include/linux/nfs_fs.h
 @@ -164,7 +164,11 @@ struct nfs_inode {
@@ -147,5 +147,5 @@ index 0ff7dd2bf8a4..91e7bb5eb9b6 100644
  
  #if IS_ENABLED(CONFIG_NFS_V4)
 -- 
-2.34.1
+2.36.1
 

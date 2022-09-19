@@ -1,8 +1,8 @@
-From ad3e3fbf06180384a8af0638b50cd8d03aa5ada2 Mon Sep 17 00:00:00 2001
+From 5b1c12f86da1a979d45cda068adc9b597bc37e53 Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Fri, 17 Dec 2021 14:31:31 -0600
-Subject: [PATCH 198/345] net: move xmit_recursion to per-task variable on -RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 198/347] net: move xmit_recursion to per-task variable on -RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -25,7 +25,7 @@ Signed-off-by: Clark Williams <williams@redhat.com>
  3 files changed, 77 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 1057828c82a8..cfb95d1d69b6 100644
+index d893dc112afc..dfec34087039 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -588,7 +588,11 @@ struct netdev_queue {
@@ -88,7 +88,7 @@ index 1057828c82a8..cfb95d1d69b6 100644
  
  void __netif_schedule(struct Qdisc *q);
  void netif_schedule_queue(struct netdev_queue *txq);
-@@ -3839,6 +3868,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3841,6 +3870,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1U << debug_value) - 1;
  }
  
@@ -133,7 +133,7 @@ index 1057828c82a8..cfb95d1d69b6 100644
  static inline void __netif_tx_lock(struct netdev_queue *txq, int cpu)
  {
  	spin_lock(&txq->_xmit_lock);
-@@ -3891,7 +3958,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
+@@ -3893,7 +3960,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
  
  static inline void txq_trans_update(struct netdev_queue *txq)
  {
@@ -143,7 +143,7 @@ index 1057828c82a8..cfb95d1d69b6 100644
  }
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 9f77df05689c..644e9cc35428 100644
+index ceb3bdfb6bc4..b7a357635d60 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1218,6 +1218,9 @@ struct task_struct {
@@ -185,5 +185,5 @@ index c279375fa5b9..a59b1db02f8b 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 -- 
-2.34.1
+2.36.1
 

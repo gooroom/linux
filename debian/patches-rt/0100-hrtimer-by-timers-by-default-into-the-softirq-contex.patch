@@ -1,9 +1,9 @@
-From 4be1e74136e129124f8b2e7e88a0b404db7515cf Mon Sep 17 00:00:00 2001
+From 8a7e45b02f567fa32754c24195d5c0d095069685 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/345] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/347] hrtimer: by timers by default into the softirq
  context
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -29,10 +29,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 56a4b9762b0c..556c4b696dfe 100644
+index 89d07312e58c..037dbe04fda2 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2261,7 +2261,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -2258,7 +2258,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -66,7 +66,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 2adde229d1af..db396b3b1c7e 100644
+index 88dd1398ae88..7f2441f671d3 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -78,7 +78,7 @@ index 2adde229d1af..db396b3b1c7e 100644
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -9308,7 +9308,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
+@@ -9311,7 +9311,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
  	if (!is_sampling_event(event))
  		return;
  
@@ -233,5 +233,5 @@ index 6d60701dc636..328620fe85f6 100644
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
 -- 
-2.34.1
+2.36.1
 

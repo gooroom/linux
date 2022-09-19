@@ -1,8 +1,8 @@
-From e6cae8ab89302c630e7cd4f202e3ac241d7d969a Mon Sep 17 00:00:00 2001
+From 590484060b22c2d41b6e33ab142e7bf68ad3d85a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 153/345] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 153/347] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7b263ecd8a7f..9e4881099757 100644
+index e4e206a1e7dd..5374ade34b87 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -101,12 +101,8 @@ struct task_group;
@@ -47,7 +47,7 @@ index 7b263ecd8a7f..9e4881099757 100644
  #define task_contributes_to_load(task)	((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
  					 (task->flags & PF_FROZEN) == 0 && \
  					 (task->state & TASK_NOLOAD) == 0)
-@@ -1718,6 +1714,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1717,6 +1713,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -100,7 +100,7 @@ index 7b263ecd8a7f..9e4881099757 100644
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
 diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index af74e843221b..31cdd0bb08d2 100644
+index 8a98e3e78c70..9c59e523f3cd 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
 @@ -190,7 +190,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
@@ -162,5 +162,5 @@ index 1f450a7649f0..9494e2007118 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.34.1
+2.36.1
 

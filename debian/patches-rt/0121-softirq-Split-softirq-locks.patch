@@ -1,8 +1,8 @@
-From 67f76b6fb2f44ff0c4c3d1c2e7d8eeb0171655f1 Mon Sep 17 00:00:00 2001
+From 4f304d0db14e45c0b23ed9ed8ee6749255dd180a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 121/345] softirq: Split softirq locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.230-rt103.tar.xz
+Subject: [PATCH 121/347] softirq: Split softirq locks
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -178,7 +178,7 @@ index 9984f2b75b73..27c3176d88d2 100644
  #define in_task()		(!(preempt_count() & \
  				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7089bc6678db..f08b868c7b56 100644
+index 1b2884889dd0..63a97f24d138 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1200,6 +1200,8 @@ struct task_struct {
@@ -199,7 +199,7 @@ index 7089bc6678db..f08b868c7b56 100644
  #define PF_EXITING		0x00000004	/* Getting shut down */
  #define PF_VCPU			0x00000010	/* I'm a virtual CPU */
 diff --git a/init/main.c b/init/main.c
-index 7baad67c2e93..094726cce32c 100644
+index 272ec131211c..0d5763c5da28 100644
 --- a/init/main.c
 +++ b/init/main.c
 @@ -560,6 +560,7 @@ asmlinkage __visible void __init start_kernel(void)
@@ -828,5 +828,5 @@ index 012bc81879bf..2b0ddd50e879 100644
  	}
  
 -- 
-2.34.1
+2.36.1
 
