@@ -1,9 +1,9 @@
-From 9ab82bb8e759466300c3157cdc71bbdaee65017d Mon Sep 17 00:00:00 2001
+From 5ec74f1eb1c064c3e54c146c802524a1168b9c2b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 4 Dec 2020 20:13:54 +0100
-Subject: [PATCH 063/319] blk-mq: Don't complete on a remote CPU in force
+Subject: [PATCH 063/317] blk-mq: Don't complete on a remote CPU in force
  threaded mode
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
 
 With force threaded interrupts enabled, raising softirq from an SMP
 function call will always result in waking the ksoftirqd thread. This is
@@ -25,10 +25,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 8 insertions(+)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 15a11a217cd03..60e34365921a9 100644
+index c5d82b21a1cc..265585e8d759 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -648,6 +648,14 @@ static inline bool blk_mq_complete_need_ipi(struct request *rq)
+@@ -650,6 +650,14 @@ static inline bool blk_mq_complete_need_ipi(struct request *rq)
  	if (!IS_ENABLED(CONFIG_SMP) ||
  	    !test_bit(QUEUE_FLAG_SAME_COMP, &rq->q->queue_flags))
  		return false;
@@ -44,5 +44,5 @@ index 15a11a217cd03..60e34365921a9 100644
  	/* same CPU or cache domain?  Complete locally */
  	if (cpu == rq->mq_ctx->cpu ||
 -- 
-2.35.3
+2.36.1
 

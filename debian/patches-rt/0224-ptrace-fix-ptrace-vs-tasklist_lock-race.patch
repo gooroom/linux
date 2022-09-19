@@ -1,8 +1,8 @@
-From e59ccc9c549055f5d79dc4a31be420d9aa0cc729 Mon Sep 17 00:00:00 2001
+From ff1bc04650d567da8c63c1b7c8b125d9387d58c6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 224/319] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.115-rt67.tar.xz
+Subject: [PATCH 224/317] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4c1c54eb85efa..65d31e296f4fc 100644
+index 4c1c54eb85ef..65d31e296f4f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -112,12 +112,8 @@ struct io_uring_task;
@@ -100,7 +100,7 @@ index 4c1c54eb85efa..65d31e296f4fc 100644
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
 diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index d99f73f83bf5f..dd7eb90258c5e 100644
+index aab480e24bd6..71acb6341e63 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
 @@ -196,7 +196,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
@@ -120,7 +120,7 @@ index d99f73f83bf5f..dd7eb90258c5e 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1c3dc18578eb0..6a5cd9eecd60e 100644
+index 1c3dc18578eb..6a5cd9eecd60 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2583,6 +2583,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
@@ -162,5 +162,5 @@ index 1c3dc18578eb0..6a5cd9eecd60e 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.35.3
+2.36.1
 
