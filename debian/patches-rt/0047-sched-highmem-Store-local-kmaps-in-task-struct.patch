@@ -1,8 +1,8 @@
-From c4939a53a1f66e869cb9f9a9c6f82edbefb01e5c Mon Sep 17 00:00:00 2001
+From 2f0ddc10efd0aec81016286b3268f1fc81a57b5b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
-Subject: [PATCH 047/317] sched: highmem: Store local kmaps in task struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 047/319] sched: highmem: Store local kmaps in task struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 129 insertions(+), 10 deletions(-)
 
 diff --git a/include/linux/highmem-internal.h b/include/linux/highmem-internal.h
-index 6ceed907b14e..c5a22177db85 100644
+index 6ceed907b14e2..c5a22177db85b 100644
 --- a/include/linux/highmem-internal.h
 +++ b/include/linux/highmem-internal.h
 @@ -9,6 +9,16 @@
@@ -52,7 +52,7 @@ index 6ceed907b14e..c5a22177db85 100644
  
  #ifdef CONFIG_HIGHMEM
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index bedd83a68c21..9599a71cea6d 100644
+index a5c0a58d4f0dd..628187c96b76e 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -34,6 +34,7 @@
@@ -63,7 +63,7 @@ index bedd83a68c21..9599a71cea6d 100644
  
  /* task_struct member predeclarations (sorted alphabetically): */
  struct audit_context;
-@@ -645,6 +646,13 @@ struct wake_q_node {
+@@ -641,6 +642,13 @@ struct wake_q_node {
  	struct wake_q_node *next;
  };
  
@@ -77,7 +77,7 @@ index bedd83a68c21..9599a71cea6d 100644
  struct task_struct {
  #ifdef CONFIG_THREAD_INFO_IN_TASK
  	/*
-@@ -1324,6 +1332,7 @@ struct task_struct {
+@@ -1320,6 +1328,7 @@ struct task_struct {
  	unsigned int			sequential_io;
  	unsigned int			sequential_io_avg;
  #endif
@@ -86,7 +86,7 @@ index bedd83a68c21..9599a71cea6d 100644
  	unsigned long			task_state_change;
  #endif
 diff --git a/kernel/entry/common.c b/kernel/entry/common.c
-index e289e6773292..59c666d9d43c 100644
+index e289e67732926..59c666d9d43c7 100644
 --- a/kernel/entry/common.c
 +++ b/kernel/entry/common.c
 @@ -2,6 +2,7 @@
@@ -106,7 +106,7 @@ index e289e6773292..59c666d9d43c 100644
  	lockdep_sys_exit();
  }
 diff --git a/kernel/fork.c b/kernel/fork.c
-index a78c0b02edd5..22d4518cafb6 100644
+index a78c0b02edd55..22d4518cafb61 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -930,6 +930,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -118,10 +118,10 @@ index a78c0b02edd5..22d4518cafb6 100644
  #ifdef CONFIG_FAULT_INJECTION
  	tsk->fail_nth = 0;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 52b39d1e1602..d9e8c070b3f4 100644
+index a0e786e368165..36e9db48c3de5 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4084,6 +4084,22 @@ static inline void finish_lock_switch(struct rq *rq)
+@@ -4089,6 +4089,22 @@ static inline void finish_lock_switch(struct rq *rq)
  # define finish_arch_post_lock_switch()	do { } while (0)
  #endif
  
@@ -144,7 +144,7 @@ index 52b39d1e1602..d9e8c070b3f4 100644
  /**
   * prepare_task_switch - prepare to switch tasks
   * @rq: the runqueue preparing to switch
-@@ -4106,6 +4122,7 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
+@@ -4111,6 +4127,7 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
  	perf_event_task_sched_out(prev, next);
  	rseq_preempt(prev);
  	fire_sched_out_preempt_notifiers(prev, next);
@@ -152,7 +152,7 @@ index 52b39d1e1602..d9e8c070b3f4 100644
  	prepare_task(next);
  	prepare_arch_switch(next);
  }
-@@ -4172,6 +4189,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -4177,6 +4194,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	finish_lock_switch(rq);
  	finish_arch_post_lock_switch();
  	kcov_finish_switch(current);
@@ -161,7 +161,7 @@ index 52b39d1e1602..d9e8c070b3f4 100644
  	fire_sched_in_preempt_notifiers(current);
  	/*
 diff --git a/mm/highmem.c b/mm/highmem.c
-index 54bd233846c9..d7a1c80001d0 100644
+index 54bd233846c90..d7a1c80001d02 100644
 --- a/mm/highmem.c
 +++ b/mm/highmem.c
 @@ -365,8 +365,6 @@ EXPORT_SYMBOL(kunmap_high);
@@ -305,5 +305,5 @@ index 54bd233846c9..d7a1c80001d0 100644
  
  #if defined(HASHED_PAGE_VIRTUAL)
 -- 
-2.36.1
+2.37.2
 

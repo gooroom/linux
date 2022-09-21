@@ -1,8 +1,8 @@
-From d6e01bdd7f33da2ae958ea24cb263c119035bba3 Mon Sep 17 00:00:00 2001
+From 4049393ce89f48a9191cd54b11195ccf1ceb868c Mon Sep 17 00:00:00 2001
 From: "Luis Claudio R. Goncalves" <lgoncalv@redhat.com>
 Date: Tue, 25 Jun 2019 11:28:04 -0300
-Subject: [PATCH 212/317] mm/zswap: Use local lock to protect per-CPU data
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 212/319] mm/zswap: Use local lock to protect per-CPU data
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 zwap uses per-CPU compression. The per-CPU data pointer is acquired with
 get_cpu_ptr() which implicitly disables preemption. It allocates
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 28 insertions(+), 15 deletions(-)
 
 diff --git a/mm/zswap.c b/mm/zswap.c
-index fbb782924ccc..b24f761b9241 100644
+index fbb782924ccc5..b24f761b9241c 100644
 --- a/mm/zswap.c
 +++ b/mm/zswap.c
 @@ -18,6 +18,7 @@
@@ -146,5 +146,5 @@ index fbb782924ccc..b24f761b9241 100644
  	zpool_unmap_handle(entry->pool->zpool, entry->handle);
  	BUG_ON(ret);
 -- 
-2.36.1
+2.37.2
 

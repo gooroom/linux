@@ -1,8 +1,8 @@
-From a181c18626e964d31409718a43d001509397fa04 Mon Sep 17 00:00:00 2001
+From e36ada64b051decd40b2daff8d60fdcb51e7726a Mon Sep 17 00:00:00 2001
 From: Andrew Halaney <ahalaney@redhat.com>
 Date: Tue, 6 Apr 2021 17:19:52 -0500
-Subject: [PATCH 299/317] locking/rwsem-rt: Remove might_sleep() in __up_read()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 299/319] locking/rwsem-rt: Remove might_sleep() in __up_read()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 There's no chance of sleeping here, the reader is giving up the
 lock and possibly waking up the writer who is waiting on it.
@@ -15,7 +15,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 1 deletion(-)
 
 diff --git a/kernel/locking/rwsem-rt.c b/kernel/locking/rwsem-rt.c
-index 274172d5bb3a..b61edc4dcb73 100644
+index 274172d5bb3a5..b61edc4dcb739 100644
 --- a/kernel/locking/rwsem-rt.c
 +++ b/kernel/locking/rwsem-rt.c
 @@ -198,7 +198,6 @@ void __up_read(struct rw_semaphore *sem)
@@ -27,5 +27,5 @@ index 274172d5bb3a..b61edc4dcb73 100644
  	/*
  	 * Wake the writer, i.e. the rtmutex owner. It might release the
 -- 
-2.36.1
+2.37.2
 

@@ -1,8 +1,8 @@
-From 4c2790a276b161569213a9537813db3f1b49c679 Mon Sep 17 00:00:00 2001
+From 36337c925349eca80db3c672563d292521511711 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 231/317] block/mq: do not invoke preempt_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 231/319] block/mq: do not invoke preempt_disable()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 preempt_disable() and get_cpu() don't play well together with the sleeping
 locks it tries to allocate later.
@@ -14,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index ccf18d172aa0..446dec9f5406 100644
+index 60681ad53cba1..42a5dec406f08 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -1572,14 +1572,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
+@@ -1573,14 +1573,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
  		return;
  
  	if (!async && !(hctx->flags & BLK_MQ_F_BLOCKING)) {
@@ -36,5 +36,5 @@ index ccf18d172aa0..446dec9f5406 100644
  
  	kblockd_mod_delayed_work_on(blk_mq_hctx_next_cpu(hctx), &hctx->run_work,
 -- 
-2.36.1
+2.37.2
 

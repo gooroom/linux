@@ -1,8 +1,8 @@
-From 186b6c5b09700e0caa53b06f7ffb56fb06437824 Mon Sep 17 00:00:00 2001
+From 28901a61850429a30853d339f6d15e9edec05589 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Tue, 8 Jun 2021 00:37:34 -0400
-Subject: [PATCH 295/317] sched: Fix affine_move_task() self-concurrency
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 295/319] sched: Fix affine_move_task() self-concurrency
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 commit 9e81889c7648d48dd5fe13f41cbc99f3c362484a upstream.
 
@@ -33,10 +33,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 12 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5ee7713ac972..8ecd1540f600 100644
+index 997f01a6b5bc7..52b339b5df0da 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1912,6 +1912,7 @@ struct migration_arg {
+@@ -1913,6 +1913,7 @@ struct migration_arg {
  
  struct set_affinity_pending {
  	refcount_t		refs;
@@ -44,7 +44,7 @@ index 5ee7713ac972..8ecd1540f600 100644
  	struct completion	done;
  	struct cpu_stop_work	stop_work;
  	struct migration_arg	arg;
-@@ -2030,12 +2031,15 @@ static int migration_cpu_stop(void *data)
+@@ -2031,12 +2032,15 @@ static int migration_cpu_stop(void *data)
  		 * determine is_migration_disabled() and so have to chase after
  		 * it.
  		 */
@@ -60,7 +60,7 @@ index 5ee7713ac972..8ecd1540f600 100644
  	task_rq_unlock(rq, p, &rf);
  
  	if (complete)
-@@ -2231,7 +2235,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2232,7 +2236,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  			    int dest_cpu, unsigned int flags)
  {
  	struct set_affinity_pending my_pending = { }, *pending = NULL;
@@ -69,7 +69,7 @@ index 5ee7713ac972..8ecd1540f600 100644
  
  	/* Can the task run on the task's current CPU? If so, we're done */
  	if (cpumask_test_cpu(task_cpu(p), &p->cpus_mask)) {
-@@ -2304,14 +2308,19 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2305,14 +2309,19 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  		 * anything else we cannot do is_migration_disabled(), punt
  		 * and have the stopper function handle it all race-free.
  		 */
@@ -92,5 +92,5 @@ index 5ee7713ac972..8ecd1540f600 100644
  		if (flags & SCA_MIGRATE_ENABLE)
  			return 0;
 -- 
-2.36.1
+2.37.2
 

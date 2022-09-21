@@ -1,8 +1,8 @@
-From 7a3019ccece0b977e9806f096b35750e8946513d Mon Sep 17 00:00:00 2001
+From 3bfd67bf9865b74ba8a3a5c5f0cf6cb827ba39b2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 20:51:03 +0100
-Subject: [PATCH 235/317] rt: Introduce cpu_chill()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 235/319] rt: Introduce cpu_chill()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Add cpu_chill() to replace cpu_relax(). cpu_chill()
@@ -62,7 +62,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 36 insertions(+)
 
 diff --git a/include/linux/delay.h b/include/linux/delay.h
-index 1d0e2ce6b6d9..02b37178b54f 100644
+index 1d0e2ce6b6d9f..02b37178b54f4 100644
 --- a/include/linux/delay.h
 +++ b/include/linux/delay.h
 @@ -76,4 +76,10 @@ static inline void fsleep(unsigned long usecs)
@@ -77,7 +77,7 @@ index 1d0e2ce6b6d9..02b37178b54f 100644
 +
  #endif /* defined(_LINUX_DELAY_H) */
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 4ef90718c114..6eb4432347ad 100644
+index 544ce87ba38a7..3db616aecb176 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -2052,6 +2052,36 @@ SYSCALL_DEFINE2(nanosleep_time32, struct old_timespec32 __user *, rqtp,
@@ -118,5 +118,5 @@ index 4ef90718c114..6eb4432347ad 100644
   * Functions related to boot-time initialization:
   */
 -- 
-2.36.1
+2.37.2
 

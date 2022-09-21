@@ -1,8 +1,8 @@
-From 111b6036c8da3d0ac4b668f34769fe1c72ef6159 Mon Sep 17 00:00:00 2001
+From 2be7c9e425a6a13a25949b0bcd1f1a6b8a07d66d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Aug 2021 15:37:38 +0200
-Subject: [PATCH 301/317] sched: Fix get_push_task() vs migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 301/319] sched: Fix get_push_task() vs migrate_disable()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 push_rt_task() attempts to move the currently running task away if the
 next runnable task has migration disabled and therefore is pinned on the
@@ -28,10 +28,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index c8423b88f62d..a8390b662455 100644
+index 792b533e9e2ca..2e4e29722f7ff 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1949,6 +1949,9 @@ static inline struct task_struct *get_push_task(struct rq *rq)
+@@ -1948,6 +1948,9 @@ static inline struct task_struct *get_push_task(struct rq *rq)
  	if (p->nr_cpus_allowed == 1)
  		return NULL;
  
@@ -42,5 +42,5 @@ index c8423b88f62d..a8390b662455 100644
  	return get_task_struct(p);
  }
 -- 
-2.36.1
+2.37.2
 

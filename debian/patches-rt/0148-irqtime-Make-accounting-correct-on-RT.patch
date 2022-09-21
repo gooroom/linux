@@ -1,8 +1,8 @@
-From f384d3acd3344ad940f1bb051ee0e7a7a209997f Mon Sep 17 00:00:00 2001
+From be5609dd3a7a998d8bdf7db391b31a915fdb27aa Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:55:54 +0100
-Subject: [PATCH 148/317] irqtime: Make accounting correct on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 148/319] irqtime: Make accounting correct on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 vtime_account_irq and irqtime_account_irq() base checks on preempt_count()
 which fails on RT because preempt_count() does not contain the softirq
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/cputime.c b/kernel/sched/cputime.c
-index 02a7932c7383..02a5aa60fe7e 100644
+index 02a7932c73838..02a5aa60fe7e5 100644
 --- a/kernel/sched/cputime.c
 +++ b/kernel/sched/cputime.c
 @@ -60,7 +60,7 @@ void irqtime_account_irq(struct task_struct *curr, unsigned int offset)
@@ -50,5 +50,5 @@ index 02a7932c7383..02a5aa60fe7e 100644
  	if (pc & HARDIRQ_OFFSET) {
  		vtime_account_hardirq(tsk);
 -- 
-2.36.1
+2.37.2
 
