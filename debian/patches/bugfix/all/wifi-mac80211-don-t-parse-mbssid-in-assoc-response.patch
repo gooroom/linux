@@ -1,0 +1,39 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Fri, 14 Oct 2022 18:41:49 +0200
+Subject: [PATCH] wifi: mac80211: don't parse mbssid in assoc response
+
+This is simply not valid and simplifies the next commit.
+I'll make a separate patch for this in the current main
+tree as well.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+Link: https://lore.kernel.org/r/20221014184133.c1c3a823db3d.I6c0186979a2872e7f7da75f9f8f93b07046afcf2@changeid
+---
+ net/mac80211/mlme.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index 9e70cb86b420..0163b835f608 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3300,7 +3300,7 @@ static bool ieee80211_assoc_success(struct ieee80211_sub_if_data *sdata,
+ 	}
+ 	capab_info = le16_to_cpu(mgmt->u.assoc_resp.capab_info);
+ 	ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false, elems,
+-			       mgmt->bssid, assoc_data->bss->bssid);
++			       mgmt->bssid, NULL);
+ 
+ 	if (elems->aid_resp)
+ 		aid = le16_to_cpu(elems->aid_resp->aid);
+@@ -3708,7 +3708,7 @@ static void ieee80211_rx_mgmt_assoc_resp(struct ieee80211_sub_if_data *sdata,
+ 		return;
+ 
+ 	ieee802_11_parse_elems(pos, len - (pos - (u8 *)mgmt), false, &elems,
+-			       mgmt->bssid, assoc_data->bss->bssid);
++			       mgmt->bssid, NULL);
+ 
+ 	if (status_code == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY &&
+ 	    elems.timeout_int &&
+-- 
+2.37.2
+
