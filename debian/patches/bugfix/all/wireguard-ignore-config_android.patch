@@ -1,0 +1,29 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Thu, 07 Jul 2022 18:58:43 +0200
+Subject: wireguard: Clear keys after suspend despite CONFIG_ANDROID=y
+Forwarded: not-needed
+
+WireGuard assumes that CONFIG_ANDROID implies Android power
+management, i.e. user-space suspending the system automatically at
+short intervals, and so does not clear keys after a suspend/resume
+cycle.  Debian systems don't do that kind of power management but we
+do set CONFIG_ANDROID on some architectures as a dependency of Binder.
+
+In 5.20, CONFIG_PM_USERSPACE_AUTOSLEEP will be introduced to tell the
+kernel that this kind of power management is in use, and
+CONFIG_ANDROID will be removed.  For now, remove this one test that
+does the wrong thing for us.
+
+References: https://lwn.net/Articles/899743/
+---
+--- a/drivers/net/wireguard/device.c
++++ b/drivers/net/wireguard/device.c
+@@ -71,7 +71,7 @@ static int wg_pm_notification(struct not
+ 	 * its normal operation rather than as a somewhat rare event, then we
+ 	 * don't actually want to clear keys.
+ 	 */
+-	if (IS_ENABLED(CONFIG_PM_AUTOSLEEP) || IS_ENABLED(CONFIG_ANDROID))
++	if (IS_ENABLED(CONFIG_PM_AUTOSLEEP))
+ 		return 0;
+ 
+ 	if (action != PM_HIBERNATION_PREPARE && action != PM_SUSPEND_PREPARE)
