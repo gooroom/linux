@@ -1,8 +1,8 @@
-From d635587a44a62229694e5c1142ca53b0b24ae6e7 Mon Sep 17 00:00:00 2001
+From eed2ee87d2f7eacbc639cb6b471a27a330ed81eb Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:12 +0200
-Subject: [PATCH 015/317] sched, lockdep: Annotate ->pi_lock recursion
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 015/319] sched, lockdep: Annotate ->pi_lock recursion
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 There's a valid ->pi_lock recursion issue where the actual PI code
 tries to wake up the stop task. Make lockdep aware so it doesn't
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 15 insertions(+)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 75fd6b8fc48d..91b8e63c5b00 100644
+index 96fc8315f30e8..026158a5652c4 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2666,6 +2666,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
+@@ -2667,6 +2667,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
  
  void sched_set_stop_task(int cpu, struct task_struct *stop)
  {
@@ -26,7 +26,7 @@ index 75fd6b8fc48d..91b8e63c5b00 100644
  	struct sched_param param = { .sched_priority = MAX_RT_PRIO - 1 };
  	struct task_struct *old_stop = cpu_rq(cpu)->stop;
  
-@@ -2681,6 +2682,20 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
+@@ -2682,6 +2683,20 @@ void sched_set_stop_task(int cpu, struct task_struct *stop)
  		sched_setscheduler_nocheck(stop, SCHED_FIFO, &param);
  
  		stop->sched_class = &stop_sched_class;
@@ -48,5 +48,5 @@ index 75fd6b8fc48d..91b8e63c5b00 100644
  
  	cpu_rq(cpu)->stop = stop;
 -- 
-2.36.1
+2.37.2
 

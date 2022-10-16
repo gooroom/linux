@@ -1,9 +1,9 @@
-From b844ee0654ece7c520a8314ca1a8379bd273b0b9 Mon Sep 17 00:00:00 2001
+From 4c1b7809adc54cf0908ecb84d80b4e142dda254f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 24 Nov 2021 17:12:20 +0100
-Subject: [PATCH 310/317] irq_work: Handle some irq_work in a per-CPU thread on
+Subject: [PATCH 310/319] irq_work: Handle some irq_work in a per-CPU thread on
  PREEMPT_RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 The irq_work callback is invoked in hard IRQ context. By default all
 callbacks are scheduled for invocation right away (given supported by
@@ -58,7 +58,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  3 files changed, 106 insertions(+), 43 deletions(-)
 
 diff --git a/include/linux/irq_work.h b/include/linux/irq_work.h
-index 3c6d3a96bca0..f551ba9c99d4 100644
+index 3c6d3a96bca0f..f551ba9c99d40 100644
 --- a/include/linux/irq_work.h
 +++ b/include/linux/irq_work.h
 @@ -40,6 +40,16 @@ void init_irq_work(struct irq_work *work, void (*func)(struct irq_work *))
@@ -90,7 +90,7 @@ index 3c6d3a96bca0..f551ba9c99d4 100644
 -
  #endif /* _LINUX_IRQ_WORK_H */
 diff --git a/kernel/irq_work.c b/kernel/irq_work.c
-index 8969aff790e2..03d09d779ee1 100644
+index 8969aff790e21..03d09d779ee12 100644
 --- a/kernel/irq_work.c
 +++ b/kernel/irq_work.c
 @@ -18,12 +18,37 @@
@@ -290,7 +290,7 @@ index 8969aff790e2..03d09d779ee1 100644
 +}
 +early_initcall(irq_work_init_threads);
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 1cad0efd635c..a4fdc7cfb723 100644
+index 1cad0efd635c9..a4fdc7cfb723b 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -1770,8 +1770,6 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
@@ -303,5 +303,5 @@ index 1cad0efd635c..a4fdc7cfb723 100644
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
 -- 
-2.36.1
+2.37.2
 

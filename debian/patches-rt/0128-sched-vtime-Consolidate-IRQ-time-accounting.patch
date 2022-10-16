@@ -1,8 +1,8 @@
-From 1e2c142aafcb8bea55eb4b7c1872b4164786d054 Mon Sep 17 00:00:00 2001
+From 29f7e9a994a43a4d93063074237b201b1b8faa5e Mon Sep 17 00:00:00 2001
 From: Frederic Weisbecker <frederic@kernel.org>
 Date: Wed, 2 Dec 2020 12:57:30 +0100
-Subject: [PATCH 128/317] sched/vtime: Consolidate IRQ time accounting
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 128/319] sched/vtime: Consolidate IRQ time accounting
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 The 3 architectures implementing CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 all have their own version of irq time accounting that dispatch the
@@ -26,7 +26,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  5 files changed, 102 insertions(+), 48 deletions(-)
 
 diff --git a/arch/ia64/kernel/time.c b/arch/ia64/kernel/time.c
-index 7abc5f37bfaf..733e0e3324b8 100644
+index 7abc5f37bfaf9..733e0e3324b80 100644
 --- a/arch/ia64/kernel/time.c
 +++ b/arch/ia64/kernel/time.c
 @@ -138,12 +138,8 @@ void vtime_account_kernel(struct task_struct *tsk)
@@ -65,7 +65,7 @@ index 7abc5f37bfaf..733e0e3324b8 100644
  
  static irqreturn_t
 diff --git a/arch/powerpc/kernel/time.c b/arch/powerpc/kernel/time.c
-index 1d20f0f77a92..7e0a497a36ee 100644
+index 1d20f0f77a920..7e0a497a36ee3 100644
 --- a/arch/powerpc/kernel/time.c
 +++ b/arch/powerpc/kernel/time.c
 @@ -312,12 +312,11 @@ static unsigned long vtime_delta_scaled(struct cpu_accounting_data *acct,
@@ -163,7 +163,7 @@ index 1d20f0f77a92..7e0a497a36ee 100644
  			       struct cpu_accounting_data *acct)
  {
 diff --git a/arch/s390/kernel/vtime.c b/arch/s390/kernel/vtime.c
-index 18a97631af43..9b3c5978b668 100644
+index 18a97631af434..9b3c5978b6683 100644
 --- a/arch/s390/kernel/vtime.c
 +++ b/arch/s390/kernel/vtime.c
 @@ -223,31 +223,50 @@ void vtime_flush(struct task_struct *tsk)
@@ -231,7 +231,7 @@ index 18a97631af43..9b3c5978b668 100644
   * Sorted add to a list. List is linear searched until first bigger
   * element is found.
 diff --git a/include/linux/vtime.h b/include/linux/vtime.h
-index 2cdeca062db3..6c9867419615 100644
+index 2cdeca062db32..6c98674196159 100644
 --- a/include/linux/vtime.h
 +++ b/include/linux/vtime.h
 @@ -83,16 +83,12 @@ static inline void vtime_init_idle(struct task_struct *tsk, int cpu) { }
@@ -272,7 +272,7 @@ index 2cdeca062db3..6c9867419615 100644
  }
  
 diff --git a/kernel/sched/cputime.c b/kernel/sched/cputime.c
-index 1d78b835ec8b..60129af16ed6 100644
+index 1d78b835ec8b4..60129af16ed69 100644
 --- a/kernel/sched/cputime.c
 +++ b/kernel/sched/cputime.c
 @@ -417,13 +417,18 @@ void vtime_task_switch(struct task_struct *prev)
@@ -299,5 +299,5 @@ index 1d78b835ec8b..60129af16ed6 100644
  
  void cputime_adjust(struct task_cputime *curr, struct prev_cputime *prev,
 -- 
-2.36.1
+2.37.2
 

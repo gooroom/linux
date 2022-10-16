@@ -1,8 +1,8 @@
-From 154f26378845b19112c10ea0e75077471dc14eec Mon Sep 17 00:00:00 2001
+From 488cedb79e212dc218ebc0b0fe6dd73d25c5444b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH 264/317] powerpc: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 264/319] powerpc: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  6 files changed, 50 insertions(+), 18 deletions(-)
 
 diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index b3ab6c2d9f66..6d8ce54ad6dd 100644
+index b3ab6c2d9f66c..6d8ce54ad6dd0 100644
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
 @@ -230,6 +230,7 @@ config PPC
@@ -29,7 +29,7 @@ index b3ab6c2d9f66..6d8ce54ad6dd 100644
  	select MMU_GATHER_PAGE_SIZE
  	select HAVE_REGS_AND_STACK_ACCESS_API
 diff --git a/arch/powerpc/include/asm/thread_info.h b/arch/powerpc/include/asm/thread_info.h
-index 6de3517bea94..98f3e16f7ff1 100644
+index 6de3517bea94e..98f3e16f7ff18 100644
 --- a/arch/powerpc/include/asm/thread_info.h
 +++ b/arch/powerpc/include/asm/thread_info.h
 @@ -54,6 +54,8 @@
@@ -88,7 +88,7 @@ index 6de3517bea94..98f3e16f7ff1 100644
  /* Bits in local_flags */
  /* Don't move TLF_NAPPING without adjusting the code in entry_32.S */
 diff --git a/arch/powerpc/kernel/asm-offsets.c b/arch/powerpc/kernel/asm-offsets.c
-index 5c125255571c..597379121407 100644
+index 5c125255571cd..597379121407a 100644
 --- a/arch/powerpc/kernel/asm-offsets.c
 +++ b/arch/powerpc/kernel/asm-offsets.c
 @@ -189,6 +189,7 @@ int main(void)
@@ -100,7 +100,7 @@ index 5c125255571c..597379121407 100644
  #ifdef CONFIG_PPC64
  	OFFSET(DCACHEL1BLOCKSIZE, ppc64_caches, l1d.block_size);
 diff --git a/arch/powerpc/kernel/entry_32.S b/arch/powerpc/kernel/entry_32.S
-index 459f5d00b990..fc9517a97640 100644
+index 459f5d00b9904..fc9517a976407 100644
 --- a/arch/powerpc/kernel/entry_32.S
 +++ b/arch/powerpc/kernel/entry_32.S
 @@ -414,7 +414,9 @@ ret_from_syscall:
@@ -179,7 +179,7 @@ index 459f5d00b990..fc9517a97640 100644
  	andi.	r0,r9,_TIF_USER_WORK_MASK
  	beq	restore_user
 diff --git a/arch/powerpc/kernel/exceptions-64e.S b/arch/powerpc/kernel/exceptions-64e.S
-index f579ce46eef2..715ff292a8f8 100644
+index f579ce46eef2d..715ff292a8f8a 100644
 --- a/arch/powerpc/kernel/exceptions-64e.S
 +++ b/arch/powerpc/kernel/exceptions-64e.S
 @@ -1080,7 +1080,7 @@ _GLOBAL(ret_from_except_lite)
@@ -224,7 +224,7 @@ index f579ce46eef2..715ff292a8f8 100644
  restore:
  	/*
 diff --git a/arch/powerpc/kernel/syscall_64.c b/arch/powerpc/kernel/syscall_64.c
-index 310bcd768cd5..ae3212dcf562 100644
+index 310bcd768cd5a..ae3212dcf5627 100644
 --- a/arch/powerpc/kernel/syscall_64.c
 +++ b/arch/powerpc/kernel/syscall_64.c
 @@ -193,7 +193,7 @@ notrace unsigned long syscall_exit_prepare(unsigned long r3,
@@ -263,5 +263,5 @@ index 310bcd768cd5..ae3212dcf562 100644
  		}
  
 -- 
-2.36.1
+2.37.2
 

@@ -1,8 +1,8 @@
-From 1610a3f82b0c0165ae7bb119cbfb71bf1171741d Mon Sep 17 00:00:00 2001
+From a071aba3ba59731db1cdb52a24ae87863655c327 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 16 Sep 2020 16:15:39 +0200
-Subject: [PATCH 239/317] net: Dequeue in dev_cpu_dead() without the lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 239/319] net: Dequeue in dev_cpu_dead() without the lock
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 Upstream uses skb_dequeue() to acquire lock of `input_pkt_queue'. The reason is
 to synchronize against a remote CPU which still thinks that the CPU is online
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index dc462c8d6252..b9e0b92c6e01 100644
+index 2c043eab50939..a802b02b4c9cb 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10991,7 +10991,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -10982,7 +10982,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
  		netif_rx_ni(skb);
  		input_queue_head_incr(oldsd);
  	}
@@ -33,5 +33,5 @@ index dc462c8d6252..b9e0b92c6e01 100644
  		input_queue_head_incr(oldsd);
  	}
 -- 
-2.36.1
+2.37.2
 

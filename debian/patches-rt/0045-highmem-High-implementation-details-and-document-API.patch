@@ -1,8 +1,8 @@
-From afd859e8318af1d0ce0accf2d44e8f4584181469 Mon Sep 17 00:00:00 2001
+From befc02e4e67a299283dace4fcfb15c8e4e70374d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:34 +0100
-Subject: [PATCH 045/317] highmem: High implementation details and document API
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.131-rt72.tar.xz
+Subject: [PATCH 045/319] highmem: High implementation details and document API
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
 
 Move the gory details of kmap & al into a private header and only document
 the interfaces which are usable by drivers.
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 diff --git a/include/linux/highmem-internal.h b/include/linux/highmem-internal.h
 new file mode 100644
-index 000000000000..6ceed907b14e
+index 0000000000000..6ceed907b14e2
 --- /dev/null
 +++ b/include/linux/highmem-internal.h
 @@ -0,0 +1,174 @@
@@ -197,7 +197,7 @@ index 000000000000..6ceed907b14e
 +
 +#endif
 diff --git a/include/linux/highmem.h b/include/linux/highmem.h
-index 3180a8f7307f..7d098bd621f6 100644
+index 3180a8f7307f5..7d098bd621f68 100644
 --- a/include/linux/highmem.h
 +++ b/include/linux/highmem.h
 @@ -11,199 +11,125 @@
@@ -497,7 +497,7 @@ index 3180a8f7307f..7d098bd621f6 100644
  /* when CONFIG_HIGHMEM is not set these will be plain clear/copy_page */
  #ifndef clear_user_highpage
 diff --git a/mm/highmem.c b/mm/highmem.c
-index 499dfafd36b7..54bd233846c9 100644
+index 499dfafd36b79..54bd233846c90 100644
 --- a/mm/highmem.c
 +++ b/mm/highmem.c
 @@ -104,7 +104,7 @@ static inline wait_queue_head_t *get_pkmap_wait_queue_head(unsigned int color)
@@ -540,5 +540,5 @@ index 499dfafd36b7..54bd233846c9 100644
  	lock_kmap();
  	flush_all_zero_pkmaps();
 -- 
-2.36.1
+2.37.2
 
