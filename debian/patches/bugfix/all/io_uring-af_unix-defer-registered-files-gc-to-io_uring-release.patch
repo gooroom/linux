@@ -1,8 +1,10 @@
 From: Pavel Begunkov <asml.silence@gmail.com>
-Date: Mon, 3 Oct 2022 13:59:47 +0100
+Date: Sun, 16 Oct 2022 23:31:26 +0100
 Subject: io_uring/af_unix: defer registered files gc to io_uring release
 Origin: https://git.kernel.org/linus/0091bfc81741b8d3aeb3b7ab8636f911b2de6e80
 Bug-Debian-Security: https://security-tracker.debian.org/tracker/CVE-2022-2602
+
+[ upstream commit 0091bfc81741b8d3aeb3b7ab8636f911b2de6e80 ]
 
 Instead of putting io_uring's registered files in unix_gc() we want it
 to be done by io_uring itself. The trick here is to consider io_uring
@@ -18,12 +20,23 @@ Signed-off-by: Pavel Begunkov <asml.silence@gmail.com>
 Signed-off-by: Thadeu Lima de Souza Cascardo <cascardo@canonical.com>
 [axboe: add kerneldoc comment to skb, fold in skb leak fix]
 Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
- include/linux/skbuff.h |  2 ++
- fs/io_uring.c          |  1 +
- net/unix/garbage.c     | 20 ++++++++++++++++++++
+ fs/io_uring.c          |    1 +
+ include/linux/skbuff.h |    2 ++
+ net/unix/garbage.c     |   20 ++++++++++++++++++++
  3 files changed, 23 insertions(+)
 
+--- a/fs/io_uring.c
++++ b/fs/io_uring.c
+@@ -7301,6 +7301,7 @@ static int __io_sqe_files_scm(struct io_
+ 	}
+ 
+ 	skb->sk = sk;
++	skb->scm_io_uring = 1;
+ 
+ 	nr_files = 0;
+ 	fpl->user = get_uid(ctx->user);
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
 @@ -681,6 +681,7 @@ typedef unsigned char *sk_buff_data_t;
@@ -38,20 +51,10 @@ Signed-off-by: Jens Axboe <axboe@kernel.dk>
  #ifdef CONFIG_TLS_DEVICE
  	__u8			decrypted:1;
  #endif
-+	__u8			scm_io_uring:1;;
++	__u8			scm_io_uring:1;
  
  #ifdef CONFIG_NET_SCHED
  	__u16			tc_index;	/* traffic control index */
---- a/fs/io_uring.c
-+++ b/fs/io_uring.c
-@@ -7318,6 +7318,7 @@ static int __io_sqe_files_scm(struct io_
- 		fpl->max = SCM_MAX_FD;
- 		fpl->count = nr_files;
- 		UNIXCB(skb).fp = fpl;
-+		skb->scm_io_uring = 1;
- 		skb->destructor = unix_destruct_scm;
- 		refcount_add(skb->truesize, &sk->sk_wmem_alloc);
- 		skb_queue_head(&sk->sk_receive_queue, skb);
 --- a/net/unix/garbage.c
 +++ b/net/unix/garbage.c
 @@ -204,6 +204,7 @@ void wait_for_unix_gc(void)
