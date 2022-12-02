@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
-Subject: [PATCH 307/342] sched: Lazy migrate_disable processing
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=80bc8f45b65be158feec72e427e42b77fcf0745a
+Subject: [PATCH 307/351] sched: Lazy migrate_disable processing
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ef6c7cbc5053f8db6f2493ab56a9e0f2a9d4b523
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -66,7 +66,7 @@ index a3c246214d28..81ce109caec3 100644
  #endif	/* !CONFIG_HOTPLUG_CPU */
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e567fe2d7058..65069db8923c 100644
+index 72255bf2166e..072dc9da7838 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -227,6 +227,8 @@ extern void io_schedule_finish(int token);
@@ -78,7 +78,7 @@ index e567fe2d7058..65069db8923c 100644
  /**
   * struct prev_cputime - snapshot of system and user cputime
   * @utime: time spent in user mode
-@@ -670,16 +672,13 @@ struct task_struct {
+@@ -674,16 +676,13 @@ struct task_struct {
  	cpumask_t			cpus_mask;
  #if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  	int				migrate_disable;
@@ -97,7 +97,7 @@ index e567fe2d7058..65069db8923c 100644
  # endif
  #endif
  #ifdef CONFIG_PREEMPT_RT_FULL
-@@ -2058,4 +2057,6 @@ static inline void rseq_syscall(struct pt_regs *regs)
+@@ -2062,4 +2061,6 @@ static inline void rseq_syscall(struct pt_regs *regs)
  
  #endif
  
@@ -278,7 +278,7 @@ index 4bf82665f28c..f603ea80af2e 100644
  	/* Interrupts are moved away from the dying cpu, reenable alloc/free */
  	irq_unlock_sparse();
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7eb3037c0b35..de6514e13e0c 100644
+index 57e8dee4e7ce..a2c0f199f362 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1065,7 +1065,8 @@ static int migration_cpu_stop(void *data)
@@ -351,7 +351,7 @@ index 7eb3037c0b35..de6514e13e0c 100644
  	/* Promote REQ to ACT */
  	rq->clock_update_flags <<= 1;
  	update_rq_clock(rq);
-@@ -5777,6 +5769,8 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
+@@ -5778,6 +5770,8 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
  		BUG_ON(!next);
  		put_prev_task(rq, next);
  
@@ -360,7 +360,7 @@ index 7eb3037c0b35..de6514e13e0c 100644
  		/*
  		 * Rules for changing task_struct::cpus_mask are holding
  		 * both pi_lock and rq->lock, such that holding either
-@@ -7241,14 +7235,9 @@ update_nr_migratory(struct task_struct *p, long delta)
+@@ -7242,14 +7236,9 @@ update_nr_migratory(struct task_struct *p, long delta)
  static inline void
  migrate_disable_update_cpus_allowed(struct task_struct *p)
  {
@@ -375,7 +375,7 @@ index 7eb3037c0b35..de6514e13e0c 100644
  }
  
  static inline void
-@@ -7266,54 +7255,35 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
+@@ -7267,54 +7256,35 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
  
  void migrate_disable(void)
  {
@@ -446,7 +446,7 @@ index 7eb3037c0b35..de6514e13e0c 100644
  
  	WARN_ON_ONCE(p->migrate_disable <= 0);
  	if (p->migrate_disable > 1) {
-@@ -7323,67 +7293,69 @@ void migrate_enable(void)
+@@ -7324,67 +7294,69 @@ void migrate_enable(void)
  
  	preempt_disable();
  
@@ -556,7 +556,7 @@ index 7eb3037c0b35..de6514e13e0c 100644
  #endif
  	barrier();
  }
-@@ -7394,20 +7366,14 @@ void migrate_enable(void)
+@@ -7395,20 +7367,14 @@ void migrate_enable(void)
  #ifdef CONFIG_SCHED_DEBUG
  	struct task_struct *p = current;
  

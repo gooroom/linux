@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
-Subject: [PATCH 074/342] mm/SLxB: change list_lock to raw_spinlock_t
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d8c58de5abafe875e6c797d46f6a9272262d1358
+Subject: [PATCH 074/351] mm/SLxB: change list_lock to raw_spinlock_t
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5f15fea3b62af963babcb686a09026b8dc07d9cf
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -398,7 +398,7 @@ index 0ed7a463f476..12b7da32bcd0 100644
  #ifdef CONFIG_SLAB
  	struct list_head slabs_partial;	/* partial list first, better asm code */
 diff --git a/mm/slub.c b/mm/slub.c
-index 0fefe0ad8f57..ef6fc4df3ed5 100644
+index ef730ea8263c..97d2bd78534b 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1182,7 +1182,7 @@ static noinline int free_debug_processing(

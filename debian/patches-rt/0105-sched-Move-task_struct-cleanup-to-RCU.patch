@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 105/342] sched: Move task_struct cleanup to RCU
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=db20a0cee5b392d2b8ed3c4190f110cb0bb4190f
+Subject: [PATCH 105/351] sched: Move task_struct cleanup to RCU
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4a264f82c1ecb578701edbdf97f8d040ad1f9cba
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -14,10 +14,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 5369eb1fd456..5e2ec9c86b4b 100644
+index 92faffe9ecf0..d627469bab35 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1196,6 +1196,9 @@ struct task_struct {
+@@ -1200,6 +1200,9 @@ struct task_struct {
  	unsigned int			sequential_io;
  	unsigned int			sequential_io_avg;
  #endif

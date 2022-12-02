@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/342] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/351] hrtimer: by timers by default into the softirq
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f68468a5cbe2c273bed160e13102b7ed2a2dc653
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=89282e2a055b47694e78836cc63efb94ec30aa73
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 89d07312e58c..037dbe04fda2 100644
+index 027941e3df68..9699f3735a55 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2258,7 +2258,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -2262,7 +2262,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -87,7 +87,7 @@ index ba66ea3ca705..11e9bbad4878 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 3c5999476609..0f949b7738fd 100644
+index 116b2d65f4e3..98a994f98fbd 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)
@@ -100,10 +100,10 @@ index 3c5999476609..0f949b7738fd 100644
  }
  #else	/* CONFIG_SCHED_HRTICK */
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 95ebbb2074c7..1a285367081c 100644
+index 9243d0049714..52acbb31a777 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1086,7 +1086,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
+@@ -1105,7 +1105,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
  {
  	struct hrtimer *timer = &dl_se->dl_timer;
  
@@ -129,7 +129,7 @@ index 16940416d526..d804b5443bb9 100644
  	cfs_b->distribute_running = 0;
  }
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index 52b55144d8ad..a2f2c6c91e05 100644
+index a068884c369f..b15428ede6cf 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -45,8 +45,8 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
@@ -219,7 +219,7 @@ index e774a49176cc..012bc81879bf 100644
  
  	/* Get the next period (per-CPU) */
 diff --git a/kernel/watchdog.c b/kernel/watchdog.c
-index 6d60701dc636..328620fe85f6 100644
+index 44096c4f4d60..bd381bfe7fa4 100644
 --- a/kernel/watchdog.c
 +++ b/kernel/watchdog.c
 @@ -485,7 +485,7 @@ static void watchdog_enable(unsigned int cpu)

@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 15:39:05 +0100
-Subject: [PATCH 199/342] net: provide a way to delegate processing a softirq
+Subject: [PATCH 199/351] net: provide a way to delegate processing a softirq
  to ksoftirqd
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9c6bc0e0c15e8990049af42ea7f423c9057c262d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=78bd50361c1f17ea23a805e1b5903a9eb04afd0e
 
 If the NET_RX uses up all of his budget it moves the following NAPI
 invocations into the `ksoftirqd`. On -RT it does not do so. Instead it
@@ -71,7 +71,7 @@ index 27a4bb2303d0..25bcf2f2714b 100644
   * This function must run with irqs disabled!
   */
 diff --git a/net/core/dev.c b/net/core/dev.c
-index a59b1db02f8b..2bf357d5602b 100644
+index 78fd4ac06a1b..480c6d91c004 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -6391,7 +6391,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/342] completion: Use simple wait queues
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2d23a63b2ce2dac0f15ecccec672b163dc974c1b
+Subject: [PATCH 095/351] completion: Use simple wait queues
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6f1a04f32f49733171bb6bf7b2f512a9b3581a02
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -67,7 +67,7 @@ index 49eb4e3c760f..49fc75368aa2 100644
  		destroy_workqueue(ffs->io_completion_wq);
  		kfree(ffs->dev_name);
 diff --git a/drivers/usb/gadget/legacy/inode.c b/drivers/usb/gadget/legacy/inode.c
-index 3ebcbd199a79..a2240aa9f4ab 100644
+index b0a2b8805f41..2da5a1bb0d01 100644
 --- a/drivers/usb/gadget/legacy/inode.c
 +++ b/drivers/usb/gadget/legacy/inode.c
 @@ -345,7 +345,7 @@ ep_io (struct ep_data *epdata, void *buf, unsigned len)
@@ -160,7 +160,7 @@ index 73e06e9986d4..f426a0661aa0 100644
  extern long prepare_to_swait_event(struct swait_queue_head *q, struct swait_queue *wait, int state);
  
 diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
-index 6abdfdf571ee..7020a6582a4c 100644
+index 6737ae6ffbae..7f90441a6238 100644
 --- a/kernel/power/hibernate.c
 +++ b/kernel/power/hibernate.c
 @@ -690,6 +690,10 @@ static int load_image_and_restore(void)
@@ -319,10 +319,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 974d92afd23e..3c5999476609 100644
+index 4becc6f1f56c..116b2d65f4e3 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7157,7 +7157,10 @@ void migrate_disable(void)
+@@ -7158,7 +7158,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -334,7 +334,7 @@ index 974d92afd23e..3c5999476609 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7187,7 +7190,10 @@ void migrate_enable(void)
+@@ -7188,7 +7191,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG

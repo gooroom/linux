@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Dec 2019 10:53:59 +0100
-Subject: [PATCH 313/342] sched: migrate_enable: Busy loop until the migration
+Subject: [PATCH 313/351] sched: migrate_enable: Busy loop until the migration
  request is completed
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f1f1be8e83c25527d3890d98c6e176bd41c63562
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7212bfd2c5351861cd36c82fe6cbdd37c202a2e6
 
 [ Upstream commit 140d7f54a5fff02898d2ca9802b39548bf7455f1 ]
 
@@ -27,10 +27,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 5 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 270adb525d93..d190d9e6b10f 100644
+index 577bec75ffd8..89133dff3161 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7323,7 +7323,7 @@ void migrate_enable(void)
+@@ -7324,7 +7324,7 @@ void migrate_enable(void)
  
  	WARN_ON(smp_processor_id() != cpu);
  	if (!is_cpu_allowed(p, cpu)) {
@@ -39,7 +39,7 @@ index 270adb525d93..d190d9e6b10f 100644
  		struct cpu_stop_work work;
  		struct rq_flags rf;
  
-@@ -7336,7 +7336,10 @@ void migrate_enable(void)
+@@ -7337,7 +7337,10 @@ void migrate_enable(void)
  				    &arg, &work);
  		tlb_migrate_finish(p->mm);
  		__schedule(true);

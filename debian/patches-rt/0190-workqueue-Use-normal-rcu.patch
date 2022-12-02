@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 24 Jul 2013 15:26:54 +0200
-Subject: [PATCH 190/342] workqueue: Use normal rcu
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=320456e9c705d27e54f3896084adce4fc4930f86
+Subject: [PATCH 190/351] workqueue: Use normal rcu
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=cee67a8812386cf151098b840ad3f043ec198571
 
 There is no need for sched_rcu. The undocumented reason why sched_rcu
 is used is to avoid a few explicit rcu_read_lock()/unlock() pairs by
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 52 insertions(+), 43 deletions(-)
 
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index b1bb6cb5802e..3e2f67b77ab8 100644
+index 4ea2f7fd20ce..d002a0ab68d6 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -128,7 +128,7 @@ enum {
@@ -210,7 +210,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  	return false;
  }
  
-@@ -3350,7 +3355,7 @@ static void rcu_free_pool(struct rcu_head *rcu)
+@@ -3348,7 +3353,7 @@ static void rcu_free_pool(struct rcu_head *rcu)
   * put_unbound_pool - put a worker_pool
   * @pool: worker_pool to put
   *
@@ -219,7 +219,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
   * safe manner.  get_unbound_pool() calls this function on its failure path
   * and this function should be able to release pools which went through,
   * successfully or not, init_worker_pool().
-@@ -3404,8 +3409,8 @@ static void put_unbound_pool(struct worker_pool *pool)
+@@ -3402,8 +3407,8 @@ static void put_unbound_pool(struct worker_pool *pool)
  	del_timer_sync(&pool->idle_timer);
  	del_timer_sync(&pool->mayday_timer);
  
@@ -230,7 +230,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  }
  
  /**
-@@ -3518,14 +3523,14 @@ static void pwq_unbound_release_workfn(struct work_struct *work)
+@@ -3516,14 +3521,14 @@ static void pwq_unbound_release_workfn(struct work_struct *work)
  	put_unbound_pool(pool);
  	mutex_unlock(&wq_pool_mutex);
  
@@ -247,7 +247,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  }
  
  /**
-@@ -4232,7 +4237,7 @@ void destroy_workqueue(struct workqueue_struct *wq)
+@@ -4230,7 +4235,7 @@ void destroy_workqueue(struct workqueue_struct *wq)
  		 * The base ref is never dropped on per-cpu pwqs.  Directly
  		 * schedule RCU free.
  		 */
@@ -256,7 +256,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  	} else {
  		/*
  		 * We're the sole accessor of @wq at this point.  Directly
-@@ -4342,7 +4347,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
+@@ -4340,7 +4345,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
  	struct pool_workqueue *pwq;
  	bool ret;
  
@@ -266,7 +266,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  
  	if (cpu == WORK_CPU_UNBOUND)
  		cpu = smp_processor_id();
-@@ -4353,7 +4359,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
+@@ -4351,7 +4357,8 @@ bool workqueue_congested(int cpu, struct workqueue_struct *wq)
  		pwq = unbound_pwq_by_node(wq, cpu_to_node(cpu));
  
  	ret = !list_empty(&pwq->delayed_works);
@@ -276,7 +276,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  
  	return ret;
  }
-@@ -4379,15 +4386,15 @@ unsigned int work_busy(struct work_struct *work)
+@@ -4377,15 +4384,15 @@ unsigned int work_busy(struct work_struct *work)
  	if (work_pending(work))
  		ret |= WORK_BUSY_PENDING;
  
@@ -296,7 +296,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  
  	return ret;
  }
-@@ -4572,7 +4579,7 @@ void show_workqueue_state(void)
+@@ -4570,7 +4577,7 @@ void show_workqueue_state(void)
  	unsigned long flags;
  	int pi;
  
@@ -305,7 +305,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  
  	pr_info("Showing busy workqueues and worker pools:\n");
  
-@@ -4637,7 +4644,7 @@ void show_workqueue_state(void)
+@@ -4635,7 +4642,7 @@ void show_workqueue_state(void)
  		touch_nmi_watchdog();
  	}
  
@@ -314,7 +314,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  }
  
  /* used to show worker information through /proc/PID/{comm,stat,status} */
-@@ -5024,16 +5031,16 @@ bool freeze_workqueues_busy(void)
+@@ -5022,16 +5029,16 @@ bool freeze_workqueues_busy(void)
  		 * nr_active is monotonically decreasing.  It's safe
  		 * to peek without lock.
  		 */
@@ -334,7 +334,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  	}
  out_unlock:
  	mutex_unlock(&wq_pool_mutex);
-@@ -5235,7 +5242,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
+@@ -5233,7 +5240,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
  	const char *delim = "";
  	int node, written = 0;
  
@@ -344,7 +344,7 @@ index b1bb6cb5802e..3e2f67b77ab8 100644
  	for_each_node(node) {
  		written += scnprintf(buf + written, PAGE_SIZE - written,
  				     "%s%d:%d", delim, node,
-@@ -5243,7 +5251,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
+@@ -5241,7 +5249,8 @@ static ssize_t wq_pool_ids_show(struct device *dev,
  		delim = " ";
  	}
  	written += scnprintf(buf + written, PAGE_SIZE - written, "\n");

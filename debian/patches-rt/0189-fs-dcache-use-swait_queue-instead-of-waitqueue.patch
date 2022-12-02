@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 189/342] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d7dde6c012afca804e922a5e807f06908f9170fe
+Subject: [PATCH 189/351] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6af69d2bbc226ecdacb1f944d8798b02c19c738
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -97,7 +97,7 @@ index 6098e0c7f87b..9ce28840684a 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 327844fedf3d..5114c8111807 100644
+index c34ee9653559..83294b91b6bf 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -1646,7 +1646,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 236/342] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f58baddb785517ba67a7470fb9278fcf919590ff
+Subject: [PATCH 236/351] sched: Add support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=48ddc8513cc012c5cf3c2da038c2544f6c3f591e
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -143,10 +143,10 @@ index ed8413e7140f..9c74a019bf57 100644
  } while (0)
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7523c0786a63..044bebd3d16f 100644
+index 19eb4838cf03..00b307a4156c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1733,6 +1733,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1737,6 +1737,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -262,7 +262,7 @@ index 6ae5b18bf3a5..396394ebbc5b 100644
  		__read_rt_unlock(cpuhp_pin);
  		goto again;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index dba425296275..0995748a3a1d 100644
+index 7def8ae96342..cf60731667bf 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -493,6 +493,48 @@ void resched_curr(struct rq *rq)
@@ -383,7 +383,7 @@ index dba425296275..0995748a3a1d 100644
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -5505,7 +5579,9 @@ void init_idle(struct task_struct *idle, int cpu)
+@@ -5506,7 +5580,9 @@ void init_idle(struct task_struct *idle, int cpu)
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -394,7 +394,7 @@ index dba425296275..0995748a3a1d 100644
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -7222,6 +7298,7 @@ void migrate_disable(void)
+@@ -7223,6 +7299,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -402,7 +402,7 @@ index dba425296275..0995748a3a1d 100644
  	pin_current_cpu();
  
  	migrate_disable_update_cpus_allowed(p);
-@@ -7289,6 +7366,7 @@ void migrate_enable(void)
+@@ -7290,6 +7367,7 @@ void migrate_enable(void)
  			arg.dest_cpu = dest_cpu;
  
  			unpin_current_cpu();
@@ -410,7 +410,7 @@ index dba425296275..0995748a3a1d 100644
  			preempt_enable();
  			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
  			tlb_migrate_finish(p->mm);
-@@ -7297,6 +7375,7 @@ void migrate_enable(void)
+@@ -7298,6 +7376,7 @@ void migrate_enable(void)
  		}
  	}
  	unpin_current_cpu();

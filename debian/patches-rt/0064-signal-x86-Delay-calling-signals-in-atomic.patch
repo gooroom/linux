@@ -1,7 +1,7 @@
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 064/342] signal/x86: Delay calling signals in atomic
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b34409a64f8206c8591fe1e49021a5b10f2da5d8
+Subject: [PATCH 064/351] signal/x86: Delay calling signals in atomic
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2cb53deb143489d57d80cf98be7e5c9566cd599e
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -79,10 +79,10 @@ index 33d3c88a7225..fb0438d06ca7 100644
  typedef sigset_t compat_sigset_t;
  #endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 52069b9ddce8..56047f57ebc7 100644
+index 6a4e7b2d27d3..96b1e60d2444 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -881,6 +881,10 @@ struct task_struct {
+@@ -885,6 +885,10 @@ struct task_struct {
  	/* Restored if set_restore_sigmask() was used: */
  	sigset_t			saved_sigmask;
  	struct sigpending		pending;
