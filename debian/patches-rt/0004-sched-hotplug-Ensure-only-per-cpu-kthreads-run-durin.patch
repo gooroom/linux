@@ -1,9 +1,9 @@
-From 517c5a9033dedb7b2292ec40d1da7d6fd4382af8 Mon Sep 17 00:00:00 2001
+From 764f55be656445a88aa3c758f19c77012ef0f844 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:01 +0200
-Subject: [PATCH 004/319] sched/hotplug: Ensure only per-cpu kthreads run
+Subject: [PATCH 004/318] sched/hotplug: Ensure only per-cpu kthreads run
  during hotplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
 
 In preparation for migrate_disable(), make sure only per-cpu kthreads
 are allowed to run on !active CPUs.
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 118 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5006330a1e702..f9cec7ae998fb 100644
+index 5006330a1e70..f9cec7ae998f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3532,8 +3532,10 @@ static inline struct callback_head *splice_balance_callbacks(struct rq *rq)
@@ -203,7 +203,7 @@ index 5006330a1e702..f9cec7ae998fb 100644
  		return ret;
  	}
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 054e206826124..5c2b902bef1ae 100644
+index 054e20682612..5c2b902bef1a 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -975,6 +975,7 @@ struct rq {
@@ -240,5 +240,5 @@ index 054e206826124..5c2b902bef1ae 100644
  
  #define rcu_dereference_check_sched_domain(p) \
 -- 
-2.37.2
+2.38.1
 

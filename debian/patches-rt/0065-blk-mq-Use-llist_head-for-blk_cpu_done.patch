@@ -1,8 +1,8 @@
-From 580fa099b1f8144d35e337bb060dbb4fb50f2d1e Mon Sep 17 00:00:00 2001
+From 0372b61e2b144d84796a7431fc5560f6519a171c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 23 Jan 2021 21:10:27 +0100
-Subject: [PATCH 065/319] blk-mq: Use llist_head for blk_cpu_done
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
+Subject: [PATCH 065/318] blk-mq: Use llist_head for blk_cpu_done
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
 
 With llist_head it is possible to avoid the locking (the irq-off region)
 when items are added. This makes it possible to add items on a remote
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 44 insertions(+), 59 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 1c1fcc3eac360..60681ad53cba1 100644
+index ffbe777c3705..cef128606ca3 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -41,7 +41,7 @@
@@ -39,7 +39,7 @@ index 1c1fcc3eac360..60681ad53cba1 100644
  
  static void blk_mq_poll_stats_start(struct request_queue *q);
  static void blk_mq_poll_stats_fn(struct blk_stat_callback *cb);
-@@ -567,68 +567,29 @@ void blk_mq_end_request(struct request *rq, blk_status_t error)
+@@ -568,68 +568,29 @@ void blk_mq_end_request(struct request *rq, blk_status_t error)
  }
  EXPORT_SYMBOL(blk_mq_end_request);
  
@@ -116,7 +116,7 @@ index 1c1fcc3eac360..60681ad53cba1 100644
  }
  
  static inline bool blk_mq_complete_need_ipi(struct request *rq)
-@@ -657,6 +618,32 @@ static inline bool blk_mq_complete_need_ipi(struct request *rq)
+@@ -658,6 +619,32 @@ static inline bool blk_mq_complete_need_ipi(struct request *rq)
  	return cpu_online(rq->mq_ctx->cpu);
  }
  
@@ -149,7 +149,7 @@ index 1c1fcc3eac360..60681ad53cba1 100644
  bool blk_mq_complete_request_remote(struct request *rq)
  {
  	WRITE_ONCE(rq->state, MQ_RQ_COMPLETE);
-@@ -669,17 +656,15 @@ bool blk_mq_complete_request_remote(struct request *rq)
+@@ -670,17 +657,15 @@ bool blk_mq_complete_request_remote(struct request *rq)
  		return false;
  
  	if (blk_mq_complete_need_ipi(rq)) {
@@ -174,7 +174,7 @@ index 1c1fcc3eac360..60681ad53cba1 100644
  }
  EXPORT_SYMBOL_GPL(blk_mq_complete_request_remote);
  
-@@ -3978,7 +3963,7 @@ static int __init blk_mq_init(void)
+@@ -3979,7 +3964,7 @@ static int __init blk_mq_init(void)
  	int i;
  
  	for_each_possible_cpu(i)
@@ -184,7 +184,7 @@ index 1c1fcc3eac360..60681ad53cba1 100644
  
  	cpuhp_setup_state_nocalls(CPUHP_BLOCK_SOFTIRQ_DEAD,
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 98fdf5a31fd66..b35193aec5e34 100644
+index 98fdf5a31fd6..b35193aec5e3 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -161,7 +161,7 @@ struct request {
@@ -197,5 +197,5 @@ index 98fdf5a31fd66..b35193aec5e34 100644
  
  	/*
 -- 
-2.37.2
+2.38.1
 

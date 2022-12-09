@@ -1,9 +1,9 @@
-From d97bab4b5afe18e141be12ad1aa1920fa646aaba Mon Sep 17 00:00:00 2001
+From eae38d7b58cd291ab700733391a3bf50a104c650 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 23 Oct 2020 12:12:02 +0200
-Subject: [PATCH 005/319] sched/core: Wait for tasks being pushed away on
+Subject: [PATCH 005/318] sched/core: Wait for tasks being pushed away on
  hotplug
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.140-rt73.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
 
 RT kernels need to ensure that all tasks which are not per CPU kthreads
 have left the outgoing CPU to guarantee that no tasks are force migrated
@@ -25,7 +25,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 43 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f9cec7ae998fb..91cef06aafdeb 100644
+index f9cec7ae998f..91cef06aafde 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6899,8 +6899,21 @@ static void balance_push(struct rq *rq)
@@ -105,7 +105,7 @@ index f9cec7ae998fb..91cef06aafdeb 100644
  		hrtick_rq_init(rq);
  		atomic_set(&rq->nr_iowait, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 5c2b902bef1ae..42e989ad0f57e 100644
+index 5c2b902bef1a..42e989ad0f57 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1006,6 +1006,10 @@ struct rq {
@@ -120,5 +120,5 @@ index 5c2b902bef1ae..42e989ad0f57e 100644
  
  #ifdef CONFIG_IRQ_TIME_ACCOUNTING
 -- 
-2.37.2
+2.38.1
 
