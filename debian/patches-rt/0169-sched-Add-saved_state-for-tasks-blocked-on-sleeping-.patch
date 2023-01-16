@@ -1,9 +1,9 @@
-From ef638795852b4499ed2c92daca9cec5e6ddd57df Mon Sep 17 00:00:00 2001
+From fdb20efab59881db896624da4b5687ef9e6c5087 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
 Subject: [PATCH 169/318] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 36 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 0e7ff0054650..745eca10a89e 100644
+index 2ab01dab5346..928353d919cb 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -659,6 +659,8 @@ struct task_struct {
@@ -31,7 +31,7 @@ index 0e7ff0054650..745eca10a89e 100644
  
  	/*
  	 * This begins the randomizable portion of task_struct. Only
-@@ -1777,6 +1779,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
+@@ -1780,6 +1782,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
  
  extern int wake_up_state(struct task_struct *tsk, unsigned int state);
  extern int wake_up_process(struct task_struct *tsk);
@@ -40,7 +40,7 @@ index 0e7ff0054650..745eca10a89e 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 36e9db48c3de..0bc4b21dafa2 100644
+index de09d433360c..f460a5ca9c49 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3302,7 +3302,7 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -112,5 +112,5 @@ index 7e70b667bba2..6b4a9f76cdcf 100644
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
 -- 
-2.38.1
+2.39.0
 

@@ -1,8 +1,8 @@
-From 0997f3181e48cbd4dc2a918682ff010d17e58a46 Mon Sep 17 00:00:00 2001
+From daf91c4631bf8d76feecf7d77574d31e2ae4f88d Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:13 +0200
 Subject: [PATCH 016/318] sched: Fix migrate_disable() vs rt/dl balancing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 In order to minimize the interference of migrate_disable() on lower
 priority tasks, which can be deprived of runtime due to being stuck
@@ -86,7 +86,7 @@ index 97ba7c920653..8b43922e65df 100644
   *
   * The reason we have it anyway.
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index d7316b9b056f..1b196d4b0964 100644
+index 83447024a7ea..343d2f13345a 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -728,8 +728,9 @@ struct task_struct {
@@ -101,7 +101,7 @@ index d7316b9b056f..1b196d4b0964 100644
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 026158a5652c..dd10fabd308c 100644
+index 83c1162f20b2..ef6b6f9ef191 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1774,11 +1774,6 @@ void migrate_enable(void)
@@ -491,5 +491,5 @@ index beb7cbb15992..7bc92589df97 100644
  
  #ifdef CONFIG_CPU_IDLE
 -- 
-2.38.1
+2.39.0
 
