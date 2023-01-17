@@ -1,8 +1,8 @@
-From 6587d489e22bf04cfea69786d9f6208b130a5e3b Mon Sep 17 00:00:00 2001
+From 617a2d00fb11b75c6cd27124cddd2e3ceb7cd1a0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH 184/318] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -112,10 +112,10 @@ index d5294e663df5..ee8846818b34 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 4375565aca66..239fc0ecbef3 100644
+index 4159c140fa47..29d8213a8770 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -1522,7 +1522,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1532,7 +1532,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  {
  	struct dentry *dentry, *old;
  	struct inode *inode = dir->d_inode;
@@ -124,7 +124,7 @@ index 4375565aca66..239fc0ecbef3 100644
  
  	/* Don't go there if it's already dead */
  	if (unlikely(IS_DEADDIR(inode)))
-@@ -3016,7 +3016,7 @@ static struct dentry *lookup_open(struct nameidata *nd, struct file *file,
+@@ -3028,7 +3028,7 @@ static struct dentry *lookup_open(struct nameidata *nd, struct file *file,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -259,5 +259,5 @@ index e1c655f928c7..f230b1ac7f91 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.38.1
+2.39.0
 

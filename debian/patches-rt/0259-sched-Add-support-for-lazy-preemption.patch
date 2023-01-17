@@ -1,8 +1,8 @@
-From 24fdaaf6ae9e67574d763f3d1ab3f82722b8b659 Mon Sep 17 00:00:00 2001
+From 3b30b7c2edc065afc5943fd1b93619de4561db51 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 259/318] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -176,10 +176,10 @@ index fb140e00f74d..af39859f02ee 100644
  #endif /* CONFIG_SMP */
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 9c56ff13616e..b97b96a4257d 100644
+index 46bc6101b8ee..9d4f29cf3d39 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1877,6 +1877,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1880,6 +1880,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -296,7 +296,7 @@ index cbe3aa495519..b5cd1e278eb5 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a3b409a5f30f..7a5e10c5724a 100644
+index 78de397947f0..5944784534b3 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -656,6 +656,48 @@ void resched_curr(struct rq *rq)
@@ -687,5 +687,5 @@ index ad738192647b..bc24ae8e3613 100644
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
 -- 
-2.38.1
+2.39.0
 

@@ -1,8 +1,8 @@
-From be73bf0f917c8bdf2dbdb91ed3786ce69b91262d Mon Sep 17 00:00:00 2001
+From 8e25c88273ea330f1d5ae81d2ec4380928441ddf Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: [PATCH 264/318] arch/arm64: Add lazy preempt support
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,
@@ -12,14 +12,15 @@ to be extended to indicate the support is available, and also to
 indicate that support for full RT preemption is now available.
 
 Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  arch/arm64/Kconfig                   |  1 +
  arch/arm64/include/asm/preempt.h     | 25 ++++++++++++++++++++++++-
- arch/arm64/include/asm/thread_info.h |  7 ++++++-
+ arch/arm64/include/asm/thread_info.h |  6 +++++-
  arch/arm64/kernel/asm-offsets.c      |  1 +
  arch/arm64/kernel/entry.S            | 13 +++++++++++--
  arch/arm64/kernel/signal.c           |  2 +-
- 6 files changed, 44 insertions(+), 5 deletions(-)
+ 6 files changed, 43 insertions(+), 5 deletions(-)
 
 diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
 index 34bd4cba81e6..a0a00212a35f 100644
@@ -76,7 +77,7 @@ index f1486b32502c..7a5770d825b9 100644
  
  #ifdef CONFIG_PREEMPTION
 diff --git a/arch/arm64/include/asm/thread_info.h b/arch/arm64/include/asm/thread_info.h
-index 1fbab854a51b..148b53dc2840 100644
+index cdcf307764aa..6eb36a2126e8 100644
 --- a/arch/arm64/include/asm/thread_info.h
 +++ b/arch/arm64/include/asm/thread_info.h
 @@ -29,6 +29,7 @@ struct thread_info {
@@ -87,25 +88,26 @@ index 1fbab854a51b..148b53dc2840 100644
  	union {
  		u64		preempt_count;	/* 0 => preemptible, <0 => bug */
  		struct {
-@@ -68,6 +69,7 @@ void arch_release_task_struct(struct task_struct *tsk);
- #define TIF_UPROBE		4	/* uprobe breakpoint or singlestep */
- #define TIF_FSCHECK		5	/* Check FS is USER_DS on return */
- #define TIF_MTE_ASYNC_FAULT	6	/* MTE Asynchronous Tag Check Fault */
-+#define TIF_NEED_RESCHED_LAZY	7
- #define TIF_SYSCALL_TRACE	8	/* syscall trace active */
- #define TIF_SYSCALL_AUDIT	9	/* syscall auditing */
+@@ -74,6 +75,7 @@ void arch_release_task_struct(struct task_struct *tsk);
  #define TIF_SYSCALL_TRACEPOINT	10	/* syscall tracepoint for ftrace */
-@@ -98,11 +100,14 @@ void arch_release_task_struct(struct task_struct *tsk);
+ #define TIF_SECCOMP		11	/* syscall secure computing */
+ #define TIF_SYSCALL_EMU		12	/* syscall emulation active */
++#define TIF_NEED_RESCHED_LAZY	13
+ #define TIF_MEMDIE		18	/* is terminating due to OOM killer */
+ #define TIF_FREEZE		19
+ #define TIF_RESTORE_SIGMASK	20
+@@ -99,13 +101,15 @@ void arch_release_task_struct(struct task_struct *tsk);
  #define _TIF_32BIT		(1 << TIF_32BIT)
  #define _TIF_SVE		(1 << TIF_SVE)
  #define _TIF_MTE_ASYNC_FAULT	(1 << TIF_MTE_ASYNC_FAULT)
 +#define _TIF_NEED_RESCHED_LAZY	(1 << TIF_NEED_RESCHED_LAZY)
+ #define _TIF_NOTIFY_SIGNAL	(1 << TIF_NOTIFY_SIGNAL)
  
  #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \
  				 _TIF_NOTIFY_RESUME | _TIF_FOREIGN_FPSTATE | \
--				 _TIF_UPROBE | _TIF_FSCHECK | _TIF_MTE_ASYNC_FAULT)
-+				 _TIF_UPROBE | _TIF_FSCHECK | _TIF_MTE_ASYNC_FAULT | \
-+				 _TIF_NEED_RESCHED_LAZY)
+ 				 _TIF_UPROBE | _TIF_FSCHECK | _TIF_MTE_ASYNC_FAULT | \
+-				 _TIF_NOTIFY_SIGNAL)
++				 _TIF_NEED_RESCHED_LAZY | _TIF_NOTIFY_SIGNAL)
  
 +#define _TIF_NEED_RESCHED_MASK	(_TIF_NEED_RESCHED | _TIF_NEED_RESCHED_LAZY)
  #define _TIF_SYSCALL_WORK	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
@@ -149,7 +151,7 @@ index d5bc1dbdd2fd..6793cbfcee05 100644
  
  	mov	x0, sp
 diff --git a/arch/arm64/kernel/signal.c b/arch/arm64/kernel/signal.c
-index 0dab5679a97d..50d4407eb08e 100644
+index b6fbbd527dd7..94eed0dc3afc 100644
 --- a/arch/arm64/kernel/signal.c
 +++ b/arch/arm64/kernel/signal.c
 @@ -921,7 +921,7 @@ asmlinkage void do_notify_resume(struct pt_regs *regs,
@@ -162,5 +164,5 @@ index 0dab5679a97d..50d4407eb08e 100644
  			local_daif_restore(DAIF_PROCCTX_NOIRQ);
  
 -- 
-2.38.1
+2.39.0
 

@@ -1,20 +1,21 @@
-From 016af374ff2d08c4c407582d06f676a85fb53316 Mon Sep 17 00:00:00 2001
+From 0a5a801b7d5d4ea77466e84984d178a67bd1caac Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
 Subject: [PATCH 262/318] arm: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  arch/arm/Kconfig                   |  1 +
- arch/arm/include/asm/thread_info.h |  8 ++++++--
+ arch/arm/include/asm/thread_info.h |  4 ++++
  arch/arm/kernel/asm-offsets.c      |  1 +
  arch/arm/kernel/entry-armv.S       | 19 ++++++++++++++++---
- arch/arm/kernel/entry-common.S     |  9 +++++++--
+ arch/arm/kernel/entry-common.S     |  1 +
  arch/arm/kernel/signal.c           |  3 ++-
- 6 files changed, 33 insertions(+), 8 deletions(-)
+ 6 files changed, 25 insertions(+), 4 deletions(-)
 
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
 index f1c8571ac23b..040ca2df4218 100644
@@ -29,7 +30,7 @@ index f1c8571ac23b..040ca2df4218 100644
  	select HAVE_REGS_AND_STACK_ACCESS_API
  	select HAVE_RSEQ
 diff --git a/arch/arm/include/asm/thread_info.h b/arch/arm/include/asm/thread_info.h
-index 536b6b979f63..875aaf9af946 100644
+index eb7ce2747eb0..115c719a1ffc 100644
 --- a/arch/arm/include/asm/thread_info.h
 +++ b/arch/arm/include/asm/thread_info.h
 @@ -46,6 +46,7 @@ struct cpu_context_save {
@@ -40,17 +41,15 @@ index 536b6b979f63..875aaf9af946 100644
  	mm_segment_t		addr_limit;	/* address limit */
  	struct task_struct	*task;		/* main task structure */
  	__u32			cpu;		/* cpu */
-@@ -134,7 +135,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
- #define TIF_SYSCALL_TRACE	4	/* syscall trace active */
- #define TIF_SYSCALL_AUDIT	5	/* syscall auditing active */
+@@ -138,6 +139,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
  #define TIF_SYSCALL_TRACEPOINT	6	/* syscall tracepoint instrumentation */
--#define TIF_SECCOMP		7	/* seccomp syscall filtering active */
-+#define TIF_NEED_RESCHED_LAZY	7
-+#define TIF_SECCOMP		8	/* seccomp syscall filtering active */
+ #define TIF_SECCOMP		7	/* seccomp syscall filtering active */
+ #define TIF_NOTIFY_SIGNAL	8	/* signal notifications exist */
++#define TIF_NEED_RESCHED_LAZY	9
  
  #define TIF_USING_IWMMXT	17
  #define TIF_MEMDIE		18	/* is terminating due to OOM killer */
-@@ -143,6 +145,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
+@@ -146,6 +148,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
  #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
@@ -58,16 +57,14 @@ index 536b6b979f63..875aaf9af946 100644
  #define _TIF_UPROBE		(1 << TIF_UPROBE)
  #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
  #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
-@@ -158,7 +161,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
-  * Change these and you break ASM code in entry-common.S
+@@ -163,6 +166,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
   */
  #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \
--				 _TIF_NOTIFY_RESUME | _TIF_UPROBE)
-+				 _TIF_NOTIFY_RESUME | _TIF_UPROBE | \
-+				 _TIF_NEED_RESCHED_LAZY)
+ 				 _TIF_NOTIFY_RESUME | _TIF_UPROBE | \
++				 _TIF_NEED_RESCHED_LAZY | \
+ 				 _TIF_NOTIFY_SIGNAL)
  
  #endif /* __KERNEL__ */
- #endif /* __ASM_ARM_THREAD_INFO_H */
 diff --git a/arch/arm/kernel/asm-offsets.c b/arch/arm/kernel/asm-offsets.c
 index 70993af22d80..024c65c3a0f2 100644
 --- a/arch/arm/kernel/asm-offsets.c
@@ -122,35 +119,19 @@ index 030351d169aa..d6086559168d 100644
  
  __und_fault:
 diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
-index bd619da73c84..e1141e98118c 100644
+index 9b3c737575e9..a30b1a1cc4d1 100644
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
-@@ -53,7 +53,9 @@ __ret_fast_syscall:
- 	cmp	r2, #TASK_SIZE
- 	blne	addr_limit_check_failed
+@@ -92,6 +92,7 @@ __ret_fast_syscall:
  	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
--	tst	r1, #_TIF_SYSCALL_WORK | _TIF_WORK_MASK
-+	tst	r1, #((_TIF_SYSCALL_WORK | _TIF_WORK_MASK) & ~_TIF_SECCOMP)
-+	bne	fast_work_pending
-+	tst	r1, #_TIF_SECCOMP
- 	bne	fast_work_pending
- 
- 
-@@ -90,8 +92,11 @@ __ret_fast_syscall:
- 	cmp	r2, #TASK_SIZE
- 	blne	addr_limit_check_failed
- 	ldr	r1, [tsk, #TI_FLAGS]		@ re-check for syscall tracing
--	tst	r1, #_TIF_SYSCALL_WORK | _TIF_WORK_MASK
-+	tst	r1, #((_TIF_SYSCALL_WORK | _TIF_WORK_MASK) & ~_TIF_SECCOMP)
-+	bne	do_slower_path
-+	tst	r1, #_TIF_SECCOMP
+ 	movs	r1, r1, lsl #16
  	beq	no_work_pending
 +do_slower_path:
   UNWIND(.fnend		)
  ENDPROC(ret_fast_syscall)
  
 diff --git a/arch/arm/kernel/signal.c b/arch/arm/kernel/signal.c
-index 2f81d3af5f9a..6e69f7b3d581 100644
+index a3a38d0a4c85..f04ccf19ab1f 100644
 --- a/arch/arm/kernel/signal.c
 +++ b/arch/arm/kernel/signal.c
 @@ -649,7 +649,8 @@ do_work_pending(struct pt_regs *regs, unsigned int thread_flags, int syscall)
@@ -164,5 +145,5 @@ index 2f81d3af5f9a..6e69f7b3d581 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.38.1
+2.39.0
 

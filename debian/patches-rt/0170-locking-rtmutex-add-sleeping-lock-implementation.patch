@@ -1,11 +1,12 @@
-From a15f1a9e36d03cb229d0420d8bd4765540624494 Mon Sep 17 00:00:00 2001
+From cab8da12c8f2e5e253f4f9c31fff73ab81e63694 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 170/318] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  include/linux/kernel.h            |   5 +
  include/linux/preempt.h           |   4 +
@@ -14,12 +15,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  include/linux/sched/wake_q.h      |  13 +-
  include/linux/spinlock_rt.h       | 155 +++++++++++
  include/linux/spinlock_types_rt.h |  38 +++
- kernel/fork.c                     |   1 +
  kernel/futex.c                    |  10 +-
  kernel/locking/rtmutex.c          | 444 +++++++++++++++++++++++++++---
  kernel/locking/rtmutex_common.h   |  14 +-
  kernel/sched/core.c               |  39 ++-
- 12 files changed, 694 insertions(+), 55 deletions(-)
+ 11 files changed, 693 insertions(+), 55 deletions(-)
  create mode 100644 include/linux/spinlock_rt.h
  create mode 100644 include/linux/spinlock_types_rt.h
 
@@ -109,7 +109,7 @@ index b828b938c876..b02009f53026 100644
  #define DEFINE_RT_MUTEX(mutexname) \
  	struct rt_mutex mutexname = __RT_MUTEX_INITIALIZER(mutexname)
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 745eca10a89e..c1d808d68023 100644
+index 928353d919cb..acbb796710d0 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -141,6 +141,9 @@ struct io_uring_task;
@@ -132,7 +132,7 @@ index 745eca10a89e..c1d808d68023 100644
  /*
   * set_special_state() should be used for those states when the blocking task
   * can not use the regular condition based wait-loop. In that case we must
-@@ -1018,6 +1024,7 @@ struct task_struct {
+@@ -1021,6 +1027,7 @@ struct task_struct {
  	raw_spinlock_t			pi_lock;
  
  	struct wake_q_node		wake_q;
@@ -368,18 +368,6 @@ index 000000000000..446da786e5d5
 +	spinlock_t name = __SPIN_LOCK_UNLOCKED(name)
 +
 +#endif
-diff --git a/kernel/fork.c b/kernel/fork.c
-index 6b212122663d..07c3b8fbf515 100644
---- a/kernel/fork.c
-+++ b/kernel/fork.c
-@@ -926,6 +926,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
- 	tsk->splice_pipe = NULL;
- 	tsk->task_frag.page = NULL;
- 	tsk->wake_q.next = NULL;
-+	tsk->wake_q_sleeper.next = NULL;
- 
- 	account_kernel_stack(tsk, 1);
- 
 diff --git a/kernel/futex.c b/kernel/futex.c
 index c2fe58c34409..b2b275bc1958 100644
 --- a/kernel/futex.c
@@ -1140,7 +1128,7 @@ index 9d1e974ca9c3..c1a280167e3c 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 0bc4b21dafa2..c279c2c80ddd 100644
+index f460a5ca9c49..686011cee29f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -511,9 +511,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1222,5 +1210,5 @@ index 0bc4b21dafa2..c279c2c80ddd 100644
  	}
  }
 -- 
-2.38.1
+2.39.0
 

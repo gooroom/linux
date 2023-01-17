@@ -1,8 +1,8 @@
-From 5bb063ad1598b062659fe0c568d8cf1e850b92b9 Mon Sep 17 00:00:00 2001
+From 9fc0c350f6bd5637aed74a2a85a31a0b542593bb Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 215/318] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.158-rt77.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,7 +60,7 @@ index e3e5e149b00e..6d39ad0f55bb 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 07c3b8fbf515..bc7aa592c9c7 100644
+index e9718d560e30..125dd5007004 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -84,7 +84,7 @@ index 07c3b8fbf515..bc7aa592c9c7 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 29219a8b3e5d..81dd0d62161d 100644
+index 8cf470f4d1e9..478d2c30151f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4266,9 +4266,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -111,5 +111,5 @@ index 29219a8b3e5d..81dd0d62161d 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.38.1
+2.39.0
 
