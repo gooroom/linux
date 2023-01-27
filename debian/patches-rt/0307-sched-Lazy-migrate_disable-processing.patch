@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
-Subject: [PATCH 307/351] sched: Lazy migrate_disable processing
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ef6c7cbc5053f8db6f2493ab56a9e0f2a9d4b523
+Subject: [PATCH 307/352] sched: Lazy migrate_disable processing
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b3c4b26bfe3d1d5a641911455e895ada0abe9920
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -44,10 +44,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  7 files changed, 129 insertions(+), 182 deletions(-)
 
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index a3c246214d28..81ce109caec3 100644
+index bddccdcd00ba..7f41ac9cf2ad 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -122,8 +122,6 @@ extern void cpu_hotplug_disable(void);
+@@ -124,8 +124,6 @@ extern void cpu_hotplug_disable(void);
  extern void cpu_hotplug_enable(void);
  void clear_tasks_mm_cpumask(int cpu);
  int cpu_down(unsigned int cpu);
@@ -56,7 +56,7 @@ index a3c246214d28..81ce109caec3 100644
  
  #else /* CONFIG_HOTPLUG_CPU */
  
-@@ -135,8 +133,6 @@ static inline int  cpus_read_trylock(void) { return true; }
+@@ -137,8 +135,6 @@ static inline int  cpus_read_trylock(void) { return true; }
  static inline void lockdep_assert_cpus_held(void) { }
  static inline void cpu_hotplug_disable(void) { }
  static inline void cpu_hotplug_enable(void) { }

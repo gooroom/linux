@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 238/351] x86: Support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=4baee5bc17c6cc95083544e897256d6438135bc9
+Subject: [PATCH 238/352] x86: Support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1920e2f99cb18754e91da0c09729f463d9d82129
 
 Implement the x86 pieces for lazy preempt.
 
@@ -51,10 +51,10 @@ index 91676b0d2d4c..3b5e41d9b29d 100644
  
  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
 diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
-index 37d9016d4768..324b7539eaab 100644
+index 78b308f2f2ea..39e23c6858c7 100644
 --- a/arch/x86/entry/entry_32.S
 +++ b/arch/x86/entry/entry_32.S
-@@ -750,8 +750,25 @@ END(ret_from_exception)
+@@ -748,8 +748,25 @@ END(ret_from_exception)
  ENTRY(resume_kernel)
  	DISABLE_INTERRUPTS(CLBR_ANY)
  .Lneed_resched:
@@ -81,10 +81,10 @@ index 37d9016d4768..324b7539eaab 100644
  	jz	restore_all_kernel
  	call	preempt_schedule_irq
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index f53d995b1370..94fccaa04bfa 100644
+index 2f6c1bc893f6..9ee62f990a7a 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -733,7 +733,23 @@ GLOBAL(swapgs_restore_regs_and_return_to_usermode)
+@@ -736,7 +736,23 @@ GLOBAL(swapgs_restore_regs_and_return_to_usermode)
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
