@@ -1,8 +1,8 @@
-From cab8da12c8f2e5e253f4f9c31fff73ab81e63694 Mon Sep 17 00:00:00 2001
+From 6e2c004599a3c33d354984cd549d0f9b8ab58964 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 170/318] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 170/319] locking/rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -15,7 +15,7 @@ Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
  include/linux/sched/wake_q.h      |  13 +-
  include/linux/spinlock_rt.h       | 155 +++++++++++
  include/linux/spinlock_types_rt.h |  38 +++
- kernel/futex.c                    |  10 +-
+ kernel/futex/core.c               |  10 +-
  kernel/locking/rtmutex.c          | 444 +++++++++++++++++++++++++++---
  kernel/locking/rtmutex_common.h   |  14 +-
  kernel/sched/core.c               |  39 ++-
@@ -368,10 +368,10 @@ index 000000000000..446da786e5d5
 +	spinlock_t name = __SPIN_LOCK_UNLOCKED(name)
 +
 +#endif
-diff --git a/kernel/futex.c b/kernel/futex.c
-index c2fe58c34409..b2b275bc1958 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
+diff --git a/kernel/futex/core.c b/kernel/futex/core.c
+index 938456be63cf..8056aa077a76 100644
+--- a/kernel/futex/core.c
++++ b/kernel/futex/core.c
 @@ -1498,6 +1498,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
  	struct task_struct *new_owner;
  	bool postunlock = false;
@@ -1210,5 +1210,5 @@ index f460a5ca9c49..686011cee29f 100644
  	}
  }
 -- 
-2.39.0
+2.39.1
 

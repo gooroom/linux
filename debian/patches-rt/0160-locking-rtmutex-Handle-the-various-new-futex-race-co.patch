@@ -1,9 +1,9 @@
-From ac40801ef7c8760e8a7f512eeb0a74b161707519 Mon Sep 17 00:00:00 2001
+From 2c9787c38ad0b919d151c4892c9782c682feb0d6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 10 Jun 2011 11:04:15 +0200
-Subject: [PATCH 160/318] locking/rtmutex: Handle the various new futex race
+Subject: [PATCH 160/319] locking/rtmutex: Handle the various new futex race
  conditions
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
 
 RT opens a few new interesting race conditions in the rtmutex/futex
 combo due to futex hash bucket lock being a 'sleeping' spinlock and
@@ -11,15 +11,15 @@ therefor not disabling preemption.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
- kernel/futex.c                  | 77 ++++++++++++++++++++++++++-------
+ kernel/futex/core.c             | 77 ++++++++++++++++++++++++++-------
  kernel/locking/rtmutex.c        | 36 ++++++++++++---
  kernel/locking/rtmutex_common.h |  2 +
  3 files changed, 94 insertions(+), 21 deletions(-)
 
-diff --git a/kernel/futex.c b/kernel/futex.c
-index 98a6e1b80bfe..c2fe58c34409 100644
---- a/kernel/futex.c
-+++ b/kernel/futex.c
+diff --git a/kernel/futex/core.c b/kernel/futex/core.c
+index 8dd0bc50ac36..938456be63cf 100644
+--- a/kernel/futex/core.c
++++ b/kernel/futex/core.c
 @@ -2155,6 +2155,16 @@ static int futex_requeue(u32 __user *uaddr1, unsigned int flags,
  				 */
  				requeue_pi_wake_futex(this, &key2, hb2);
@@ -251,5 +251,5 @@ index b1455dc2366f..096b16cfb096 100644
  extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  				       struct task_struct *proxy_owner);
 -- 
-2.39.0
+2.39.1
 
