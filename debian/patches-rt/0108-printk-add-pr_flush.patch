@@ -21,11 +21,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  lib/bug.c              |  1 +
  4 files changed, 99 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/printk.h b/include/linux/printk.h
-index 153212445b68..7e4352467d83 100644
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
-@@ -481,6 +481,8 @@ extern int kptr_restrict;
+@@ -481,6 +481,8 @@
  	no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
  #endif
  
@@ -34,11 +32,9 @@ index 153212445b68..7e4352467d83 100644
  /*
   * ratelimited messages with local ratelimit_state,
   * no local ratelimit_state used in the !PRINTK case
-diff --git a/kernel/panic.c b/kernel/panic.c
-index 1f0df42f8d0c..0efdac3cf94e 100644
 --- a/kernel/panic.c
 +++ b/kernel/panic.c
-@@ -177,12 +177,28 @@ static void panic_print_sys_info(void)
+@@ -244,6 +244,7 @@
  void panic(const char *fmt, ...)
  {
  	static char buf[1024];
@@ -46,8 +42,9 @@ index 1f0df42f8d0c..0efdac3cf94e 100644
  	va_list args;
  	long i, i_next = 0, len;
  	int state = 0;
- 	int old_cpu, this_cpu;
- 	bool _crash_kexec_post_notifiers = crash_kexec_post_notifiers;
+@@ -260,6 +261,21 @@
+ 		panic_on_warn = 0;
+ 	}
  
 +	console_verbose();
 +	pr_emerg("Kernel panic - not syncing:\n");
@@ -67,7 +64,7 @@ index 1f0df42f8d0c..0efdac3cf94e 100644
  	/*
  	 * Disable local interrupts. This will prevent panic_smp_self_stop
  	 * from deadlocking the first cpu that invokes the panic, since
-@@ -213,24 +229,13 @@ void panic(const char *fmt, ...)
+@@ -290,24 +306,13 @@
  	if (old_cpu != PANIC_CPU_INVALID && old_cpu != this_cpu)
  		panic_smp_self_stop();
  
@@ -92,7 +89,7 @@ index 1f0df42f8d0c..0efdac3cf94e 100644
  	/*
  	 * If kgdb is enabled, give it a chance to run before we stop all
  	 * the other CPUs or else we won't be able to debug processes left
-@@ -552,6 +557,7 @@ static void print_oops_end_marker(void)
+@@ -629,6 +634,7 @@
  {
  	init_oops_id();
  	pr_warn("---[ end trace %016llx ]---\n", (unsigned long long)oops_id);
@@ -100,11 +97,9 @@ index 1f0df42f8d0c..0efdac3cf94e 100644
  }
  
  /*
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 58da007d7c99..14cb111fe9f0 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -3233,6 +3233,12 @@ void kmsg_dump(enum kmsg_dump_reason reason)
+@@ -3233,6 +3233,12 @@
  			sync_mode = true;
  			pr_info("enabled sync mode\n");
  		}
@@ -117,7 +112,7 @@ index 58da007d7c99..14cb111fe9f0 100644
  	}
  
  	rcu_read_lock();
-@@ -3512,3 +3518,76 @@ void console_atomic_unlock(unsigned int flags)
+@@ -3512,3 +3518,76 @@
  	prb_unlock(&printk_cpulock, flags);
  }
  EXPORT_SYMBOL(console_atomic_unlock);
@@ -194,11 +189,9 @@ index 58da007d7c99..14cb111fe9f0 100644
 +	return (diff == 0);
 +}
 +EXPORT_SYMBOL(pr_flush);
-diff --git a/lib/bug.c b/lib/bug.c
-index 4ab398a2de93..9c681f29e61e 100644
 --- a/lib/bug.c
 +++ b/lib/bug.c
-@@ -202,6 +202,7 @@ enum bug_trap_type report_bug(unsigned long bugaddr, struct pt_regs *regs)
+@@ -202,6 +202,7 @@
  	else
  		pr_crit("Kernel BUG at %pB [verbose debug info unavailable]\n",
  			(void *)bugaddr);
@@ -206,6 +199,3 @@ index 4ab398a2de93..9c681f29e61e 100644
  
  	return BUG_TRAP_TYPE_BUG;
  }
--- 
-2.39.1
-
