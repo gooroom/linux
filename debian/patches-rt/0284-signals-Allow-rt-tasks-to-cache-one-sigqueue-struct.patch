@@ -1,8 +1,8 @@
-From 9258eaf398f0dbec2eabc7b13f49191a3f6bd897 Mon Sep 17 00:00:00 2001
+From ffe9c3d5bf1d1148ddf50bbb5201f0333d35e063 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 284/319] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 284/320] signals: Allow rt tasks to cache one sigqueue struct
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -41,10 +41,10 @@ index b256f9c65661..ebf6c515a7b2 100644
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 8989e1d1f79b..46c582d48cd5 100644
+index bacdaf980933..b86f388d3e64 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -152,7 +152,7 @@ static void __exit_signal(struct task_struct *tsk)
+@@ -199,7 +199,7 @@ static void __exit_signal(struct task_struct *tsk)
  	 * Do this under ->siglock, we can race with another thread
  	 * doing sigqueue_free() if we have SIGQUEUE_PREALLOC signals.
  	 */
@@ -208,5 +208,5 @@ index e8819aabe3cd..e1f263cbcf09 100644
  	if (q)
  		q->flags |= SIGQUEUE_PREALLOC;
 -- 
-2.39.1
+2.39.2
 

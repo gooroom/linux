@@ -1,8 +1,8 @@
-From 1d94419041cc21076d50d6ab8ca21cb4ad42069d Mon Sep 17 00:00:00 2001
+From 832c132f68cad66ea63fdce2f66a0ad85c35bf12 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 223/319] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 223/320] ptrace: fix ptrace vs tasklist_lock race
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -120,7 +120,7 @@ index aab480e24bd6..71acb6341e63 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 08581d172216..78de397947f0 100644
+index 4c1c927448dd..47119f3c096a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2584,6 +2584,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
@@ -162,5 +162,5 @@ index 08581d172216..78de397947f0 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.39.1
+2.39.2
 

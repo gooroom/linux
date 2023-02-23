@@ -1,8 +1,8 @@
-From f3611526819c955ae06a254ad5a5fa812ba82109 Mon Sep 17 00:00:00 2001
+From 819880fb683d14bdc4303147fc04a06e9b205418 Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:00 +0106
-Subject: [PATCH 097/319] printk: remove safe buffers
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 097/320] printk: remove safe buffers
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 With @logbuf_lock removed, the high level printk functions for
 storing messages are lockless. Messages can be stored from any
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  9 files changed, 17 insertions(+), 425 deletions(-)
 
 diff --git a/arch/powerpc/kernel/traps.c b/arch/powerpc/kernel/traps.c
-index 069d451240fa..c053c5acd674 100644
+index 5e5a2448ae79..d39a4a6b4ddf 100644
 --- a/arch/powerpc/kernel/traps.c
 +++ b/arch/powerpc/kernel/traps.c
 @@ -170,7 +170,6 @@ extern void panic_flush_kmsg_start(void)
@@ -95,10 +95,10 @@ index c589c7a9562c..fb0ca1a805b5 100644
  
  		/*
 diff --git a/kernel/panic.c b/kernel/panic.c
-index 332736a72a58..1f0df42f8d0c 100644
+index bc39e2b27d31..7965f1e31224 100644
 --- a/kernel/panic.c
 +++ b/kernel/panic.c
-@@ -247,7 +247,6 @@ void panic(const char *fmt, ...)
+@@ -324,7 +324,6 @@ void panic(const char *fmt, ...)
  	 * Bypass the panic_cpu check and call __crash_kexec directly.
  	 */
  	if (!_crash_kexec_post_notifiers) {
@@ -106,7 +106,7 @@ index 332736a72a58..1f0df42f8d0c 100644
  		__crash_kexec(NULL);
  
  		/*
-@@ -271,8 +270,6 @@ void panic(const char *fmt, ...)
+@@ -348,8 +347,6 @@ void panic(const char *fmt, ...)
  	 */
  	atomic_notifier_call_chain(&panic_notifier_list, 0, buf);
  
@@ -873,5 +873,5 @@ index 8abe1870dba4..b09a490f5f70 100644
  	put_cpu();
  }
 -- 
-2.39.1
+2.39.2
 

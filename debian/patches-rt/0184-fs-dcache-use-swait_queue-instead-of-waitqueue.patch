@@ -1,8 +1,8 @@
-From 9c281ba91ad897e650ed5fe641e6cce875d4cfad Mon Sep 17 00:00:00 2001
+From 85eecdab3017e1072f1ba5e13e24ea12a7eb9d1b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 184/319] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 184/320] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -199,10 +199,10 @@ index 5d52aea8d7e7..d89526cfedf2 100644
  		if (IS_ERR(child))
  			goto end_instantiate;
 diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index 070d2df8ab9c..a1a964b631d7 100644
+index cd7c6c4af83a..d612bde00cf9 100644
 --- a/fs/proc/proc_sysctl.c
 +++ b/fs/proc/proc_sysctl.c
-@@ -683,7 +683,7 @@ static bool proc_sys_fill_cache(struct file *file,
+@@ -684,7 +684,7 @@ static bool proc_sys_fill_cache(struct file *file,
  
  	child = d_lookup(dir, &qname);
  	if (!child) {
@@ -259,5 +259,5 @@ index e1c655f928c7..f230b1ac7f91 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.39.1
+2.39.2
 

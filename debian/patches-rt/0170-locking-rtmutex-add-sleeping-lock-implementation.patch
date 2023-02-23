@@ -1,8 +1,8 @@
-From 6e2c004599a3c33d354984cd549d0f9b8ab58964 Mon Sep 17 00:00:00 2001
+From 292ef3970c1f8cd5e6c046f4e67190b09538e540 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 170/319] locking/rtmutex: add sleeping lock implementation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 170/320] locking/rtmutex: add sleeping lock implementation
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -24,7 +24,7 @@ Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
  create mode 100644 include/linux/spinlock_types_rt.h
 
 diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index 4dc85e7c619e..1f2ce832900a 100644
+index 52c235d3a4ef..4ede4ee6f5b2 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
 @@ -220,6 +220,10 @@ extern void __cant_migrate(const char *file, int line);
@@ -1128,7 +1128,7 @@ index 9d1e974ca9c3..c1a280167e3c 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f460a5ca9c49..686011cee29f 100644
+index f25a0089bbc5..cc450b420e58 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -511,9 +511,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1210,5 +1210,5 @@ index f460a5ca9c49..686011cee29f 100644
  	}
  }
 -- 
-2.39.1
+2.39.2
 

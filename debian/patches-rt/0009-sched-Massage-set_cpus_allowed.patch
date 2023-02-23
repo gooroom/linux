@@ -1,8 +1,8 @@
-From 8cb507bbfffc5e03b70d64ec1312a395790982d8 Mon Sep 17 00:00:00 2001
+From a29740457da992d5dcd60c509df1df6de2765118 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/319] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.165-rt81.tar.xz
+Subject: [PATCH 009/320] sched: Massage set_cpus_allowed()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9c51b8ab0a66..ed7625aa0e32 100644
+index f3546e8ee0f0..2cb57611b0ee 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1835,13 +1835,14 @@ static int migration_cpu_stop(void *data)
@@ -104,7 +104,7 @@ index 9c51b8ab0a66..ed7625aa0e32 100644
  {
  	return set_cpus_allowed_ptr(p, new_mask);
  }
-@@ -6012,7 +6020,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+@@ -6011,7 +6019,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
  	}
  #endif
  again:
@@ -113,7 +113,7 @@ index 9c51b8ab0a66..ed7625aa0e32 100644
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6588,7 +6596,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
+@@ -6587,7 +6595,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -171,5 +171,5 @@ index 42e989ad0f57..e75b4e322555 100644
  #endif
  
 -- 
-2.39.1
+2.39.2
 
