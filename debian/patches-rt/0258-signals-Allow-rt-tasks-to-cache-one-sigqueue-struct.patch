@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 258/352] signals: Allow rt tasks to cache one sigqueue struct
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=984ee1a823fc4ee793245f23ffb4037a1d852ef0
+Subject: [PATCH 258/353] signals: Allow rt tasks to cache one sigqueue struct
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d85873931924900315b5a856a749781e0e8a24d8
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -41,10 +41,10 @@ index 0be5ce2375cb..6495fda18c2c 100644
  /* Test if 'sig' is valid signal. Use this instead of testing _NSIG directly */
  static inline int valid_signal(unsigned long sig)
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 908e7a33e1fc..2a414fc71b87 100644
+index 02360ec3b122..51b36d58c872 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -160,7 +160,7 @@ static void __exit_signal(struct task_struct *tsk)
+@@ -207,7 +207,7 @@ static void __exit_signal(struct task_struct *tsk)
  	 * Do this under ->siglock, we can race with another thread
  	 * doing sigqueue_free() if we have SIGQUEUE_PREALLOC signals.
  	 */

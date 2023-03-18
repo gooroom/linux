@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 27 Jun 2014 16:24:52 +0200
-Subject: [PATCH 257/352] workqueue: Prevent deadlock/stall on RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6c7263959b71ae04b14321c8124bcb7b21383448
+Subject: [PATCH 257/353] workqueue: Prevent deadlock/stall on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=28106458965558d74a1cca7de50fccbf12784ffd
 
 Austin reported a XFS deadlock/stall on RT where scheduled work gets
 never exececuted and tasks are waiting for each other for ever.
@@ -42,10 +42,10 @@ Cc: Steven Rostedt <rostedt@goodmis.org>
  2 files changed, 51 insertions(+), 15 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index cf60731667bf..f9babcec1afc 100644
+index 7428f07baf62..2e5a34f98d91 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3615,9 +3615,8 @@ void __noreturn do_task_dead(void)
+@@ -3614,9 +3614,8 @@ void __noreturn do_task_dead(void)
  
  static inline void sched_submit_work(struct task_struct *tsk)
  {
@@ -56,7 +56,7 @@ index cf60731667bf..f9babcec1afc 100644
  	/*
  	 * If a worker went to sleep, notify and ask workqueue whether
  	 * it wants to wake up a task to maintain concurrency.
-@@ -3631,6 +3630,9 @@ static inline void sched_submit_work(struct task_struct *tsk)
+@@ -3630,6 +3629,9 @@ static inline void sched_submit_work(struct task_struct *tsk)
  		preempt_enable_no_resched();
  	}
  

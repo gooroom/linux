@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100
-Subject: [PATCH 119/352] softirq: Check preemption after reenabling interrupts
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3527f0e93fca35f5f34ae85b3666d034575aa72d
+Subject: [PATCH 119/353] softirq: Check preemption after reenabling interrupts
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=19854b2b246e1cc30fd1245ff895c1ab72179397
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -116,7 +116,7 @@ index 86a709954f5a..9c069ef83d6d 100644
  	return 0;
  }
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 880b096eef8a..b11a0189124d 100644
+index b778f3596543..f766df2bd01d 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -2725,6 +2725,7 @@ static void __netif_reschedule(struct Qdisc *q)
@@ -135,7 +135,7 @@ index 880b096eef8a..b11a0189124d 100644
  }
  EXPORT_SYMBOL(__dev_kfree_skb_irq);
  
-@@ -4269,6 +4271,7 @@ static int enqueue_to_backlog(struct sk_buff *skb, int cpu,
+@@ -4271,6 +4273,7 @@ static int enqueue_to_backlog(struct sk_buff *skb, int cpu,
  	rps_unlock(sd);
  
  	local_irq_restore(flags);
@@ -143,7 +143,7 @@ index 880b096eef8a..b11a0189124d 100644
  
  	atomic_long_inc(&skb->dev->rx_dropped);
  	kfree_skb(skb);
-@@ -5820,12 +5823,14 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
+@@ -5822,12 +5825,14 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
  		sd->rps_ipi_list = NULL;
  
  		local_irq_enable();
@@ -158,7 +158,7 @@ index 880b096eef8a..b11a0189124d 100644
  }
  
  static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
-@@ -5903,6 +5908,7 @@ void __napi_schedule(struct napi_struct *n)
+@@ -5905,6 +5910,7 @@ void __napi_schedule(struct napi_struct *n)
  	local_irq_save(flags);
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  	local_irq_restore(flags);
@@ -166,7 +166,7 @@ index 880b096eef8a..b11a0189124d 100644
  }
  EXPORT_SYMBOL(__napi_schedule);
  
-@@ -9527,6 +9533,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -9529,6 +9535,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
  
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();

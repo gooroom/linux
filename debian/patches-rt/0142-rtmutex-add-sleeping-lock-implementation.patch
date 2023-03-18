@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 142/352] rtmutex: add sleeping lock implementation
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1fd7707ac0e3998eaf5a1dea9ef7c8881d24dc8c
+Subject: [PATCH 142/353] rtmutex: add sleeping lock implementation
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6be22870f26ca2e1643ac0a9d1bdbce96927d7a2
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  create mode 100644 include/linux/spinlock_types_rt.h
 
 diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index 50733abbe548..64ef575435bb 100644
+index a28ec4c2f3f5..71efa419997d 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
 @@ -260,6 +260,9 @@ extern int _cond_resched(void);
@@ -1144,7 +1144,7 @@ index 53a8c5d03d28..7c1dd1bd95c7 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b1771f3de84a..d448d4768507 100644
+index 4536a66cabb8..0602cc95321f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct task_struct *p)

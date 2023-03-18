@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 099/352] hrtimers: Prepare full preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=012ba59813ca3652fc9f34004a486626dd6ee7f8
+Subject: [PATCH 099/353] hrtimers: Prepare full preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=10b87032115e0f5b5a334b1864303318b7066ae7
 
 Make cancellation of a running callback in softirq context safe
 against preemption.
@@ -94,7 +94,7 @@ index ee7e987ea1b4..0571b498db73 100644
  
  void run_posix_cpu_timers(struct task_struct *task);
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index 6a2ba39889bd..f4c8cfde00b0 100644
+index 56af8a97cf2d..dec68f9dab7b 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
 @@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
@@ -107,7 +107,7 @@ index 6a2ba39889bd..f4c8cfde00b0 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 1e03d7fab81c..8bbde17325c7 100644
+index 23c89873bf60..ab38b51a96cc 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -957,6 +957,33 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -161,7 +161,7 @@ index 1e03d7fab81c..8bbde17325c7 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1913,6 +1941,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -1915,6 +1943,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
@@ -184,7 +184,7 @@ index 2e2b335ef101..7650ee736964 100644
  		}
  		expires = timeval_to_ktime(value->it_value);
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index 48758108e055..2cf5aa704106 100644
+index 1234868b3b03..36ee80652208 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
 @@ -463,7 +463,7 @@ static struct k_itimer * alloc_posix_timer(void)

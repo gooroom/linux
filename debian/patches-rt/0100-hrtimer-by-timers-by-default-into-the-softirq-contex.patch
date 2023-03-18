@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/352] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/353] hrtimer: by timers by default into the softirq
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=73f454fc7b0fdb014ce710ee91d241ca909361ed
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f9f1e73ce4ef807af8e03835d5816f0fb1243af6
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -87,7 +87,7 @@ index 668e5492e4c4..f374d3a250eb 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 116b2d65f4e3..98a994f98fbd 100644
+index f3b478592eb4..5d663bd7ad93 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)
@@ -144,7 +144,7 @@ index a068884c369f..b15428ede6cf 100644
  }
  
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 8bbde17325c7..e947f3b344ac 100644
+index ab38b51a96cc..beb81024c287 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -1202,7 +1202,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,

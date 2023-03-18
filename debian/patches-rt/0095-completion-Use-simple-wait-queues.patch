@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/352] completion: Use simple wait queues
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7dc52704c341dd344dade1f55186d1cb2527ed9a
+Subject: [PATCH 095/353] completion: Use simple wait queues
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=08d9f9ee2f40d2efabad47b284f676f1bc0050e6
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -54,10 +54,10 @@ index a04d59843022..e0046c35a0bd 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index 49eb4e3c760f..49fc75368aa2 100644
+index f9f324f76a72..0b503fcd9cee 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1626,7 +1626,7 @@ static void ffs_data_put(struct ffs_data *ffs)
+@@ -1631,7 +1631,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		ffs_data_clear(ffs);
  		ffs_release_dev(ffs->private_data);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
@@ -319,10 +319,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4becc6f1f56c..116b2d65f4e3 100644
+index 20f9f4eead0d..f3b478592eb4 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7158,7 +7158,10 @@ void migrate_disable(void)
+@@ -7157,7 +7157,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -334,7 +334,7 @@ index 4becc6f1f56c..116b2d65f4e3 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7188,7 +7191,10 @@ void migrate_enable(void)
+@@ -7187,7 +7190,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
