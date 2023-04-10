@@ -1,8 +1,8 @@
-From d24bef8ecacc7c1152e1ce0cfb8679a33fe79446 Mon Sep 17 00:00:00 2001
+From 7b82256fb7f45217e6088b01f1468846deace14d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 235/320] fs: namespace: Use cpu_chill() in trylock loops
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.168-rt83.tar.xz
+Subject: [PATCH 235/321] fs: namespace: Use cpu_chill() in trylock loops
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 046b084136c5..6a550e342d6b 100644
+index 046b084136c51..6a550e342d6be 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -14,6 +14,7 @@
