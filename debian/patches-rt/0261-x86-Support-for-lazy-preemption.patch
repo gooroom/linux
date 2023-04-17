@@ -1,8 +1,8 @@
-From facaf0475ffeb7fd8eb3d35fecf04c97a628f7ee Mon Sep 17 00:00:00 2001
+From 94037ead430025e1977bc11c86b504e5ead55371 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 261/318] x86: Support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 261/321] x86: Support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Implement the x86 pieces for lazy preempt.
 
@@ -17,7 +17,7 @@ Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
  5 files changed, 48 insertions(+), 5 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 2868fbe6b512..d9eb1d2c2da8 100644
+index d8c53d52069ab..889934e5a8ac5 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -212,6 +212,7 @@ config X86
@@ -29,7 +29,7 @@ index 2868fbe6b512..d9eb1d2c2da8 100644
  	select HAVE_POSIX_CPU_TIMERS_TASK_WORK
  	select HAVE_REGS_AND_STACK_ACCESS_API
 diff --git a/arch/x86/include/asm/preempt.h b/arch/x86/include/asm/preempt.h
-index 50e0c0ab7b97..afe37a8c6c24 100644
+index 50e0c0ab7b97b..afe37a8c6c248 100644
 --- a/arch/x86/include/asm/preempt.h
 +++ b/arch/x86/include/asm/preempt.h
 @@ -89,17 +89,48 @@ static __always_inline void __preempt_count_sub(int val)
@@ -83,7 +83,7 @@ index 50e0c0ab7b97..afe37a8c6c24 100644
  
  #ifdef CONFIG_PREEMPTION
 diff --git a/arch/x86/include/asm/thread_info.h b/arch/x86/include/asm/thread_info.h
-index 012c8ee93b67..d77e99ba7610 100644
+index 012c8ee93b67f..d77e99ba76102 100644
 --- a/arch/x86/include/asm/thread_info.h
 +++ b/arch/x86/include/asm/thread_info.h
 @@ -56,17 +56,24 @@ struct task_struct;
@@ -137,7 +137,7 @@ index 012c8ee93b67..d77e99ba7610 100644
  
  /*
 diff --git a/include/linux/entry-common.h b/include/linux/entry-common.h
-index 46c42479f950..b902af13d05f 100644
+index 46c42479f9501..b902af13d05fd 100644
 --- a/include/linux/entry-common.h
 +++ b/include/linux/entry-common.h
 @@ -67,9 +67,9 @@
@@ -154,7 +154,7 @@ index 46c42479f950..b902af13d05f 100644
  
  /**
 diff --git a/kernel/entry/common.c b/kernel/entry/common.c
-index f32250adb681..cdf97ea30b4c 100644
+index f32250adb6815..cdf97ea30b4c0 100644
 --- a/kernel/entry/common.c
 +++ b/kernel/entry/common.c
 @@ -157,7 +157,7 @@ static unsigned long exit_to_user_mode_loop(struct pt_regs *regs,
@@ -167,5 +167,5 @@ index f32250adb681..cdf97ea30b4c 100644
  
  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
 -- 
-2.39.0
+2.39.2
 

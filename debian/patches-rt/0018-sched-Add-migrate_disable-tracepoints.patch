@@ -1,8 +1,8 @@
-From 928054202b51ae44e5de356fefbfbcdb597e7105 Mon Sep 17 00:00:00 2001
+From e9481b6b52991427ec7456a6e0ed8f0a3d528a8c Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:15 +0200
-Subject: [PATCH 018/318] sched: Add migrate_disable() tracepoints
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 018/321] sched: Add migrate_disable() tracepoints
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 XXX write a tracer:
 
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/include/trace/events/sched.h b/include/trace/events/sched.h
-index c96a4337afe6..e48f584abf5f 100644
+index c96a4337afe6c..e48f584abf5ff 100644
 --- a/include/trace/events/sched.h
 +++ b/include/trace/events/sched.h
 @@ -650,6 +650,18 @@ DECLARE_TRACE(sched_update_nr_running_tp,
@@ -46,7 +46,7 @@ index c96a4337afe6..e48f584abf5f 100644
  
  /* This part must be outside protection */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ef6b6f9ef191..efda2712ad87 100644
+index 5f5bba88cc2de..79ba910577594 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1739,6 +1739,8 @@ void migrate_disable(void)
@@ -68,10 +68,10 @@ index ef6b6f9ef191..efda2712ad87 100644
  EXPORT_SYMBOL_GPL(migrate_enable);
  
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 0ad28ede7297..92dd1b222cea 100644
+index 5ca7a8031fd91..748fd6b2b2204 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2282,6 +2282,7 @@ static void pull_dl_task(struct rq *this_rq)
+@@ -2281,6 +2281,7 @@ static void pull_dl_task(struct rq *this_rq)
  				goto skip;
  
  			if (is_migration_disabled(p)) {
@@ -80,10 +80,10 @@ index 0ad28ede7297..92dd1b222cea 100644
  			} else {
  				deactivate_task(src_rq, p, 0);
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index ec6d769f9ffd..6d1c15a34307 100644
+index c25e35f415557..c5038d680c2c5 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
-@@ -1889,7 +1889,12 @@ static int push_rt_task(struct rq *rq, bool pull)
+@@ -1891,7 +1891,12 @@ static int push_rt_task(struct rq *rq, bool pull)
  		struct task_struct *push_task = NULL;
  		int cpu;
  
@@ -97,7 +97,7 @@ index ec6d769f9ffd..6d1c15a34307 100644
  			return 0;
  
  		cpu = find_lowest_rq(rq->curr);
-@@ -2235,6 +2240,7 @@ static void pull_rt_task(struct rq *this_rq)
+@@ -2237,6 +2242,7 @@ static void pull_rt_task(struct rq *this_rq)
  				goto skip;
  
  			if (is_migration_disabled(p)) {
@@ -106,5 +106,5 @@ index ec6d769f9ffd..6d1c15a34307 100644
  			} else {
  				deactivate_task(src_rq, p, 0);
 -- 
-2.39.0
+2.39.2
 

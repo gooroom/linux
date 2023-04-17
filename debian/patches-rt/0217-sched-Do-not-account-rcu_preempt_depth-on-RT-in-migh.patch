@@ -1,9 +1,9 @@
-From d6de9c0e3a8497c71d54daf2a148c03b5794e25d Mon Sep 17 00:00:00 2001
+From ce6c79497de936fafba3d80ea78f556665d2c42c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 7 Jun 2011 09:19:06 +0200
-Subject: [PATCH 217/318] sched: Do not account rcu_preempt_depth on RT in
+Subject: [PATCH 217/321] sched: Do not account rcu_preempt_depth on RT in
  might_sleep()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 RT changes the rcu_preempt_depth semantics, so we cannot check for it
 in might_sleep().
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index 81da17cfcf71..1effcae06ea1 100644
+index bb9681309e0d1..cbeea5c61a3a7 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -54,6 +54,11 @@ void __rcu_read_unlock(void);
@@ -40,10 +40,10 @@ index 81da17cfcf71..1effcae06ea1 100644
  
  /* Internal to kernel */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 052cdebe7e77..08581d172216 100644
+index 8678cff3aae96..4c1c927448dd4 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7881,7 +7881,7 @@ void __init sched_init(void)
+@@ -7880,7 +7880,7 @@ void __init sched_init(void)
  #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
  static inline int preempt_count_equals(int preempt_offset)
  {
@@ -53,5 +53,5 @@ index 052cdebe7e77..08581d172216 100644
  	return (nested == preempt_offset);
  }
 -- 
-2.39.0
+2.39.2
 

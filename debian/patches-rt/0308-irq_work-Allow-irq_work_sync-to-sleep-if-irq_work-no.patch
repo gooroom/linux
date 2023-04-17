@@ -1,9 +1,9 @@
-From ccb38c6f7569d4cf0c698572328fb43fc2792a3c Mon Sep 17 00:00:00 2001
+From 2e3411d36c1fddf4d0afebc344300a8257cb861c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 24 Nov 2021 17:12:19 +0100
-Subject: [PATCH 308/318] irq_work: Allow irq_work_sync() to sleep if
+Subject: [PATCH 308/321] irq_work: Allow irq_work_sync() to sleep if
  irq_work() no IRQ support.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 irq_work() triggers instantly an interrupt if supported by the
 architecture. Otherwise the work will be processed on the next timer
@@ -27,7 +27,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  2 files changed, 19 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/irq_work.h b/include/linux/irq_work.h
-index f941f2d7d71c..3c6d3a96bca0 100644
+index f941f2d7d71ce..3c6d3a96bca0f 100644
 --- a/include/linux/irq_work.h
 +++ b/include/linux/irq_work.h
 @@ -3,6 +3,7 @@
@@ -68,7 +68,7 @@ index f941f2d7d71c..3c6d3a96bca0 100644
  bool irq_work_queue(struct irq_work *work);
  bool irq_work_queue_on(struct irq_work *work, int cpu);
 diff --git a/kernel/irq_work.c b/kernel/irq_work.c
-index 8183d30e1bb1..8969aff790e2 100644
+index 8183d30e1bb1c..8969aff790e21 100644
 --- a/kernel/irq_work.c
 +++ b/kernel/irq_work.c
 @@ -165,6 +165,9 @@ void irq_work_single(void *arg)
@@ -96,5 +96,5 @@ index 8183d30e1bb1..8969aff790e2 100644
  	while (atomic_read(&work->flags) & IRQ_WORK_BUSY)
  		cpu_relax();
 -- 
-2.39.0
+2.39.2
 

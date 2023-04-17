@@ -1,9 +1,9 @@
-From 0035b8d9eb74724b17229f1d290b6aade850f63f Mon Sep 17 00:00:00 2001
+From 2df81645aea9cded5b6dd22d969d7edb3937ae11 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
-Subject: [PATCH 282/318] drivers/block/zram: Replace bit spinlocks with
+Subject: [PATCH 282/321] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
 OTOH, they're a lot less wasteful than an rtmutex per page.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 37 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 0636df6b67db..1a7523cefbe9 100644
+index 0636df6b67db6..1a7523cefbe9b 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -59,6 +59,40 @@ static void zram_free_page(struct zram *zram, size_t index);
@@ -77,7 +77,7 @@ index 0636df6b67db..1a7523cefbe9 100644
  }
  
 diff --git a/drivers/block/zram/zram_drv.h b/drivers/block/zram/zram_drv.h
-index f2fd46daa760..7e4dd447e1dd 100644
+index f2fd46daa7604..7e4dd447e1ddd 100644
 --- a/drivers/block/zram/zram_drv.h
 +++ b/drivers/block/zram/zram_drv.h
 @@ -63,6 +63,7 @@ struct zram_table_entry {
@@ -89,5 +89,5 @@ index f2fd46daa760..7e4dd447e1dd 100644
  	ktime_t ac_time;
  #endif
 -- 
-2.39.0
+2.39.2
 

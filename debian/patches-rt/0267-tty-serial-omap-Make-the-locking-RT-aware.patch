@@ -1,8 +1,8 @@
-From 751088be401a32de3e59230f52a9d04b0eee2562 Mon Sep 17 00:00:00 2001
+From 0f29248371f10774187187e75c448d4322baf873 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 28 Jul 2011 13:32:57 +0200
-Subject: [PATCH 267/318] tty/serial/omap: Make the locking RT aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 267/321] tty/serial/omap: Make the locking RT aware
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the
 optimsation we are looking for. Redo it to make it work on -RT and
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 4 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/tty/serial/omap-serial.c b/drivers/tty/serial/omap-serial.c
-index 84e8158088cd..342005ed5ebf 100644
+index 84e8158088cd2..342005ed5ebf8 100644
 --- a/drivers/tty/serial/omap-serial.c
 +++ b/drivers/tty/serial/omap-serial.c
 @@ -1311,13 +1311,10 @@ serial_omap_console_write(struct console *co, const char *s,
@@ -45,5 +45,5 @@ index 84e8158088cd..342005ed5ebf 100644
  
  static int __init
 -- 
-2.39.0
+2.39.2
 

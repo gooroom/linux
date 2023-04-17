@@ -1,9 +1,9 @@
-From b3957188400e76743e0d2b366bfa369a9a99ed56 Mon Sep 17 00:00:00 2001
+From cd1fda4f700c175e25748e479c8c4673407703f8 Mon Sep 17 00:00:00 2001
 From: Kevin Hao <haokexin@gmail.com>
 Date: Mon, 4 May 2020 11:34:07 +0800
-Subject: [PATCH 200/318] mm: slub: Always flush the delayed empty slubs in
+Subject: [PATCH 200/321] mm: slub: Always flush the delayed empty slubs in
  flush_all()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 After commit f0b231101c94 ("mm/SLUB: delay giving back empty slubs to
 IRQ enabled regions"), when the free_slab() is invoked with the IRQ
@@ -43,7 +43,7 @@ Cc: stable-rt@vger.kernel.org
  1 file changed, 3 deletions(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index faba29039375..cb414c1f9ef6 100644
+index faba290393757..cb414c1f9ef6b 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -2501,9 +2501,6 @@ static void flush_all(struct kmem_cache *s)
@@ -57,5 +57,5 @@ index faba29039375..cb414c1f9ef6 100644
  		raw_spin_lock_irq(&f->lock);
  		list_splice_init(&f->list, &tofree);
 -- 
-2.39.0
+2.39.2
 

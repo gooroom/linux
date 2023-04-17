@@ -1,11 +1,11 @@
-From 4814d111247a927aadda46ec02a8c85bb0d56508 Mon Sep 17 00:00:00 2001
+From b22534116b80b791d981cc091e7c7f4b37c2830c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 3 Feb 2021 11:05:23 -0500
-Subject: [PATCH 076/318] tracing: Merge irqflags + preempt counter.
+Subject: [PATCH 076/321] tracing: Merge irqflags + preempt counter.
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 The state of the interrupts (irqflags) and the preemption counter are
 both passed down to tracing_generic_entry_update(). Only one bit of
@@ -79,7 +79,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  17 files changed, 286 insertions(+), 307 deletions(-)
 
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index c57b79301a75..409385b25ecb 100644
+index c57b79301a75e..409385b25ecb3 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -148,17 +148,29 @@ enum print_line_t {
@@ -128,7 +128,7 @@ index c57b79301a75..409385b25ecb 100644
  };
  
 diff --git a/kernel/trace/blktrace.c b/kernel/trace/blktrace.c
-index 15a376f85e09..59ac048e1be4 100644
+index ab912cc60760a..a95a2027eefda 100644
 --- a/kernel/trace/blktrace.c
 +++ b/kernel/trace/blktrace.c
 @@ -72,17 +72,17 @@ static void trace_note(struct blk_trace *bt, pid_t pid, int action,
@@ -195,7 +195,7 @@ index 15a376f85e09..59ac048e1be4 100644
  		}
  	}
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 146771d6d007..ee50dfffa96b 100644
+index ce45bdd9077db..22324406cd9d9 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -176,7 +176,7 @@ static union trace_eval_map_item *trace_eval_maps;
@@ -714,7 +714,7 @@ index 146771d6d007..ee50dfffa96b 100644
  	}
  
  out:
-@@ -6688,7 +6708,6 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
+@@ -6703,7 +6723,6 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
  	enum event_trigger_type tt = ETT_NONE;
  	struct trace_buffer *buffer;
  	struct print_entry *entry;
@@ -722,7 +722,7 @@ index 146771d6d007..ee50dfffa96b 100644
  	ssize_t written;
  	int size;
  	int len;
-@@ -6708,7 +6727,6 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
+@@ -6723,7 +6742,6 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
  
  	BUILD_BUG_ON(TRACE_BUF_SIZE >= PAGE_SIZE);
  
@@ -730,7 +730,7 @@ index 146771d6d007..ee50dfffa96b 100644
  	size = sizeof(*entry) + cnt + 2; /* add '\0' and possible '\n' */
  
  	/* If less than "<faulted>", then make sure we can still add that */
-@@ -6717,7 +6735,7 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
+@@ -6732,7 +6750,7 @@ tracing_mark_write(struct file *filp, const char __user *ubuf,
  
  	buffer = tr->array_buffer.buffer;
  	event = __trace_buffer_lock_reserve(buffer, TRACE_PRINT, size,
@@ -739,7 +739,7 @@ index 146771d6d007..ee50dfffa96b 100644
  	if (unlikely(!event))
  		/* Ring buffer disabled, return as if not open for write */
  		return -EBADF;
-@@ -6769,7 +6787,6 @@ tracing_mark_raw_write(struct file *filp, const char __user *ubuf,
+@@ -6784,7 +6802,6 @@ tracing_mark_raw_write(struct file *filp, const char __user *ubuf,
  	struct ring_buffer_event *event;
  	struct trace_buffer *buffer;
  	struct raw_data_entry *entry;
@@ -747,7 +747,7 @@ index 146771d6d007..ee50dfffa96b 100644
  	ssize_t written;
  	int size;
  	int len;
-@@ -6791,14 +6808,13 @@ tracing_mark_raw_write(struct file *filp, const char __user *ubuf,
+@@ -6806,14 +6823,13 @@ tracing_mark_raw_write(struct file *filp, const char __user *ubuf,
  
  	BUILD_BUG_ON(TRACE_BUF_SIZE >= PAGE_SIZE);
  
@@ -764,7 +764,7 @@ index 146771d6d007..ee50dfffa96b 100644
  		/* Ring buffer disabled, return as if not open for write */
  		return -EBADF;
 diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 8d67f7f44840..3e6f5f94ee08 100644
+index 37f616bf5fa93..9ba7660f3a14c 100644
 --- a/kernel/trace/trace.h
 +++ b/kernel/trace/trace.h
 @@ -745,8 +745,7 @@ struct ring_buffer_event *
@@ -891,7 +891,7 @@ index 8d67f7f44840..3e6f5f94ee08 100644
  	if (tt)
  		event_triggers_post_call(file, tt);
 diff --git a/kernel/trace/trace_branch.c b/kernel/trace/trace_branch.c
-index eff099123aa2..e47fdb4c92fb 100644
+index eff099123aa27..e47fdb4c92fbc 100644
 --- a/kernel/trace/trace_branch.c
 +++ b/kernel/trace/trace_branch.c
 @@ -37,7 +37,7 @@ probe_likely_condition(struct ftrace_likely_data *f, int val, int expect)
@@ -917,7 +917,7 @@ index eff099123aa2..e47fdb4c92fb 100644
  		goto out;
  
 diff --git a/kernel/trace/trace_event_perf.c b/kernel/trace/trace_event_perf.c
-index 643e0b19920d..0443dd61667b 100644
+index 643e0b19920d2..0443dd61667b9 100644
 --- a/kernel/trace/trace_event_perf.c
 +++ b/kernel/trace/trace_event_perf.c
 @@ -421,11 +421,8 @@ NOKPROBE_SYMBOL(perf_trace_buf_alloc);
@@ -934,7 +934,7 @@ index 643e0b19920d..0443dd61667b 100644
  NOKPROBE_SYMBOL(perf_trace_buf_update);
  
 diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
-index bac13f24a96e..e2f521ab12c9 100644
+index bac13f24a96e5..e2f521ab12c92 100644
 --- a/kernel/trace/trace_events.c
 +++ b/kernel/trace/trace_events.c
 @@ -259,22 +259,19 @@ void *trace_event_buffer_reserve(struct trace_event_buffer *fbuffer,
@@ -1000,7 +1000,7 @@ index bac13f24a96e..e2f521ab12c9 100644
  	atomic_dec(&per_cpu(ftrace_test_event_disable, cpu));
  	preempt_enable_notrace();
 diff --git a/kernel/trace/trace_events_inject.c b/kernel/trace/trace_events_inject.c
-index 22bcf7c51d1e..c188045c5f97 100644
+index 22bcf7c51d1ee..c188045c5f976 100644
 --- a/kernel/trace/trace_events_inject.c
 +++ b/kernel/trace/trace_events_inject.c
 @@ -192,7 +192,6 @@ static void *trace_alloc_entry(struct trace_event_call *call, int *size)
@@ -1024,7 +1024,7 @@ index 22bcf7c51d1e..c188045c5f97 100644
  	while ((len = parse_field(str, call, &field, &val)) > 0) {
  		if (is_function_field(field))
 diff --git a/kernel/trace/trace_functions.c b/kernel/trace/trace_functions.c
-index 93e20ed642e5..8606cb73341e 100644
+index 93e20ed642e53..8606cb73341ed 100644
 --- a/kernel/trace/trace_functions.c
 +++ b/kernel/trace/trace_functions.c
 @@ -133,15 +133,14 @@ function_trace_call(unsigned long ip, unsigned long parent_ip,
@@ -1099,7 +1099,7 @@ index 93e20ed642e5..8606cb73341e 100644
  
  static void
 diff --git a/kernel/trace/trace_functions_graph.c b/kernel/trace/trace_functions_graph.c
-index 60d66278aa0d..b086ba8bb3d6 100644
+index 60d66278aa0d8..b086ba8bb3d65 100644
 --- a/kernel/trace/trace_functions_graph.c
 +++ b/kernel/trace/trace_functions_graph.c
 @@ -96,8 +96,7 @@ print_graph_duration(struct trace_array *tr, unsigned long long duration,
@@ -1213,7 +1213,7 @@ index 60d66278aa0d..b086ba8bb3d6 100644
  	atomic_dec(&data->disabled);
  	local_irq_restore(flags);
 diff --git a/kernel/trace/trace_hwlat.c b/kernel/trace/trace_hwlat.c
-index d071fc271eef..4c01c5d8b9a7 100644
+index d071fc271eef7..4c01c5d8b9a7a 100644
 --- a/kernel/trace/trace_hwlat.c
 +++ b/kernel/trace/trace_hwlat.c
 @@ -108,14 +108,9 @@ static void trace_hwlat_sample(struct hwlat_sample *sample)
@@ -1233,7 +1233,7 @@ index d071fc271eef..4c01c5d8b9a7 100644
  		return;
  	entry	= ring_buffer_event_data(event);
 diff --git a/kernel/trace/trace_irqsoff.c b/kernel/trace/trace_irqsoff.c
-index ee4571b624bc..f11add83c108 100644
+index ee4571b624bcb..f11add83c1083 100644
 --- a/kernel/trace/trace_irqsoff.c
 +++ b/kernel/trace/trace_irqsoff.c
 @@ -143,11 +143,14 @@ irqsoff_tracer_call(unsigned long ip, unsigned long parent_ip,
@@ -1467,7 +1467,7 @@ index ee4571b624bc..f11add83c108 100644
  
  static int preemptoff_tracer_init(struct trace_array *tr)
 diff --git a/kernel/trace/trace_kprobe.c b/kernel/trace/trace_kprobe.c
-index 41dd17390c73..8ac26fddf999 100644
+index 41dd17390c732..8ac26fddf9996 100644
 --- a/kernel/trace/trace_kprobe.c
 +++ b/kernel/trace/trace_kprobe.c
 @@ -1393,8 +1393,7 @@ __kprobe_trace_func(struct trace_kprobe *tk, struct pt_regs *regs,
@@ -1509,7 +1509,7 @@ index 41dd17390c73..8ac26fddf999 100644
  		return;
  
 diff --git a/kernel/trace/trace_mmiotrace.c b/kernel/trace/trace_mmiotrace.c
-index 84582bf1ed5f..7221ae0b4c47 100644
+index 84582bf1ed5fb..7221ae0b4c477 100644
 --- a/kernel/trace/trace_mmiotrace.c
 +++ b/kernel/trace/trace_mmiotrace.c
 @@ -300,10 +300,11 @@ static void __trace_mmiotrace_rw(struct trace_array *tr,
@@ -1559,7 +1559,7 @@ index 84582bf1ed5f..7221ae0b4c47 100644
  
  void mmio_trace_mapping(struct mmiotrace_map *map)
 diff --git a/kernel/trace/trace_sched_wakeup.c b/kernel/trace/trace_sched_wakeup.c
-index 97b10bb31a1f..f1c603358ff3 100644
+index 97b10bb31a1f0..f1c603358ff33 100644
 --- a/kernel/trace/trace_sched_wakeup.c
 +++ b/kernel/trace/trace_sched_wakeup.c
 @@ -67,7 +67,7 @@ static bool function_enabled;
@@ -1800,7 +1800,7 @@ index 97b10bb31a1f..f1c603358ff3 100644
  out_locked:
  	arch_spin_unlock(&wakeup_lock);
 diff --git a/kernel/trace/trace_syscalls.c b/kernel/trace/trace_syscalls.c
-index d85a2f0f316b..8bfcd3b09422 100644
+index d85a2f0f316b3..8bfcd3b094226 100644
 --- a/kernel/trace/trace_syscalls.c
 +++ b/kernel/trace/trace_syscalls.c
 @@ -298,9 +298,8 @@ static void ftrace_syscall_enter(void *data, struct pt_regs *regs, long id)
@@ -1874,7 +1874,7 @@ index d85a2f0f316b..8bfcd3b09422 100644
  
  static int reg_event_syscall_enter(struct trace_event_file *file,
 diff --git a/kernel/trace/trace_uprobe.c b/kernel/trace/trace_uprobe.c
-index 9900d4e3808c..7be4f5d673a6 100644
+index 9900d4e3808cc..7be4f5d673a65 100644
 --- a/kernel/trace/trace_uprobe.c
 +++ b/kernel/trace/trace_uprobe.c
 @@ -965,7 +965,7 @@ static void __uprobe_trace_func(struct trace_uprobe *tu,
@@ -1896,5 +1896,5 @@ index 9900d4e3808c..7be4f5d673a6 100644
  
  /* uprobe handler */
 -- 
-2.39.0
+2.39.2
 

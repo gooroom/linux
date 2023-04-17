@@ -1,8 +1,8 @@
-From f712db80f3b851681de14a704d81efb16f9e9c33 Mon Sep 17 00:00:00 2001
+From f515205f6ca56e5f5ddbba8e5edff83570ce7957 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:06 +0200
-Subject: [PATCH 009/318] sched: Massage set_cpus_allowed()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 009/321] sched: Massage set_cpus_allowed()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Thread a u32 flags word through the *set_cpus_allowed*() callchain.
 This will allow adding behavioural tweaks for future users.
@@ -16,7 +16,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 26 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9c51b8ab0a66..ed7625aa0e32 100644
+index f3546e8ee0f0c..2cb57611b0eea 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1835,13 +1835,14 @@ static int migration_cpu_stop(void *data)
@@ -104,7 +104,7 @@ index 9c51b8ab0a66..ed7625aa0e32 100644
  {
  	return set_cpus_allowed_ptr(p, new_mask);
  }
-@@ -6012,7 +6020,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+@@ -6011,7 +6019,7 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
  	}
  #endif
  again:
@@ -113,7 +113,7 @@ index 9c51b8ab0a66..ed7625aa0e32 100644
  
  	if (!retval) {
  		cpuset_cpus_allowed(p, cpus_allowed);
-@@ -6588,7 +6596,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
+@@ -6587,7 +6595,7 @@ void __init init_idle(struct task_struct *idle, int cpu)
  	 *
  	 * And since this is boot we can forgo the serialization.
  	 */
@@ -123,10 +123,10 @@ index 9c51b8ab0a66..ed7625aa0e32 100644
  	/*
  	 * We're having a chicken and egg problem, even though we are
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 53347497b652..f8e2e09c7896 100644
+index c3babac0c8c59..14c8b2d2bcadb 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2311,7 +2311,8 @@ static void task_woken_dl(struct rq *rq, struct task_struct *p)
+@@ -2310,7 +2310,8 @@ static void task_woken_dl(struct rq *rq, struct task_struct *p)
  }
  
  static void set_cpus_allowed_dl(struct task_struct *p,
@@ -136,7 +136,7 @@ index 53347497b652..f8e2e09c7896 100644
  {
  	struct root_domain *src_rd;
  	struct rq *rq;
-@@ -2340,7 +2341,7 @@ static void set_cpus_allowed_dl(struct task_struct *p,
+@@ -2339,7 +2340,7 @@ static void set_cpus_allowed_dl(struct task_struct *p,
  		raw_spin_unlock(&src_dl_b->lock);
  	}
  
@@ -146,7 +146,7 @@ index 53347497b652..f8e2e09c7896 100644
  
  /* Assumes rq->lock is held */
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 42e989ad0f57..e75b4e322555 100644
+index 42e989ad0f57e..e75b4e3225552 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1817,7 +1817,8 @@ struct sched_class {
@@ -171,5 +171,5 @@ index 42e989ad0f57..e75b4e322555 100644
  #endif
  
 -- 
-2.39.0
+2.39.2
 

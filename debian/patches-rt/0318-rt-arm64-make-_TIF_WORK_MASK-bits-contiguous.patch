@@ -1,7 +1,8 @@
+From 349c35cf02763ce9071a6458ae67e55fd6efc0bc Mon Sep 17 00:00:00 2001
 From: Salvatore Bonaccorso <carnil@debian.org>
 Date: Fri, 20 Jan 2023 19:23:03 +0100
-Subject: arm64: make _TIF_WORK_MASK bits contiguous
-Origin: https://lore.kernel.org/lkml/Y8rfwA7F1gObKGG7@eldamar.lan/
+Subject: [PATCH 318/321] rt: arm64: make _TIF_WORK_MASK bits contiguous
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 As same as in commit 870d16757ba8 ("arm64: make _TIF_WORK_MASK bits
 contiguous") in mainline, we need to make the bits of _TIF_WORK_MASK to
@@ -9,7 +10,7 @@ be contiguous in order to use this as an immediate argument to an AND
 instruction in entry.S.
 
 We shuffle these bits down-by-one keeping the existing contiguity after
-inserting TIF_NEED_RESCHED_LAZY.
+inserting TIF_NEED_RESCHED_LAZY in the preempt-rt patch series.
 
 Otherwise, omitting this change will result in a build failure as below:
 
@@ -18,14 +19,18 @@ Otherwise, omitting this change will result in a build failure as below:
 
 Reported-by: Vignesh Raghavendra <vigneshr@ti.com>
 Reported-by: Pavel Machek <pavel@denx.de>
+Cc: Mark Rutland <mark.rutland@arm.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Cc: Will Deacon <will@kernel.org>
 Link: https://lore.kernel.org/lkml/40de655e-26f3-aa7b-f1ec-6877396a9f1e@ti.com/
 Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  arch/arm64/include/asm/thread_info.h | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/arch/arm64/include/asm/thread_info.h b/arch/arm64/include/asm/thread_info.h
-index 6eb36a2126e8..2afd9ceb66c9 100644
+index 6eb36a2126e84..2afd9ceb66c96 100644
 --- a/arch/arm64/include/asm/thread_info.h
 +++ b/arch/arm64/include/asm/thread_info.h
 @@ -70,12 +70,12 @@ void arch_release_task_struct(struct task_struct *tsk);
@@ -48,5 +53,5 @@ index 6eb36a2126e8..2afd9ceb66c9 100644
  #define TIF_FREEZE		19
  #define TIF_RESTORE_SIGMASK	20
 -- 
-2.39.0
+2.39.2
 

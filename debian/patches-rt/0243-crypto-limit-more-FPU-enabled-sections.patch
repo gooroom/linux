@@ -1,11 +1,11 @@
-From b4cd2d2fdf256e9f4e1fdc53c2bcb863087a9e89 Mon Sep 17 00:00:00 2001
+From 4343a905563c8148a720e9d7167f69a592c2e1af Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 13:40:10 +0100
-Subject: [PATCH 243/318] crypto: limit more FPU-enabled sections
+Subject: [PATCH 243/321] crypto: limit more FPU-enabled sections
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Those crypto drivers use SSE/AVX/… for their crypto work and in order to
 do so in kernel they need to enable the "FPU" in kernel mode which
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 13 insertions(+)
 
 diff --git a/arch/x86/include/asm/fpu/api.h b/arch/x86/include/asm/fpu/api.h
-index ad2fee785310..d31b0886592a 100644
+index ad2fee7853108..d31b0886592a1 100644
 --- a/arch/x86/include/asm/fpu/api.h
 +++ b/arch/x86/include/asm/fpu/api.h
 @@ -28,6 +28,7 @@ extern void kernel_fpu_begin_mask(unsigned int kfpu_mask);
@@ -47,7 +47,7 @@ index ad2fee785310..d31b0886592a 100644
  /* Code that is unaware of kernel_fpu_begin_mask() can use this */
  static inline void kernel_fpu_begin(void)
 diff --git a/arch/x86/kernel/fpu/core.c b/arch/x86/kernel/fpu/core.c
-index 571220ac8bea..d315d45b64fa 100644
+index 571220ac8beaa..d315d45b64faa 100644
 --- a/arch/x86/kernel/fpu/core.c
 +++ b/arch/x86/kernel/fpu/core.c
 @@ -159,6 +159,18 @@ void kernel_fpu_end(void)
@@ -70,5 +70,5 @@ index 571220ac8bea..d315d45b64fa 100644
   * Save the FPU state (mark it for reload if necessary):
   *
 -- 
-2.39.0
+2.39.2
 

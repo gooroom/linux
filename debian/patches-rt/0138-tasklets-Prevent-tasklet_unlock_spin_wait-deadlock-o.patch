@@ -1,9 +1,9 @@
-From 4edb5ac747b734023f4c4990e564fe6798079b34 Mon Sep 17 00:00:00 2001
+From 3641af24d68b950020e36ef42a48164e3b150cb1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:42:10 +0100
-Subject: [PATCH 138/318] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
+Subject: [PATCH 138/321] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
  on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 tasklet_unlock_spin_wait() spin waits for the TASKLET_STATE_SCHED bit in
 the tasklet state to be cleared. This works on !RT nicely because the
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 29 insertions(+), 11 deletions(-)
 
 diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 77cd88cc4575..4b3ec31189db 100644
+index c4fafbfa28a6f..6eae70ec3a178 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
-@@ -654,7 +654,7 @@ enum
+@@ -658,7 +658,7 @@ enum
  	TASKLET_STATE_RUN	/* Tasklet is running (SMP only) */
  };
  
@@ -40,7 +40,7 @@ index 77cd88cc4575..4b3ec31189db 100644
  static inline int tasklet_trylock(struct tasklet_struct *t)
  {
  	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
-@@ -662,16 +662,8 @@ static inline int tasklet_trylock(struct tasklet_struct *t)
+@@ -666,16 +666,8 @@ static inline int tasklet_trylock(struct tasklet_struct *t)
  
  void tasklet_unlock(struct tasklet_struct *t);
  void tasklet_unlock_wait(struct tasklet_struct *t);
@@ -59,7 +59,7 @@ index 77cd88cc4575..4b3ec31189db 100644
  static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
  static inline void tasklet_unlock(struct tasklet_struct *t) { }
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index ecc3ac4091c8..fcb201ceed71 100644
+index ecc3ac4091c8c..fcb201ceed712 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -614,6 +614,32 @@ void tasklet_init(struct tasklet_struct *t,
@@ -105,5 +105,5 @@ index ecc3ac4091c8..fcb201ceed71 100644
  {
  	smp_mb__before_atomic();
 -- 
-2.39.0
+2.39.2
 

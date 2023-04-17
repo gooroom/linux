@@ -1,8 +1,8 @@
-From 2d0d32bcc70f13dd243d370e5a5744aae21426e5 Mon Sep 17 00:00:00 2001
+From cbd07a23018d2a08e37e2cb9182dedb24ab2204b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 17 Dec 2021 11:32:09 +0100
-Subject: [PATCH 311/318] eventfd: Make signal recursion protection a task bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 311/321] eventfd: Make signal recursion protection a task bit
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Upstream commit b542e383d8c005f06a131e2b40d5889b812f19c6
 
@@ -40,10 +40,10 @@ Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
  4 files changed, 15 insertions(+), 14 deletions(-)
 
 diff --git a/fs/aio.c b/fs/aio.c
-index c72b2c51b446..f7d47c9ff6de 100644
+index c90e045a37bc5..e1181dc37be11 100644
 --- a/fs/aio.c
 +++ b/fs/aio.c
-@@ -1761,7 +1761,7 @@ static int aio_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
+@@ -1765,7 +1765,7 @@ static int aio_poll_wake(struct wait_queue_entry *wait, unsigned mode, int sync,
  		list_del_init(&req->wait.entry);
  		list_del(&iocb->ki_list);
  		iocb->ki_res.res = mangle_poll(mask);
@@ -53,7 +53,7 @@ index c72b2c51b446..f7d47c9ff6de 100644
  			INIT_WORK(&req->work, aio_poll_put_work);
  			schedule_work(&req->work);
 diff --git a/fs/eventfd.c b/fs/eventfd.c
-index 4a14295cffe0..8f017bde869e 100644
+index 4a14295cffe0d..8f017bde869ea 100644
 --- a/fs/eventfd.c
 +++ b/fs/eventfd.c
 @@ -25,8 +25,6 @@
@@ -93,7 +93,7 @@ index 4a14295cffe0..8f017bde869e 100644
  
  	return n;
 diff --git a/include/linux/eventfd.h b/include/linux/eventfd.h
-index ce1cf42740bf..3f24ec0ae778 100644
+index 6cd2a92daf205..ab602b95dfd04 100644
 --- a/include/linux/eventfd.h
 +++ b/include/linux/eventfd.h
 @@ -14,6 +14,7 @@
@@ -131,7 +131,7 @@ index ce1cf42740bf..3f24ec0ae778 100644
  
  #endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c9a8fe41936b..34c86a285cb5 100644
+index c9a8fe41936b1..34c86a285cb55 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -848,6 +848,10 @@ struct task_struct {
@@ -146,5 +146,5 @@ index c9a8fe41936b..34c86a285cb5 100644
  	unsigned long			atomic_flags; /* Flags requiring atomic access. */
  
 -- 
-2.39.0
+2.39.2
 

@@ -1,9 +1,9 @@
-From 62c698a6797781417c112086c06c365c297534a1 Mon Sep 17 00:00:00 2001
+From b8b538d67276a8576ae3dd8a2a325a3e52d249c8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
-Subject: [PATCH 216/318] kernel/sched: move stack + kprobe clean up to
+Subject: [PATCH 216/321] kernel/sched: move stack + kprobe clean up to
  __put_task_struct()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 There is no need to free the stack before the task struct (except for reasons
 mentioned in commit 68f24b08ee89 ("sched/core: Free the stack early if
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 11 insertions(+), 10 deletions(-)
 
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 125dd5007004..f7ee43f72871 100644
+index 4194c256f51e8..23ff60d161d56 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -42,6 +42,7 @@
@@ -57,7 +57,7 @@ index 125dd5007004..f7ee43f72871 100644
  	cgroup_free(tsk);
  	task_numa_free(tsk, true);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 478d2c30151f..052cdebe7e77 100644
+index 80149c7d4bbd0..8678cff3aae96 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4278,15 +4278,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -77,5 +77,5 @@ index 478d2c30151f..052cdebe7e77 100644
  	}
  
 -- 
-2.39.0
+2.39.2
 

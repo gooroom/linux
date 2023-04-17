@@ -1,9 +1,9 @@
-From 5c42714f0bfffc700b130829fdc3631b1848ceb8 Mon Sep 17 00:00:00 2001
+From ffe4d61a2813a7e1975fbd895f9b7dba80b6578d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:35 +0100
-Subject: [PATCH 046/318] sched: Make migrate_disable/enable() independent of
+Subject: [PATCH 046/321] sched: Make migrate_disable/enable() independent of
  RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Now that the scheduler can deal with migrate disable properly, there is no
 real compelling reason to make it only available for RT.
@@ -38,10 +38,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 56 insertions(+), 56 deletions(-)
 
 diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index f5392d96d688..4dc85e7c619e 100644
+index 66948e1bf4fa6..7786934749688 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
-@@ -204,6 +204,7 @@ extern int _cond_resched(void);
+@@ -206,6 +206,7 @@ extern int _cond_resched(void);
  extern void ___might_sleep(const char *file, int line, int preempt_offset);
  extern void __might_sleep(const char *file, int line, int preempt_offset);
  extern void __cant_sleep(const char *file, int line, int preempt_offset);
@@ -49,7 +49,7 @@ index f5392d96d688..4dc85e7c619e 100644
  
  /**
   * might_sleep - annotation for functions that can sleep
-@@ -227,6 +228,18 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
+@@ -229,6 +230,18 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
  # define cant_sleep() \
  	do { __cant_sleep(__FILE__, __LINE__, 0); } while (0)
  # define sched_annotate_sleep()	(current->task_state_change = 0)
@@ -68,7 +68,7 @@ index f5392d96d688..4dc85e7c619e 100644
  /**
   * non_block_start - annotate the start of section where sleeping is prohibited
   *
-@@ -251,6 +264,7 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
+@@ -253,6 +266,7 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
  				   int preempt_offset) { }
  # define might_sleep() do { might_resched(); } while (0)
  # define cant_sleep() do { } while (0)
@@ -76,7 +76,7 @@ index f5392d96d688..4dc85e7c619e 100644
  # define sched_annotate_sleep() do { } while (0)
  # define non_block_start() do { } while (0)
  # define non_block_end() do { } while (0)
-@@ -258,13 +272,6 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
+@@ -260,13 +274,6 @@ extern void __cant_sleep(const char *file, int line, int preempt_offset);
  
  #define might_sleep_if(cond) do { if (cond) might_sleep(); } while (0)
  
@@ -91,7 +91,7 @@ index f5392d96d688..4dc85e7c619e 100644
   * abs - return absolute value of an argument
   * @x: the value.  If it is unsigned type, it is converted to signed type first.
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 8b43922e65df..6df63cbe8bb0 100644
+index 8b43922e65dfe..6df63cbe8bb04 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -322,7 +322,7 @@ static inline void preempt_notifier_init(struct preempt_notifier *notifier,
@@ -150,7 +150,7 @@ index 8b43922e65df..6df63cbe8bb0 100644
  
  #endif /* __LINUX_PREEMPT_H */
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 343d2f13345a..d846b0d1427d 100644
+index 343d2f13345a9..d846b0d1427d9 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -727,7 +727,7 @@ struct task_struct {
@@ -163,7 +163,7 @@ index 343d2f13345a..d846b0d1427d 100644
  #endif
  	unsigned short			migration_flags;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 88653822dfa8..75e4fc87f7fb 100644
+index 7d0b726f0ace6..7b1a79430530f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1707,8 +1707,6 @@ void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
@@ -213,7 +213,7 @@ index 88653822dfa8..75e4fc87f7fb 100644
  
  static void
  ttwu_stat(struct task_struct *p, int cpu, int wake_flags)
-@@ -7905,6 +7897,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
+@@ -7904,6 +7896,39 @@ void __cant_sleep(const char *file, int line, int preempt_offset)
  	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
  }
  EXPORT_SYMBOL_GPL(__cant_sleep);
@@ -254,7 +254,7 @@ index 88653822dfa8..75e4fc87f7fb 100644
  
  #ifdef CONFIG_MAGIC_SYSRQ
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 7bc92589df97..7e70b667bba2 100644
+index 7bc92589df97f..7e70b667bba27 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1057,7 +1057,7 @@ struct rq {
@@ -276,7 +276,7 @@ index 7bc92589df97..7e70b667bba2 100644
  #else
  	return false;
 diff --git a/lib/smp_processor_id.c b/lib/smp_processor_id.c
-index dbb96ebf661f..0c0c42b14370 100644
+index dbb96ebf661fd..0c0c42b143704 100644
 --- a/lib/smp_processor_id.c
 +++ b/lib/smp_processor_id.c
 @@ -26,7 +26,7 @@ unsigned int check_preemption_disabled(const char *what1, const char *what2)
@@ -289,5 +289,5 @@ index dbb96ebf661f..0c0c42b14370 100644
  		goto out;
  #endif
 -- 
-2.39.0
+2.39.2
 

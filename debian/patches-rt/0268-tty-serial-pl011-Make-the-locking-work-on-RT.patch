@@ -1,8 +1,8 @@
-From 49ab35a6af009e15986d89f8a834b429ac506a94 Mon Sep 17 00:00:00 2001
+From f160adb5788a256fcfd5518e1fb12068d171fca3 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 8 Jan 2013 21:36:51 +0100
-Subject: [PATCH 268/318] tty/serial/pl011: Make the locking work on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Subject: [PATCH 268/321] tty/serial/pl011: Make the locking work on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the optimsation
 we are looking for. Redo it to make it work on -RT and non-RT.
@@ -13,10 +13,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index 9900ee3f9068..8b4d408b903d 100644
+index 348d4b2a391a3..4a462f104aab6 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
-@@ -2199,18 +2199,24 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+@@ -2211,18 +2211,24 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
  {
  	struct uart_amba_port *uap = amba_ports[co->index];
  	unsigned int old_cr = 0, new_cr;
@@ -45,7 +45,7 @@ index 9900ee3f9068..8b4d408b903d 100644
  
  	/*
  	 *	First save the CR then disable the interrupts
-@@ -2236,8 +2242,7 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
+@@ -2248,8 +2254,7 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
  		pl011_write(old_cr, uap, REG_CR);
  
  	if (locked)
@@ -56,5 +56,5 @@ index 9900ee3f9068..8b4d408b903d 100644
  	clk_disable(uap->clk);
  }
 -- 
-2.39.0
+2.39.2
 

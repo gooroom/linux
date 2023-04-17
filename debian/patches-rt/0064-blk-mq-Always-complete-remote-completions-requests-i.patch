@@ -1,9 +1,9 @@
-From 587683bfca8443e3f7667f87110e02d75cb104be Mon Sep 17 00:00:00 2001
+From f97b4ee32df69cbcc47746250bf69807d48c4557 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 23 Jan 2021 21:10:26 +0100
-Subject: [PATCH 064/318] blk-mq: Always complete remote completions requests
+Subject: [PATCH 064/321] blk-mq: Always complete remote completions requests
  in softirq
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 Controllers with multiple queues have their IRQ-handelers pinned to a
 CPU. The core shouldn't need to complete the request on a remote CPU.
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 13 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index a22d179e92aa..ffbe777c3705 100644
+index 7613f2f7f6595..87dcb2a21dc80 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -629,19 +629,7 @@ static void __blk_mq_complete_request_remote(void *data)
+@@ -630,19 +630,7 @@ static void __blk_mq_complete_request_remote(void *data)
  {
  	struct request *rq = data;
  
@@ -45,5 +45,5 @@ index a22d179e92aa..ffbe777c3705 100644
  
  static inline bool blk_mq_complete_need_ipi(struct request *rq)
 -- 
-2.39.0
+2.39.2
 

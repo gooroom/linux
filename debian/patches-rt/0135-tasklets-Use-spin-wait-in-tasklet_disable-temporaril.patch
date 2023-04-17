@@ -1,9 +1,9 @@
-From a36af452195100ae82a06662c8f2246422f8570d Mon Sep 17 00:00:00 2001
+From a44669bb3d1d6b39e9746c68ba1d1422dc844ba0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:42:07 +0100
-Subject: [PATCH 135/318] tasklets: Use spin wait in tasklet_disable()
+Subject: [PATCH 135/321] tasklets: Use spin wait in tasklet_disable()
  temporarily
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.162-rt78.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
 
 To ease the transition use spin waiting in tasklet_disable() until all
 usage sites from atomic context have been cleaned up.
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 9a9dd3ed6fdc..77bbb7e4e0f9 100644
+index abba3eff4f86a..fe085c46f2107 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
-@@ -724,7 +724,8 @@ static inline void tasklet_disable_in_atomic(struct tasklet_struct *t)
+@@ -728,7 +728,8 @@ static inline void tasklet_disable_in_atomic(struct tasklet_struct *t)
  static inline void tasklet_disable(struct tasklet_struct *t)
  {
  	tasklet_disable_nosync(t);
@@ -29,5 +29,5 @@ index 9a9dd3ed6fdc..77bbb7e4e0f9 100644
  }
  
 -- 
-2.39.0
+2.39.2
 
