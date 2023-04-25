@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 100/353] hrtimer: by timers by default into the softirq
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f9f1e73ce4ef807af8e03835d5816f0fb1243af6
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6117abca429d5fae96db4e3437aa1d6f818fe1d2
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -87,7 +87,7 @@ index 668e5492e4c4..f374d3a250eb 100644
  
  	/*
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f3b478592eb4..5d663bd7ad93 100644
+index cdaf83d26695..b307f7c8ce14 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -315,7 +315,7 @@ static void hrtick_rq_init(struct rq *rq)
@@ -113,10 +113,10 @@ index 9243d0049714..52acbb31a777 100644
  }
  
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 16940416d526..d804b5443bb9 100644
+index bd9a375c45f4..6d1911b08b7f 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4951,9 +4951,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
+@@ -4998,9 +4998,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);

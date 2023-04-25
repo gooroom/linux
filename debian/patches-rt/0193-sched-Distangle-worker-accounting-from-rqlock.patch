@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
 Subject: [PATCH 193/353] sched: Distangle worker accounting from rqlock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=715fa9dc7cfb3f14a29fc39827a435230b1c9b5d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d8baa8f0d9dc0a90bb805367f43ef3e8e5452e0f
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -33,10 +33,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 47 insertions(+), 100 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index dcf25b931a86..c1907a891f5d 100644
+index 4a714c92dff2..20585605b2ac 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1704,10 +1704,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl
+@@ -1707,10 +1707,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl
  {
  	activate_task(rq, p, en_flags);
  	p->on_rq = TASK_ON_RQ_QUEUED;
@@ -47,7 +47,7 @@ index dcf25b931a86..c1907a891f5d 100644
  }
  
  /*
-@@ -2146,56 +2142,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+@@ -2149,56 +2145,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
  	return success;
  }
  
@@ -104,7 +104,7 @@ index dcf25b931a86..c1907a891f5d 100644
  /**
   * wake_up_process - Wake up a specific process
   * @p: The process to be woken up.
-@@ -3565,21 +3511,6 @@ static void __sched notrace __schedule(bool preempt)
+@@ -3568,21 +3514,6 @@ static void __sched notrace __schedule(bool preempt)
  				atomic_inc(&rq->nr_iowait);
  				delayacct_blkio_start();
  			}
@@ -126,7 +126,7 @@ index dcf25b931a86..c1907a891f5d 100644
  		}
  		switch_count = &prev->nvcsw;
  	}
-@@ -3639,6 +3570,20 @@ static inline void sched_submit_work(struct task_struct *tsk)
+@@ -3642,6 +3573,20 @@ static inline void sched_submit_work(struct task_struct *tsk)
  {
  	if (!tsk->state || tsk_is_pi_blocked(tsk))
  		return;
@@ -147,7 +147,7 @@ index dcf25b931a86..c1907a891f5d 100644
  	/*
  	 * If we are going to sleep and we have plugged IO queued,
  	 * make sure to submit it to avoid deadlocks.
-@@ -3647,6 +3592,12 @@ static inline void sched_submit_work(struct task_struct *tsk)
+@@ -3650,6 +3595,12 @@ static inline void sched_submit_work(struct task_struct *tsk)
  		blk_schedule_flush_plug(tsk);
  }
  
@@ -160,7 +160,7 @@ index dcf25b931a86..c1907a891f5d 100644
  asmlinkage __visible void __sched schedule(void)
  {
  	struct task_struct *tsk = current;
-@@ -3657,6 +3608,7 @@ asmlinkage __visible void __sched schedule(void)
+@@ -3660,6 +3611,7 @@ asmlinkage __visible void __sched schedule(void)
  		__schedule(false);
  		sched_preempt_enable_no_resched();
  	} while (need_resched());

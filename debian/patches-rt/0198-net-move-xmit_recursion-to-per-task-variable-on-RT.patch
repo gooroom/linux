@@ -1,7 +1,7 @@
 From: Clark Williams <williams@redhat.com>
 Date: Fri, 17 Dec 2021 14:31:31 -0600
 Subject: [PATCH 198/353] net: move xmit_recursion to per-task variable on -RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0bf6c775ed72603bb92b0867f435d3a8160ee602
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=79260e1688dd4ea3eafa5963d4dbaf63c7db5245
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -24,10 +24,10 @@ Signed-off-by: Clark Williams <williams@redhat.com>
  3 files changed, 77 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index d893dc112afc..dfec34087039 100644
+index d3e4b3f195ff..63a0574e2ac2 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -588,7 +588,11 @@ struct netdev_queue {
+@@ -590,7 +590,11 @@ struct netdev_queue {
   * write-mostly part
   */
  	spinlock_t		_xmit_lock ____cacheline_aligned_in_smp;
@@ -39,7 +39,7 @@ index d893dc112afc..dfec34087039 100644
  	/*
  	 * Time (in jiffies) of last Tx
  	 */
-@@ -3009,14 +3013,38 @@ static inline void input_queue_tail_incr_save(struct softnet_data *sd,
+@@ -3011,14 +3015,38 @@ static inline void input_queue_tail_incr_save(struct softnet_data *sd,
  #endif
  }
  
@@ -79,7 +79,7 @@ index d893dc112afc..dfec34087039 100644
  static inline bool dev_xmit_recursion(void)
  {
  	return unlikely(__this_cpu_read(softnet_data.xmit.recursion) >
-@@ -3032,6 +3060,7 @@ static inline void dev_xmit_recursion_dec(void)
+@@ -3034,6 +3062,7 @@ static inline void dev_xmit_recursion_dec(void)
  {
  	__this_cpu_dec(softnet_data.xmit.recursion);
  }
@@ -87,7 +87,7 @@ index d893dc112afc..dfec34087039 100644
  
  void __netif_schedule(struct Qdisc *q);
  void netif_schedule_queue(struct netdev_queue *txq);
-@@ -3841,6 +3870,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3843,6 +3872,44 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1U << debug_value) - 1;
  }
  
@@ -132,7 +132,7 @@ index d893dc112afc..dfec34087039 100644
  static inline void __netif_tx_lock(struct netdev_queue *txq, int cpu)
  {
  	spin_lock(&txq->_xmit_lock);
-@@ -3893,7 +3960,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
+@@ -3895,7 +3962,7 @@ static inline void __netif_tx_unlock_bh(struct netdev_queue *txq)
  
  static inline void txq_trans_update(struct netdev_queue *txq)
  {

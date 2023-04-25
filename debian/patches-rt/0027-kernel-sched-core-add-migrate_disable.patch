@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
 Subject: [PATCH 027/353] kernel/sched/core: add migrate_disable()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5def3408927f014d1716e091bf98483b631c5512
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7f0d9f74555c7b5e54700bf2156e7a6526a6c964
 
 ---
  include/linux/preempt.h |  23 +++++++
@@ -85,10 +85,10 @@ index 6bb7f07bc1dd..039da089482c 100644
   * Callback to arch code if there's nosmp or maxcpus=0 on the
   * boot command line:
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f3aaa785eb6c..477c349c9770 100644
+index 81f86841b841..cf896da8cb0e 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1008,7 +1008,15 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
+@@ -1011,7 +1011,15 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
  	p->nr_cpus_allowed = cpumask_weight(new_mask);
  }
  
@@ -105,7 +105,7 @@ index f3aaa785eb6c..477c349c9770 100644
  {
  	struct rq *rq = task_rq(p);
  	bool queued, running;
-@@ -1037,6 +1045,20 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -1040,6 +1048,20 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  		set_curr_task(rq, p);
  }
  
@@ -126,7 +126,7 @@ index f3aaa785eb6c..477c349c9770 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
-@@ -1096,9 +1118,16 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1099,9 +1121,16 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	}
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -144,7 +144,7 @@ index f3aaa785eb6c..477c349c9770 100644
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
  		struct migration_arg arg = { p, dest_cpu };
  		/* Need help from migration thread: drop lock and wait. */
-@@ -7108,3 +7137,100 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7111,3 +7140,100 @@ const u32 sched_prio_to_wmult[40] = {
  };
  
  #undef CREATE_TRACE_POINTS

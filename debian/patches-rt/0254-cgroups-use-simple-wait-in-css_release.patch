@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 15:52:24 +0100
 Subject: [PATCH 254/353] cgroups: use simple wait in css_release()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a73a4f4611d0e96f4b265a289790269dbd0b5c89
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=23f4f05c0423e2bc9c2974a05275a3796862ed51
 
 To avoid:
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -54,10 +54,10 @@ index 56442d3b651d..1d2275287f0e 100644
  
  	/*
 diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-index a892a99eb4bf..992f0ee8dba1 100644
+index a8185cdb8587..da19cf179b27 100644
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -4747,10 +4747,10 @@ static void css_free_rwork_fn(struct work_struct *work)
+@@ -4787,10 +4787,10 @@ static void css_free_rwork_fn(struct work_struct *work)
  	}
  }
  
@@ -70,7 +70,7 @@ index a892a99eb4bf..992f0ee8dba1 100644
  	struct cgroup_subsys *ss = css->ss;
  	struct cgroup *cgrp = css->cgroup;
  
-@@ -4812,8 +4812,8 @@ static void css_release(struct percpu_ref *ref)
+@@ -4852,8 +4852,8 @@ static void css_release(struct percpu_ref *ref)
  	struct cgroup_subsys_state *css =
  		container_of(ref, struct cgroup_subsys_state, refcnt);
  
@@ -81,7 +81,7 @@ index a892a99eb4bf..992f0ee8dba1 100644
  }
  
  static void init_and_link_css(struct cgroup_subsys_state *css,
-@@ -5533,6 +5533,7 @@ static int __init cgroup_wq_init(void)
+@@ -5573,6 +5573,7 @@ static int __init cgroup_wq_init(void)
  	 */
  	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
  	BUG_ON(!cgroup_destroy_wq);

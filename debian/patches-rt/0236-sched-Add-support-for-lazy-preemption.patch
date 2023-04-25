@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 236/353] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=129dd623f99236ecb1605a646cf4e2ad2926a74d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c591b9bea866f1ee6976e32a554ec9b7991fe482
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -262,7 +262,7 @@ index 6ae5b18bf3a5..396394ebbc5b 100644
  		__read_rt_unlock(cpuhp_pin);
  		goto again;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d93032e1b59e..7428f07baf62 100644
+index 41219ea235eb..e581ce1edc12 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -493,6 +493,48 @@ void resched_curr(struct rq *rq)
@@ -314,7 +314,7 @@ index d93032e1b59e..7428f07baf62 100644
  void resched_cpu(int cpu)
  {
  	struct rq *rq = cpu_rq(cpu);
-@@ -2409,6 +2451,9 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
+@@ -2412,6 +2454,9 @@ int sched_fork(unsigned long clone_flags, struct task_struct *p)
  	p->on_cpu = 0;
  #endif
  	init_task_preempt_count(p);
@@ -324,7 +324,7 @@ index d93032e1b59e..7428f07baf62 100644
  #ifdef CONFIG_SMP
  	plist_node_init(&p->pushable_tasks, MAX_PRIO);
  	RB_CLEAR_NODE(&p->pushable_dl_tasks);
-@@ -3517,6 +3562,7 @@ static void __sched notrace __schedule(bool preempt)
+@@ -3520,6 +3565,7 @@ static void __sched notrace __schedule(bool preempt)
  
  	next = pick_next_task(rq, prev, &rf);
  	clear_tsk_need_resched(prev);
@@ -332,7 +332,7 @@ index d93032e1b59e..7428f07baf62 100644
  	clear_preempt_need_resched();
  
  	if (likely(prev != next)) {
-@@ -3697,6 +3743,30 @@ static void __sched notrace preempt_schedule_common(void)
+@@ -3700,6 +3746,30 @@ static void __sched notrace preempt_schedule_common(void)
  	} while (need_resched());
  }
  
@@ -363,7 +363,7 @@ index d93032e1b59e..7428f07baf62 100644
  #ifdef CONFIG_PREEMPT
  /*
   * this is the entry point to schedule() from in-kernel preemption
-@@ -3711,7 +3781,8 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
+@@ -3714,7 +3784,8 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
  	 */
  	if (likely(!preemptible()))
  		return;
@@ -373,7 +373,7 @@ index d93032e1b59e..7428f07baf62 100644
  	preempt_schedule_common();
  }
  NOKPROBE_SYMBOL(preempt_schedule);
-@@ -3738,6 +3809,9 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
+@@ -3741,6 +3812,9 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
  	if (likely(!preemptible()))
  		return;
  
@@ -383,7 +383,7 @@ index d93032e1b59e..7428f07baf62 100644
  	do {
  		/*
  		 * Because the function tracer can trace preempt_count_sub()
-@@ -5505,7 +5579,9 @@ void init_idle(struct task_struct *idle, int cpu)
+@@ -5508,7 +5582,9 @@ void init_idle(struct task_struct *idle, int cpu)
  
  	/* Set the preempt count _outside_ the spinlocks! */
  	init_idle_preempt_count(idle, cpu);
@@ -394,7 +394,7 @@ index d93032e1b59e..7428f07baf62 100644
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -7222,6 +7298,7 @@ void migrate_disable(void)
+@@ -7225,6 +7301,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -402,7 +402,7 @@ index d93032e1b59e..7428f07baf62 100644
  	pin_current_cpu();
  
  	migrate_disable_update_cpus_allowed(p);
-@@ -7289,6 +7366,7 @@ void migrate_enable(void)
+@@ -7292,6 +7369,7 @@ void migrate_enable(void)
  			arg.dest_cpu = dest_cpu;
  
  			unpin_current_cpu();
@@ -410,7 +410,7 @@ index d93032e1b59e..7428f07baf62 100644
  			preempt_enable();
  			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
  			tlb_migrate_finish(p->mm);
-@@ -7297,6 +7375,7 @@ void migrate_enable(void)
+@@ -7300,6 +7378,7 @@ void migrate_enable(void)
  		}
  	}
  	unpin_current_cpu();
@@ -419,10 +419,10 @@ index d93032e1b59e..7428f07baf62 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 16940416d526..d006dfc54a45 100644
+index bd9a375c45f4..430248f46f72 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4104,7 +4104,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+@@ -4151,7 +4151,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
  	ideal_runtime = sched_slice(cfs_rq, curr);
  	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
  	if (delta_exec > ideal_runtime) {
@@ -431,7 +431,7 @@ index 16940416d526..d006dfc54a45 100644
  		/*
  		 * The current task ran long enough, ensure it doesn't get
  		 * re-elected due to buddy favours.
-@@ -4128,7 +4128,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+@@ -4175,7 +4175,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
  		return;
  
  	if (delta > ideal_runtime)
@@ -440,7 +440,7 @@ index 16940416d526..d006dfc54a45 100644
  }
  
  static void
-@@ -4270,7 +4270,7 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
+@@ -4317,7 +4317,7 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
  	 * validating it and just reschedule.
  	 */
  	if (queued) {
@@ -449,7 +449,7 @@ index 16940416d526..d006dfc54a45 100644
  		return;
  	}
  	/*
-@@ -4404,7 +4404,7 @@ static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
+@@ -4451,7 +4451,7 @@ static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
  	 * hierarchy can be throttled
  	 */
  	if (!assign_cfs_rq_runtime(cfs_rq) && likely(cfs_rq->curr))
@@ -458,7 +458,7 @@ index 16940416d526..d006dfc54a45 100644
  }
  
  static __always_inline
-@@ -5112,7 +5112,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
+@@ -5159,7 +5159,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
  
  		if (delta < 0) {
  			if (rq->curr == p)
@@ -467,7 +467,7 @@ index 16940416d526..d006dfc54a45 100644
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6706,7 +6706,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+@@ -6750,7 +6750,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
  	return;
  
  preempt:
@@ -476,7 +476,7 @@ index 16940416d526..d006dfc54a45 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9840,7 +9840,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -9884,7 +9884,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -485,7 +485,7 @@ index 16940416d526..d006dfc54a45 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9864,7 +9864,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -9908,7 +9908,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)

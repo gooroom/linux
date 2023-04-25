@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
 Subject: [PATCH 307/353] sched: Lazy migrate_disable processing
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3ab97ea9a8f7316a2de680820d4be7353ffe3831
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=59d98c89b8a1579f4a88ad4c440c28f73211b951
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -278,10 +278,10 @@ index 4bf82665f28c..f603ea80af2e 100644
  	/* Interrupts are moved away from the dying cpu, reenable alloc/free */
  	irq_unlock_sparse();
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index eb6035b411cf..7af6f9295778 100644
+index 8cfb469b23a6..451d07a772bc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1065,7 +1065,8 @@ static int migration_cpu_stop(void *data)
+@@ -1068,7 +1068,8 @@ static int migration_cpu_stop(void *data)
  void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask)
  {
  	cpumask_copy(&p->cpus_mask, new_mask);
@@ -291,7 +291,7 @@ index eb6035b411cf..7af6f9295778 100644
  }
  
  #if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
-@@ -1076,8 +1077,7 @@ int __migrate_disabled(struct task_struct *p)
+@@ -1079,8 +1080,7 @@ int __migrate_disabled(struct task_struct *p)
  EXPORT_SYMBOL_GPL(__migrate_disabled);
  #endif
  
@@ -301,7 +301,7 @@ index eb6035b411cf..7af6f9295778 100644
  {
  	struct rq *rq = task_rq(p);
  	bool queued, running;
-@@ -1106,20 +1106,6 @@ static void __do_set_cpus_allowed_tail(struct task_struct *p,
+@@ -1109,20 +1109,6 @@ static void __do_set_cpus_allowed_tail(struct task_struct *p,
  		set_curr_task(rq, p);
  }
  
@@ -322,7 +322,7 @@ index eb6035b411cf..7af6f9295778 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
-@@ -1179,7 +1165,8 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1182,7 +1168,8 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	}
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -332,7 +332,7 @@ index eb6035b411cf..7af6f9295778 100644
  		goto out;
  
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
-@@ -3458,6 +3445,8 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
+@@ -3461,6 +3448,8 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)
  	BUG();
  }
  
@@ -341,7 +341,7 @@ index eb6035b411cf..7af6f9295778 100644
  /*
   * __schedule() is the main scheduler function.
   *
-@@ -3528,6 +3517,9 @@ static void __sched notrace __schedule(bool preempt)
+@@ -3531,6 +3520,9 @@ static void __sched notrace __schedule(bool preempt)
  	rq_lock(rq, &rf);
  	smp_mb__after_spinlock();
  
@@ -351,7 +351,7 @@ index eb6035b411cf..7af6f9295778 100644
  	/* Promote REQ to ACT */
  	rq->clock_update_flags <<= 1;
  	update_rq_clock(rq);
-@@ -5777,6 +5769,8 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
+@@ -5780,6 +5772,8 @@ static void migrate_tasks(struct rq *dead_rq, struct rq_flags *rf)
  		BUG_ON(!next);
  		put_prev_task(rq, next);
  
@@ -360,7 +360,7 @@ index eb6035b411cf..7af6f9295778 100644
  		/*
  		 * Rules for changing task_struct::cpus_mask are holding
  		 * both pi_lock and rq->lock, such that holding either
-@@ -7241,14 +7235,9 @@ update_nr_migratory(struct task_struct *p, long delta)
+@@ -7244,14 +7238,9 @@ update_nr_migratory(struct task_struct *p, long delta)
  static inline void
  migrate_disable_update_cpus_allowed(struct task_struct *p)
  {
@@ -375,7 +375,7 @@ index eb6035b411cf..7af6f9295778 100644
  }
  
  static inline void
-@@ -7266,54 +7255,35 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
+@@ -7269,54 +7258,35 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
  
  void migrate_disable(void)
  {
@@ -446,7 +446,7 @@ index eb6035b411cf..7af6f9295778 100644
  
  	WARN_ON_ONCE(p->migrate_disable <= 0);
  	if (p->migrate_disable > 1) {
-@@ -7323,67 +7293,69 @@ void migrate_enable(void)
+@@ -7326,67 +7296,69 @@ void migrate_enable(void)
  
  	preempt_disable();
  
@@ -556,7 +556,7 @@ index eb6035b411cf..7af6f9295778 100644
  #endif
  	barrier();
  }
-@@ -7394,20 +7366,14 @@ void migrate_enable(void)
+@@ -7397,20 +7369,14 @@ void migrate_enable(void)
  #ifdef CONFIG_SCHED_DEBUG
  	struct task_struct *p = current;
  

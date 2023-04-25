@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
 Subject: [PATCH 089/353] timers: Prepare for full preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1d1c853913c8f67bb9092897c60d37e9d218f690
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5fcad9b9dd52a53e32b23ee738fde8ccae781456
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -29,7 +29,7 @@ index 7b066fd38248..54627d046b3a 100644
  #else
  # define del_timer_sync(t)		del_timer(t)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d1e219fee070..20f9f4eead0d 100644
+index d29ae6ac0036..4041ab1b0c4b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -498,11 +498,14 @@ void resched_cpu(int cpu)

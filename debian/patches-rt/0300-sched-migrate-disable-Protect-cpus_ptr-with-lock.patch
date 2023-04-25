@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 27 Jul 2019 00:56:34 -0500
 Subject: [PATCH 300/353] sched: migrate disable: Protect cpus_ptr with lock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9be1a879bc1fcaf2e8b1ce9559411bcaf5e3a1bd
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=88139859a77ae38bb0ca8c7822443ed42e90dac4
 
 [ Upstream commit 27ee52a891ed2c7e2e2c8332ccae0de7c2674b09 ]
 
@@ -16,10 +16,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e77397082269..8f33515d0cde 100644
+index 56c1aa35ed42..0f2c20111c09 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7244,9 +7244,8 @@ migrate_disable_update_cpus_allowed(struct task_struct *p)
+@@ -7247,9 +7247,8 @@ migrate_disable_update_cpus_allowed(struct task_struct *p)
  	struct rq *rq;
  	struct rq_flags rf;
  
@@ -30,7 +30,7 @@ index e77397082269..8f33515d0cde 100644
  	update_nr_migratory(p, -1);
  	p->nr_cpus_allowed = 1;
  	task_rq_unlock(rq, p, &rf);
-@@ -7258,9 +7257,8 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
+@@ -7261,9 +7260,8 @@ migrate_enable_update_cpus_allowed(struct task_struct *p)
  	struct rq *rq;
  	struct rq_flags rf;
  
