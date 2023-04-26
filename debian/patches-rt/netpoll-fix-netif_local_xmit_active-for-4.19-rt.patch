@@ -1,0 +1,26 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Wed, 26 Apr 2023 22:24:48 +0200
+Subject: netpoll: Fix netif_local_xmit_active() for 4.19-rt
+
+Commit be71c3c75a488ca1594a98df0754094179ec8146 "net: don't let
+netpoll invoke NAPI if in xmit context", which was commit
+275b471e3d2daf1472ae8fa70dc1b50c9e0b9e75 upstream, added a comparison
+of net_device::xmit_lock_owner.  In 4.19-rt (but not newer RT
+branches) this field holds a task_struct pointer, not a CPU ID.
+Change the comparison accordingly.
+
+---
+--- a/net/core/netpoll.c
++++ b/net/core/netpoll.c
+@@ -143,7 +143,11 @@ static int netif_local_xmit_active(struc
+ 	for (i = 0; i < dev->num_tx_queues; i++) {
+ 		struct netdev_queue *txq = netdev_get_tx_queue(dev, i);
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++		if (READ_ONCE(txq->xmit_lock_owner) == current)
++#else
+ 		if (READ_ONCE(txq->xmit_lock_owner) == smp_processor_id())
++#endif
+ 			return 1;
+ 	}
+ 
