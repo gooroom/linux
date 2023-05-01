@@ -56,7 +56,10 @@ fi
 
 profiles=nodoc,noudeb,pkg.linux.nosource,pkg.linux.notools
 
-dpkg-checkbuilddeps -P"$profiles"
+# Check build-dependencies early if possible
+if [ -f debian/control ]; then
+    dpkg-checkbuilddeps -P"$profiles"
+fi
 
 # Append 'a~test' to Debian version; this should be less than any official
 # successor and easily recognisable
@@ -72,7 +75,11 @@ alias quilt='quilt --quiltrc -'
 # Try to clean up any previous test patches
 if [ "$featureset" = none ]; then
     patchdir=debian/patches
-    while patch="$(quilt next 2>/dev/null || quilt top 2>/dev/null)" && \
+    while patch="$(quilt top 2>/dev/null)" && \
+	[ "${patch#test/}" != "$patch" ]; do
+        quilt pop -f
+    done
+    while patch="$(quilt next 2>/dev/null)" && \
 	[ "${patch#test/}" != "$patch" ]; do
         quilt delete -r "$patch"
     done
@@ -114,10 +121,13 @@ EOF
 fi
 
 # Regenerate control and included rules
-rm debian/control debian/rules.gen
+rm -f debian/control debian/rules.gen
 debian/rules debian/control-real && exit 1 || true
 test -f debian/control
 test -f debian/rules.gen
+
+# Check build-dependencies now that we know debian/control exists
+dpkg-checkbuilddeps -P"$profiles"
 
 # Clean up old build; apply existing patches for featureset
 debian/rules clean
