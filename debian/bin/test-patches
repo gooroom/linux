@@ -83,6 +83,14 @@ fi
 rm -rf $patchdir/test/
 mkdir $patchdir/test
 
+# Prepare a new directory for the config; override ABI name
+rm -rf debian/config.local
+mkdir debian/config.local
+cat >debian/config.local/defines <<EOF
+[abi]
+abiname: 0.a.test
+EOF
+
 # Regenerate control and included rules
 rm debian/control debian/rules.gen
 debian/rules debian/control-real && exit 1 || true
