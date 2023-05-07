@@ -1,9 +1,8 @@
-From 84facacc5994009491bb74f5bee0c8399540c9b5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 109/347] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 109/351] sched: Add saved_state for tasks blocked on sleeping
  locks
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=93ed8db7e6295b227c390bffa860f7e5e833d6e4
 
 Spinlocks are state preserving in !RT. RT changes the state when a
 task gets blocked on a lock. So we need to remember the state before
@@ -19,10 +18,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 36 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 5e2ec9c86b4b..1b2884889dd0 100644
+index d627469bab35..44a5e80481bb 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -600,6 +600,8 @@ struct task_struct {
+@@ -604,6 +604,8 @@ struct task_struct {
  #endif
  	/* -1 unrunnable, 0 runnable, >0 stopped: */
  	volatile long			state;
@@ -31,7 +30,7 @@ index 5e2ec9c86b4b..1b2884889dd0 100644
  
  	/*
  	 * This begins the randomizable portion of task_struct. Only
-@@ -1621,6 +1623,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
+@@ -1625,6 +1627,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
  
  extern int wake_up_state(struct task_struct *tsk, unsigned int state);
  extern int wake_up_process(struct task_struct *tsk);
@@ -40,7 +39,7 @@ index 5e2ec9c86b4b..1b2884889dd0 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 089779e18440..3ec69104d0e0 100644
+index 4763faddac6b..165df30aad7b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2002,8 +2002,27 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -103,6 +102,3 @@ index 55e695080fc6..637c408fb2dc 100644
  
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
--- 
-2.36.1
-

@@ -1,0 +1,37 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Thu, 1 Dec 2022 00:28:51 +0100
+Subject: efi: random: Properly limit the size of the random seed
+Forwarded: https://lore.kernel.org/stable/Y4fq5mGUbcKV8VwM@decadent.org.uk/T/
+
+Commit be36f9e7517e ("efi: READ_ONCE rng seed size before munmap")
+added a READ_ONCE() and also changed the call to
+add_bootloader_randomness() to use the local size variable.  Neither
+of these changes was actually needed and this was not backported to
+the 4.19 stable branch.
+
+Commit 161a438d730d ("efi: random: reduce seed size to 32 bytes")
+reverted the addition of READ_ONCE() and added a limit to the value of
+size.  This depends on the earlier commit, because size can now differ
+from seed->size, but it was wrongly backported to the 4.19 stable
+branch by itself.
+
+Apply the missing change to the add_bootloader_randomness() parameter
+(except that here we are still using add_device_randomness()).
+
+Fixes: 0513592520ae ("efi: random: reduce seed size to 32 bytes")
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+---
+ drivers/firmware/efi/efi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/firmware/efi/efi.c
++++ b/drivers/firmware/efi/efi.c
+@@ -570,7 +570,7 @@ int __init efi_config_parse_tables(void
+ 					      sizeof(*seed) + size);
+ 			if (seed != NULL) {
+ 				pr_notice("seeding entropy pool\n");
+-				add_device_randomness(seed->bits, seed->size);
++				add_device_randomness(seed->bits, size);
+ 				early_memunmap(seed, sizeof(*seed) + size);
+ 			} else {
+ 				pr_err("Could not map UEFI random seed!\n");

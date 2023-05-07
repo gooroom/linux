@@ -1,8 +1,7 @@
-From 977952ae9f00231e71587f8dc135949a2bed15e2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 107/347] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Subject: [PATCH 107/351] sched: Move mmdrop to RCU on RT
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f1fda01d66505c00694bf701fee98783bfd51188
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -84,7 +83,7 @@ index f5a4c42233f0..114ff9724b02 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4cc39856c4c6..676b9b213991 100644
+index a291133f169f..632999d01f73 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2734,9 +2734,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -102,7 +101,7 @@ index 4cc39856c4c6..676b9b213991 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -5603,6 +5607,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -5604,6 +5608,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -110,6 +109,3 @@ index 4cc39856c4c6..676b9b213991 100644
  /*
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
--- 
-2.36.1
-

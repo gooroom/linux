@@ -1,8 +1,7 @@
-From 8af466b69f15bf4b922703f7b7d6bba72f2ae86c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 031/347] timekeeping: Split jiffies seqlock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Subject: [PATCH 031/351] timekeeping: Split jiffies seqlock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a342f5aed55ec0615985281f556def2909aa3b11
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -136,10 +135,10 @@ index 48403fb653c2..e774a49176cc 100644
  	ts->timer_expires_base = basemono;
  
 diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
-index f246818e35db..2cc8a1e8e94f 100644
+index 087f71183c3f..3d41ca395dd1 100644
 --- a/kernel/time/timekeeping.c
 +++ b/kernel/time/timekeeping.c
-@@ -2392,8 +2392,10 @@ EXPORT_SYMBOL(hardpps);
+@@ -2407,8 +2407,10 @@ EXPORT_SYMBOL(hardpps);
   */
  void xtime_update(unsigned long ticks)
  {
@@ -166,6 +165,3 @@ index 141ab3ab0354..099737f6f10c 100644
  
  #define CS_NAME_LEN	32
  
--- 
-2.36.1
-

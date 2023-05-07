@@ -1,8 +1,7 @@
-From a21527d57f8b1d303be3a91b055080f68bd83448 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
-Subject: [PATCH 025/347] NFSv4: replace seqcount_t with a seqlock_t
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Subject: [PATCH 025/351] NFSv4: replace seqcount_t with a seqlock_t
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=94e5754505317d785d438d9fcf7e0130ed11b8f3
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -58,7 +57,7 @@ index 5ac7bf24c507..b15a7a2f64fe 100644
  };
  
 diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 759c834b60fd..256a4b0c4407 100644
+index f9f76594b866..7feb4c11471a 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
 @@ -2874,7 +2874,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
@@ -80,7 +79,7 @@ index 759c834b60fd..256a4b0c4407 100644
  	}
  
 diff --git a/fs/nfs/nfs4state.c b/fs/nfs/nfs4state.c
-index 30576a10a1f4..e0b94cbce3bf 100644
+index 5ab021f87ecf..f97c63038ff2 100644
 --- a/fs/nfs/nfs4state.c
 +++ b/fs/nfs/nfs4state.c
 @@ -516,7 +516,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
@@ -131,6 +130,3 @@ index 30576a10a1f4..e0b94cbce3bf 100644
  	return status;
  }
  
--- 
-2.36.1
-

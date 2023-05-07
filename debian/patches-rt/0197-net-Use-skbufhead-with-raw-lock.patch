@@ -1,8 +1,7 @@
-From 8c4af88efcc296bc2daa2be90fbea82190799883 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
-Subject: [PATCH 197/347] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Subject: [PATCH 197/351] net: Use skbufhead with raw lock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=619cb3448d91f55316735c1ca4725b7d8b3d73e3
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -53,7 +52,7 @@ index f97734f34746..3ede4f0eac10 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 315bdaf00ac8..c279375fa5b9 100644
+index add05f74ba38..8ea1c7347987 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -219,14 +219,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -96,8 +95,8 @@ index 315bdaf00ac8..c279375fa5b9 100644
  			/*
 @@ -6341,13 +6343,21 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)
  	unsigned long time_limit = jiffies +
- 		usecs_to_jiffies(netdev_budget_usecs);
- 	int budget = netdev_budget;
+ 		usecs_to_jiffies(READ_ONCE(netdev_budget_usecs));
+ 	int budget = READ_ONCE(netdev_budget);
 +	struct sk_buff_head tofree_q;
 +	struct sk_buff *skb;
  	LIST_HEAD(list);
@@ -143,6 +142,3 @@ index 315bdaf00ac8..c279375fa5b9 100644
  #ifdef CONFIG_XFRM_OFFLOAD
  		skb_queue_head_init(&sd->xfrm_backlog);
  #endif
--- 
-2.36.1
-

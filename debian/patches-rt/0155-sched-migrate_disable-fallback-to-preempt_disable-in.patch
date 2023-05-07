@@ -1,9 +1,8 @@
-From e85e95b0e59b7d493402419e3a63a06978a06452 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 155/347] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 155/351] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/4.19/older/patches-4.19.246-rt110.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=45c69023a6783aef1cdde83c05006953e80582b6
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
 anymore so it has almost no users. However the futex code has a workaround for
@@ -71,10 +70,10 @@ index 9eafc34898b4..ed8413e7140f 100644
  {
  	return 0;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4f8fcba23c1d..ceb3bdfb6bc4 100644
+index 08971062c194..3bc6b3206e14 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -667,7 +667,7 @@ struct task_struct {
+@@ -671,7 +671,7 @@ struct task_struct {
  	int				nr_cpus_allowed;
  	const cpumask_t			*cpus_ptr;
  	cpumask_t			cpus_mask;
@@ -83,7 +82,7 @@ index 4f8fcba23c1d..ceb3bdfb6bc4 100644
  	int				migrate_disable;
  	int				migrate_disable_update;
  # ifdef CONFIG_SCHED_DEBUG
-@@ -675,8 +675,8 @@ struct task_struct {
+@@ -679,8 +679,8 @@ struct task_struct {
  # endif
  
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
@@ -94,7 +93,7 @@ index 4f8fcba23c1d..ceb3bdfb6bc4 100644
  # endif
  #endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 555dea10764e..0c44c16244a1 100644
+index 22b49744a3d9..630e726acdd2 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1031,7 +1031,7 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -124,7 +123,7 @@ index 555dea10764e..0c44c16244a1 100644
  	if (__migrate_disabled(p)) {
  		p->migrate_disable_update = 1;
  		goto out;
-@@ -7204,7 +7204,7 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7205,7 +7205,7 @@ const u32 sched_prio_to_wmult[40] = {
  
  #undef CREATE_TRACE_POINTS
  
@@ -133,7 +132,7 @@ index 555dea10764e..0c44c16244a1 100644
  
  static inline void
  update_nr_migratory(struct task_struct *p, long delta)
-@@ -7352,45 +7352,44 @@ EXPORT_SYMBOL(migrate_enable);
+@@ -7353,45 +7353,44 @@ EXPORT_SYMBOL(migrate_enable);
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  void migrate_disable(void)
  {
@@ -199,6 +198,3 @@ index dc3f3e6fa0bd..169b98c12da7 100644
  	P(migrate_disable);
  #endif
  	P(nr_cpus_allowed);
--- 
-2.36.1
-
