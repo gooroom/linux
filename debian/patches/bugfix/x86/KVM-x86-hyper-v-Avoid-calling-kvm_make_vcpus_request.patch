@@ -1,0 +1,53 @@
+From: Vitaly Kuznetsov <vkuznets@redhat.com>
+Date: Fri, 3 Sep 2021 09:51:36 +0200
+Subject: KVM: x86: hyper-v: Avoid calling kvm_make_vcpus_request_mask() with
+ vcpu_mask==NULL
+Origin: https://git.kernel.org/linus/6470accc7ba948b0b3aca22b273fe84ec638a116
+Bug-Debian: https://bugs.debian.org/1035779
+
+In preparation to making kvm_make_vcpus_request_mask() use for_each_set_bit()
+switch kvm_hv_flush_tlb() to calling kvm_make_all_cpus_request() for 'all cpus'
+case.
+
+Note: kvm_make_all_cpus_request() (unlike kvm_make_vcpus_request_mask())
+currently dynamically allocates cpumask on each call and this is suboptimal.
+Both kvm_make_all_cpus_request() and kvm_make_vcpus_request_mask() are
+going to be switched to using pre-allocated per-cpu masks.
+
+Reviewed-by: Sean Christopherson <seanjc@google.com>
+Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+Message-Id: <20210903075141.403071-4-vkuznets@redhat.com>
+Signed-off-by: Paolo Bonzini <pbonzini@redhat.com>
+---
+ arch/x86/kvm/hyperv.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+--- a/arch/x86/kvm/hyperv.c
++++ b/arch/x86/kvm/hyperv.c
+@@ -1562,16 +1562,19 @@ static u64 kvm_hv_flush_tlb(struct kvm_v
+ 
+ 	cpumask_clear(&hv_vcpu->tlb_flush);
+ 
+-	vcpu_mask = all_cpus ? NULL :
+-		sparse_set_to_vcpu_mask(kvm, sparse_banks, valid_bank_mask,
+-					vp_bitmap, vcpu_bitmap);
+-
+ 	/*
+ 	 * vcpu->arch.cr3 may not be up-to-date for running vCPUs so we can't
+ 	 * analyze it here, flush TLB regardless of the specified address space.
+ 	 */
+-	kvm_make_vcpus_request_mask(kvm, KVM_REQ_TLB_FLUSH_GUEST,
+-				    NULL, vcpu_mask, &hv_vcpu->tlb_flush);
++	if (all_cpus) {
++		kvm_make_all_cpus_request(kvm, KVM_REQ_TLB_FLUSH_GUEST);
++	} else {
++		vcpu_mask = sparse_set_to_vcpu_mask(kvm, sparse_banks, valid_bank_mask,
++						    vp_bitmap, vcpu_bitmap);
++
++		kvm_make_vcpus_request_mask(kvm, KVM_REQ_TLB_FLUSH_GUEST,
++					    NULL, vcpu_mask, &hv_vcpu->tlb_flush);
++	}
+ 
+ ret_success:
+ 	/* We always do full TLB flush, set rep_done = rep_cnt. */
