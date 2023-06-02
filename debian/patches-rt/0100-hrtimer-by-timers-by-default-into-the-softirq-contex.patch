@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 100/353] hrtimer: by timers by default into the softirq
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6117abca429d5fae96db4e3437aa1d6f818fe1d2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f29c49b257f3002eb54b6303ac0fc6551f3180b2
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -65,7 +65,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 668e5492e4c4..f374d3a250eb 100644
+index 2bf4b6b109bf..69524886cc89 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -206,10 +206,10 @@ index a836efd34589..c50e8f3262de 100644
  	clockevents_register_device(&ce_broadcast_hrtimer);
  }
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index e774a49176cc..012bc81879bf 100644
+index 0491c4c4a5cf..721e70e1f0b9 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -1314,7 +1314,7 @@ void tick_setup_sched_timer(void)
+@@ -1326,7 +1326,7 @@ void tick_setup_sched_timer(void)
  	/*
  	 * Emulate tick processing via per-CPU hrtimers:
  	 */

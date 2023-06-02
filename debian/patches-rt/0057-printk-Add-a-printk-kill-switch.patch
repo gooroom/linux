@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 22 Jul 2011 17:58:40 +0200
 Subject: [PATCH 057/353] printk: Add a printk kill switch
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f062ada5016529787b9a1fce14332b05eee8df10
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=41266168d2081efb4dce1f66cceb696bd642a639
 
 Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
 it does not dead-lock with the early printk code.
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 71 insertions(+), 20 deletions(-)
 
 diff --git a/include/linux/printk.h b/include/linux/printk.h
-index 6dd867e39365..b9d050428456 100644
+index f4d7e643f010..586be4c5df96 100644
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
 @@ -140,9 +140,11 @@ struct va_format {
