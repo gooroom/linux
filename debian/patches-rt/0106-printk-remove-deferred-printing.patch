@@ -1,8 +1,8 @@
-From 342f18d74bb76c62740d9937ac7efe2303fd5de7 Mon Sep 17 00:00:00 2001
+From 5a3dabdd94ea50ae94df7b017649006d761a1d54 Mon Sep 17 00:00:00 2001
 From: John Ogness <john.ogness@linutronix.de>
 Date: Mon, 30 Nov 2020 01:42:08 +0106
 Subject: [PATCH 106/321] printk: remove deferred printing
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.180-rt88.tar.xz
 
 Since printing occurs either atomically or from the printing
 kthread, there is no need for any deferring or tracking possible
@@ -73,7 +73,7 @@ index 754f67ac4326a..c35b71f8644aa 100644
  		lockdep_on();					\
  	} while (0)
 diff --git a/include/linux/printk.h b/include/linux/printk.h
-index 1ebd93581acc1..153212445b681 100644
+index 3738374e2b3bc..410435ac15ea1 100644
 --- a/include/linux/printk.h
 +++ b/include/linux/printk.h
 @@ -155,18 +155,6 @@ static inline __printf(1, 2) __cold
@@ -408,10 +408,10 @@ index c23b127a65459..0000000000000
 -	return vprintk_default(fmt, args);
 -}
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index b263845f10aff..3cc8b6433f9ae 100644
+index 99245487351b0..10d0bf73ba611 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -9348,7 +9348,6 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
+@@ -9349,7 +9349,6 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
  	tracing_off();
  
  	local_irq_save(flags);
@@ -419,7 +419,7 @@ index b263845f10aff..3cc8b6433f9ae 100644
  
  	/* Simulate the iterator */
  	trace_init_global_iter(&iter);
-@@ -9428,7 +9427,6 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
+@@ -9429,7 +9428,6 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
  		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
  	}
  	atomic_dec(&dump_running);
@@ -428,5 +428,5 @@ index b263845f10aff..3cc8b6433f9ae 100644
  }
  EXPORT_SYMBOL_GPL(ftrace_dump);
 -- 
-2.39.2
+2.40.1
 

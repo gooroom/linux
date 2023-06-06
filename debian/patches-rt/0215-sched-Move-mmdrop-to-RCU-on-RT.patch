@@ -1,8 +1,8 @@
-From 4d3f26ea9bef39cd0657fcd5eebda14d1e578a7d Mon Sep 17 00:00:00 2001
+From a905f5cebce56b78555e70a78f5246a62dadee50 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 215/321] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.180-rt88.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -60,10 +60,10 @@ index e3e5e149b00e6..6d39ad0f55bb9 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index dd09cd8bcd186..4194c256f51e8 100644
+index 58fc874f9f3b7..78efb94a35e83 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -688,6 +688,19 @@ void __mmdrop(struct mm_struct *mm)
+@@ -691,6 +691,19 @@ void __mmdrop(struct mm_struct *mm)
  }
  EXPORT_SYMBOL_GPL(__mmdrop);
  
@@ -84,10 +84,10 @@ index dd09cd8bcd186..4194c256f51e8 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 47066d5b9dfc5..80149c7d4bbd0 100644
+index 4c38711336399..6be3bae150c0a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -4266,9 +4266,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -4269,9 +4269,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	 *   provided by mmdrop(),
  	 * - a sync_core for SYNC_CORE.
  	 */
@@ -102,7 +102,7 @@ index 47066d5b9dfc5..80149c7d4bbd0 100644
  	}
  	if (unlikely(prev_state == TASK_DEAD)) {
  		if (prev->sched_class->task_dead)
-@@ -7266,6 +7270,7 @@ void sched_setnuma(struct task_struct *p, int nid)
+@@ -7269,6 +7273,7 @@ void sched_setnuma(struct task_struct *p, int nid)
  #endif /* CONFIG_NUMA_BALANCING */
  
  #ifdef CONFIG_HOTPLUG_CPU
@@ -111,5 +111,5 @@ index 47066d5b9dfc5..80149c7d4bbd0 100644
   * Ensure that the idle task is using init_mm right before its CPU goes
   * offline.
 -- 
-2.39.2
+2.40.1
 
