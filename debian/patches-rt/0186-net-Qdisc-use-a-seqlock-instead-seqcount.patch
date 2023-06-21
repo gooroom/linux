@@ -1,8 +1,8 @@
-From c75630ee743346b8bb8a10ace88f90d51e474f83 Mon Sep 17 00:00:00 2001
+From 33e080cf38110da47ba572cc1f898dfa0cfb74df Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 186/321] net/Qdisc: use a seqlock instead seqcount
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.180-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -99,7 +99,7 @@ index 0000000000000..95a497a72e511
 +
 +#endif
 diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index 61cd19ee51f4e..7b67ea962dbd1 100644
+index a62677be74528..8ce663a9b4f45 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -10,6 +10,7 @@
@@ -250,10 +250,10 @@ index e491b083b3485..ef432cea2e105 100644
  			 struct gnet_stats_basic_cpu __percpu *cpu,
  			 struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 54e2309315eb5..ca72dffaa71df 100644
+index 2084724c36ad3..27800140a19ff 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1270,7 +1270,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+@@ -1275,7 +1275,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
  		rcu_assign_pointer(sch->stab, stab);
  	}
  	if (tca[TCA_RATE]) {
@@ -295,5 +295,5 @@ index ecdd9e83f2f49..73b5aa7976458 100644
  	sch->ops = ops;
  	sch->flags = ops->static_flags;
 -- 
-2.40.1
+2.41.0
 

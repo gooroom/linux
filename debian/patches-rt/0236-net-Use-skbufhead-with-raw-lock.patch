@@ -1,8 +1,8 @@
-From f7be8620b91b8ce2551ef64e27cef2024d24f1f9 Mon Sep 17 00:00:00 2001
+From 890dc0dfe9d31613849e910daf3763f5383bc0e0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
 Subject: [PATCH 236/321] net: Use skbufhead with raw lock
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.180-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -40,7 +40,7 @@ index a210f19958621..af89bd5e7d568 100644
  		struct lock_class_key *class)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 2a93f0007adf9..dce452ca559d0 100644
+index 8ae9c1f233cc5..d074ac15d547f 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -221,14 +221,14 @@ static inline struct hlist_head *dev_index_hash(struct net *net, int ifindex)
@@ -60,7 +60,7 @@ index 2a93f0007adf9..dce452ca559d0 100644
  #endif
  }
  
-@@ -11294,7 +11294,7 @@ static int __init net_dev_init(void)
+@@ -11298,7 +11298,7 @@ static int __init net_dev_init(void)
  
  		INIT_WORK(flush, flush_backlog);
  
@@ -70,5 +70,5 @@ index 2a93f0007adf9..dce452ca559d0 100644
  #ifdef CONFIG_XFRM_OFFLOAD
  		skb_queue_head_init(&sd->xfrm_backlog);
 -- 
-2.40.1
+2.41.0
 

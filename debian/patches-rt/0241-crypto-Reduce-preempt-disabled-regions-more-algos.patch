@@ -1,8 +1,8 @@
-From 028ee5cd34ce4ab9ae0ea1de9678e06191a6f44b Mon Sep 17 00:00:00 2001
+From 812a15798286f6ec35497558119b2297ff01b73a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 21 Feb 2014 17:24:04 +0100
 Subject: [PATCH 241/321] crypto: Reduce preempt disabled regions, more algos
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.180-rt88.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
 
 Don Estabrook reported
 | kernel: WARNING: CPU: 2 PID: 858 at kernel/sched/core.c:2428 migrate_disable+0xed/0x100()
@@ -34,7 +34,6 @@ I shorten the FPU off region and ensure blkcipher_walk_done() is called
 with preemption enabled. This might hurt the performance because we now
 enable/disable the FPU state more often but we gain lower latency and
 the bug is gone.
-
 
 Reported-by: Don Estabrook <don.estabrook@gmail.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -237,5 +236,5 @@ index d3d91a0abf88f..6d07747215147 100644
  		nbytes = walk.nbytes;
  	}
 -- 
-2.40.1
+2.41.0
 
