@@ -135,11 +135,13 @@ Kernel config files
 ===================
 
 Each kernel configuration file is constructed dynamically from a
-number of files under debian/config.  They are read in the following
-order, such that files later on the list can override settings from
-earlier files.  Most of the files are optional and the filenames can
-generally be overridden by explicit lists (possibly empty) specified
-in the 'defines' files.
+number of files under debian/config and (if it exists)
+debian/config.local.  They are read in the following order, such that
+files later on the list can override settings from earlier files.
+Files in debian/config.local can also override settings from the
+corresponding file in debian/config.  Most of the files are optional
+and the filenames can generally be overridden by explicit lists
+(possibly empty) specified in the 'defines' files.
 
 1. Common:
    - Default filename: config
@@ -251,8 +253,11 @@ Several build profiles are understood and supported:
   produces only the linux-libc-dev package and has no host
   build-dependencies.
 - nodoc: Exclude most documentation
+- noudeb: Exclude installer udeb packages
 - pkg.linux.notools: Exclude userland tool packages (linux-kbuild-<version>,
   linux-perf-<version>, etc.)
+- pkg.linux.mintools: Build minimal set of userland tool packages
+  (linux-kbuild-<version>, linux-bootwrapper-<abiname> on powerpc/ppc64)
 - pkg.linux.nokernel: Exclude kernel image and header packages
 - pkg.linux.nosource: Exclude source binary package (linux-source-<version>)
 - cross: Needed when cross-building.  Currently this must be used together

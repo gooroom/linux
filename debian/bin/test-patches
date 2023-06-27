@@ -6,7 +6,7 @@ shopt -s extglob
 # Set defaults from the running kernel
 arch="$(dpkg --print-architecture)"
 kernelabi="$(uname -r)"
-ff="${kernelabi#+([^-])-@(trunk|?(rc)+([0-9])|+([0-9]).bpo.+([0-9]))-}"
+ff="${kernelabi#+([^-])-@(trunk|?(rc)+([0-9])|0.@(bpo|deb+([0-9])).+([0-9]))-}"
 if [ "x$ff" != "x$kernelabi" ]; then
     flavour="${ff#@(openvz|rt|vserver|xen)-}"
     if [ "x$flavour" != "x$ff" ]; then
@@ -19,13 +19,15 @@ else
     featureset=none
 fi
 
+dbginfo=
 fuzz=0
 jobs=$(nproc)
 
-eval "set -- $(getopt -n "$0" -o "f:j:s:" -l "fuzz:" -- "$@")"
+eval "set -- $(getopt -n "$0" -o "f:gj:s:" -l "fuzz:" -- "$@")"
 while true; do
     case "$1" in
 	-f) flavour="$2"; shift 2 ;;
+	-g) dbginfo=y; shift 1 ;;
 	-j) jobs="$2"; shift 2 ;;
 	-s) featureset="$2"; shift 2 ;;
 	--fuzz) fuzz="$2"; shift 2;;
@@ -38,6 +40,7 @@ if [ $# -lt 1 ]; then
     cat >&2 <<EOF
 Options:
      -f <flavour>     specify the 'flavour' of kernel to build, e.g. 686-pae
+     -g               enable debug info
      -j <jobs>        specify number of compiler jobs to run in parallel
                       (default: number of available processors)
      -s <featureset>  specify an optional featureset to apply, e.g. rt
@@ -51,10 +54,12 @@ if [ -z "$flavour" ]; then
     exit 2
 fi
 
-export DEB_BUILD_PROFILES=pkg.linux.notools
-export MAKEFLAGS="$MAKEFLAGS -j$jobs"
+profiles=nodoc,noudeb,pkg.linux.nosource,pkg.linux.mintools
 
-dpkg-checkbuilddeps -B
+# Check build-dependencies early if possible
+if [ -f debian/control ]; then
+    dpkg-checkbuilddeps -P"$profiles"
+fi
 
 # Append 'a~test' to Debian version; this should be less than any official
 # successor and easily recognisable
@@ -70,7 +75,11 @@ alias quilt='quilt --quiltrc -'
 # Try to clean up any previous test patches
 if [ "$featureset" = none ]; then
     patchdir=debian/patches
-    while patch="$(quilt next 2>/dev/null || quilt top 2>/dev/null)" && \
+    while patch="$(quilt top 2>/dev/null)" && \
+	[ "${patch#test/}" != "$patch" ]; do
+        quilt pop -f
+    done
+    while patch="$(quilt next 2>/dev/null)" && \
 	[ "${patch#test/}" != "$patch" ]; do
         quilt delete -r "$patch"
     done
@@ -83,11 +92,42 @@ fi
 rm -rf $patchdir/test/
 mkdir $patchdir/test
 
+# Prepare a new directory for the config; override ABI name, featuresets, flavours
+rm -rf debian/config.local
+mkdir debian/config.local debian/config.local/"$arch" debian/config.local/"$arch"/"$featureset"
+cat >debian/config.local/defines <<EOF
+[abi]
+abiname: 0.a.test
+EOF
+if [ -z "$dbginfo" ]; then
+    cat >>debian/config.local/defines <<EOF
+[build]
+debug-info: false
+EOF
+fi
+cat >debian/config.local/"$arch"/defines <<EOF
+[base]
+featuresets: $featureset
+EOF
+cat >debian/config.local/"$arch"/"$featureset"/defines <<EOF
+[base]
+flavours: $flavour
+EOF
+if [ "$featureset" = none ]; then
+    # default-flavour must refer to a flavour that's enabled
+    cat >>debian/config.local/"$arch"/"$featureset"/defines <<EOF
+default-flavour: $flavour
+EOF
+fi
+
 # Regenerate control and included rules
-rm debian/control debian/rules.gen
+rm -f debian/control debian/rules.gen
 debian/rules debian/control-real && exit 1 || true
 test -f debian/control
 test -f debian/rules.gen
+
+# Check build-dependencies now that we know debian/control exists
+dpkg-checkbuilddeps -P"$profiles"
 
 # Clean up old build; apply existing patches for featureset
 debian/rules clean
@@ -102,4 +142,4 @@ for patch in "$@"; do
 done
 
 # Build selected binaries
-fakeroot make -f debian/rules.gen binary-arch_"$arch"_"$featureset"_"$flavour"
+dpkg-buildpackage -b -P"$profiles" -j"$jobs" -nc -uc
