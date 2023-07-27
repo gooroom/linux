@@ -1,0 +1,52 @@
+From: Pablo Neira Ayuso <pablo@netfilter.org>
+Date: Mon, 25 Jan 2021 23:19:17 +0100
+Subject: netfilter: nftables: statify nft_parse_register()
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=f19a4818a92ae0d998df221f554be33c3224eee9
+
+commit 08a01c11a5bb3de9b0a9c9b2685867e50eda9910 upstream.
+
+This function is not used anymore by any extension, statify it.
+
+Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ include/net/netfilter/nf_tables.h | 1 -
+ net/netfilter/nf_tables_api.c     | 3 +--
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/include/net/netfilter/nf_tables.h b/include/net/netfilter/nf_tables.h
+index 564fbe0c865f..030237f3d82a 100644
+--- a/include/net/netfilter/nf_tables.h
++++ b/include/net/netfilter/nf_tables.h
+@@ -205,7 +205,6 @@ static inline enum nft_registers nft_type_to_reg(enum nft_data_types type)
+ }
+ 
+ int nft_parse_u32_check(const struct nlattr *attr, int max, u32 *dest);
+-unsigned int nft_parse_register(const struct nlattr *attr);
+ int nft_dump_register(struct sk_buff *skb, unsigned int attr, unsigned int reg);
+ 
+ int nft_parse_register_load(const struct nlattr *attr, u8 *sreg, u32 len);
+diff --git a/net/netfilter/nf_tables_api.c b/net/netfilter/nf_tables_api.c
+index 92ea3332cdda..07807b397be2 100644
+--- a/net/netfilter/nf_tables_api.c
++++ b/net/netfilter/nf_tables_api.c
+@@ -8492,7 +8492,7 @@ EXPORT_SYMBOL_GPL(nft_parse_u32_check);
+  *	Registers used to be 128 bit wide, these register numbers will be
+  *	mapped to the corresponding 32 bit register numbers.
+  */
+-unsigned int nft_parse_register(const struct nlattr *attr)
++static unsigned int nft_parse_register(const struct nlattr *attr)
+ {
+ 	unsigned int reg;
+ 
+@@ -8504,7 +8504,6 @@ unsigned int nft_parse_register(const struct nlattr *attr)
+ 		return reg + NFT_REG_SIZE / NFT_REG32_SIZE - NFT_REG32_00;
+ 	}
+ }
+-EXPORT_SYMBOL_GPL(nft_parse_register);
+ 
+ /**
+  *	nft_dump_register - dump a register value to a netlink attribute
+-- 
+2.40.1
+
