@@ -19,8 +19,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 ---
  arch/x86/include/asm/mem_encrypt.h |    7 ++++---
  arch/x86/kernel/cpu/common.c       |   11 +++++++++++
- init/main.c                        |    3 ---
- 3 files changed, 15 insertions(+), 6 deletions(-)
+ init/main.c                        |   11 -----------
+ 3 files changed, 15 insertions(+), 14 deletions(-)
 
 --- a/arch/x86/include/asm/mem_encrypt.h
 +++ b/arch/x86/include/asm/mem_encrypt.h
@@ -94,3 +94,18 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  void __init __weak poking_init(void) { }
  
  void __init __weak pgtable_cache_init(void) { }
+@@ -992,14 +989,6 @@ asmlinkage __visible void __init __no_sa
+ 	 */
+ 	locking_selftest();
+ 
+-	/*
+-	 * This needs to be called before any devices perform DMA
+-	 * operations that might use the SWIOTLB bounce buffers. It will
+-	 * mark the bounce buffers as decrypted so that their usage will
+-	 * not cause "plain-text" data to be decrypted when accessed.
+-	 */
+-	mem_encrypt_init();
+-
+ #ifdef CONFIG_BLK_DEV_INITRD
+ 	if (initrd_start && !initrd_below_start_ok &&
+ 	    page_to_pfn(virt_to_page((void *)initrd_start)) < min_low_pfn) {
