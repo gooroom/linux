@@ -1,8 +1,8 @@
-From a3d414a38b403820ce1ffa0883e354ff9dfe2728 Mon Sep 17 00:00:00 2001
+From fd7c41cc3352e02741ceace3e23c54308ea5647a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
 Subject: [PATCH 215/321] sched: Move mmdrop to RCU on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 34 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index 4eb38918da8f8..2a83d965b00e1 100644
+index 4eb38918da8f..2a83d965b00e 100644
 --- a/include/linux/mm_types.h
 +++ b/include/linux/mm_types.h
 @@ -12,6 +12,7 @@
@@ -38,7 +38,7 @@ index 4eb38918da8f8..2a83d965b00e1 100644
  		atomic_long_t hugetlb_usage;
  #endif
 diff --git a/include/linux/sched/mm.h b/include/linux/sched/mm.h
-index e3e5e149b00e6..6d39ad0f55bb9 100644
+index e3e5e149b00e..6d39ad0f55bb 100644
 --- a/include/linux/sched/mm.h
 +++ b/include/linux/sched/mm.h
 @@ -49,6 +49,17 @@ static inline void mmdrop(struct mm_struct *mm)
@@ -60,7 +60,7 @@ index e3e5e149b00e6..6d39ad0f55bb9 100644
   * mmget() - Pin the address space associated with a &struct mm_struct.
   * @mm: The address space to pin.
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 58fc874f9f3b7..78efb94a35e83 100644
+index 58fc874f9f3b..78efb94a35e8 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -691,6 +691,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -84,7 +84,7 @@ index 58fc874f9f3b7..78efb94a35e83 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4c38711336399..6be3bae150c0a 100644
+index 4c3871133639..6be3bae150c0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4269,9 +4269,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)

@@ -1,9 +1,9 @@
-From 434b891d70396220aee67c09073c2b498d638abc Mon Sep 17 00:00:00 2001
+From 419a8dd88ddb3a158970b749e363c6bd4adf06d7 Mon Sep 17 00:00:00 2001
 From: Valentin Schneider <valentin.schneider@arm.com>
 Date: Fri, 23 Oct 2020 12:12:16 +0200
 Subject: [PATCH 019/321] sched: Deny self-issued __set_cpus_allowed_ptr() when
  migrate_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
   migrate_disable();
   set_cpus_allowed_ptr(current, {something excluding task_cpu(current)});
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 11a0ccf6fad7f..6d5e8249c6532 100644
+index 11a0ccf6fad7..6d5e8249c653 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2254,8 +2254,17 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,

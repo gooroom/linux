@@ -1,8 +1,8 @@
-From d9478f4a07fa957014ad0c2b6c2f9cff144ca7d0 Mon Sep 17 00:00:00 2001
+From 17eede62892f3b6047177db09638afd98fe81392 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 230/321] block/mq: do not invoke preempt_disable()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.184-rt90.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 preempt_disable() and get_cpu() don't play well together with the sleeping
 locks it tries to allocate later.
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index a6618bf45992d..37466b3a4ba57 100644
+index a6618bf45992..37466b3a4ba5 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -1575,14 +1575,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
