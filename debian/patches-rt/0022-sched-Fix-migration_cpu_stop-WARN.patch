@@ -1,8 +1,8 @@
-From 0f67a475c2dbdf5c908c363d1c0c91a1e9241dc6 Mon Sep 17 00:00:00 2001
+From 0dd5228465770beee6b05130d48fa7ec831fe1a7 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Tue, 17 Nov 2020 12:14:51 +0100
 Subject: [PATCH 022/321] sched: Fix migration_cpu_stop() WARN
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 Oleksandr reported hitting the WARN in the 'task_rq(p) != rq' branch
 of migration_cpu_stop(). Valentin noted that using cpu_of(rq) in that
@@ -21,10 +21,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 22cc308fa4ac4..6122cd8cfbf13 100644
+index 3b04a39f99b0..949733522a7f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1926,7 +1926,7 @@ static int migration_cpu_stop(void *data)
+@@ -1929,7 +1929,7 @@ static int migration_cpu_stop(void *data)
  			 * and we should be valid again. Nothing to do.
  			 */
  			if (!pending) {
@@ -33,7 +33,7 @@ index 22cc308fa4ac4..6122cd8cfbf13 100644
  				goto out;
  			}
  
-@@ -1954,7 +1954,7 @@ static int migration_cpu_stop(void *data)
+@@ -1957,7 +1957,7 @@ static int migration_cpu_stop(void *data)
  		 * valid again. Nothing to do.
  		 */
  		if (!pending) {
@@ -43,5 +43,5 @@ index 22cc308fa4ac4..6122cd8cfbf13 100644
  		}
  
 -- 
-2.39.2
+2.41.0
 

@@ -1,8 +1,8 @@
-From e9435e0da8a68b6d095fe0d00b4ae5fba37a8450 Mon Sep 17 00:00:00 2001
+From a2b0f720a1da96e338ff129067929613bd9e5ae8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Mar 2021 09:42:15 +0100
 Subject: [PATCH 143/321] PCI: hv: Use tasklet_disable_in_atomic()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 The hv_compose_msi_msg() callback in irq_chip::irq_compose_msi_msg is
 invoked via irq_chip_compose_msi_msg(), which itself is always invoked from
@@ -29,10 +29,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/drivers/pci/controller/pci-hyperv.c b/drivers/pci/controller/pci-hyperv.c
-index 4353443b89d81..03e2569da934d 100644
+index 2d6c77dcc815..7daba964f54e 100644
 --- a/drivers/pci/controller/pci-hyperv.c
 +++ b/drivers/pci/controller/pci-hyperv.c
-@@ -1522,7 +1522,7 @@ static void hv_compose_msi_msg(struct irq_data *data, struct msi_msg *msg)
+@@ -1518,7 +1518,7 @@ static void hv_compose_msi_msg(struct irq_data *data, struct msi_msg *msg)
  	 * Prevents hv_pci_onchannelcallback() from running concurrently
  	 * in the tasklet.
  	 */
@@ -42,5 +42,5 @@ index 4353443b89d81..03e2569da934d 100644
  	/*
  	 * Since this function is called with IRQ locks held, can't
 -- 
-2.39.2
+2.41.0
 

@@ -1,9 +1,9 @@
-From 31a5fff0acceee8121284f3109609969de57c5a3 Mon Sep 17 00:00:00 2001
+From b5fa9f19be6c8143692264492a1917825319b6f4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Mar 2021 09:42:16 +0100
 Subject: [PATCH 144/321] firewire: ohci: Use tasklet_disable_in_atomic() where
  required
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 tasklet_disable() is invoked in several places. Some of them are in atomic
 context which prevents a conversion of tasklet_disable() to a sleepable
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/firewire/ohci.c b/drivers/firewire/ohci.c
-index 9811c40956e54..17c9d825188bb 100644
+index 9811c40956e5..17c9d825188b 100644
 --- a/drivers/firewire/ohci.c
 +++ b/drivers/firewire/ohci.c
 @@ -2545,7 +2545,7 @@ static int ohci_cancel_packet(struct fw_card *card, struct fw_packet *packet)
@@ -57,5 +57,5 @@ index 9811c40956e54..17c9d825188bb 100644
  	if (!test_and_set_bit_lock(0, &ctx->flushing_completions)) {
  		context_tasklet((unsigned long)&ctx->context);
 -- 
-2.39.2
+2.41.0
 

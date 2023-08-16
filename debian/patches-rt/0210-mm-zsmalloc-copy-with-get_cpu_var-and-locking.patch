@@ -1,8 +1,8 @@
-From e874409f9b460c97d659eea7d1f0eb602680551a Mon Sep 17 00:00:00 2001
+From 2b7661975999a37c360b1c3a74075ac386f7d0bf Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Tue, 22 Mar 2016 11:16:09 +0100
 Subject: [PATCH 210/321] mm/zsmalloc: copy with get_cpu_var() and locking
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 get_cpu_var() disables preemption and triggers a might_sleep() splat later.
 This is replaced with get_locked_var().
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 79 insertions(+), 6 deletions(-)
 
 diff --git a/mm/zsmalloc.c b/mm/zsmalloc.c
-index c18dc8e61d352..7dad2ff3e7785 100644
+index c18dc8e61d35..7dad2ff3e778 100644
 --- a/mm/zsmalloc.c
 +++ b/mm/zsmalloc.c
 @@ -57,6 +57,7 @@
@@ -208,5 +208,5 @@ index c18dc8e61d352..7dad2ff3e7785 100644
  	migrate_read_unlock(zspage);
  	unpin_tag(handle);
 -- 
-2.39.2
+2.41.0
 

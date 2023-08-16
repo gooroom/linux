@@ -1,9 +1,9 @@
-From 25b5a22f7e9106c078def213ad58a81ffe0190e8 Mon Sep 17 00:00:00 2001
+From e6bf7882f64d06e61fe82d76690b1d400b0efe57 Mon Sep 17 00:00:00 2001
 From: Valentin Schneider <valentin.schneider@arm.com>
 Date: Fri, 13 Nov 2020 11:24:14 +0000
 Subject: [PATCH 023/321] sched/core: Add missing completion for
  affine_move_task() waiters
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 Qian reported that some fuzzer issuing sched_setaffinity() ends up stuck on
 a wait_for_completion(). The problematic pattern seems to be:
@@ -44,10 +44,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 12 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 6122cd8cfbf13..7d0b726f0ace6 100644
+index 949733522a7f..f763c4225f78 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1938,7 +1938,7 @@ static int migration_cpu_stop(void *data)
+@@ -1941,7 +1941,7 @@ static int migration_cpu_stop(void *data)
  		else
  			p->wake_cpu = dest_cpu;
  
@@ -56,7 +56,7 @@ index 6122cd8cfbf13..7d0b726f0ace6 100644
  		/*
  		 * This happens when we get migrated between migrate_enable()'s
  		 * preempt_enable() and scheduling the stopper task. At that
-@@ -1948,6 +1948,17 @@ static int migration_cpu_stop(void *data)
+@@ -1951,6 +1951,17 @@ static int migration_cpu_stop(void *data)
  		 * more likely.
  		 */
  
@@ -75,5 +75,5 @@ index 6122cd8cfbf13..7d0b726f0ace6 100644
  		 * When this was migrate_enable() but we no longer have an
  		 * @pending, a concurrent SCA 'fixed' things and we should be
 -- 
-2.39.2
+2.41.0
 

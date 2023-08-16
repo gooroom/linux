@@ -1,8 +1,8 @@
-From eb60b12e7cf61d52363a25011c80d66fea3923af Mon Sep 17 00:00:00 2001
+From 009ff9217bea8078ee3ad34887555f7317c9faac Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 23 Jan 2021 21:10:27 +0100
 Subject: [PATCH 065/321] blk-mq: Use llist_head for blk_cpu_done
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 With llist_head it is possible to avoid the locking (the irq-off region)
 when items are added. This makes it possible to add items on a remote
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 44 insertions(+), 59 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 87dcb2a21dc80..8f4324cb9c3f5 100644
+index 87b8377a74fc..a6618bf45992 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -41,7 +41,7 @@
@@ -184,7 +184,7 @@ index 87dcb2a21dc80..8f4324cb9c3f5 100644
  
  	cpuhp_setup_state_nocalls(CPUHP_BLOCK_SOFTIRQ_DEAD,
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 98fdf5a31fd66..b35193aec5e34 100644
+index 98fdf5a31fd6..b35193aec5e3 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -161,7 +161,7 @@ struct request {
@@ -197,5 +197,5 @@ index 98fdf5a31fd66..b35193aec5e34 100644
  
  	/*
 -- 
-2.39.2
+2.41.0
 
