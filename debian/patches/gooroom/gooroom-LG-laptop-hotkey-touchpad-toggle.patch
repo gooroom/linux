@@ -1,0 +1,82 @@
+From cdb652215ee3004a08a676f1ede3d120c99281ac Mon Sep 17 00:00:00 2001
+From: "mike.seo" <mike.seo@lge.com>
+Date: Fri, 14 Oct 2022 10:48:06 +0900
+Subject: [PATCH] LG laptop hotkey-touchpad toggle
+---
+ drivers/input/keyboard/atkbd.c   | 20 ++++++++++++++++++--
+ drivers/platform/x86/lg-laptop.c |  1 -
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+diff --git a/drivers/input/keyboard/atkbd.c b/drivers/input/keyboard/atkbd.c
+index d4131236d18c..810c9ada8b22 100644
+--- a/drivers/input/keyboard/atkbd.c
++++ b/drivers/input/keyboard/atkbd.c
+@@ -157,6 +157,8 @@ static const unsigned short atkbd_unxlate_table[128] = {
+ #define ATKBD_RET_RELEASE	0xf0
+ #define ATKBD_RET_HANJA		0xf1
+ #define ATKBD_RET_HANGEUL	0xf2
++#define ATKBD_RET_TOUCHPAD	0x76
++#define ATKBD_KEY_F21		0x80
+ #define ATKBD_RET_ERR		0xff
+ 
+ #define ATKBD_KEY_UNKNOWN	0
+@@ -251,6 +253,7 @@ static unsigned int (*atkbd_platform_scancode_fixup)(struct atkbd *, unsigned in
+  * to many commands until full reset (ATKBD_CMD_RESET_BAT) is performed.
+  */
+ static bool atkbd_skip_deactivate;
++static bool lg_laptop;
+ 
+ static ssize_t atkbd_attr_show_helper(struct device *dev, char *buf,
+ 				ssize_t (*handler)(struct atkbd *, char *));
+@@ -480,9 +483,14 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
+ 
+ 	if (atkbd->emul && --atkbd->emul)
+ 		goto out;
+-
++	
+ 	keycode = atkbd->keycode[code];
+-
++	if(lg_laptop){
++		if ( code == ATKBD_RET_TOUCHPAD && atkbd->last == 0x1d
++	    && (jiffies + msecs_to_jiffies(dev->rep[REP_DELAY]) / 2 - atkbd->time < 10)) {
++			keycode=KEY_F21;
++		}
++	}
+ 	if (!(atkbd->release && test_bit(code, atkbd->force_release_mask)))
+ 		if (keycode != ATKBD_KEY_NULL)
+ 			input_event(dev, EV_MSC, MSC_SCAN, code);
+@@ -1105,6 +1113,13 @@ static void atkbd_set_keycode_table(struct atkbd *atkbd)
+ 	scancode = atkbd_compat_scancode(atkbd, ATKBD_RET_HANJA);
+ 	atkbd->keycode[scancode] = KEY_HANJA;
+ 	__set_bit(scancode, atkbd->force_release_mask);
++ /*
++  * Fn+F5 generates KEY_F21
++ */
++	if(lg_laptop){
++		atkbd->keycode[ATKBD_KEY_F21]= KEY_F21;
++		__set_bit(ATKBD_RET_TOUCHPAD, atkbd->force_release_mask);
++	}
+ 
+ /*
+  * Perform additional fixups
+@@ -1732,6 +1747,7 @@ static int __init atkbd_setup_scancode_fixup(const struct dmi_system_id *id)
+ static int __init atkbd_deactivate_fixup(const struct dmi_system_id *id)
+ {
+ 	atkbd_skip_deactivate = true;
++	lg_laptop = true;
+ 	return 1;
+ }
+ 
+diff --git a/drivers/platform/x86/lg-laptop.c b/drivers/platform/x86/lg-laptop.c
+index 332868b140ed..d3c771d4dcbd 100644
+--- a/drivers/platform/x86/lg-laptop.c
++++ b/drivers/platform/x86/lg-laptop.c
+@@ -78,7 +78,6 @@ static enum led_brightness get_kbd_backlight_level(void);
+ 
+ static const struct key_entry wmi_keymap[] = {
+ 	{KE_KEY, 0x70, {KEY_F15} },	 /* LG control panel (F1) */
+-	{KE_KEY, 0x74, {KEY_F21} },	 /* Touchpad toggle (F5) */
+ 	{KE_KEY, 0xf020000, {KEY_F14} }, /* Read mode (F9) */
+ 	{KE_KEY, 0x10000000, {KEY_F16} },/* Keyboard backlight (F8) - pressing
+ 					  * this key both sends an event and
+-- 
+2.34.1

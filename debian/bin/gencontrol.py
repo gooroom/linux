@@ -585,14 +585,14 @@ class Gencontrol(Base):
                                     arch, featureset, flavour))
         makeflags['KCONFIG'] = ' '.join(kconfig)
         makeflags['KCONFIG_OPTIONS'] = ''
-        if build_signed:
-            makeflags['KCONFIG_OPTIONS'] += ' -o SECURITY_LOCKDOWN_LSM=y -o MODULE_SIG=y'
+        #if build_signed:
+        #    makeflags['KCONFIG_OPTIONS'] += ' -o SECURITY_LOCKDOWN_LSM=y -o MODULE_SIG=y'
         # Add "salt" to fix #872263
         makeflags['KCONFIG_OPTIONS'] += \
             ' -o "BUILD_SALT=\\"%(abiname)s%(localversion)s\\""' % vars
-        if config_entry_build.get('trusted-certs'):
-            makeflags['KCONFIG_OPTIONS'] += \
-                f' -o "SYSTEM_TRUSTED_KEYS=\\"${{CURDIR}}/{config_entry_build["trusted-certs"]}\\""'
+        #if config_entry_build.get('trusted-certs'):
+        #    makeflags['KCONFIG_OPTIONS'] += \
+        #        f' -o "SYSTEM_TRUSTED_KEYS=\\"${{CURDIR}}/{config_entry_build["trusted-certs"]}\\""'
 
         merged_config = ('debian/build/config.%s_%s_%s' %
                          (arch, featureset, flavour))

@@ -1,0 +1,102 @@
+From b644c95598adfe2b968e97daee3a890dd2fda84d Mon Sep 17 00:00:00 2001
+From: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+Date: Mon, 11 Jul 2022 19:51:25 +0800
+Subject: [PATCH] platform/x86: asus-wmi: Add mic-mute LED classdev support
+
+In some new ASUS devices, hotkey Fn+F13 is used for mic mute. If mic-mute
+LED is present by checking WMI ASUS_WMI_DEVID_MICMUTE_LED, we will add a
+mic-mute LED classdev, asus::micmute, in the asus-wmi driver to control
+it. The binding of mic-mute LED controls will be swithched with LED
+trigger.
+
+Signed-off-by: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+Link: https://lore.kernel.org/r/20220711115125.2072508-1-PaddyKP_Yao@asus.com
+Reviewed-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/platform/x86/Kconfig               |  2 ++
+ drivers/platform/x86/asus-wmi.c            | 25 ++++++++++++++++++++++
+ include/linux/platform_data/x86/asus-wmi.h |  1 +
+ 3 files changed, 28 insertions(+)
+
+diff --git a/drivers/platform/x86/Kconfig b/drivers/platform/x86/Kconfig
+index 7fa88efeef4da6..6a33c862452b49 100644
+--- a/drivers/platform/x86/Kconfig
++++ b/drivers/platform/x86/Kconfig
+@@ -273,6 +273,8 @@ config ASUS_WMI
+ 	select INPUT_SPARSEKMAP
+ 	select LEDS_CLASS
+ 	select NEW_LEDS
++	select LEDS_TRIGGERS
++	select LEDS_TRIGGER_AUDIO
+ 	select ACPI_PLATFORM_PROFILE
+ 	help
+ 	  Say Y here if you have a WMI aware Asus laptop (like Eee PCs or new
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 62ce198a34631d..89b604e04d7f65 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -208,6 +208,7 @@ struct asus_wmi {
+ 	int kbd_led_wk;
+ 	struct led_classdev lightbar_led;
+ 	int lightbar_led_wk;
++	struct led_classdev micmute_led;
+ 	struct workqueue_struct *led_workqueue;
+ 	struct work_struct tpd_led_work;
+ 	struct work_struct wlan_led_work;
+@@ -1028,12 +1029,23 @@ static enum led_brightness lightbar_led_get(struct led_classdev *led_cdev)
+ 	return result & ASUS_WMI_DSTS_LIGHTBAR_MASK;
+ }
+ 
++static int micmute_led_set(struct led_classdev *led_cdev,
++			   enum led_brightness brightness)
++{
++	int state = brightness != LED_OFF;
++	int err;
++
++	err = asus_wmi_set_devstate(ASUS_WMI_DEVID_MICMUTE_LED, state, NULL);
++	return err < 0 ? err : 0;
++}
++
+ static void asus_wmi_led_exit(struct asus_wmi *asus)
+ {
+ 	led_classdev_unregister(&asus->kbd_led);
+ 	led_classdev_unregister(&asus->tpd_led);
+ 	led_classdev_unregister(&asus->wlan_led);
+ 	led_classdev_unregister(&asus->lightbar_led);
++	led_classdev_unregister(&asus->micmute_led);
+ 
+ 	if (asus->led_workqueue)
+ 		destroy_workqueue(asus->led_workqueue);
+@@ -1105,6 +1117,19 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+ 					   &asus->lightbar_led);
+ 	}
+ 
++	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
++		asus->micmute_led.name = "asus::micmute";
++		asus->micmute_led.max_brightness = 1;
++		asus->micmute_led.brightness = ledtrig_audio_get(LED_AUDIO_MICMUTE);
++		asus->micmute_led.brightness_set_blocking = micmute_led_set;
++		asus->micmute_led.default_trigger = "audio-micmute";
++
++		rv = led_classdev_register(&asus->platform_device->dev,
++						&asus->micmute_led);
++		if (rv)
++			goto error;
++	}
++
+ error:
+ 	if (rv)
+ 		asus_wmi_led_exit(asus);
+diff --git a/include/linux/platform_data/x86/asus-wmi.h b/include/linux/platform_data/x86/asus-wmi.h
+index a571b47ff362f2..98f2b2f20f3e9a 100644
+--- a/include/linux/platform_data/x86/asus-wmi.h
++++ b/include/linux/platform_data/x86/asus-wmi.h
+@@ -49,6 +49,7 @@
+ #define ASUS_WMI_DEVID_LED4		0x00020014
+ #define ASUS_WMI_DEVID_LED5		0x00020015
+ #define ASUS_WMI_DEVID_LED6		0x00020016
++#define ASUS_WMI_DEVID_MICMUTE_LED		0x00040017
+ 
+ /* Backlight and Brightness */
+ #define ASUS_WMI_DEVID_ALS_ENABLE	0x00050001 /* Ambient Light Sensor */

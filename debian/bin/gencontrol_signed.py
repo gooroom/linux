@@ -198,7 +198,7 @@ class Gencontrol(Base):
                   (image_package_name, image_suffix)) as f:
             kconfig = f.readlines()
         assert 'CONFIG_EFI_STUB=y\n' in kconfig
-        assert 'CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y\n' in kconfig
+        #assert 'CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y\n' in kconfig
         cert_file_name = config_build['trusted-certs']
         self.image_packages.append((image_suffix, image_package_name,
                                     cert_file_name))

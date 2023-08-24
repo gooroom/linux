@@ -1,0 +1,25 @@
+From 4f4fb490084e2320b1b1e3ed4e7587d235f4ccab Mon Sep 17 00:00:00 2001
+From: "mike.seo" <mike.seo@lge.com>
+Date: Mon, 26 Jun 2023 14:08:23 +0900
+Subject: [PATCH] [Fix] external microphone cannot be visible in input device
+ list in Settings->sound At LG laptop 15U(G)50R
+When external microphone such as earjack is connected to device, codec alc256 tend to recognize just one input device as "Microphone".
+Therefore users who want to use internal microphone installed in laptop cannot could be uncomportable.
+This patch gives two selection in Settings->sound->Input device, "Headset Microphone", and "Internal Microphone".
+---
+ sound/pci/hda/patch_realtek.c | 1 +
+ 1 file changed, 1 insertion(+)
+diff --git a/sound/pci/hda/patch_realtek.c b/sound/pci/hda/patch_realtek.c
+index 3c629f4ae080..c243ab13eaa7 100644
+--- a/sound/pci/hda/patch_realtek.c
++++ b/sound/pci/hda/patch_realtek.c
+@@ -9709,6 +9709,7 @@ static const struct snd_pci_quirk alc269_fixup_tbl[] = {
+ 	SND_PCI_QUIRK(0x17aa, 0x9e56, "Lenovo ZhaoYang CF4620Z", ALC286_FIXUP_SONY_MIC_NO_PRESENCE),
+ 	SND_PCI_QUIRK(0x1849, 0x1233, "ASRock NUC Box 1100", ALC233_FIXUP_NO_AUDIO_JACK),
+ 	SND_PCI_QUIRK(0x1849, 0xa233, "Positivo Master C6300", ALC269_FIXUP_HEADSET_MIC),
++	SND_PCI_QUIRK(0x1854, 0x0503, "LG 15U50R", ALC295_FIXUP_FRAMEWORK_LAPTOP_MIC_NO_PRESENCE),
+ 	SND_PCI_QUIRK(0x19e5, 0x3204, "Huawei MACH-WX9", ALC256_FIXUP_HUAWEI_MACH_WX9_PINS),
+ 	SND_PCI_QUIRK(0x19e5, 0x320f, "Huawei WRT-WX9 ", ALC256_FIXUP_ASUS_MIC_NO_PRESENCE),
+ 	SND_PCI_QUIRK(0x1b35, 0x1235, "CZC B20", ALC269_FIXUP_CZC_B20),
+-- 
+2.34.1

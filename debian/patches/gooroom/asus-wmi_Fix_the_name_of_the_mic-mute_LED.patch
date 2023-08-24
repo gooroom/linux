@@ -1,0 +1,31 @@
+From ee653d2d8f7c935a00f01a7654d889e8ce55b00e Mon Sep 17 00:00:00 2001
+From: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+Date: Thu, 25 Aug 2022 08:43:05 +0800
+Subject: [PATCH] platform/x86: asus-wmi: Fix the name of the mic-mute LED
+ classdev
+
+According to well-known-leds.txt, we should use "platform::micmute"
+instead of "asus::micmute" for the name of the mic-mute LED classdev.
+
+Signed-off-by: PaddyKP_Yao <PaddyKP_Yao@asus.com>
+Reviewed-by: Andy Shevchenko <andy.shevchenko@gmail.com>
+Link: https://lore.kernel.org/r/20220825004305.709539-1-PaddyKP_Yao@asus.com
+Reviewed-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/platform/x86/asus-wmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 89b604e04d7f65..3acc75c24c7938 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -1118,7 +1118,7 @@ static int asus_wmi_led_init(struct asus_wmi *asus)
+ 	}
+ 
+ 	if (asus_wmi_dev_is_present(asus, ASUS_WMI_DEVID_MICMUTE_LED)) {
+-		asus->micmute_led.name = "asus::micmute";
++		asus->micmute_led.name = "platform::micmute";
+ 		asus->micmute_led.max_brightness = 1;
+ 		asus->micmute_led.brightness = ledtrig_audio_get(LED_AUDIO_MICMUTE);
+ 		asus->micmute_led.brightness_set_blocking = micmute_led_set;
