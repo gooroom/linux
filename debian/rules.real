@@ -563,10 +563,11 @@ install-udeb_$(ARCH): export KW_DEFCONFIG_DIR=debian/installer
 install-udeb_$(ARCH): export KW_CONFIG_DIR=debian/installer
 install-udeb_$(ARCH): DH_OPTIONS=$(PACKAGE_NAMES:%=-p%)
 ifeq ($(UDEB_UNSIGNED_TEST_BUILD),True)
-install-udeb_$(ARCH): export DEB_BUILD_PROFILES=pkg.linux.udeb-unsigned-test-build
+install-udeb_$(ARCH): export DEB_BUILD_PROFILES+=pkg.linux.udeb-unsigned-test-build
 endif
 install-udeb_$(ARCH):
 # Logically we should check for %-di here, but that would break test builds
+ifeq (,$(filter noudeb,$(DEB_BUILD_PROFILES)))
 ifneq (,$(filter linux-image-%,$(packages_enabled)))
 	dh_testdir
 	dh_prep
@@ -578,6 +579,7 @@ ifeq ($(UDEB_UNSIGNED_TEST_BUILD),False)
 	dh_builddeb
 endif
 endif  # enabled
+endif  # noudeb
 
 install-source: PACKAGE_NAME = $(SOURCE_BASENAME)-source-$(VERSION)
 install-source: DH_OPTIONS = -p$(PACKAGE_NAME)

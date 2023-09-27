@@ -1,9 +1,9 @@
-From 549f3ea1c35744aa57b86673e30e04766b8b5439 Mon Sep 17 00:00:00 2001
+From 2afd3742e22b4b4735a97a16ec56f588cb4b57e7 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 16:05:28 +0100
 Subject: [PATCH 233/321] sunrpc: Make svc_xprt_do_enqueue() use
  get_cpu_light()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
 |in_atomic(): 1, irqs_disabled(): 0, pid: 3194, name: rpc.nfsd
@@ -27,7 +27,6 @@ Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5
 | [<ffffffff8117f889>] SyS_write+0x49/0xb0
 | [<ffffffff815c4556>] system_call_fastpath+0x16/0x1b
 
-
 Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -35,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/net/sunrpc/svc_xprt.c b/net/sunrpc/svc_xprt.c
-index 06e503466c32c..16bd1278a9890 100644
+index 06e503466c32..16bd1278a989 100644
 --- a/net/sunrpc/svc_xprt.c
 +++ b/net/sunrpc/svc_xprt.c
 @@ -422,7 +422,7 @@ void svc_xprt_do_enqueue(struct svc_xprt *xprt)
@@ -57,5 +56,5 @@ index 06e503466c32c..16bd1278a9890 100644
  }
  EXPORT_SYMBOL_GPL(svc_xprt_do_enqueue);
 -- 
-2.39.2
+2.41.0
 

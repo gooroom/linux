@@ -1,8 +1,8 @@
-From b49963167d672d7c1d67b1926f1e7d6b1acdb755 Mon Sep 17 00:00:00 2001
+From a8b794c4e248713b4aea3b98ca62a7b2b687012d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:55:53 +0100
 Subject: [PATCH 146/321] softirq: Add RT specific softirq accounting
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 RT requires the softirq processing and local bottomhalf disabled regions to
 be preemptible. Using the normal preempt count based serialization is
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/hardirq.h b/include/linux/hardirq.h
-index 0926e9ca4d85f..76878b357ffa9 100644
+index 0926e9ca4d85..76878b357ffa 100644
 --- a/include/linux/hardirq.h
 +++ b/include/linux/hardirq.h
 @@ -6,6 +6,7 @@
@@ -40,7 +40,7 @@ index 0926e9ca4d85f..76878b357ffa9 100644
  #include <asm/hardirq.h>
  
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 69cc8b64aa3a0..9881eac0698fd 100644
+index 69cc8b64aa3a..9881eac0698f 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -79,7 +79,11 @@
@@ -57,7 +57,7 @@ index 69cc8b64aa3a0..9881eac0698fd 100644
  
  /*
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 08b5804c29ec1..2ab01dab5346a 100644
+index 08b5804c29ec..2ab01dab5346 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1046,6 +1046,9 @@ struct task_struct {
@@ -71,5 +71,5 @@ index 08b5804c29ec1..2ab01dab5346a 100644
  #ifdef CONFIG_LOCKDEP
  # define MAX_LOCK_DEPTH			48UL
 -- 
-2.39.2
+2.41.0
 

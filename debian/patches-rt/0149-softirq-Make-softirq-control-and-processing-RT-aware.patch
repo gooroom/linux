@@ -1,8 +1,8 @@
-From 77fca590a2ffd41c4bdacfdd2fdef43b1b9d4028 Mon Sep 17 00:00:00 2001
+From e20f01d40f9933b15955381c2582c0989a898b01 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 9 Mar 2021 09:55:56 +0100
 Subject: [PATCH 149/321] softirq: Make softirq control and processing RT aware
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 Provide a local lock based serialization for soft interrupts on RT which
 allows the local_bh_disabled() sections and servicing soft interrupts to be
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 182 insertions(+), 8 deletions(-)
 
 diff --git a/include/linux/bottom_half.h b/include/linux/bottom_half.h
-index a19519f4241dc..e4dd613a070e3 100644
+index a19519f4241d..e4dd613a070e 100644
 --- a/include/linux/bottom_half.h
 +++ b/include/linux/bottom_half.h
 @@ -4,7 +4,7 @@
@@ -34,7 +34,7 @@ index a19519f4241dc..e4dd613a070e3 100644
  #else
  static __always_inline void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 87fac6ac0c32e..ed13f6097de89 100644
+index 87fac6ac0c32..ed13f6097de8 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -13,6 +13,7 @@
@@ -263,5 +263,5 @@ index 87fac6ac0c32e..ed13f6097de89 100644
  
  	pending = local_softirq_pending();
 -- 
-2.39.2
+2.41.0
 

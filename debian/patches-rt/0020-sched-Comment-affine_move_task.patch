@@ -1,8 +1,8 @@
-From d24af47057003f5c7742d832f723e56137e63c1d Mon Sep 17 00:00:00 2001
+From 0f597de5bf010092ef5b694cb7318a71ddea5c2d Mon Sep 17 00:00:00 2001
 From: Valentin Schneider <valentin.schneider@arm.com>
 Date: Fri, 23 Oct 2020 12:12:17 +0200
 Subject: [PATCH 020/321] sched: Comment affine_move_task()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
 Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
@@ -13,10 +13,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 79 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 3ced05b6059d5..be6afe16462b7 100644
+index 6d5e8249c653..de98b0724d17 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -2091,7 +2091,75 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
+@@ -2094,7 +2094,75 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  }
  
  /*
@@ -93,7 +93,7 @@ index 3ced05b6059d5..be6afe16462b7 100644
   */
  static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flags *rf,
  			    int dest_cpu, unsigned int flags)
-@@ -2135,6 +2203,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2138,6 +2206,7 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	if (!(flags & SCA_MIGRATE_ENABLE)) {
  		/* serialized by p->pi_lock */
  		if (!p->migration_pending) {
@@ -101,7 +101,7 @@ index 3ced05b6059d5..be6afe16462b7 100644
  			refcount_set(&my_pending.refs, 1);
  			init_completion(&my_pending.done);
  			p->migration_pending = &my_pending;
-@@ -2178,7 +2247,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2181,7 +2250,11 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	}
  
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
@@ -114,7 +114,7 @@ index 3ced05b6059d5..be6afe16462b7 100644
  		task_rq_unlock(rq, p, rf);
  		stop_one_cpu(cpu_of(rq), migration_cpu_stop, &arg);
  
-@@ -2203,6 +2276,10 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
+@@ -2206,6 +2279,10 @@ static int affine_move_task(struct rq *rq, struct task_struct *p, struct rq_flag
  	if (refcount_dec_and_test(&pending->refs))
  		wake_up_var(&pending->refs);
  
@@ -126,5 +126,5 @@ index 3ced05b6059d5..be6afe16462b7 100644
  
  	return 0;
 -- 
-2.39.2
+2.41.0
 

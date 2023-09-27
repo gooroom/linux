@@ -1,8 +1,8 @@
-From 4c4720570b11163b42bd6d8805ecc8933b3c046a Mon Sep 17 00:00:00 2001
+From d0bedbfe78ebf37cf4a3a9d8ccf9a0479bbf4240 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:00 +0200
 Subject: [PATCH 003/321] sched: Fix balance_callback()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 The intent of balance_callback() has always been to delay executing
 balancing operations until the end of the current rq->lock section.
@@ -29,10 +29,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 78 insertions(+), 44 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 1303a2607f1f8..bbfecaad93e24 100644
+index 9d6dd14cfd26..47506bcb7c3d 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3508,6 +3508,69 @@ static inline void finish_task(struct task_struct *prev)
+@@ -3511,6 +3511,69 @@ static inline void finish_task(struct task_struct *prev)
  #endif
  }
  
@@ -102,7 +102,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  static inline void
  prepare_lock_switch(struct rq *rq, struct task_struct *next, struct rq_flags *rf)
  {
-@@ -3533,6 +3596,7 @@ static inline void finish_lock_switch(struct rq *rq)
+@@ -3536,6 +3599,7 @@ static inline void finish_lock_switch(struct rq *rq)
  	 * prev into current:
  	 */
  	spin_acquire(&rq->lock.dep_map, 0, 0, _THIS_IP_);
@@ -110,7 +110,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  	raw_spin_unlock_irq(&rq->lock);
  }
  
-@@ -3674,43 +3738,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
+@@ -3677,43 +3741,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
  	return rq;
  }
  
@@ -154,7 +154,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  /**
   * schedule_tail - first thing a freshly forked thread must call.
   * @prev: the thread we just switched away from.
-@@ -3730,7 +3757,6 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
+@@ -3733,7 +3760,6 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
  	 */
  
  	rq = finish_task_switch(prev);
@@ -162,7 +162,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  	preempt_enable();
  
  	if (current->set_child_tid)
-@@ -4545,10 +4571,11 @@ static void __sched notrace __schedule(bool preempt)
+@@ -4548,10 +4574,11 @@ static void __sched notrace __schedule(bool preempt)
  		rq = context_switch(rq, prev, next, &rf);
  	} else {
  		rq->clock_update_flags &= ~(RQCF_ACT_SKIP|RQCF_REQ_SKIP);
@@ -177,7 +177,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  }
  
  void __noreturn do_task_dead(void)
-@@ -4969,9 +4996,11 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
+@@ -4972,9 +4999,11 @@ void rt_mutex_setprio(struct task_struct *p, struct task_struct *pi_task)
  out_unlock:
  	/* Avoid rq from going away on us: */
  	preempt_disable();
@@ -191,7 +191,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  	preempt_enable();
  }
  #else
-@@ -5214,6 +5243,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -5217,6 +5246,7 @@ static int __sched_setscheduler(struct task_struct *p,
  	int oldpolicy = -1, policy = attr->sched_policy;
  	int retval, oldprio, newprio, queued, running;
  	const struct sched_class *prev_class;
@@ -199,7 +199,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  	struct rq_flags rf;
  	int reset_on_fork;
  	int queue_flags = DEQUEUE_SAVE | DEQUEUE_MOVE | DEQUEUE_NOCLOCK;
-@@ -5456,6 +5486,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -5459,6 +5489,7 @@ static int __sched_setscheduler(struct task_struct *p,
  
  	/* Avoid rq from going away on us: */
  	preempt_disable();
@@ -207,7 +207,7 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  	task_rq_unlock(rq, p, &rf);
  
  	if (pi) {
-@@ -5464,7 +5495,7 @@ static int __sched_setscheduler(struct task_struct *p,
+@@ -5467,7 +5498,7 @@ static int __sched_setscheduler(struct task_struct *p,
  	}
  
  	/* Run balance callbacks after we've adjusted the PI chain: */
@@ -217,10 +217,10 @@ index 1303a2607f1f8..bbfecaad93e24 100644
  
  	return 0;
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 12c65628801c6..054e206826124 100644
+index 852e856eed48..a8d20edf6a20 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1224,6 +1224,9 @@ static inline void rq_pin_lock(struct rq *rq, struct rq_flags *rf)
+@@ -1225,6 +1225,9 @@ static inline void rq_pin_lock(struct rq *rq, struct rq_flags *rf)
  	rq->clock_update_flags &= (RQCF_REQ_SKIP|RQCF_ACT_SKIP);
  	rf->clock_update_flags = 0;
  #endif
@@ -231,5 +231,5 @@ index 12c65628801c6..054e206826124 100644
  
  static inline void rq_unpin_lock(struct rq *rq, struct rq_flags *rf)
 -- 
-2.39.2
+2.41.0
 

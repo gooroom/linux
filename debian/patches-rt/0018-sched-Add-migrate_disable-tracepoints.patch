@@ -1,8 +1,8 @@
-From e9481b6b52991427ec7456a6e0ed8f0a3d528a8c Mon Sep 17 00:00:00 2001
+From 1eaa86d3e44a68ca3c0c9caac5204f7d3e1841d2 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:15 +0200
 Subject: [PATCH 018/321] sched: Add migrate_disable() tracepoints
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.176-rt86.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/5.10/older/patches-5.10.186-rt91.tar.xz
 
 XXX write a tracer:
 
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/include/trace/events/sched.h b/include/trace/events/sched.h
-index c96a4337afe6c..e48f584abf5ff 100644
+index c96a4337afe6..e48f584abf5f 100644
 --- a/include/trace/events/sched.h
 +++ b/include/trace/events/sched.h
 @@ -650,6 +650,18 @@ DECLARE_TRACE(sched_update_nr_running_tp,
@@ -46,10 +46,10 @@ index c96a4337afe6c..e48f584abf5ff 100644
  
  /* This part must be outside protection */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5f5bba88cc2de..79ba910577594 100644
+index 8e59db48d9e9..11a0ccf6fad7 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -1739,6 +1739,8 @@ void migrate_disable(void)
+@@ -1742,6 +1742,8 @@ void migrate_disable(void)
  		return;
  	}
  
@@ -58,7 +58,7 @@ index 5f5bba88cc2de..79ba910577594 100644
  	preempt_disable();
  	this_rq()->nr_pinned++;
  	p->migration_disabled = 1;
-@@ -1771,6 +1773,8 @@ void migrate_enable(void)
+@@ -1774,6 +1776,8 @@ void migrate_enable(void)
  	p->migration_disabled = 0;
  	this_rq()->nr_pinned--;
  	preempt_enable();
@@ -68,7 +68,7 @@ index 5f5bba88cc2de..79ba910577594 100644
  EXPORT_SYMBOL_GPL(migrate_enable);
  
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 5ca7a8031fd91..748fd6b2b2204 100644
+index 5ca7a8031fd9..748fd6b2b220 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -2281,6 +2281,7 @@ static void pull_dl_task(struct rq *this_rq)
@@ -80,7 +80,7 @@ index 5ca7a8031fd91..748fd6b2b2204 100644
  			} else {
  				deactivate_task(src_rq, p, 0);
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index c25e35f415557..c5038d680c2c5 100644
+index c25e35f41555..c5038d680c2c 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -1891,7 +1891,12 @@ static int push_rt_task(struct rq *rq, bool pull)
@@ -106,5 +106,5 @@ index c25e35f415557..c5038d680c2c5 100644
  			} else {
  				deactivate_task(src_rq, p, 0);
 -- 
-2.39.2
+2.41.0
 
