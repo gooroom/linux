@@ -1,0 +1,4015 @@
+diff --git a/crypto/Kconfig b/crypto/Kconfig
+index d77966767..a36821454 100644
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -582,6 +582,11 @@ config CRYPTO_TWOFISH_COMMON
+ 	  Common parts of the Twofish cipher algorithm shared by the
+ 	  generic c and the assembler implementations.
+ 
++config CRYPTO_LEA
++	tristate "LEA"
++	help
++	  TEA (Lightweight Encryption Algorithm) cipher algorithms
++
+ endmenu
+ 
+ menu "Length-preserving ciphers and modes"
+diff --git a/crypto/Makefile b/crypto/Makefile
+index 303b21c43..5ff24995a 100644
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -212,3 +212,9 @@ obj-$(CONFIG_CRYPTO_SIMD) += crypto_simd.o
+ # Key derivation function
+ #
+ obj-$(CONFIG_CRYPTO_KDF800108_CTR) += kdf_sp800108.o
++
++
++#
++# LEA
++#
++obj-$(CONFIG_CRYPTO_LEA) += lea/
+diff --git a/crypto/lea/Kbuild b/crypto/lea/Kbuild
+new file mode 100644
+index 000000000..79436f5e0
+--- /dev/null
++++ b/crypto/lea/Kbuild
+@@ -0,0 +1,18 @@
++export CC
++export CPP
++
++#ccflags-y =-std=gnu11
++
++obj-m += crypto_lea.o
++
++ifeq (${ARCH}, x86)
++
++obj-m += crypto_lea_simd.o
++ifeq (${UTS_MACHINE}, x86_64)
++crypto_lea_simd-y := crypto_lea_avx2_x86_64-asm.o crypto_lea_sse2_x86_64-asm.o crypto_lea_simd_glue.o
++else
++crypto_lea_simd-y := crypto_lea_avx2_i586-asm.o crypto_lea_sse2_i586-asm.o crypto_lea_simd_glue.o
++endif
++
++endif
++
+diff --git a/crypto/lea/Kbuild.in b/crypto/lea/Kbuild.in
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/crypto/lea/Makefile b/crypto/lea/Makefile
+new file mode 100644
+index 000000000..cf5ca7bba
+--- /dev/null
++++ b/crypto/lea/Makefile
+@@ -0,0 +1,12 @@
++obj-$(CONFIG_CRYPTO_LEA) += crypto_lea.o
++
++ifeq (${ARCH}, x86)
++
++obj-m += crypto_lea_simd.o
++ifeq (${UTS_MACHINE}, x86_64)
++crypto_lea_simd-y := crypto_lea_avx2_x86_64-asm.o crypto_lea_sse2_x86_64-asm.o crypto_lea_simd_glue.o
++else
++crypto_lea_simd-y := crypto_lea_avx2_i586-asm.o crypto_lea_sse2_i586-asm.o crypto_lea_simd_glue.o
++endif
++
++endif
+diff --git a/crypto/lea/Makefile.module b/crypto/lea/Makefile.module
+new file mode 100644
+index 000000000..e0c1f81ac
+--- /dev/null
++++ b/crypto/lea/Makefile.module
+@@ -0,0 +1,21 @@
++#LINUX_KERNEL_PATH=/home/letrhee/linux-kernel/linux-azure/debian/build/build-azure
++
++KERNEL_NAME = $(shell uname -r)
++
++ifndef LINUX_KERNEL_PATH
++LINUX_KERNEL_PATH=/lib/modules/$(KERNEL_NAME)/build
++endif
++
++PWD = $(shell pwd)
++
++module:
++	make -C $(LINUX_KERNEL_PATH) M=$(PWD) modules
++
++install:
++	make -C $(LINUX_KERNEL_PATH) M=$(PWD) modules_install
++	depmod -A
++
++all: module
++
++clean:
++	make -C $(LINUX_KERNEL_PATH) M=$(PWD) clean
+diff --git a/crypto/lea/README.md b/crypto/lea/README.md
+new file mode 100644
+index 000000000..e9b3425cd
+--- /dev/null
++++ b/crypto/lea/README.md
+@@ -0,0 +1,109 @@
++# Linux LEA 암호 모듈
++
++- 작성일자: 2022-10-24
++
++Linux 커널 내 Crypto API에 LEA 암호 알고리즘을 사용할 수 있도록 제공하는 모듈입니다.
++
++C 언어로 구성된 범용 LEA 암호 모듈 `crypto_lea.ko`와 AVX2, movbe, SSE2 명령어를 포함하여 구성된 고속 x86-64 LEA 암호 모듈 `crypto_lea_simd.ko` 모듈로 이루어져 있습니다.
++## 구현 대상
++
++x86-64(64비트), x86(32비트) 각각 구현되어 있습니다.
++
++### 64비트 구현
++- 4블록 ECB 암/복호화: SSE2
++- 8블록 ECB 암/복호화: AVX2
++- 4블록 CBC 복호화: SSE2
++- 8블록 CBC 복호화: AVX2
++- 4블록 CTR 암호화: SSE2, SSE2+MOVBE
++- 8블록 CTR 암호화: AVX2+MOVBE
++- 4블록 XTS 암/복호화: SSE2
++- 8블록 XTS 암/복호화: AVX2
++
++GCM 모드는 리눅스 Crypto API내에 `gcm-base(ctr(lea), ghash)`를 이용합니다.
++
++### 32비트 구현
++- 4블록 ECB 암/복호화: SSE2
++- 8블록 ECB 암/복호화: AVX2
++- 4블록 CBC 복호화: SSE2
++- 4블록 CTR 암호화: SSE2, SSE2+MOVBE
++- 8블록 CTR 암호화: AVX2+MOVBE
++
++GCM 모드는 리눅스 Crypto API내에 `gcm-base(ctr(lea), ghash)`를 이용합니다.
++
++XTS 모드는 Crypto API내에 `xts(ecb(lea))`를 이용합니다.
++
++## 빌드 절차
++
++Debian, Ubuntu를 기준으로 설명합니다.
++
++다음 명령어를 통해 의존 패키지를 설치합니다.
++
++```sh
++sudo apt install build-essential dpkg-dev linux-headers-$(uname -r)
++```
++
++`linux-headers`는 LEA 암호 모듈을 설치하고자 하는 리눅스의 버전과 일치해야하며, 위 명령어는 빌드 환경과 적용 리눅스 버전이 일치할때를 기준으로 한 명령어 입니다.
++
++이후 다음 명령어를 통해 컴파일하고, 모듈을 적재할 수 있습니다.
++
++```sh
++make
++sudo insmod crypto_lea.ko
++sudo insmod crypto_lea_simd.ko
++```
++
++필요하다면 `make install` 등의 명령으로 실제 모듈을 설치하고, 부트로더에 커널 모듈을 등록하는 작업을 같이 수행할 수 있습니다.
++
++## 파일 안내
++
++### `Makefile`
++리눅스 커널 모듈 생성을 위한 Helper makefile입니다.
++
++### `Kbuild`
++실제 리눅스 커널 모듈 생성 Makefile 구성 파일입니다.
++
++### `crypto_lea.c`, `.h`
++C언어로 구현된 범용 LEA 암호화 구현입니다.
++
++### `crypto_lea_simd_glue.c`, `crypto_lea_local.h`
++`crypto_lea_simd` 모듈 구동 코드입니다.
++
++Crypto API 요청에 따라 Assembly 구현을 호출하여 암/복호화합니다.
++
++### `crypto_lea_{sse2,avx2}-asm.h`
++SSE2, AVX2 암/복호화에 필요한 공용 코드입니다.
++
++### `crypto_lea_util_{x64,x86}-asm.h`
++x86-64, x86 암/복호화에 필요한 공용 코드입니다.
++
++### `crypto_lea_{sse2,avx2}_{i586,x86_64}-asm.S`
++x86-64, x86 및 SSE2, AVX2 조합에 따른 실제 어셈블리 구현입니다.
++
++### `ecb_cbc_helpers.h`
++ECB, CBC 호출용 헬퍼 코드입니다. Linux 커널 코드의 `arch/x86/crypto/ecb_cbc_helpers.h`와 동일한 파일입니다. 
++
++### `cleanse_compile_command.sh`
++
++`clangd`를 이용한 개발 환경을 구성할 때 `gcc` 전용 컴파일 플래그를 제거하는데 사용됩니다.
++
++## 테스트 코드
++
++구현물이 올바르게 빌드 되었는지 확인하기 위해 `crypto_lea_test` 모듈을 별도로 제공하고 있습니다.
++
++해당 모듈에서 기본적인 커널 내 암호화 호출을 확인할 수 있습니다.
++
++## 개발/수정 시 안내 사항
++
++본 코드는 Visual Studio Code에서 `clangd` 확장을 이용하여 개발되었습니다.
++본 모듈에 암호 운영 모드를 추가하는 등의 개선/수정 작업이 필요할 수 있으며, 다음을 명령을 통해 동일한 구성을 가질 수 있습니다.
++
++```sh
++#clangd, bear 필요
++make clean
++bear -- make
++./cleanse_compile_comand.sh
++```
++
++Ubuntu 22.04.1 기준으로 `clangd`에서 별도 에러 메시지 없이 `bear` 실행을 통해 생성 된 `compile_command.json` 파일이 정리됩니다.
++
++clang, gcc 버전에 따라 지워야할 flag가 달라 `cleanse_compile_comand.sh`의 추가 수정이 필요할 수 있습니다.
+\ No newline at end of file
+diff --git a/crypto/lea/cleanse_compile_command.sh b/crypto/lea/cleanse_compile_command.sh
+new file mode 100644
+index 000000000..5d93d1dea
+--- /dev/null
++++ b/crypto/lea/cleanse_compile_command.sh
+@@ -0,0 +1,11 @@
++#/bin/bash
++cat compile_commands.json  |
++ sed 's/"-mpreferred-stack-boundary=3",//g' |
++ sed 's/"-mindirect-branch=thunk-extern",//g' |
++ sed 's/"-mfunction-return=thunk-extern",//g' |
++ sed 's/"-mindirect-branch-register",//g' |
++ sed 's/"-fno-allow-store-data-races",//g' |
++ sed 's/"-fconserve-stack",//g' |
++ sed 's/"-mrecord-mcount",//g' |
++ sed 's/"-mindirect-branch-cs-prefix",//g' |
++ cat > compile_commands.json
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea.c b/crypto/lea/crypto_lea.c
+new file mode 100644
+index 000000000..7e7a5470b
+--- /dev/null
++++ b/crypto/lea/crypto_lea.c
+@@ -0,0 +1,876 @@
++#include <asm/unaligned.h>
++#include <linux/crypto.h>
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++
++#include "asm-generic/unaligned.h"
++#include "crypto_lea.h"
++#include "crypto_lea_local.h"
++
++__visible const u32 lea_delta[8][36] ____cacheline_aligned = {
++    {0xc3efe9db, 0x87dfd3b7, 0x0fbfa76f, 0x1f7f4ede, 0x3efe9dbc, 0x7dfd3b78,
++     0xfbfa76f0, 0xf7f4ede1, 0xefe9dbc3, 0xdfd3b787, 0xbfa76f0f, 0x7f4ede1f,
++     0xfe9dbc3e, 0xfd3b787d, 0xfa76f0fb, 0xf4ede1f7, 0xe9dbc3ef, 0xd3b787df,
++     0xa76f0fbf, 0x4ede1f7f, 0x9dbc3efe, 0x3b787dfd, 0x76f0fbfa, 0xede1f7f4,
++     0xdbc3efe9, 0xb787dfd3, 0x6f0fbfa7, 0xde1f7f4e, 0xbc3efe9d, 0x787dfd3b,
++     0xf0fbfa76, 0xe1f7f4eD, 0xc3efe9db, 0x87dfd3b7, 0x0fbfa76f, 0x1f7f4ede},
++    {0x44626b02, 0x88c4d604, 0x1189ac09, 0x23135812, 0x4626b024, 0x8c4d6048,
++     0x189ac091, 0x31358122, 0x626b0244, 0xc4d60488, 0x89ac0911, 0x13581223,
++     0x26b02446, 0x4d60488c, 0x9ac09118, 0x35812231, 0x6b024462, 0xd60488c4,
++     0xac091189, 0x58122313, 0xb0244626, 0x60488c4d, 0xc091189a, 0x81223135,
++     0x0244626b, 0x0488c4d6, 0x091189ac, 0x12231358, 0x244626b0, 0x488c4d60,
++     0x91189ac0, 0x22313581, 0x44626b02, 0x88c4d604, 0x1189ac09, 0x23135812},
++    {0x79e27c8a, 0xf3c4f914, 0xe789f229, 0xcf13e453, 0x9e27c8a7, 0x3c4f914f,
++     0x789f229e, 0xf13e453c, 0xe27c8a79, 0xc4f914f3, 0x89f229e7, 0x13e453cf,
++     0x27c8a79e, 0x4f914f3c, 0x9f229e78, 0x3e453cf1, 0x7c8a79e2, 0xf914f3c4,
++     0xf229e789, 0xe453cf13, 0xc8a79e27, 0x914f3c4f, 0x229e789f, 0x453cf13e,
++     0x8a79e27c, 0x14f3c4f9, 0x29e789f2, 0x53cf13e4, 0xa79e27c8, 0x4f3c4f91,
++     0x9e789f22, 0x3cf13e45, 0x79e27c8a, 0xf3c4f914, 0xe789f229, 0xcf13e453},
++    {0x78df30ec, 0xf1be61d8, 0xe37cc3b1, 0xc6f98763, 0x8df30ec7, 0x1be61d8f,
++     0x37cc3b1e, 0x6f98763c, 0xdf30ec78, 0xbe61d8f1, 0x7cc3b1e3, 0xf98763c6,
++     0xf30ec78d, 0xe61d8f1b, 0xcc3b1e37, 0x98763c6f, 0x30ec78df, 0x61d8f1be,
++     0xc3b1e37c, 0x8763c6f9, 0x0ec78df3, 0x1d8f1be6, 0x3b1e37cc, 0x763c6f98,
++     0xec78df30, 0xd8f1be61, 0xb1e37cc3, 0x63c6f987, 0xc78df30e, 0x8f1be61d,
++     0x1e37cc3b, 0x3c6f9876, 0x78df30ec, 0xf1be61d8, 0xe37cc3b1, 0xc6f98763},
++    {0x715ea49e, 0xe2bd493c, 0xc57a9279, 0x8af524f3, 0x15ea49e7, 0x2bd493ce,
++     0x57a9279c, 0xaf524f38, 0x5ea49e71, 0xbd493ce2, 0x7a9279c5, 0xf524f38a,
++     0xea49e715, 0xd493ce2b, 0xa9279c57, 0x524f38af, 0xa49e715e, 0x493ce2bd,
++     0x9279c57a, 0x24f38af5, 0x49e715ea, 0x93ce2bd4, 0x279c57a9, 0x4f38af52,
++     0x9e715ea4, 0x3ce2bd49, 0x79c57a92, 0xf38af524, 0xe715ea49, 0xce2bd493,
++     0x9c57a927, 0x38af524f, 0x715ea49e, 0xe2bd493c, 0xc57a9279, 0x8af524f3},
++    {0xc785da0a, 0x8f0bb415, 0x1e17682b, 0x3c2ed056, 0x785da0ac, 0xf0bb4158,
++     0xe17682b1, 0xc2ed0563, 0x85da0ac7, 0x0bb4158f, 0x17682b1e, 0x2ed0563c,
++     0x5da0ac78, 0xbb4158f0, 0x7682b1e1, 0xed0563c2, 0xda0ac785, 0xb4158f0b,
++     0x682b1e17, 0xd0563c2e, 0xa0ac785d, 0x4158f0bb, 0x82b1e176, 0x0563c2ed,
++     0x0ac785da, 0x158f0bb4, 0x2b1e1768, 0x563c2ed0, 0xac785da0, 0x58f0bb41,
++     0xb1e17682, 0x63c2ed05, 0xc785da0a, 0x8f0bb415, 0x1e17682b, 0x3c2ed056},
++    {0xe04ef22a, 0xc09de455, 0x813bc8ab, 0x02779157, 0x04ef22ae, 0x09de455c,
++     0x13bc8ab8, 0x27791570, 0x4ef22ae0, 0x9de455c0, 0x3bc8ab81, 0x77915702,
++     0xef22ae04, 0xde455c09, 0xbc8ab813, 0x79157027, 0xf22ae04e, 0xe455c09d,
++     0xc8ab813b, 0x91570277, 0x22ae04ef, 0x455c09de, 0x8ab813bc, 0x15702779,
++     0x2ae04ef2, 0x55c09de4, 0xab813bc8, 0x57027791, 0xae04ef22, 0x5c09de45,
++     0xb813bc8a, 0x70277915, 0xe04ef22a, 0xc09de455, 0x813bc8ab, 0x02779157},
++    {0xe5c40957, 0xcb8812af, 0x9710255f, 0x2e204abf, 0x5c40957e, 0xb8812afc,
++     0x710255f9, 0xe204abf2, 0xc40957e5, 0x8812afcb, 0x10255f97, 0x204abf2e,
++     0x40957e5c, 0x812afcb8, 0x0255f971, 0x04abf2e2, 0x0957e5c4, 0x12afcb88,
++     0x255f9710, 0x4abf2e20, 0x957e5c40, 0x2afcb881, 0x55f97102, 0xabf2e204,
++     0x57e5c409, 0xafcb8812, 0x5f971025, 0xbf2e204a, 0x7e5c4095, 0xfcb8812a,
++     0xf9710255, 0xf2e204ab, 0xe5c40957, 0xcb8812af, 0x9710255f, 0x2e204abf}};
++EXPORT_SYMBOL_GPL(lea_delta);
++
++void __crypto_lea_encrypt(const void *_key, u8 *out, const u8 *in) {
++  const struct crypto_lea_ctx *key = _key;
++  u32 X0 = get_unaligned_le32(&in[0]);
++  u32 X1 = get_unaligned_le32(&in[4]);
++  u32 X2 = get_unaligned_le32(&in[8]);
++  u32 X3 = get_unaligned_le32(&in[12]);
++
++  X3 = ror32((X2 ^ key->rk[4]) + (X3 ^ key->rk[5]), 3);
++  X2 = ror32((X1 ^ key->rk[2]) + (X2 ^ key->rk[3]), 5);
++  X1 = rol32((X0 ^ key->rk[0]) + (X1 ^ key->rk[1]), 9);
++  X0 = ror32((X3 ^ key->rk[10]) + (X0 ^ key->rk[11]), 3);
++  X3 = ror32((X2 ^ key->rk[8]) + (X3 ^ key->rk[9]), 5);
++  X2 = rol32((X1 ^ key->rk[6]) + (X2 ^ key->rk[7]), 9);
++  X1 = ror32((X0 ^ key->rk[16]) + (X1 ^ key->rk[17]), 3);
++  X0 = ror32((X3 ^ key->rk[14]) + (X0 ^ key->rk[15]), 5);
++  X3 = rol32((X2 ^ key->rk[12]) + (X3 ^ key->rk[13]), 9);
++  X2 = ror32((X1 ^ key->rk[22]) + (X2 ^ key->rk[23]), 3);
++  X1 = ror32((X0 ^ key->rk[20]) + (X1 ^ key->rk[21]), 5);
++  X0 = rol32((X3 ^ key->rk[18]) + (X0 ^ key->rk[19]), 9);
++
++  X3 = ror32((X2 ^ key->rk[28]) + (X3 ^ key->rk[29]), 3);
++  X2 = ror32((X1 ^ key->rk[26]) + (X2 ^ key->rk[27]), 5);
++  X1 = rol32((X0 ^ key->rk[24]) + (X1 ^ key->rk[25]), 9);
++  X0 = ror32((X3 ^ key->rk[34]) + (X0 ^ key->rk[35]), 3);
++  X3 = ror32((X2 ^ key->rk[32]) + (X3 ^ key->rk[33]), 5);
++  X2 = rol32((X1 ^ key->rk[30]) + (X2 ^ key->rk[31]), 9);
++  X1 = ror32((X0 ^ key->rk[40]) + (X1 ^ key->rk[41]), 3);
++  X0 = ror32((X3 ^ key->rk[38]) + (X0 ^ key->rk[39]), 5);
++  X3 = rol32((X2 ^ key->rk[36]) + (X3 ^ key->rk[37]), 9);
++  X2 = ror32((X1 ^ key->rk[46]) + (X2 ^ key->rk[47]), 3);
++  X1 = ror32((X0 ^ key->rk[44]) + (X1 ^ key->rk[45]), 5);
++  X0 = rol32((X3 ^ key->rk[42]) + (X0 ^ key->rk[43]), 9);
++
++  X3 = ror32((X2 ^ key->rk[52]) + (X3 ^ key->rk[53]), 3);
++  X2 = ror32((X1 ^ key->rk[50]) + (X2 ^ key->rk[51]), 5);
++  X1 = rol32((X0 ^ key->rk[48]) + (X1 ^ key->rk[49]), 9);
++  X0 = ror32((X3 ^ key->rk[58]) + (X0 ^ key->rk[59]), 3);
++  X3 = ror32((X2 ^ key->rk[56]) + (X3 ^ key->rk[57]), 5);
++  X2 = rol32((X1 ^ key->rk[54]) + (X2 ^ key->rk[55]), 9);
++  X1 = ror32((X0 ^ key->rk[64]) + (X1 ^ key->rk[65]), 3);
++  X0 = ror32((X3 ^ key->rk[62]) + (X0 ^ key->rk[63]), 5);
++  X3 = rol32((X2 ^ key->rk[60]) + (X3 ^ key->rk[61]), 9);
++  X2 = ror32((X1 ^ key->rk[70]) + (X2 ^ key->rk[71]), 3);
++  X1 = ror32((X0 ^ key->rk[68]) + (X1 ^ key->rk[69]), 5);
++  X0 = rol32((X3 ^ key->rk[66]) + (X0 ^ key->rk[67]), 9);
++
++  X3 = ror32((X2 ^ key->rk[76]) + (X3 ^ key->rk[77]), 3);
++  X2 = ror32((X1 ^ key->rk[74]) + (X2 ^ key->rk[75]), 5);
++  X1 = rol32((X0 ^ key->rk[72]) + (X1 ^ key->rk[73]), 9);
++  X0 = ror32((X3 ^ key->rk[82]) + (X0 ^ key->rk[83]), 3);
++  X3 = ror32((X2 ^ key->rk[80]) + (X3 ^ key->rk[81]), 5);
++  X2 = rol32((X1 ^ key->rk[78]) + (X2 ^ key->rk[79]), 9);
++  X1 = ror32((X0 ^ key->rk[88]) + (X1 ^ key->rk[89]), 3);
++  X0 = ror32((X3 ^ key->rk[86]) + (X0 ^ key->rk[87]), 5);
++  X3 = rol32((X2 ^ key->rk[84]) + (X3 ^ key->rk[85]), 9);
++  X2 = ror32((X1 ^ key->rk[94]) + (X2 ^ key->rk[95]), 3);
++  X1 = ror32((X0 ^ key->rk[92]) + (X1 ^ key->rk[93]), 5);
++  X0 = rol32((X3 ^ key->rk[90]) + (X0 ^ key->rk[91]), 9);
++
++  X3 = ror32((X2 ^ key->rk[100]) + (X3 ^ key->rk[101]), 3);
++  X2 = ror32((X1 ^ key->rk[98]) + (X2 ^ key->rk[99]), 5);
++  X1 = rol32((X0 ^ key->rk[96]) + (X1 ^ key->rk[97]), 9);
++  X0 = ror32((X3 ^ key->rk[106]) + (X0 ^ key->rk[107]), 3);
++  X3 = ror32((X2 ^ key->rk[104]) + (X3 ^ key->rk[105]), 5);
++  X2 = rol32((X1 ^ key->rk[102]) + (X2 ^ key->rk[103]), 9);
++  X1 = ror32((X0 ^ key->rk[112]) + (X1 ^ key->rk[113]), 3);
++  X0 = ror32((X3 ^ key->rk[110]) + (X0 ^ key->rk[111]), 5);
++  X3 = rol32((X2 ^ key->rk[108]) + (X3 ^ key->rk[109]), 9);
++  X2 = ror32((X1 ^ key->rk[118]) + (X2 ^ key->rk[119]), 3);
++  X1 = ror32((X0 ^ key->rk[116]) + (X1 ^ key->rk[117]), 5);
++  X0 = rol32((X3 ^ key->rk[114]) + (X0 ^ key->rk[115]), 9);
++
++  X3 = ror32((X2 ^ key->rk[124]) + (X3 ^ key->rk[125]), 3);
++  X2 = ror32((X1 ^ key->rk[122]) + (X2 ^ key->rk[123]), 5);
++  X1 = rol32((X0 ^ key->rk[120]) + (X1 ^ key->rk[121]), 9);
++  X0 = ror32((X3 ^ key->rk[130]) + (X0 ^ key->rk[131]), 3);
++  X3 = ror32((X2 ^ key->rk[128]) + (X3 ^ key->rk[129]), 5);
++  X2 = rol32((X1 ^ key->rk[126]) + (X2 ^ key->rk[127]), 9);
++  X1 = ror32((X0 ^ key->rk[136]) + (X1 ^ key->rk[137]), 3);
++  X0 = ror32((X3 ^ key->rk[134]) + (X0 ^ key->rk[135]), 5);
++  X3 = rol32((X2 ^ key->rk[132]) + (X3 ^ key->rk[133]), 9);
++  X2 = ror32((X1 ^ key->rk[142]) + (X2 ^ key->rk[143]), 3);
++  X1 = ror32((X0 ^ key->rk[140]) + (X1 ^ key->rk[141]), 5);
++  X0 = rol32((X3 ^ key->rk[138]) + (X0 ^ key->rk[139]), 9);
++
++  if (key->round > 24) {
++    X3 = ror32((X2 ^ key->rk[148]) + (X3 ^ key->rk[149]), 3);
++    X2 = ror32((X1 ^ key->rk[146]) + (X2 ^ key->rk[147]), 5);
++    X1 = rol32((X0 ^ key->rk[144]) + (X1 ^ key->rk[145]), 9);
++    X0 = ror32((X3 ^ key->rk[154]) + (X0 ^ key->rk[155]), 3);
++    X3 = ror32((X2 ^ key->rk[152]) + (X3 ^ key->rk[153]), 5);
++    X2 = rol32((X1 ^ key->rk[150]) + (X2 ^ key->rk[151]), 9);
++    X1 = ror32((X0 ^ key->rk[160]) + (X1 ^ key->rk[161]), 3);
++    X0 = ror32((X3 ^ key->rk[158]) + (X0 ^ key->rk[159]), 5);
++    X3 = rol32((X2 ^ key->rk[156]) + (X3 ^ key->rk[157]), 9);
++    X2 = ror32((X1 ^ key->rk[166]) + (X2 ^ key->rk[167]), 3);
++    X1 = ror32((X0 ^ key->rk[164]) + (X1 ^ key->rk[165]), 5);
++    X0 = rol32((X3 ^ key->rk[162]) + (X0 ^ key->rk[163]), 9);
++  }
++
++  if (key->round > 28) {
++    X3 = ror32((X2 ^ key->rk[172]) + (X3 ^ key->rk[173]), 3);
++    X2 = ror32((X1 ^ key->rk[170]) + (X2 ^ key->rk[171]), 5);
++    X1 = rol32((X0 ^ key->rk[168]) + (X1 ^ key->rk[169]), 9);
++    X0 = ror32((X3 ^ key->rk[178]) + (X0 ^ key->rk[179]), 3);
++    X3 = ror32((X2 ^ key->rk[176]) + (X3 ^ key->rk[177]), 5);
++    X2 = rol32((X1 ^ key->rk[174]) + (X2 ^ key->rk[175]), 9);
++    X1 = ror32((X0 ^ key->rk[184]) + (X1 ^ key->rk[185]), 3);
++    X0 = ror32((X3 ^ key->rk[182]) + (X0 ^ key->rk[183]), 5);
++    X3 = rol32((X2 ^ key->rk[180]) + (X3 ^ key->rk[181]), 9);
++    X2 = ror32((X1 ^ key->rk[190]) + (X2 ^ key->rk[191]), 3);
++    X1 = ror32((X0 ^ key->rk[188]) + (X1 ^ key->rk[189]), 5);
++    X0 = rol32((X3 ^ key->rk[186]) + (X0 ^ key->rk[187]), 9);
++  }
++
++  put_unaligned_le32(X0, &out[0]);
++  put_unaligned_le32(X1, &out[4]);
++  put_unaligned_le32(X2, &out[8]);
++  put_unaligned_le32(X3, &out[12]);
++}
++EXPORT_SYMBOL_GPL(__crypto_lea_encrypt);
++
++void __crypto_lea_decrypt(const void *_key, u8 *out, const u8 *in) {
++  const struct crypto_lea_ctx *key = _key;
++  u32 X0 = get_unaligned_le32(&in[0]);
++  u32 X1 = get_unaligned_le32(&in[4]);
++  u32 X2 = get_unaligned_le32(&in[8]);
++  u32 X3 = get_unaligned_le32(&in[12]);
++
++  if (key->round > 28) {
++    X0 = (ror32(X0, 9) - (X3 ^ key->rk[186])) ^ key->rk[187];
++    X1 = (rol32(X1, 5) - (X0 ^ key->rk[188])) ^ key->rk[189];
++    X2 = (rol32(X2, 3) - (X1 ^ key->rk[190])) ^ key->rk[191];
++    X3 = (ror32(X3, 9) - (X2 ^ key->rk[180])) ^ key->rk[181];
++    X0 = (rol32(X0, 5) - (X3 ^ key->rk[182])) ^ key->rk[183];
++    X1 = (rol32(X1, 3) - (X0 ^ key->rk[184])) ^ key->rk[185];
++    X2 = (ror32(X2, 9) - (X1 ^ key->rk[174])) ^ key->rk[175];
++    X3 = (rol32(X3, 5) - (X2 ^ key->rk[176])) ^ key->rk[177];
++    X0 = (rol32(X0, 3) - (X3 ^ key->rk[178])) ^ key->rk[179];
++    X1 = (ror32(X1, 9) - (X0 ^ key->rk[168])) ^ key->rk[169];
++    X2 = (rol32(X2, 5) - (X1 ^ key->rk[170])) ^ key->rk[171];
++    X3 = (rol32(X3, 3) - (X2 ^ key->rk[172])) ^ key->rk[173];
++  }
++
++  if (key->round > 24) {
++    X0 = (ror32(X0, 9) - (X3 ^ key->rk[162])) ^ key->rk[163];
++    X1 = (rol32(X1, 5) - (X0 ^ key->rk[164])) ^ key->rk[165];
++    X2 = (rol32(X2, 3) - (X1 ^ key->rk[166])) ^ key->rk[167];
++    X3 = (ror32(X3, 9) - (X2 ^ key->rk[156])) ^ key->rk[157];
++    X0 = (rol32(X0, 5) - (X3 ^ key->rk[158])) ^ key->rk[159];
++    X1 = (rol32(X1, 3) - (X0 ^ key->rk[160])) ^ key->rk[161];
++    X2 = (ror32(X2, 9) - (X1 ^ key->rk[150])) ^ key->rk[151];
++    X3 = (rol32(X3, 5) - (X2 ^ key->rk[152])) ^ key->rk[153];
++    X0 = (rol32(X0, 3) - (X3 ^ key->rk[154])) ^ key->rk[155];
++    X1 = (ror32(X1, 9) - (X0 ^ key->rk[144])) ^ key->rk[145];
++    X2 = (rol32(X2, 5) - (X1 ^ key->rk[146])) ^ key->rk[147];
++    X3 = (rol32(X3, 3) - (X2 ^ key->rk[148])) ^ key->rk[149];
++  }
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[138])) ^ key->rk[139];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[140])) ^ key->rk[141];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[142])) ^ key->rk[143];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[132])) ^ key->rk[133];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[134])) ^ key->rk[135];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[136])) ^ key->rk[137];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[126])) ^ key->rk[127];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[128])) ^ key->rk[129];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[130])) ^ key->rk[131];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[120])) ^ key->rk[121];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[122])) ^ key->rk[123];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[124])) ^ key->rk[125];
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[114])) ^ key->rk[115];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[116])) ^ key->rk[117];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[118])) ^ key->rk[119];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[108])) ^ key->rk[109];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[110])) ^ key->rk[111];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[112])) ^ key->rk[113];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[102])) ^ key->rk[103];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[104])) ^ key->rk[105];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[106])) ^ key->rk[107];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[96])) ^ key->rk[97];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[98])) ^ key->rk[99];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[100])) ^ key->rk[101];
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[90])) ^ key->rk[91];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[92])) ^ key->rk[93];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[94])) ^ key->rk[95];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[84])) ^ key->rk[85];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[86])) ^ key->rk[87];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[88])) ^ key->rk[89];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[78])) ^ key->rk[79];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[80])) ^ key->rk[81];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[82])) ^ key->rk[83];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[72])) ^ key->rk[73];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[74])) ^ key->rk[75];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[76])) ^ key->rk[77];
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[66])) ^ key->rk[67];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[68])) ^ key->rk[69];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[70])) ^ key->rk[71];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[60])) ^ key->rk[61];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[62])) ^ key->rk[63];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[64])) ^ key->rk[65];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[54])) ^ key->rk[55];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[56])) ^ key->rk[57];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[58])) ^ key->rk[59];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[48])) ^ key->rk[49];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[50])) ^ key->rk[51];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[52])) ^ key->rk[53];
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[42])) ^ key->rk[43];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[44])) ^ key->rk[45];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[46])) ^ key->rk[47];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[36])) ^ key->rk[37];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[38])) ^ key->rk[39];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[40])) ^ key->rk[41];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[30])) ^ key->rk[31];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[32])) ^ key->rk[33];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[34])) ^ key->rk[35];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[24])) ^ key->rk[25];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[26])) ^ key->rk[27];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[28])) ^ key->rk[29];
++
++  X0 = (ror32(X0, 9) - (X3 ^ key->rk[18])) ^ key->rk[19];
++  X1 = (rol32(X1, 5) - (X0 ^ key->rk[20])) ^ key->rk[21];
++  X2 = (rol32(X2, 3) - (X1 ^ key->rk[22])) ^ key->rk[23];
++  X3 = (ror32(X3, 9) - (X2 ^ key->rk[12])) ^ key->rk[13];
++  X0 = (rol32(X0, 5) - (X3 ^ key->rk[14])) ^ key->rk[15];
++  X1 = (rol32(X1, 3) - (X0 ^ key->rk[16])) ^ key->rk[17];
++  X2 = (ror32(X2, 9) - (X1 ^ key->rk[6])) ^ key->rk[7];
++  X3 = (rol32(X3, 5) - (X2 ^ key->rk[8])) ^ key->rk[9];
++  X0 = (rol32(X0, 3) - (X3 ^ key->rk[10])) ^ key->rk[11];
++  X1 = (ror32(X1, 9) - (X0 ^ key->rk[0])) ^ key->rk[1];
++  X2 = (rol32(X2, 5) - (X1 ^ key->rk[2])) ^ key->rk[3];
++  X3 = (rol32(X3, 3) - (X2 ^ key->rk[4])) ^ key->rk[5];
++
++  put_unaligned_le32(X0, &out[0]);
++  put_unaligned_le32(X1, &out[4]);
++  put_unaligned_le32(X2, &out[8]);
++  put_unaligned_le32(X3, &out[12]);
++}
++EXPORT_SYMBOL_GPL(__crypto_lea_decrypt);
++
++static void crypto_lea_encrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in) {
++  const struct crypto_lea_ctx *key = crypto_tfm_ctx(tfm);
++
++  __crypto_lea_encrypt(key, out, in);
++}
++
++static void crypto_lea_decrypt(struct crypto_tfm *tfm, u8 *out, const u8 *in) {
++  const struct crypto_lea_ctx *key = crypto_tfm_ctx(tfm);
++  __crypto_lea_decrypt(key, out, in);
++}
++
++int _crypto_lea_set_key(struct crypto_lea_ctx *key, const u8 *in_key,
++                        u32 key_len) {
++  const u32 *_mk = (const u32 *)in_key;
++  switch (key_len) {
++  case 16:
++    key->rk[0] = rol32(get_unaligned_le32(&_mk[0]) + lea_delta[0][0], 1);
++    key->rk[6] = rol32(key->rk[0] + lea_delta[1][1], 1);
++    key->rk[12] = rol32(key->rk[6] + lea_delta[2][2], 1);
++    key->rk[18] = rol32(key->rk[12] + lea_delta[3][3], 1);
++    key->rk[24] = rol32(key->rk[18] + lea_delta[0][4], 1);
++    key->rk[30] = rol32(key->rk[24] + lea_delta[1][5], 1);
++    key->rk[36] = rol32(key->rk[30] + lea_delta[2][6], 1);
++    key->rk[42] = rol32(key->rk[36] + lea_delta[3][7], 1);
++    key->rk[48] = rol32(key->rk[42] + lea_delta[0][8], 1);
++    key->rk[54] = rol32(key->rk[48] + lea_delta[1][9], 1);
++    key->rk[60] = rol32(key->rk[54] + lea_delta[2][10], 1);
++    key->rk[66] = rol32(key->rk[60] + lea_delta[3][11], 1);
++    key->rk[72] = rol32(key->rk[66] + lea_delta[0][12], 1);
++    key->rk[78] = rol32(key->rk[72] + lea_delta[1][13], 1);
++    key->rk[84] = rol32(key->rk[78] + lea_delta[2][14], 1);
++    key->rk[90] = rol32(key->rk[84] + lea_delta[3][15], 1);
++    key->rk[96] = rol32(key->rk[90] + lea_delta[0][16], 1);
++    key->rk[102] = rol32(key->rk[96] + lea_delta[1][17], 1);
++    key->rk[108] = rol32(key->rk[102] + lea_delta[2][18], 1);
++    key->rk[114] = rol32(key->rk[108] + lea_delta[3][19], 1);
++    key->rk[120] = rol32(key->rk[114] + lea_delta[0][20], 1);
++    key->rk[126] = rol32(key->rk[120] + lea_delta[1][21], 1);
++    key->rk[132] = rol32(key->rk[126] + lea_delta[2][22], 1);
++    key->rk[138] = rol32(key->rk[132] + lea_delta[3][23], 1);
++
++    key->rk[1] = key->rk[3] = key->rk[5] =
++        rol32(get_unaligned_le32(&_mk[1]) + lea_delta[0][1], 3);
++    key->rk[7] = key->rk[9] = key->rk[11] =
++        rol32(key->rk[1] + lea_delta[1][2], 3);
++    key->rk[13] = key->rk[15] = key->rk[17] =
++        rol32(key->rk[7] + lea_delta[2][3], 3);
++    key->rk[19] = key->rk[21] = key->rk[23] =
++        rol32(key->rk[13] + lea_delta[3][4], 3);
++    key->rk[25] = key->rk[27] = key->rk[29] =
++        rol32(key->rk[19] + lea_delta[0][5], 3);
++    key->rk[31] = key->rk[33] = key->rk[35] =
++        rol32(key->rk[25] + lea_delta[1][6], 3);
++    key->rk[37] = key->rk[39] = key->rk[41] =
++        rol32(key->rk[31] + lea_delta[2][7], 3);
++    key->rk[43] = key->rk[45] = key->rk[47] =
++        rol32(key->rk[37] + lea_delta[3][8], 3);
++    key->rk[49] = key->rk[51] = key->rk[53] =
++        rol32(key->rk[43] + lea_delta[0][9], 3);
++    key->rk[55] = key->rk[57] = key->rk[59] =
++        rol32(key->rk[49] + lea_delta[1][10], 3);
++    key->rk[61] = key->rk[63] = key->rk[65] =
++        rol32(key->rk[55] + lea_delta[2][11], 3);
++    key->rk[67] = key->rk[69] = key->rk[71] =
++        rol32(key->rk[61] + lea_delta[3][12], 3);
++    key->rk[73] = key->rk[75] = key->rk[77] =
++        rol32(key->rk[67] + lea_delta[0][13], 3);
++    key->rk[79] = key->rk[81] = key->rk[83] =
++        rol32(key->rk[73] + lea_delta[1][14], 3);
++    key->rk[85] = key->rk[87] = key->rk[89] =
++        rol32(key->rk[79] + lea_delta[2][15], 3);
++    key->rk[91] = key->rk[93] = key->rk[95] =
++        rol32(key->rk[85] + lea_delta[3][16], 3);
++    key->rk[97] = key->rk[99] = key->rk[101] =
++        rol32(key->rk[91] + lea_delta[0][17], 3);
++    key->rk[103] = key->rk[105] = key->rk[107] =
++        rol32(key->rk[97] + lea_delta[1][18], 3);
++    key->rk[109] = key->rk[111] = key->rk[113] =
++        rol32(key->rk[103] + lea_delta[2][19], 3);
++    key->rk[115] = key->rk[117] = key->rk[119] =
++        rol32(key->rk[109] + lea_delta[3][20], 3);
++    key->rk[121] = key->rk[123] = key->rk[125] =
++        rol32(key->rk[115] + lea_delta[0][21], 3);
++    key->rk[127] = key->rk[129] = key->rk[131] =
++        rol32(key->rk[121] + lea_delta[1][22], 3);
++    key->rk[133] = key->rk[135] = key->rk[137] =
++        rol32(key->rk[127] + lea_delta[2][23], 3);
++    key->rk[139] = key->rk[141] = key->rk[143] =
++        rol32(key->rk[133] + lea_delta[3][24], 3);
++
++    key->rk[2] = rol32(get_unaligned_le32(&_mk[2]) + lea_delta[0][2], 6);
++    key->rk[8] = rol32(key->rk[2] + lea_delta[1][3], 6);
++    key->rk[14] = rol32(key->rk[8] + lea_delta[2][4], 6);
++    key->rk[20] = rol32(key->rk[14] + lea_delta[3][5], 6);
++    key->rk[26] = rol32(key->rk[20] + lea_delta[0][6], 6);
++    key->rk[32] = rol32(key->rk[26] + lea_delta[1][7], 6);
++    key->rk[38] = rol32(key->rk[32] + lea_delta[2][8], 6);
++    key->rk[44] = rol32(key->rk[38] + lea_delta[3][9], 6);
++    key->rk[50] = rol32(key->rk[44] + lea_delta[0][10], 6);
++    key->rk[56] = rol32(key->rk[50] + lea_delta[1][11], 6);
++    key->rk[62] = rol32(key->rk[56] + lea_delta[2][12], 6);
++    key->rk[68] = rol32(key->rk[62] + lea_delta[3][13], 6);
++    key->rk[74] = rol32(key->rk[68] + lea_delta[0][14], 6);
++    key->rk[80] = rol32(key->rk[74] + lea_delta[1][15], 6);
++    key->rk[86] = rol32(key->rk[80] + lea_delta[2][16], 6);
++    key->rk[92] = rol32(key->rk[86] + lea_delta[3][17], 6);
++    key->rk[98] = rol32(key->rk[92] + lea_delta[0][18], 6);
++    key->rk[104] = rol32(key->rk[98] + lea_delta[1][19], 6);
++    key->rk[110] = rol32(key->rk[104] + lea_delta[2][20], 6);
++    key->rk[116] = rol32(key->rk[110] + lea_delta[3][21], 6);
++    key->rk[122] = rol32(key->rk[116] + lea_delta[0][22], 6);
++    key->rk[128] = rol32(key->rk[122] + lea_delta[1][23], 6);
++    key->rk[134] = rol32(key->rk[128] + lea_delta[2][24], 6);
++    key->rk[140] = rol32(key->rk[134] + lea_delta[3][25], 6);
++
++    key->rk[4] = rol32(get_unaligned_le32(&_mk[3]) + lea_delta[0][3], 11);
++    key->rk[10] = rol32(key->rk[4] + lea_delta[1][4], 11);
++    key->rk[16] = rol32(key->rk[10] + lea_delta[2][5], 11);
++    key->rk[22] = rol32(key->rk[16] + lea_delta[3][6], 11);
++    key->rk[28] = rol32(key->rk[22] + lea_delta[0][7], 11);
++    key->rk[34] = rol32(key->rk[28] + lea_delta[1][8], 11);
++    key->rk[40] = rol32(key->rk[34] + lea_delta[2][9], 11);
++    key->rk[46] = rol32(key->rk[40] + lea_delta[3][10], 11);
++    key->rk[52] = rol32(key->rk[46] + lea_delta[0][11], 11);
++    key->rk[58] = rol32(key->rk[52] + lea_delta[1][12], 11);
++    key->rk[64] = rol32(key->rk[58] + lea_delta[2][13], 11);
++    key->rk[70] = rol32(key->rk[64] + lea_delta[3][14], 11);
++    key->rk[76] = rol32(key->rk[70] + lea_delta[0][15], 11);
++    key->rk[82] = rol32(key->rk[76] + lea_delta[1][16], 11);
++    key->rk[88] = rol32(key->rk[82] + lea_delta[2][17], 11);
++    key->rk[94] = rol32(key->rk[88] + lea_delta[3][18], 11);
++    key->rk[100] = rol32(key->rk[94] + lea_delta[0][19], 11);
++    key->rk[106] = rol32(key->rk[100] + lea_delta[1][20], 11);
++    key->rk[112] = rol32(key->rk[106] + lea_delta[2][21], 11);
++    key->rk[118] = rol32(key->rk[112] + lea_delta[3][22], 11);
++    key->rk[124] = rol32(key->rk[118] + lea_delta[0][23], 11);
++    key->rk[130] = rol32(key->rk[124] + lea_delta[1][24], 11);
++    key->rk[136] = rol32(key->rk[130] + lea_delta[2][25], 11);
++    key->rk[142] = rol32(key->rk[136] + lea_delta[3][26], 11);
++    break;
++
++  case 24:
++    key->rk[0] = rol32(get_unaligned_le32(&_mk[0]) + lea_delta[0][0], 1);
++    key->rk[6] = rol32(key->rk[0] + lea_delta[1][1], 1);
++    key->rk[12] = rol32(key->rk[6] + lea_delta[2][2], 1);
++    key->rk[18] = rol32(key->rk[12] + lea_delta[3][3], 1);
++    key->rk[24] = rol32(key->rk[18] + lea_delta[4][4], 1);
++    key->rk[30] = rol32(key->rk[24] + lea_delta[5][5], 1);
++    key->rk[36] = rol32(key->rk[30] + lea_delta[0][6], 1);
++    key->rk[42] = rol32(key->rk[36] + lea_delta[1][7], 1);
++    key->rk[48] = rol32(key->rk[42] + lea_delta[2][8], 1);
++    key->rk[54] = rol32(key->rk[48] + lea_delta[3][9], 1);
++    key->rk[60] = rol32(key->rk[54] + lea_delta[4][10], 1);
++    key->rk[66] = rol32(key->rk[60] + lea_delta[5][11], 1);
++    key->rk[72] = rol32(key->rk[66] + lea_delta[0][12], 1);
++    key->rk[78] = rol32(key->rk[72] + lea_delta[1][13], 1);
++    key->rk[84] = rol32(key->rk[78] + lea_delta[2][14], 1);
++    key->rk[90] = rol32(key->rk[84] + lea_delta[3][15], 1);
++    key->rk[96] = rol32(key->rk[90] + lea_delta[4][16], 1);
++    key->rk[102] = rol32(key->rk[96] + lea_delta[5][17], 1);
++    key->rk[108] = rol32(key->rk[102] + lea_delta[0][18], 1);
++    key->rk[114] = rol32(key->rk[108] + lea_delta[1][19], 1);
++    key->rk[120] = rol32(key->rk[114] + lea_delta[2][20], 1);
++    key->rk[126] = rol32(key->rk[120] + lea_delta[3][21], 1);
++    key->rk[132] = rol32(key->rk[126] + lea_delta[4][22], 1);
++    key->rk[138] = rol32(key->rk[132] + lea_delta[5][23], 1);
++    key->rk[144] = rol32(key->rk[138] + lea_delta[0][24], 1);
++    key->rk[150] = rol32(key->rk[144] + lea_delta[1][25], 1);
++    key->rk[156] = rol32(key->rk[150] + lea_delta[2][26], 1);
++    key->rk[162] = rol32(key->rk[156] + lea_delta[3][27], 1);
++
++    key->rk[1] = rol32(get_unaligned_le32(&_mk[1]) + lea_delta[0][1], 3);
++    key->rk[7] = rol32(key->rk[1] + lea_delta[1][2], 3);
++    key->rk[13] = rol32(key->rk[7] + lea_delta[2][3], 3);
++    key->rk[19] = rol32(key->rk[13] + lea_delta[3][4], 3);
++    key->rk[25] = rol32(key->rk[19] + lea_delta[4][5], 3);
++    key->rk[31] = rol32(key->rk[25] + lea_delta[5][6], 3);
++    key->rk[37] = rol32(key->rk[31] + lea_delta[0][7], 3);
++    key->rk[43] = rol32(key->rk[37] + lea_delta[1][8], 3);
++    key->rk[49] = rol32(key->rk[43] + lea_delta[2][9], 3);
++    key->rk[55] = rol32(key->rk[49] + lea_delta[3][10], 3);
++    key->rk[61] = rol32(key->rk[55] + lea_delta[4][11], 3);
++    key->rk[67] = rol32(key->rk[61] + lea_delta[5][12], 3);
++    key->rk[73] = rol32(key->rk[67] + lea_delta[0][13], 3);
++    key->rk[79] = rol32(key->rk[73] + lea_delta[1][14], 3);
++    key->rk[85] = rol32(key->rk[79] + lea_delta[2][15], 3);
++    key->rk[91] = rol32(key->rk[85] + lea_delta[3][16], 3);
++    key->rk[97] = rol32(key->rk[91] + lea_delta[4][17], 3);
++    key->rk[103] = rol32(key->rk[97] + lea_delta[5][18], 3);
++    key->rk[109] = rol32(key->rk[103] + lea_delta[0][19], 3);
++    key->rk[115] = rol32(key->rk[109] + lea_delta[1][20], 3);
++    key->rk[121] = rol32(key->rk[115] + lea_delta[2][21], 3);
++    key->rk[127] = rol32(key->rk[121] + lea_delta[3][22], 3);
++    key->rk[133] = rol32(key->rk[127] + lea_delta[4][23], 3);
++    key->rk[139] = rol32(key->rk[133] + lea_delta[5][24], 3);
++    key->rk[145] = rol32(key->rk[139] + lea_delta[0][25], 3);
++    key->rk[151] = rol32(key->rk[145] + lea_delta[1][26], 3);
++    key->rk[157] = rol32(key->rk[151] + lea_delta[2][27], 3);
++    key->rk[163] = rol32(key->rk[157] + lea_delta[3][28], 3);
++
++    key->rk[2] = rol32(get_unaligned_le32(&_mk[2]) + lea_delta[0][2], 6);
++    key->rk[8] = rol32(key->rk[2] + lea_delta[1][3], 6);
++    key->rk[14] = rol32(key->rk[8] + lea_delta[2][4], 6);
++    key->rk[20] = rol32(key->rk[14] + lea_delta[3][5], 6);
++    key->rk[26] = rol32(key->rk[20] + lea_delta[4][6], 6);
++    key->rk[32] = rol32(key->rk[26] + lea_delta[5][7], 6);
++    key->rk[38] = rol32(key->rk[32] + lea_delta[0][8], 6);
++    key->rk[44] = rol32(key->rk[38] + lea_delta[1][9], 6);
++    key->rk[50] = rol32(key->rk[44] + lea_delta[2][10], 6);
++    key->rk[56] = rol32(key->rk[50] + lea_delta[3][11], 6);
++    key->rk[62] = rol32(key->rk[56] + lea_delta[4][12], 6);
++    key->rk[68] = rol32(key->rk[62] + lea_delta[5][13], 6);
++    key->rk[74] = rol32(key->rk[68] + lea_delta[0][14], 6);
++    key->rk[80] = rol32(key->rk[74] + lea_delta[1][15], 6);
++    key->rk[86] = rol32(key->rk[80] + lea_delta[2][16], 6);
++    key->rk[92] = rol32(key->rk[86] + lea_delta[3][17], 6);
++    key->rk[98] = rol32(key->rk[92] + lea_delta[4][18], 6);
++    key->rk[104] = rol32(key->rk[98] + lea_delta[5][19], 6);
++    key->rk[110] = rol32(key->rk[104] + lea_delta[0][20], 6);
++    key->rk[116] = rol32(key->rk[110] + lea_delta[1][21], 6);
++    key->rk[122] = rol32(key->rk[116] + lea_delta[2][22], 6);
++    key->rk[128] = rol32(key->rk[122] + lea_delta[3][23], 6);
++    key->rk[134] = rol32(key->rk[128] + lea_delta[4][24], 6);
++    key->rk[140] = rol32(key->rk[134] + lea_delta[5][25], 6);
++    key->rk[146] = rol32(key->rk[140] + lea_delta[0][26], 6);
++    key->rk[152] = rol32(key->rk[146] + lea_delta[1][27], 6);
++    key->rk[158] = rol32(key->rk[152] + lea_delta[2][28], 6);
++    key->rk[164] = rol32(key->rk[158] + lea_delta[3][29], 6);
++
++    key->rk[3] = rol32(get_unaligned_le32(&_mk[3]) + lea_delta[0][3], 11);
++    key->rk[9] = rol32(key->rk[3] + lea_delta[1][4], 11);
++    key->rk[15] = rol32(key->rk[9] + lea_delta[2][5], 11);
++    key->rk[21] = rol32(key->rk[15] + lea_delta[3][6], 11);
++    key->rk[27] = rol32(key->rk[21] + lea_delta[4][7], 11);
++    key->rk[33] = rol32(key->rk[27] + lea_delta[5][8], 11);
++    key->rk[39] = rol32(key->rk[33] + lea_delta[0][9], 11);
++    key->rk[45] = rol32(key->rk[39] + lea_delta[1][10], 11);
++    key->rk[51] = rol32(key->rk[45] + lea_delta[2][11], 11);
++    key->rk[57] = rol32(key->rk[51] + lea_delta[3][12], 11);
++    key->rk[63] = rol32(key->rk[57] + lea_delta[4][13], 11);
++    key->rk[69] = rol32(key->rk[63] + lea_delta[5][14], 11);
++    key->rk[75] = rol32(key->rk[69] + lea_delta[0][15], 11);
++    key->rk[81] = rol32(key->rk[75] + lea_delta[1][16], 11);
++    key->rk[87] = rol32(key->rk[81] + lea_delta[2][17], 11);
++    key->rk[93] = rol32(key->rk[87] + lea_delta[3][18], 11);
++    key->rk[99] = rol32(key->rk[93] + lea_delta[4][19], 11);
++    key->rk[105] = rol32(key->rk[99] + lea_delta[5][20], 11);
++    key->rk[111] = rol32(key->rk[105] + lea_delta[0][21], 11);
++    key->rk[117] = rol32(key->rk[111] + lea_delta[1][22], 11);
++    key->rk[123] = rol32(key->rk[117] + lea_delta[2][23], 11);
++    key->rk[129] = rol32(key->rk[123] + lea_delta[3][24], 11);
++    key->rk[135] = rol32(key->rk[129] + lea_delta[4][25], 11);
++    key->rk[141] = rol32(key->rk[135] + lea_delta[5][26], 11);
++    key->rk[147] = rol32(key->rk[141] + lea_delta[0][27], 11);
++    key->rk[153] = rol32(key->rk[147] + lea_delta[1][28], 11);
++    key->rk[159] = rol32(key->rk[153] + lea_delta[2][29], 11);
++    key->rk[165] = rol32(key->rk[159] + lea_delta[3][30], 11);
++
++    key->rk[4] = rol32(get_unaligned_le32(&_mk[4]) + lea_delta[0][4], 13);
++    key->rk[10] = rol32(key->rk[4] + lea_delta[1][5], 13);
++    key->rk[16] = rol32(key->rk[10] + lea_delta[2][6], 13);
++    key->rk[22] = rol32(key->rk[16] + lea_delta[3][7], 13);
++    key->rk[28] = rol32(key->rk[22] + lea_delta[4][8], 13);
++    key->rk[34] = rol32(key->rk[28] + lea_delta[5][9], 13);
++    key->rk[40] = rol32(key->rk[34] + lea_delta[0][10], 13);
++    key->rk[46] = rol32(key->rk[40] + lea_delta[1][11], 13);
++    key->rk[52] = rol32(key->rk[46] + lea_delta[2][12], 13);
++    key->rk[58] = rol32(key->rk[52] + lea_delta[3][13], 13);
++    key->rk[64] = rol32(key->rk[58] + lea_delta[4][14], 13);
++    key->rk[70] = rol32(key->rk[64] + lea_delta[5][15], 13);
++    key->rk[76] = rol32(key->rk[70] + lea_delta[0][16], 13);
++    key->rk[82] = rol32(key->rk[76] + lea_delta[1][17], 13);
++    key->rk[88] = rol32(key->rk[82] + lea_delta[2][18], 13);
++    key->rk[94] = rol32(key->rk[88] + lea_delta[3][19], 13);
++    key->rk[100] = rol32(key->rk[94] + lea_delta[4][20], 13);
++    key->rk[106] = rol32(key->rk[100] + lea_delta[5][21], 13);
++    key->rk[112] = rol32(key->rk[106] + lea_delta[0][22], 13);
++    key->rk[118] = rol32(key->rk[112] + lea_delta[1][23], 13);
++    key->rk[124] = rol32(key->rk[118] + lea_delta[2][24], 13);
++    key->rk[130] = rol32(key->rk[124] + lea_delta[3][25], 13);
++    key->rk[136] = rol32(key->rk[130] + lea_delta[4][26], 13);
++    key->rk[142] = rol32(key->rk[136] + lea_delta[5][27], 13);
++    key->rk[148] = rol32(key->rk[142] + lea_delta[0][28], 13);
++    key->rk[154] = rol32(key->rk[148] + lea_delta[1][29], 13);
++    key->rk[160] = rol32(key->rk[154] + lea_delta[2][30], 13);
++    key->rk[166] = rol32(key->rk[160] + lea_delta[3][31], 13);
++
++    key->rk[5] = rol32(get_unaligned_le32(&_mk[5]) + lea_delta[0][5], 17);
++    key->rk[11] = rol32(key->rk[5] + lea_delta[1][6], 17);
++    key->rk[17] = rol32(key->rk[11] + lea_delta[2][7], 17);
++    key->rk[23] = rol32(key->rk[17] + lea_delta[3][8], 17);
++    key->rk[29] = rol32(key->rk[23] + lea_delta[4][9], 17);
++    key->rk[35] = rol32(key->rk[29] + lea_delta[5][10], 17);
++    key->rk[41] = rol32(key->rk[35] + lea_delta[0][11], 17);
++    key->rk[47] = rol32(key->rk[41] + lea_delta[1][12], 17);
++    key->rk[53] = rol32(key->rk[47] + lea_delta[2][13], 17);
++    key->rk[59] = rol32(key->rk[53] + lea_delta[3][14], 17);
++    key->rk[65] = rol32(key->rk[59] + lea_delta[4][15], 17);
++    key->rk[71] = rol32(key->rk[65] + lea_delta[5][16], 17);
++    key->rk[77] = rol32(key->rk[71] + lea_delta[0][17], 17);
++    key->rk[83] = rol32(key->rk[77] + lea_delta[1][18], 17);
++    key->rk[89] = rol32(key->rk[83] + lea_delta[2][19], 17);
++    key->rk[95] = rol32(key->rk[89] + lea_delta[3][20], 17);
++    key->rk[101] = rol32(key->rk[95] + lea_delta[4][21], 17);
++    key->rk[107] = rol32(key->rk[101] + lea_delta[5][22], 17);
++    key->rk[113] = rol32(key->rk[107] + lea_delta[0][23], 17);
++    key->rk[119] = rol32(key->rk[113] + lea_delta[1][24], 17);
++    key->rk[125] = rol32(key->rk[119] + lea_delta[2][25], 17);
++    key->rk[131] = rol32(key->rk[125] + lea_delta[3][26], 17);
++    key->rk[137] = rol32(key->rk[131] + lea_delta[4][27], 17);
++    key->rk[143] = rol32(key->rk[137] + lea_delta[5][28], 17);
++    key->rk[149] = rol32(key->rk[143] + lea_delta[0][29], 17);
++    key->rk[155] = rol32(key->rk[149] + lea_delta[1][30], 17);
++    key->rk[161] = rol32(key->rk[155] + lea_delta[2][31], 17);
++    key->rk[167] = rol32(key->rk[161] + lea_delta[3][0], 17);
++    break;
++
++  case 32:
++    key->rk[0] = rol32(get_unaligned_le32(&_mk[0]) + lea_delta[0][0], 1);
++    key->rk[8] = rol32(key->rk[0] + lea_delta[1][3], 6);
++    key->rk[16] = rol32(key->rk[8] + lea_delta[2][6], 13);
++    key->rk[24] = rol32(key->rk[16] + lea_delta[4][4], 1);
++    key->rk[32] = rol32(key->rk[24] + lea_delta[5][7], 6);
++    key->rk[40] = rol32(key->rk[32] + lea_delta[6][10], 13);
++    key->rk[48] = rol32(key->rk[40] + lea_delta[0][8], 1);
++    key->rk[56] = rol32(key->rk[48] + lea_delta[1][11], 6);
++    key->rk[64] = rol32(key->rk[56] + lea_delta[2][14], 13);
++    key->rk[72] = rol32(key->rk[64] + lea_delta[4][12], 1);
++    key->rk[80] = rol32(key->rk[72] + lea_delta[5][15], 6);
++    key->rk[88] = rol32(key->rk[80] + lea_delta[6][18], 13);
++    key->rk[96] = rol32(key->rk[88] + lea_delta[0][16], 1);
++    key->rk[104] = rol32(key->rk[96] + lea_delta[1][19], 6);
++    key->rk[112] = rol32(key->rk[104] + lea_delta[2][22], 13);
++    key->rk[120] = rol32(key->rk[112] + lea_delta[4][20], 1);
++    key->rk[128] = rol32(key->rk[120] + lea_delta[5][23], 6);
++    key->rk[136] = rol32(key->rk[128] + lea_delta[6][26], 13);
++    key->rk[144] = rol32(key->rk[136] + lea_delta[0][24], 1);
++    key->rk[152] = rol32(key->rk[144] + lea_delta[1][27], 6);
++    key->rk[160] = rol32(key->rk[152] + lea_delta[2][30], 13);
++    key->rk[168] = rol32(key->rk[160] + lea_delta[4][28], 1);
++    key->rk[176] = rol32(key->rk[168] + lea_delta[5][31], 6);
++    key->rk[184] = rol32(key->rk[176] + lea_delta[6][2], 13);
++
++    key->rk[1] = rol32(get_unaligned_le32(&_mk[1]) + lea_delta[0][1], 3);
++    key->rk[9] = rol32(key->rk[1] + lea_delta[1][4], 11);
++    key->rk[17] = rol32(key->rk[9] + lea_delta[2][7], 17);
++    key->rk[25] = rol32(key->rk[17] + lea_delta[4][5], 3);
++    key->rk[33] = rol32(key->rk[25] + lea_delta[5][8], 11);
++    key->rk[41] = rol32(key->rk[33] + lea_delta[6][11], 17);
++    key->rk[49] = rol32(key->rk[41] + lea_delta[0][9], 3);
++    key->rk[57] = rol32(key->rk[49] + lea_delta[1][12], 11);
++    key->rk[65] = rol32(key->rk[57] + lea_delta[2][15], 17);
++    key->rk[73] = rol32(key->rk[65] + lea_delta[4][13], 3);
++    key->rk[81] = rol32(key->rk[73] + lea_delta[5][16], 11);
++    key->rk[89] = rol32(key->rk[81] + lea_delta[6][19], 17);
++    key->rk[97] = rol32(key->rk[89] + lea_delta[0][17], 3);
++    key->rk[105] = rol32(key->rk[97] + lea_delta[1][20], 11);
++    key->rk[113] = rol32(key->rk[105] + lea_delta[2][23], 17);
++    key->rk[121] = rol32(key->rk[113] + lea_delta[4][21], 3);
++    key->rk[129] = rol32(key->rk[121] + lea_delta[5][24], 11);
++    key->rk[137] = rol32(key->rk[129] + lea_delta[6][27], 17);
++    key->rk[145] = rol32(key->rk[137] + lea_delta[0][25], 3);
++    key->rk[153] = rol32(key->rk[145] + lea_delta[1][28], 11);
++    key->rk[161] = rol32(key->rk[153] + lea_delta[2][31], 17);
++    key->rk[169] = rol32(key->rk[161] + lea_delta[4][29], 3);
++    key->rk[177] = rol32(key->rk[169] + lea_delta[5][0], 11);
++    key->rk[185] = rol32(key->rk[177] + lea_delta[6][3], 17);
++
++    key->rk[2] = rol32(get_unaligned_le32(&_mk[2]) + lea_delta[0][2], 6);
++    key->rk[10] = rol32(key->rk[2] + lea_delta[1][5], 13);
++    key->rk[18] = rol32(key->rk[10] + lea_delta[3][3], 1);
++    key->rk[26] = rol32(key->rk[18] + lea_delta[4][6], 6);
++    key->rk[34] = rol32(key->rk[26] + lea_delta[5][9], 13);
++    key->rk[42] = rol32(key->rk[34] + lea_delta[7][7], 1);
++    key->rk[50] = rol32(key->rk[42] + lea_delta[0][10], 6);
++    key->rk[58] = rol32(key->rk[50] + lea_delta[1][13], 13);
++    key->rk[66] = rol32(key->rk[58] + lea_delta[3][11], 1);
++    key->rk[74] = rol32(key->rk[66] + lea_delta[4][14], 6);
++    key->rk[82] = rol32(key->rk[74] + lea_delta[5][17], 13);
++    key->rk[90] = rol32(key->rk[82] + lea_delta[7][15], 1);
++    key->rk[98] = rol32(key->rk[90] + lea_delta[0][18], 6);
++    key->rk[106] = rol32(key->rk[98] + lea_delta[1][21], 13);
++    key->rk[114] = rol32(key->rk[106] + lea_delta[3][19], 1);
++    key->rk[122] = rol32(key->rk[114] + lea_delta[4][22], 6);
++    key->rk[130] = rol32(key->rk[122] + lea_delta[5][25], 13);
++    key->rk[138] = rol32(key->rk[130] + lea_delta[7][23], 1);
++    key->rk[146] = rol32(key->rk[138] + lea_delta[0][26], 6);
++    key->rk[154] = rol32(key->rk[146] + lea_delta[1][29], 13);
++    key->rk[162] = rol32(key->rk[154] + lea_delta[3][27], 1);
++    key->rk[170] = rol32(key->rk[162] + lea_delta[4][30], 6);
++    key->rk[178] = rol32(key->rk[170] + lea_delta[5][1], 13);
++    key->rk[186] = rol32(key->rk[178] + lea_delta[7][31], 1);
++
++    key->rk[3] = rol32(get_unaligned_le32(&_mk[3]) + lea_delta[0][3], 11);
++    key->rk[11] = rol32(key->rk[3] + lea_delta[1][6], 17);
++    key->rk[19] = rol32(key->rk[11] + lea_delta[3][4], 3);
++    key->rk[27] = rol32(key->rk[19] + lea_delta[4][7], 11);
++    key->rk[35] = rol32(key->rk[27] + lea_delta[5][10], 17);
++    key->rk[43] = rol32(key->rk[35] + lea_delta[7][8], 3);
++    key->rk[51] = rol32(key->rk[43] + lea_delta[0][11], 11);
++    key->rk[59] = rol32(key->rk[51] + lea_delta[1][14], 17);
++    key->rk[67] = rol32(key->rk[59] + lea_delta[3][12], 3);
++    key->rk[75] = rol32(key->rk[67] + lea_delta[4][15], 11);
++    key->rk[83] = rol32(key->rk[75] + lea_delta[5][18], 17);
++    key->rk[91] = rol32(key->rk[83] + lea_delta[7][16], 3);
++    key->rk[99] = rol32(key->rk[91] + lea_delta[0][19], 11);
++    key->rk[107] = rol32(key->rk[99] + lea_delta[1][22], 17);
++    key->rk[115] = rol32(key->rk[107] + lea_delta[3][20], 3);
++    key->rk[123] = rol32(key->rk[115] + lea_delta[4][23], 11);
++    key->rk[131] = rol32(key->rk[123] + lea_delta[5][26], 17);
++    key->rk[139] = rol32(key->rk[131] + lea_delta[7][24], 3);
++    key->rk[147] = rol32(key->rk[139] + lea_delta[0][27], 11);
++    key->rk[155] = rol32(key->rk[147] + lea_delta[1][30], 17);
++    key->rk[163] = rol32(key->rk[155] + lea_delta[3][28], 3);
++    key->rk[171] = rol32(key->rk[163] + lea_delta[4][31], 11);
++    key->rk[179] = rol32(key->rk[171] + lea_delta[5][2], 17);
++    key->rk[187] = rol32(key->rk[179] + lea_delta[7][0], 3);
++
++    key->rk[4] = rol32(get_unaligned_le32(&_mk[4]) + lea_delta[0][4], 13);
++    key->rk[12] = rol32(key->rk[4] + lea_delta[2][2], 1);
++    key->rk[20] = rol32(key->rk[12] + lea_delta[3][5], 6);
++    key->rk[28] = rol32(key->rk[20] + lea_delta[4][8], 13);
++    key->rk[36] = rol32(key->rk[28] + lea_delta[6][6], 1);
++    key->rk[44] = rol32(key->rk[36] + lea_delta[7][9], 6);
++    key->rk[52] = rol32(key->rk[44] + lea_delta[0][12], 13);
++    key->rk[60] = rol32(key->rk[52] + lea_delta[2][10], 1);
++    key->rk[68] = rol32(key->rk[60] + lea_delta[3][13], 6);
++    key->rk[76] = rol32(key->rk[68] + lea_delta[4][16], 13);
++    key->rk[84] = rol32(key->rk[76] + lea_delta[6][14], 1);
++    key->rk[92] = rol32(key->rk[84] + lea_delta[7][17], 6);
++    key->rk[100] = rol32(key->rk[92] + lea_delta[0][20], 13);
++    key->rk[108] = rol32(key->rk[100] + lea_delta[2][18], 1);
++    key->rk[116] = rol32(key->rk[108] + lea_delta[3][21], 6);
++    key->rk[124] = rol32(key->rk[116] + lea_delta[4][24], 13);
++    key->rk[132] = rol32(key->rk[124] + lea_delta[6][22], 1);
++    key->rk[140] = rol32(key->rk[132] + lea_delta[7][25], 6);
++    key->rk[148] = rol32(key->rk[140] + lea_delta[0][28], 13);
++    key->rk[156] = rol32(key->rk[148] + lea_delta[2][26], 1);
++    key->rk[164] = rol32(key->rk[156] + lea_delta[3][29], 6);
++    key->rk[172] = rol32(key->rk[164] + lea_delta[4][0], 13);
++    key->rk[180] = rol32(key->rk[172] + lea_delta[6][30], 1);
++    key->rk[188] = rol32(key->rk[180] + lea_delta[7][1], 6);
++
++    key->rk[5] = rol32(get_unaligned_le32(&_mk[5]) + lea_delta[0][5], 17);
++    key->rk[13] = rol32(key->rk[5] + lea_delta[2][3], 3);
++    key->rk[21] = rol32(key->rk[13] + lea_delta[3][6], 11);
++    key->rk[29] = rol32(key->rk[21] + lea_delta[4][9], 17);
++    key->rk[37] = rol32(key->rk[29] + lea_delta[6][7], 3);
++    key->rk[45] = rol32(key->rk[37] + lea_delta[7][10], 11);
++    key->rk[53] = rol32(key->rk[45] + lea_delta[0][13], 17);
++    key->rk[61] = rol32(key->rk[53] + lea_delta[2][11], 3);
++    key->rk[69] = rol32(key->rk[61] + lea_delta[3][14], 11);
++    key->rk[77] = rol32(key->rk[69] + lea_delta[4][17], 17);
++    key->rk[85] = rol32(key->rk[77] + lea_delta[6][15], 3);
++    key->rk[93] = rol32(key->rk[85] + lea_delta[7][18], 11);
++    key->rk[101] = rol32(key->rk[93] + lea_delta[0][21], 17);
++    key->rk[109] = rol32(key->rk[101] + lea_delta[2][19], 3);
++    key->rk[117] = rol32(key->rk[109] + lea_delta[3][22], 11);
++    key->rk[125] = rol32(key->rk[117] + lea_delta[4][25], 17);
++    key->rk[133] = rol32(key->rk[125] + lea_delta[6][23], 3);
++    key->rk[141] = rol32(key->rk[133] + lea_delta[7][26], 11);
++    key->rk[149] = rol32(key->rk[141] + lea_delta[0][29], 17);
++    key->rk[157] = rol32(key->rk[149] + lea_delta[2][27], 3);
++    key->rk[165] = rol32(key->rk[157] + lea_delta[3][30], 11);
++    key->rk[173] = rol32(key->rk[165] + lea_delta[4][1], 17);
++    key->rk[181] = rol32(key->rk[173] + lea_delta[6][31], 3);
++    key->rk[189] = rol32(key->rk[181] + lea_delta[7][2], 11);
++
++    key->rk[6] = rol32(get_unaligned_le32(&_mk[6]) + lea_delta[1][1], 1);
++    key->rk[14] = rol32(key->rk[6] + lea_delta[2][4], 6);
++    key->rk[22] = rol32(key->rk[14] + lea_delta[3][7], 13);
++    key->rk[30] = rol32(key->rk[22] + lea_delta[5][5], 1);
++    key->rk[38] = rol32(key->rk[30] + lea_delta[6][8], 6);
++    key->rk[46] = rol32(key->rk[38] + lea_delta[7][11], 13);
++    key->rk[54] = rol32(key->rk[46] + lea_delta[1][9], 1);
++    key->rk[62] = rol32(key->rk[54] + lea_delta[2][12], 6);
++    key->rk[70] = rol32(key->rk[62] + lea_delta[3][15], 13);
++    key->rk[78] = rol32(key->rk[70] + lea_delta[5][13], 1);
++    key->rk[86] = rol32(key->rk[78] + lea_delta[6][16], 6);
++    key->rk[94] = rol32(key->rk[86] + lea_delta[7][19], 13);
++    key->rk[102] = rol32(key->rk[94] + lea_delta[1][17], 1);
++    key->rk[110] = rol32(key->rk[102] + lea_delta[2][20], 6);
++    key->rk[118] = rol32(key->rk[110] + lea_delta[3][23], 13);
++    key->rk[126] = rol32(key->rk[118] + lea_delta[5][21], 1);
++    key->rk[134] = rol32(key->rk[126] + lea_delta[6][24], 6);
++    key->rk[142] = rol32(key->rk[134] + lea_delta[7][27], 13);
++    key->rk[150] = rol32(key->rk[142] + lea_delta[1][25], 1);
++    key->rk[158] = rol32(key->rk[150] + lea_delta[2][28], 6);
++    key->rk[166] = rol32(key->rk[158] + lea_delta[3][31], 13);
++    key->rk[174] = rol32(key->rk[166] + lea_delta[5][29], 1);
++    key->rk[182] = rol32(key->rk[174] + lea_delta[6][0], 6);
++    key->rk[190] = rol32(key->rk[182] + lea_delta[7][3], 13);
++
++    key->rk[7] = rol32(get_unaligned_le32(&_mk[7]) + lea_delta[1][2], 3);
++    key->rk[15] = rol32(key->rk[7] + lea_delta[2][5], 11);
++    key->rk[23] = rol32(key->rk[15] + lea_delta[3][8], 17);
++    key->rk[31] = rol32(key->rk[23] + lea_delta[5][6], 3);
++    key->rk[39] = rol32(key->rk[31] + lea_delta[6][9], 11);
++    key->rk[47] = rol32(key->rk[39] + lea_delta[7][12], 17);
++    key->rk[55] = rol32(key->rk[47] + lea_delta[1][10], 3);
++    key->rk[63] = rol32(key->rk[55] + lea_delta[2][13], 11);
++    key->rk[71] = rol32(key->rk[63] + lea_delta[3][16], 17);
++    key->rk[79] = rol32(key->rk[71] + lea_delta[5][14], 3);
++    key->rk[87] = rol32(key->rk[79] + lea_delta[6][17], 11);
++    key->rk[95] = rol32(key->rk[87] + lea_delta[7][20], 17);
++    key->rk[103] = rol32(key->rk[95] + lea_delta[1][18], 3);
++    key->rk[111] = rol32(key->rk[103] + lea_delta[2][21], 11);
++    key->rk[119] = rol32(key->rk[111] + lea_delta[3][24], 17);
++    key->rk[127] = rol32(key->rk[119] + lea_delta[5][22], 3);
++    key->rk[135] = rol32(key->rk[127] + lea_delta[6][25], 11);
++    key->rk[143] = rol32(key->rk[135] + lea_delta[7][28], 17);
++    key->rk[151] = rol32(key->rk[143] + lea_delta[1][26], 3);
++    key->rk[159] = rol32(key->rk[151] + lea_delta[2][29], 11);
++    key->rk[167] = rol32(key->rk[159] + lea_delta[3][0], 17);
++    key->rk[175] = rol32(key->rk[167] + lea_delta[5][30], 3);
++    key->rk[183] = rol32(key->rk[175] + lea_delta[6][1], 11);
++    key->rk[191] = rol32(key->rk[183] + lea_delta[7][4], 17);
++
++    break;
++
++  default:
++    return 1;
++  }
++
++  key->round = LEA_ROUND_CNT(key_len);
++
++  return 0;
++}
++EXPORT_SYMBOL_GPL(_crypto_lea_set_key);
++
++int crypto_lea_set_key(struct crypto_tfm *tfm, const u8 *in_key,
++                       u32 key_len) {
++  return _crypto_lea_set_key(crypto_tfm_ctx(tfm), in_key, key_len);
++}
++EXPORT_SYMBOL_GPL(crypto_lea_set_key);
++
++static struct crypto_alg lea_alg = {
++    .cra_name        = "lea",
++    .cra_driver_name = "lea-generic",
++    .cra_priority    = 100,
++    .cra_flags       = CRYPTO_ALG_TYPE_CIPHER,
++    .cra_blocksize   = LEA_BLOCK_SIZE,
++    .cra_ctxsize     = sizeof(struct crypto_lea_ctx),
++    .cra_module      = THIS_MODULE,
++    .cra_u           = {
++      .cipher = {
++        .cia_min_keysize = LEA_MIN_KEY_SIZE,
++        .cia_max_keysize = LEA_MAX_KEY_SIZE,
++        .cia_setkey = crypto_lea_set_key,
++        .cia_encrypt = crypto_lea_encrypt,
++        .cia_decrypt = crypto_lea_decrypt
++        }
++      }
++    };
++
++static int crypto_lea_init(void) {
++  return crypto_register_alg(&lea_alg);
++}
++
++static void crypto_lea_exit(void) {
++  crypto_unregister_alg(&lea_alg);
++}
++
++module_init(crypto_lea_init);
++module_exit(crypto_lea_exit);
++
++MODULE_DESCRIPTION("LEA Cipher Algorithm");
++MODULE_AUTHOR("Dongsoo Lee <letrhee@nsr.re.kr>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS_CRYPTO("lea");
++MODULE_ALIAS_CRYPTO("lea-generic");
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea.h b/crypto/lea/crypto_lea.h
+new file mode 100644
+index 000000000..f62bbc7c1
+--- /dev/null
++++ b/crypto/lea/crypto_lea.h
+@@ -0,0 +1,41 @@
++#ifndef _CRYPTO_LEA_H
++#define _CRYPTO_LEA_H
++
++#include <linux/crypto.h>
++#include <linux/types.h>
++
++#define LEA_MIN_KEY_SIZE 16
++#define LEA_MAX_KEY_SIZE 32
++#define LEA_KEYSIZE_128 16
++#define LEA_KEYSIZE_192 24
++#define LEA_KEYSIZE_256 32
++#define LEA_BLOCK_SIZE 16
++#define LEA_ROUND_CNT(key_len) ((key_len >> 1) + 16)
++
++#define LEA_MAX_KEYLENGTH_U32 (LEA_ROUND_CNT(LEA_MAX_KEY_SIZE) * 6)
++#define LEA_MAX_KEYLENGTH (LEA_MAX_KEYLENGTH * sizeof(u32))
++
++struct crypto_lea_ctx {
++  u32 rk[LEA_MAX_KEYLENGTH_U32];
++  u32 round;
++};
++
++static inline int lea_check_keylen(u32 keylen) {
++  switch (keylen) {
++  case LEA_KEYSIZE_128:
++  case LEA_KEYSIZE_192:
++  case LEA_KEYSIZE_256:
++    break;
++  default:
++    return -EINVAL;
++  }
++
++  return 0;
++}
++
++extern const u32 lea_delta[8][36] ____cacheline_aligned;
++
++int crypto_lea_set_key(struct crypto_tfm *tfm, const u8 *in_key, u32 key_len);
++int _crypto_lea_set_key(struct crypto_lea_ctx *ctx, const u8 *in_key,
++                        u32 key_len);
++#endif
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_avx2-asm.S b/crypto/lea/crypto_lea_avx2-asm.S
+new file mode 100644
+index 000000000..d1bb68f73
+--- /dev/null
++++ b/crypto/lea/crypto_lea_avx2-asm.S
+@@ -0,0 +1,138 @@
++#include <linux/linkage.h>
++#include <asm/frame.h>
++
++#define LEA_MAX_KEYLENGTH (32 * 6 * 4)
++
++#define XMM(n) %xmm ##  n
++#define YMM(n) %ymm ##  n
++
++#define XAR_AVX2(v0, v1, cur, pre, tmp, rk1, rk2) \
++    vpbroadcastd rk2, tmp; \
++    vpxor        tmp, cur, cur; \
++    vpbroadcastd rk1, tmp; \
++    vpxor        pre, tmp, tmp; \
++    vpaddd       cur, tmp, tmp; \
++    vpsrld       v0, tmp, cur; \
++    vpslld       v1, tmp, tmp; \
++    vpxor        tmp, cur, cur;
++
++
++#define XSR_AVX2(v0, v1, cur, pre, tmp, rk1, rk2) \
++    vpsrld       v0, cur, tmp; \
++    vpslld       v1, cur, cur; \
++    vpxor        tmp, cur, cur; \
++    vpbroadcastd rk1, tmp; \
++    vpxor        pre, tmp, tmp; \
++    vpsubd       tmp, cur, cur; \
++    vpbroadcastd rk2, tmp; \
++    vpxor        tmp, cur, cur;
++
++#define XAR3_AVX2(cur, pre, tmp, rk1, rk2) \
++    XAR_AVX2($3, $29, cur, pre, tmp, rk1, rk2)
++
++#define XAR5_AVX2(cur, pre, tmp, rk1, rk2) \
++    XAR_AVX2($5, $27, cur, pre, tmp, rk1, rk2)
++
++#define XAR9_AVX2(cur, pre, tmp, rk1, rk2) \
++    XAR_AVX2($23, $9, cur, pre, tmp, rk1, rk2)
++
++
++#define XSR9_AVX2(cur, pre, tmp, rk1, rk2) \
++    XSR_AVX2($9, $23, cur, pre, tmp, rk1, rk2)
++    
++#define XSR5_AVX2(cur, pre, tmp, rk1, rk2) \
++    XSR_AVX2($27, $5, cur, pre, tmp, rk1, rk2)
++
++#define XSR3_AVX2(cur, pre, tmp, rk1, rk2) \
++    XSR_AVX2($29, $3, cur, pre, tmp, rk1, rk2)
++
++#define LOAD_AND_JOIN8_YMM(i, ti, j, mem) \
++    vmovd (j + 0 * 16)(mem), XMM(ti); \
++    vpinsrd $0x1, (j + 1 * 16)(mem), XMM(ti), XMM(ti); \
++    vpinsrd $0x2, (j + 2 * 16)(mem), XMM(ti), XMM(ti); \
++    vpinsrd $0x3, (j + 3 * 16)(mem), XMM(ti), XMM(ti); \
++    vmovd (j + 4 * 16)(mem), XMM(i); \
++    vpinsrd $0x1, (j + 5 * 16)(mem), XMM(i), XMM(i); \
++    vpinsrd $0x2, (j + 6 * 16)(mem), XMM(i), XMM(i); \
++    vpinsrd $0x3, (j + 7 * 16)(mem), XMM(i), XMM(i); \
++    vinserti128 $0x1, XMM(ti), YMM(i), YMM(i); \
++
++#define LOAD_AND_JOIN_BLOCK8(i0, i1, i2, i3, ti0, mem) \
++    LOAD_AND_JOIN8_YMM(i0, ti0, 0, mem);\
++    LOAD_AND_JOIN8_YMM(i1, ti0, 4, mem);\
++    LOAD_AND_JOIN8_YMM(i2, ti0, 8, mem);\
++    LOAD_AND_JOIN8_YMM(i3, ti0, 12, mem);
++
++#define SPLIT_AND_STORE8_YMM(i, j, mem) \
++    vmovd XMM(i), (j + 4 * 16)(mem);\
++    vpextrd $0x1, XMM(i), (j + 5 * 16)(mem);\
++    vpextrd $0x2, XMM(i), (j + 6 * 16)(mem);\
++    vpextrd $0x3, XMM(i), (j + 7 * 16)(mem);\
++    vextracti128 $0x1, YMM(i), XMM(i);\
++    vmovd XMM(i), (j + 0 * 16)(mem);\
++    vpextrd $0x1, XMM(i), (j + 1 * 16)(mem);\
++    vpextrd $0x2, XMM(i), (j + 2 * 16)(mem);\
++    vpextrd $0x3, XMM(i), (j + 3 * 16)(mem);
++
++#define SPLIT_AND_STORE_BLOCK8(i0, i1, i2, i3, mem) \
++    SPLIT_AND_STORE8_YMM(i0, 0, mem);\
++    SPLIT_AND_STORE8_YMM(i1, 4, mem);\
++    SPLIT_AND_STORE8_YMM(i2, 8, mem);\
++    SPLIT_AND_STORE8_YMM(i3, 12, mem);
++
++#define LEA_1ROUND_ENC(i0, i1, i2, i3, tmp, rk, rnd_num) \
++    XAR3_AVX2(i3, i2, tmp, (((rnd_num) * 6 + 4) * 4)(rk), (((rnd_num) * 6 + 5) * 4)(rk)); \
++    XAR5_AVX2(i2, i1, tmp, (((rnd_num) * 6 + 2) * 4)(rk), (((rnd_num) * 6 + 3) * 4)(rk)); \
++    XAR9_AVX2(i1, i0, tmp, (((rnd_num) * 6 + 0) * 4)(rk), (((rnd_num) * 6 + 1) * 4)(rk));
++
++#define LEA_4ROUND_ENC(i0, i1, i2, i3, tmp, rk, rnd_num) \
++    LEA_1ROUND_ENC(i0, i1, i2, i3, tmp, rk, rnd_num + 0); \
++    LEA_1ROUND_ENC(i1, i2, i3, i0, tmp, rk, rnd_num + 1); \
++    LEA_1ROUND_ENC(i2, i3, i0, i1, tmp, rk, rnd_num + 2); \
++    LEA_1ROUND_ENC(i3, i0, i1, i2, tmp, rk, rnd_num + 3);
++
++#define LEA_1ROUND_DEC(i0, i1, i2, i3, tmp, rk, rnd_num) \
++    XSR9_AVX2(i0, i3, tmp, (((rnd_num) * 6 + 0) * 4)(rk), (((rnd_num) * 6 + 1) * 4)(rk)); \
++    XSR5_AVX2(i1, i0, tmp, (((rnd_num) * 6 + 2) * 4)(rk), (((rnd_num) * 6 + 3) * 4)(rk)); \
++    XSR3_AVX2(i2, i1, tmp, (((rnd_num) * 6 + 4) * 4)(rk), (((rnd_num) * 6 + 5) * 4)(rk));
++
++#define LEA_4ROUND_DEC(i0, i1, i2, i3, tmp, rk, rnd_num) \
++    LEA_1ROUND_DEC(i0, i1, i2, i3, tmp, rk, rnd_num + 3); \
++    LEA_1ROUND_DEC(i3, i0, i1, i2, tmp, rk, rnd_num + 2); \
++    LEA_1ROUND_DEC(i2, i3, i0, i1, tmp, rk, rnd_num + 1); \
++    LEA_1ROUND_DEC(i1, i2, i3, i0, tmp, rk, rnd_num + 0);
++
++.section	.rodata.lea_avx2.cbc_shuffle_mask, "aM", @progbits, 32
++.align 32
++.Lcbc_shuffle_mask:
++    .octa 0x00000002000000010000000000000007
++    .octa 0x00000006000000050000000400000003
++
++.section	.rodata.lea_avx2.xts_tweak_mask, "aM", @progbits, 16
++.align 16
++.Lxts_tweak_mask:
++	.octa 0x00000000000000010000000000000087
++
++#define CBC_LOAD_SHUFFLE_MASK(mask) \
++    vmovdqa .Lcbc_shuffle_mask, mask;
++
++#define XTS_LOAD_TWEAK_MASK(mask) \
++    vmovdqa .Lxts_tweak_mask, mask;
++
++#define XTS_NEXT_TWEAK_1BLOCK(out0, in0, tmp0, mask) \
++    pshufd $0x13, in0, tmp0; \
++    psrad $31, tmp0; \
++    pand mask, tmp0; \
++    vpsllq $1, in0, out0; \
++    pxor tmp0, out0;
++
++#define JOIN_BLOCK4(x0, x1, out_x2, x3, tmp, in_x2) \
++    vpunpckhdq x1, x0, out_x2; \
++    vpunpckldq x1, x0, x0; \
++    vpunpckldq x3, in_x2, tmp; \
++    vpunpckhdq x3, in_x2, in_x2; \
++    \
++    vpunpckhqdq tmp, x0, x1; \
++    vpunpcklqdq tmp, x0, x0; \
++    vpunpckhqdq in_x2, out_x2, x3; \
++    vpunpcklqdq in_x2, out_x2, out_x2;
+diff --git a/crypto/lea/crypto_lea_avx2_i586-asm.S b/crypto/lea/crypto_lea_avx2_i586-asm.S
+new file mode 100644
+index 000000000..c2ab853fd
+--- /dev/null
++++ b/crypto/lea/crypto_lea_avx2_i586-asm.S
+@@ -0,0 +1,213 @@
++#include <linux/linkage.h>
++#include <asm/frame.h>
++
++.file "crypto_lea_avx2_i586-asm.S"
++
++#include "crypto_lea_avx2-asm.S"
++#include "crypto_lea_util_x86-asm.S"
++
++.section .text
++
++#define LEA_MAX_KEYLENGTH (32 * 6 * 4)
++
++#define XTS_TW_X0 %xmm8
++#define XTS_TW_X1 %xmm9
++#define XTS_TW_I2 %xmm0
++#define XTS_TW_O2 %xmm10
++#define XTS_TW_X3 %xmm11
++#define XTS_TW_X4 %xmm12
++#define XTS_TW_X5 %xmm13
++#define XTS_TW_I6 %xmm1
++#define XTS_TW_O6 %xmm14
++#define XTS_TW_X7 %xmm15
++#define XTS_TW_X8 %xmm2
++#define XTS_MASK  %xmm7
++
++#define XTS_TW_Y0 %ymm12
++#define XTS_TW_Y1 %ymm13
++#define XTS_TW_Y2 %ymm14
++#define XTS_TW_Y3 %ymm15
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_enc_8way)
++	/* input:
++	 *	%edi: ctx, CTX
++	 *	%ymm0..%ymm3: 8 plaintext blocks
++	 * output:
++	 *	%ymm0..%ymm3: 8 encrypted blocks
++	 */
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 0);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 4);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 8);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 12);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 16);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 20);
++
++    cmpl $24, LEA_MAX_KEYLENGTH(%edi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 24);
++
++    cmpl $28, LEA_MAX_KEYLENGTH(%edi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 28);
++
++.Lenc_done:
++	RET;
++SYM_FUNC_END(__lea_enc_8way)
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_dec_8way)
++	/* input:
++	 *	%edi: ctx, CTX
++	 *	%ymm0..%ymm3: 8 encrypted blocks
++	 * output:
++	 *	%ymm0..%ymm3: 8 plaintext blocks
++	 */
++    cmpl $28, LEA_MAX_KEYLENGTH(%edi);
++    jbe .Lenc_24;
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 28);
++
++.Lenc_24:
++    cmpl $24, LEA_MAX_KEYLENGTH(%edi);
++    jbe .Lenc_20;
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 24);
++
++.Lenc_20:
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 20);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 16);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 12);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 8);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 4);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %edi, 0);
++ 
++	RET;
++SYM_FUNC_END(__lea_dec_8way)
++
++SYM_FUNC_START(lea_ecb_enc_8way)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++    vzeroupper;
++
++    movl (arg_ctx + 4*1)(%esp), %edi;
++    movl (arg_src + 4*1)(%esp), %eax;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %eax);
++
++    call __lea_enc_8way;
++
++    movl (arg_dst + 4*1)(%esp), %eax;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %eax);
++
++    vzeroupper;
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_enc_8way)
++
++SYM_FUNC_START(lea_ecb_dec_8way)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++    vzeroupper;
++
++    movl (arg_ctx + 4*1)(%esp), %edi;
++    movl (arg_src + 4*1)(%esp), %eax;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %eax);
++
++    call __lea_dec_8way
++
++    movl (arg_dst + 4*1)(%esp), %eax;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %eax);
++
++    vzeroupper;
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_dec_8way)
++
++SYM_FUNC_START(lea_ctr_enc_8way)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++     *  arg_iv (%esp): iv
++     *  arg_buf(%esp): buffer
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++    push CTR_32_l3;
++    push CTR_32_l2;
++    push CTR_32_l1;
++    push CTR_32_l0;
++    vzeroupper;
++
++    movl (arg_iv  + 4*5)(%esp), %eax;
++    movl (arg_buf + 4*5)(%esp), %edi;
++
++    movbe (%eax), CTR_32_l3;
++    movbe 4(%eax), CTR_32_l2;
++    movbe 8(%eax), CTR_32_l1;
++    movbe 12(%eax), CTR_32_l0;
++
++    movdqu (%eax), %xmm0;
++    movdqu %xmm0, (%edi);
++
++    PROC_NEXT_CTR(%edi, 1, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 2, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 3, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 4, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 5, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 6, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%edi, 7, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    PROC_NEXT_CTR(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %edi);
++
++    movl (arg_ctx + 4*5)(%esp), %edi;
++
++    call __lea_enc_8way;
++
++    movl (arg_dst + 4*5)(%esp), %edi;
++    movl (arg_src + 4*5)(%esp), %eax;
++
++    LOAD_AND_JOIN8_YMM(4, 6, 0, %eax);
++    LOAD_AND_JOIN8_YMM(5, 7, 4, %eax);
++
++    vpxor %ymm4, %ymm0, %ymm0;
++    vpxor %ymm5, %ymm1, %ymm1;
++
++    LOAD_AND_JOIN8_YMM(4, 6, 8, %eax);
++    LOAD_AND_JOIN8_YMM(5, 7, 12, %eax);
++
++    vpxor %ymm4, %ymm2, %ymm2;
++    vpxor %ymm5, %ymm3, %ymm3;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %edi);
++
++    vzeroupper;
++    pop CTR_32_l0;
++    pop CTR_32_l1;
++    pop CTR_32_l2;
++    pop CTR_32_l3;
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_8way)
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_avx2_x86_64-asm.S b/crypto/lea/crypto_lea_avx2_x86_64-asm.S
+new file mode 100644
+index 000000000..1f16c2f49
+--- /dev/null
++++ b/crypto/lea/crypto_lea_avx2_x86_64-asm.S
+@@ -0,0 +1,331 @@
++#include <linux/linkage.h>
++#include <asm/frame.h>
++
++.file "crypto_lea_avx2_x86_64-asm.S"
++
++#include "crypto_lea_util_x64-asm.S"
++#include "crypto_lea_avx2-asm.S"
++
++.section .text
++
++#define LEA_MAX_KEYLENGTH (32 * 6 * 4)
++
++#define XTS_TW_X0 %xmm8
++#define XTS_TW_X1 %xmm9
++#define XTS_TW_I2 %xmm0
++#define XTS_TW_O2 %xmm10
++#define XTS_TW_X3 %xmm11
++#define XTS_TW_X4 %xmm12
++#define XTS_TW_X5 %xmm13
++#define XTS_TW_I6 %xmm1
++#define XTS_TW_O6 %xmm14
++#define XTS_TW_X7 %xmm15
++#define XTS_TW_X8 %xmm2
++#define XTS_MASK  %xmm7
++
++#define XTS_TW_Y0 %ymm12
++#define XTS_TW_Y1 %ymm13
++#define XTS_TW_Y2 %ymm14
++#define XTS_TW_Y3 %ymm15
++
++#define CTR_64_low %rax
++#define CTR_64_high %r9
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_enc_8way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%ymm0..%ymm3: 8 plaintext blocks
++	 * output:
++	 *	%ymm0..%ymm3: 8 encrypted blocks
++	 */
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 0);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 4);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 8);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 12);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 16);
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 20);
++
++    cmpl $24, LEA_MAX_KEYLENGTH(%rdi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 24);
++
++    cmpl $28, LEA_MAX_KEYLENGTH(%rdi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 28);
++
++.Lenc_done:
++	RET;
++SYM_FUNC_END(__lea_enc_8way)
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_dec_8way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%ymm0..%ymm3: 8 encrypted blocks
++	 * output:
++	 *	%ymm0..%ymm3: 8 plaintext blocks
++	 */
++    cmpl $28, LEA_MAX_KEYLENGTH(%rdi);
++    jbe .Lenc_24;
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 28);
++
++.Lenc_24:
++    cmpl $24, LEA_MAX_KEYLENGTH(%rdi);
++    jbe .Lenc_20;
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 24);
++
++.Lenc_20:
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 20);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 16);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 12);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 8);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 4);
++    LEA_4ROUND_DEC(%ymm0, %ymm1, %ymm2, %ymm3, %ymm4, %rdi, 0);
++ 
++	RET;
++SYM_FUNC_END(__lea_dec_8way)
++
++SYM_FUNC_START(lea_ecb_enc_8way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++	 */
++	FRAME_BEGIN
++
++    vzeroupper;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %rdx);
++
++    call __lea_enc_8way;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++
++    vzeroupper;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_enc_8way)
++
++SYM_FUNC_START(lea_ecb_dec_8way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++	 */
++	FRAME_BEGIN
++
++    vzeroupper;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %rdx);
++
++    call __lea_dec_8way
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++
++    vzeroupper;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_dec_8way)
++
++/* x86_64 only */
++SYM_FUNC_START(lea_cbc_dec_8way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++	 */
++	FRAME_BEGIN
++
++    vzeroupper;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %rdx);
++
++    CBC_LOAD_SHUFFLE_MASK(%ymm5);
++    vpxor %ymm4, %ymm4, %ymm4;
++
++    vpermd %ymm0, %ymm5, %ymm6;
++    vpermd %ymm1, %ymm5, %ymm7;
++    vpermd %ymm2, %ymm5, %ymm8;
++    vpermd %ymm3, %ymm5, %ymm9;
++    
++    vpblendd $0x10, %ymm4, %ymm6, %ymm6;
++    vpblendd $0x10, %ymm4, %ymm7, %ymm7;
++    vpblendd $0x10, %ymm4, %ymm8, %ymm8;
++    vpblendd $0x10, %ymm4, %ymm9, %ymm9;
++
++    call __lea_dec_8way
++
++    vpxor  %ymm6, %ymm0, %ymm0;
++    vpxor  %ymm7, %ymm1, %ymm1;
++    vpxor  %ymm8, %ymm2, %ymm2;
++    vpxor  %ymm9, %ymm3, %ymm3;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++
++    vzeroupper;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_cbc_dec_8way)
++
++/* x86_64 only */
++SYM_FUNC_START(lea_xts_enc_8way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++     *	%rcx: tweak
++	 */
++	FRAME_BEGIN
++
++    vzeroupper;
++
++    movdqu (%rcx), XTS_TW_X0;
++    XTS_LOAD_TWEAK_MASK(XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X1, XTS_TW_X0, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_I2, XTS_TW_X1, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X3, XTS_TW_I2, XMM(5), XTS_MASK);
++    
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X4, XTS_TW_X3, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X5, XTS_TW_X4, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_I6, XTS_TW_X5, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X7, XTS_TW_I6, XMM(5), XTS_MASK);
++
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X8, XTS_TW_X7, XMM(5), XTS_MASK);
++    movdqu XTS_TW_X8, (%rcx);
++
++    JOIN_BLOCK4(XTS_TW_X0, XTS_TW_X1, XTS_TW_O2, XTS_TW_X3, XMM(5), XTS_TW_I2);
++    JOIN_BLOCK4(XTS_TW_X4, XTS_TW_X5, XTS_TW_O6, XTS_TW_X7, XMM(5), XTS_TW_I6);
++
++    vinserti128 $0x1, XTS_TW_X0, XTS_TW_Y0, XTS_TW_Y0;
++    vinserti128 $0x1, XTS_TW_X1, XTS_TW_Y1, XTS_TW_Y1;
++    vinserti128 $0x1, XTS_TW_O2, XTS_TW_Y2, XTS_TW_Y2;
++    vinserti128 $0x1, XTS_TW_X3, XTS_TW_Y3, XTS_TW_Y3;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %rdx);
++
++    vpxor XTS_TW_Y0, %ymm0, %ymm0;
++    vpxor XTS_TW_Y1, %ymm1, %ymm1;
++    vpxor XTS_TW_Y2, %ymm2, %ymm2;
++    vpxor XTS_TW_Y3, %ymm3, %ymm3;
++
++    call __lea_enc_8way
++
++    vpxor XTS_TW_Y0, %ymm0, %ymm0;
++    vpxor XTS_TW_Y1, %ymm1, %ymm1;
++    vpxor XTS_TW_Y2, %ymm2, %ymm2;
++    vpxor XTS_TW_Y3, %ymm3, %ymm3;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++
++    vzeroupper;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_enc_8way)
++
++SYM_FUNC_START(lea_xts_dec_8way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++     *	%rcx: tweak
++	 */
++	FRAME_BEGIN
++
++    vzeroupper;
++
++    movdqu (%rcx), XTS_TW_X0;
++    XTS_LOAD_TWEAK_MASK(XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X1, XTS_TW_X0, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_I2, XTS_TW_X1, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X3, XTS_TW_I2, XMM(5), XTS_MASK);
++    
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X4, XTS_TW_X3, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X5, XTS_TW_X4, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_I6, XTS_TW_X5, XMM(5), XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X7, XTS_TW_I6, XMM(5), XTS_MASK);
++
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW_X8, XTS_TW_X7, XMM(5), XTS_MASK);
++    movdqu XTS_TW_X8, (%rcx);
++
++    JOIN_BLOCK4(XTS_TW_X0, XTS_TW_X1, XTS_TW_O2, XTS_TW_X3, XMM(5), XTS_TW_I2);
++    JOIN_BLOCK4(XTS_TW_X4, XTS_TW_X5, XTS_TW_O6, XTS_TW_X7, XMM(5), XTS_TW_I6);
++
++    vinserti128 $0x1, XTS_TW_X0, XTS_TW_Y0, XTS_TW_Y0;
++    vinserti128 $0x1, XTS_TW_X1, XTS_TW_Y1, XTS_TW_Y1;
++    vinserti128 $0x1, XTS_TW_O2, XTS_TW_Y2, XTS_TW_Y2;
++    vinserti128 $0x1, XTS_TW_X3, XTS_TW_Y3, XTS_TW_Y3;
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %rdx);
++
++    vpxor XTS_TW_Y0, %ymm0, %ymm0;
++    vpxor XTS_TW_Y1, %ymm1, %ymm1;
++    vpxor XTS_TW_Y2, %ymm2, %ymm2;
++    vpxor XTS_TW_Y3, %ymm3, %ymm3;
++
++    call __lea_dec_8way
++
++    vpxor XTS_TW_Y0, %ymm0, %ymm0;
++    vpxor XTS_TW_Y1, %ymm1, %ymm1;
++    vpxor XTS_TW_Y2, %ymm2, %ymm2;
++    vpxor XTS_TW_Y3, %ymm3, %ymm3;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++
++    vzeroupper;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_dec_8way)
++
++
++SYM_FUNC_START(lea_ctr_enc_8way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (8 blocks)
++	 *	%rdx: src (8 blocks)
++     *	%rcx: ctr
++     *  %r8 : buffer (8 blocks)
++	 */
++	FRAME_BEGIN
++
++    push CTR_64_high;
++
++    vzeroupper;
++    movbe (%rcx), CTR_64_high;
++    movbe 8(%rcx), CTR_64_low;
++    movbe CTR_64_high, (%r8);
++    movbe CTR_64_low, 8(%r8);
++
++    PROC_NEXT_CTR(%r8, 1, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 2, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 3, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 4, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 5, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 6, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%r8, 7, CTR_64_low, CTR_64_high);
++    PROC_NEXT_CTR(%rcx, 0, CTR_64_low, CTR_64_high);
++
++    LOAD_AND_JOIN_BLOCK8(0, 1, 2, 3, 4, %r8);
++    LOAD_AND_JOIN_BLOCK8(5, 6, 7, 8, 4, %rdx);
++
++    call __lea_enc_8way;
++    
++    vpxor %ymm5, %ymm0, %ymm0;
++    vpxor %ymm6, %ymm1, %ymm1;
++    vpxor %ymm7, %ymm2, %ymm2;
++    vpxor %ymm8, %ymm3, %ymm3;
++
++    SPLIT_AND_STORE_BLOCK8(0, 1, 2, 3, %rsi);
++    
++    vzeroupper;
++
++    pop CTR_64_high;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_8way)
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_local.h b/crypto/lea/crypto_lea_local.h
+new file mode 100644
+index 000000000..1e64c8e10
+--- /dev/null
++++ b/crypto/lea/crypto_lea_local.h
+@@ -0,0 +1,22 @@
++#ifndef CRYPTO_LEA_LOCAL_H
++#define CRYPTO_LEA_LOCAL_H
++
++#include "crypto_lea.h"
++#include <linux/types.h>
++#include <linux/string.h>
++
++void __crypto_lea_encrypt(const void *ctx, u8 *dst, const u8 *src);
++void __crypto_lea_decrypt(const void *ctx, u8 *dst, const u8 *src);
++
++#define SIMD_KEY_ALIGN 16
++#define SIMD_ALIGN_ATTR __attribute__((__aligned__(SIMD_KEY_ALIGN)))
++
++struct lea_xts_ctx {
++  u8 raw_crypt_ctx[sizeof(struct crypto_lea_ctx)] SIMD_ALIGN_ATTR;
++  u8 raw_tweak_ctx[sizeof(struct crypto_lea_ctx)] SIMD_ALIGN_ATTR;
++};
++
++#define LEA_AVX2_PARALLEL_BLOCKS 8
++#define LEA_SSE2_PARALLEL_BLOCKS 4
++
++#endif
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_simd_glue.c b/crypto/lea/crypto_lea_simd_glue.c
+new file mode 100644
+index 000000000..6de18b6e1
+--- /dev/null
++++ b/crypto/lea/crypto_lea_simd_glue.c
+@@ -0,0 +1,1188 @@
++#include <asm-generic/unaligned.h>
++#include <crypto/algapi.h>
++#include <crypto/ctr.h>
++#include <crypto/internal/simd.h>
++#include <crypto/scatterwalk.h>
++#include <crypto/skcipher.h>
++#include <linux/err.h>
++#include <linux/module.h>
++#include <linux/types.h>
++
++#include "crypto_lea.h"
++#include "crypto_lea_local.h"
++#include "ecb_cbc_helpers.h"
++#include <asm/simd.h>
++#include <crypto/internal/skcipher.h>
++
++asmlinkage void lea_ecb_enc_8way(const void *ctx, u8 *dst, const u8 *src);
++asmlinkage void lea_ecb_dec_8way(const void *ctx, u8 *dst, const u8 *src);
++asmlinkage void lea_ecb_enc_4way(const void *ctx, u8 *dst, const u8 *src);
++asmlinkage void lea_ecb_dec_4way(const void *ctx, u8 *dst, const u8 *src);
++
++#if defined(__x86_64__)
++asmlinkage void lea_cbc_dec_8way(const void *ctx, u8 *dst, const u8 *src);
++#endif
++asmlinkage void lea_cbc_dec_4way(const void *ctx, u8 *dst, const u8 *src);
++
++asmlinkage void lea_ctr_enc_4way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *ctr);
++asmlinkage void lea_ctr_enc_4way_no_movbe(const void *ctx, u8 *dst,
++                                          const u8 *src, u8 *ctr);
++asmlinkage void lea_ctr_enc_8way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *ctr, u8 *buffer);
++
++#if defined(__x86_64__)
++asmlinkage void lea_xts_enc_8way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *tweak);
++asmlinkage void lea_xts_dec_8way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *tweak);
++asmlinkage void lea_xts_enc_4way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *tweak);
++asmlinkage void lea_xts_dec_4way(const void *ctx, u8 *dst, const u8 *src,
++                                 u8 *tweak);
++asmlinkage void lea_xts_next_tweak_sse2(u8 *tweak_out, const u8 *tweak_in);
++asmlinkage void lea_xts_xor_1block(u8 *dst, const u8 *src, const u8 *src2);
++#endif
++
++static int ecb_encrypt_8way(struct skcipher_request *req) {
++  ECB_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  ECB_BLOCK(LEA_AVX2_PARALLEL_BLOCKS, lea_ecb_enc_8way);
++  ECB_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_ecb_enc_4way);
++  ECB_BLOCK(1, __crypto_lea_encrypt);
++  ECB_WALK_END();
++}
++
++static int ecb_decrypt_8way(struct skcipher_request *req) {
++  ECB_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  ECB_BLOCK(LEA_AVX2_PARALLEL_BLOCKS, lea_ecb_dec_8way);
++  ECB_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_ecb_dec_4way);
++  ECB_BLOCK(1, __crypto_lea_decrypt);
++  ECB_WALK_END();
++}
++
++static int ecb_encrypt_4way(struct skcipher_request *req) {
++  ECB_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  ECB_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_ecb_enc_4way);
++  ECB_BLOCK(1, __crypto_lea_encrypt);
++  ECB_WALK_END();
++}
++
++static int ecb_decrypt_4way(struct skcipher_request *req) {
++  ECB_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  ECB_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_ecb_dec_4way);
++  ECB_BLOCK(1, __crypto_lea_decrypt);
++  ECB_WALK_END();
++}
++
++static int cbc_encrypt(struct skcipher_request *req) {
++  CBC_WALK_START(req, LEA_BLOCK_SIZE, -1);
++  CBC_ENC_BLOCK(__crypto_lea_encrypt);
++  CBC_WALK_END();
++}
++
++#if defined(__x86_64__)
++static int cbc_decrypt_8way(struct skcipher_request *req) {
++  CBC_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  CBC_DEC_BLOCK(LEA_AVX2_PARALLEL_BLOCKS, lea_cbc_dec_8way);
++  CBC_DEC_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_cbc_dec_4way);
++  CBC_DEC_BLOCK(1, __crypto_lea_decrypt);
++  CBC_WALK_END();
++}
++#endif
++
++static int cbc_decrypt_4way(struct skcipher_request *req) {
++  CBC_WALK_START(req, LEA_BLOCK_SIZE, LEA_SSE2_PARALLEL_BLOCKS);
++  CBC_DEC_BLOCK(LEA_SSE2_PARALLEL_BLOCKS, lea_cbc_dec_4way);
++  CBC_DEC_BLOCK(1, __crypto_lea_decrypt);
++  CBC_WALK_END();
++}
++
++typedef struct {
++  u64 v0, v1;
++} _u128;
++
++static inline void xor_1blk(u8 *out, const u8 *in1, const u8 *in2) {
++  const _u128 *_in1 = (const _u128 *)in1;
++  const _u128 *_in2 = (const _u128 *)in2;
++  _u128 *_out = (_u128 *)out;
++  _out->v0 = _in1->v0 ^ _in2->v0;
++  _out->v1 = _in1->v1 ^ _in2->v1;
++}
++
++#if defined(__x86_64__)
++static inline void xts_next_tweak(u8 *out, const u8 *in) {
++  const u64 *_in = (const u64 *)in;
++  u64 *_out = (u64 *)out;
++  u64 v0 = _in[0];
++  u64 v1 = _in[1];
++  u64 carry = (u64)(((s64)v1) >> 63);
++
++  v1 = (v1 << 1) ^ (v0 >> 63);
++  v0 = (v0 << 1) ^ ((u64)carry & 0x87);
++
++  _out[0] = v0;
++  _out[1] = v1;
++}
++
++static int xts_encrypt_8way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_tfm *tfm_ctx = crypto_skcipher_ctx(tfm);
++  struct lea_xts_ctx *ctx = crypto_tfm_ctx(tfm_ctx);
++  struct skcipher_request subreq;
++  struct skcipher_walk walk;
++
++  int ret;
++  u32 nblocks;
++  u32 tail = req->cryptlen % LEA_BLOCK_SIZE;
++  u32 edge_tail = 0;
++
++  if (req->cryptlen < LEA_BLOCK_SIZE) {
++    return -EINVAL;
++  }
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  if (unlikely(tail != 0 && walk.nbytes < walk.total)) {
++    u32 req_len = req->cryptlen - LEA_BLOCK_SIZE - tail;
++    skcipher_walk_abort(&walk);
++
++    skcipher_request_set_tfm(&subreq, tfm);
++    skcipher_request_set_callback(&subreq, skcipher_request_flags(req), NULL,
++                                  NULL);
++    skcipher_request_set_crypt(&subreq, req->src, req->dst, req_len, req->iv);
++    req = &subreq;
++    ret = skcipher_walk_virt(&walk, req, false);
++    if (ret) {
++      return ret;
++    }
++    edge_tail = tail;
++    tail = 0;
++  }
++
++  __crypto_lea_encrypt(ctx->raw_tweak_ctx, walk.iv, walk.iv);
++
++  while ((nblocks = walk.nbytes / LEA_BLOCK_SIZE) > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    bool is_tail = tail != 0 && (nblocks + 1) * LEA_BLOCK_SIZE > walk.total;
++
++    if (unlikely(is_tail)) {
++      nblocks -= 1;
++    }
++
++    kernel_fpu_begin();
++
++    for (; nblocks >= LEA_AVX2_PARALLEL_BLOCKS;
++         nblocks -= LEA_AVX2_PARALLEL_BLOCKS) {
++      lea_xts_enc_8way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks >= LEA_SSE2_PARALLEL_BLOCKS;
++         nblocks -= LEA_SSE2_PARALLEL_BLOCKS) {
++      lea_xts_enc_4way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks > 0; nblocks -= 1) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++      xts_next_tweak(walk.iv, walk.iv);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(is_tail)) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(buffer, walk.iv, buffer);
++
++      memcpy(dst, buffer, LEA_BLOCK_SIZE);
++      memcpy(buffer, src + LEA_BLOCK_SIZE, tail);
++      memcpy(dst + LEA_BLOCK_SIZE, dst, tail);
++
++      xts_next_tweak(walk.iv, walk.iv);
++
++      xor_1blk(buffer, walk.iv, buffer);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++
++      nbytes -= LEA_BLOCK_SIZE + tail;
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, nbytes);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  if (unlikely(edge_tail != 0)) {
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++    struct scatterlist sg_src[2];
++    struct scatterlist sg_dst[2];
++    struct scatterlist *scatter_src;
++    struct scatterlist *scatter_dst;
++    const u8 *src;
++    u8 *dst;
++    scatter_src = scatterwalk_ffwd(sg_src, req->src, req->cryptlen);
++    if (req->src == req->dst) {
++      scatter_dst = scatter_src;
++    } else {
++      scatter_dst = scatterwalk_ffwd(sg_dst, req->dst, req->cryptlen);
++    }
++
++    skcipher_request_set_crypt(req, scatter_src, scatter_dst,
++                               LEA_BLOCK_SIZE + edge_tail, req->iv);
++
++    ret = skcipher_walk_virt(&walk, req, false);
++
++    src = walk.src.virt.addr;
++    dst = walk.dst.virt.addr;
++
++    kernel_fpu_begin();
++
++    xor_1blk(buffer, walk.iv, src);
++    __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(buffer, walk.iv, buffer);
++
++    memcpy(dst, buffer, LEA_BLOCK_SIZE);
++    memcpy(buffer, src + LEA_BLOCK_SIZE, edge_tail);
++    memcpy(dst + LEA_BLOCK_SIZE, dst, edge_tail);
++
++    xts_next_tweak(walk.iv, walk.iv);
++
++    xor_1blk(buffer, walk.iv, buffer);
++    __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(dst, walk.iv, buffer);
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, 0);
++  }
++
++  return ret;
++}
++
++static int xts_decrypt_8way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_tfm *tfm_ctx = crypto_skcipher_ctx(tfm);
++  struct lea_xts_ctx *ctx = crypto_tfm_ctx(tfm_ctx);
++  struct skcipher_request subreq;
++  struct skcipher_walk walk;
++
++  int ret;
++  u32 nblocks;
++  u32 tail = req->cryptlen % LEA_BLOCK_SIZE;
++  u32 edge_tail = 0;
++
++  if (req->cryptlen < LEA_BLOCK_SIZE) {
++    return -EINVAL;
++  }
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  if (unlikely(tail != 0 && walk.nbytes < walk.total)) {
++    u32 req_len = req->cryptlen - LEA_BLOCK_SIZE - tail;
++    skcipher_walk_abort(&walk);
++
++    skcipher_request_set_tfm(&subreq, tfm);
++    skcipher_request_set_callback(&subreq, skcipher_request_flags(req), NULL,
++                                  NULL);
++    skcipher_request_set_crypt(&subreq, req->src, req->dst, req_len, req->iv);
++    req = &subreq;
++    ret = skcipher_walk_virt(&walk, req, false);
++    if (ret) {
++      return ret;
++    }
++    edge_tail = tail;
++    tail = 0;
++  }
++
++  __crypto_lea_encrypt(ctx->raw_tweak_ctx, walk.iv, walk.iv);
++
++  while ((nblocks = walk.nbytes / LEA_BLOCK_SIZE) > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    bool is_tail = tail != 0 && (nblocks + 1) * LEA_BLOCK_SIZE > walk.total;
++
++    if (unlikely(is_tail)) {
++      nblocks -= 1;
++    }
++
++    kernel_fpu_begin();
++
++    for (; nblocks >= LEA_AVX2_PARALLEL_BLOCKS;
++         nblocks -= LEA_AVX2_PARALLEL_BLOCKS) {
++      lea_xts_dec_8way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks >= LEA_SSE2_PARALLEL_BLOCKS;
++         nblocks -= LEA_SSE2_PARALLEL_BLOCKS) {
++      lea_xts_dec_4way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks > 0; nblocks -= 1) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++      xts_next_tweak(walk.iv, walk.iv);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(is_tail)) {
++      u8 __aligned(16) ntweak[16] = {
++          0,
++      };
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      memcpy(ntweak, walk.iv, LEA_BLOCK_SIZE);
++      xts_next_tweak(walk.iv, ntweak);
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(buffer, walk.iv, buffer);
++
++      memcpy(dst, buffer, LEA_BLOCK_SIZE);
++
++      memcpy(buffer, src + 16, tail);
++      memcpy(dst + 16, dst, tail);
++
++      xor_1blk(buffer, ntweak, buffer);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, ntweak, buffer);
++
++      nbytes -= LEA_BLOCK_SIZE + tail;
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, nbytes);
++    }
++
++    kernel_fpu_end();
++
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  if (unlikely(edge_tail != 0)) {
++    u8 __aligned(16) ntweak[16] = {
++        0,
++    };
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++    struct scatterlist sg_src[2];
++    struct scatterlist sg_dst[2];
++    struct scatterlist *scatter_src;
++    struct scatterlist *scatter_dst;
++    const u8 *src;
++    u8 *dst;
++    scatter_src = scatterwalk_ffwd(sg_src, req->src, req->cryptlen);
++    if (req->src == req->dst) {
++      scatter_dst = scatter_src;
++    } else {
++      scatter_dst = scatterwalk_ffwd(sg_dst, req->dst, req->cryptlen);
++    }
++
++    skcipher_request_set_crypt(req, scatter_src, scatter_dst,
++                               LEA_BLOCK_SIZE + edge_tail, req->iv);
++
++    ret = skcipher_walk_virt(&walk, req, false);
++
++    src = walk.src.virt.addr;
++    dst = walk.dst.virt.addr;
++
++    kernel_fpu_begin();
++
++    memcpy(ntweak, walk.iv, LEA_BLOCK_SIZE);
++    xts_next_tweak(walk.iv, ntweak);
++
++    xor_1blk(buffer, walk.iv, src);
++    __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(buffer, walk.iv, buffer);
++
++    memcpy(dst, buffer, LEA_BLOCK_SIZE);
++
++    memcpy(buffer, src + 16, edge_tail);
++    memcpy(dst + 16, dst, edge_tail);
++
++    xor_1blk(buffer, ntweak, buffer);
++    __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(dst, ntweak, buffer);
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, 0);
++  }
++
++return ret;
++}
++#endif
++
++static int ctr_encrypt_4way_no_movbe(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_lea_ctx *ctx = crypto_skcipher_ctx(tfm);
++  struct skcipher_walk walk;
++  int ret;
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  while (walk.nbytes > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE * 4];
++
++    kernel_fpu_begin();
++
++    while (nbytes >= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE) {
++      lea_ctr_enc_4way_no_movbe(ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    while (nbytes >= LEA_BLOCK_SIZE) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      xor_1blk(dst, buffer, src);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(nbytes != 0)) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      crypto_xor_cpy(dst, buffer, src, nbytes);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, 0);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  return ret;
++}
++
++static int ctr_encrypt_4way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_lea_ctx *ctx = crypto_skcipher_ctx(tfm);
++  struct skcipher_walk walk;
++
++  int ret;
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  while (walk.nbytes > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++    kernel_fpu_begin();
++
++    while (nbytes >= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE) {
++      lea_ctr_enc_4way(ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    while (nbytes >= LEA_BLOCK_SIZE) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      xor_1blk(dst, buffer, src);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(nbytes != 0)) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      crypto_xor_cpy(dst, buffer, src, nbytes);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, 0);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  return ret;
++}
++
++static int ctr_encrypt_8way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_lea_ctx *ctx = crypto_skcipher_ctx(tfm);
++  struct skcipher_walk walk;
++
++  int ret;
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  while (walk.nbytes > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    u8 __aligned(32) buffer[LEA_BLOCK_SIZE * LEA_AVX2_PARALLEL_BLOCKS];
++
++    kernel_fpu_begin();
++
++    while (nbytes >= LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE) {
++      lea_ctr_enc_8way(ctx, dst, src, walk.iv, buffer);
++      src += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    while (nbytes >= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE) {
++      lea_ctr_enc_4way(ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    while (nbytes >= LEA_BLOCK_SIZE) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      xor_1blk(dst, buffer, src);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(nbytes != 0)) {
++      __crypto_lea_encrypt(ctx, buffer, walk.iv);
++      crypto_xor_cpy(dst, buffer, src, nbytes);
++      crypto_inc(walk.iv, LEA_BLOCK_SIZE);
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, 0);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  return ret;
++}
++
++#if defined(__x86_64__)
++static int xts_encrypt_4way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_tfm *tfm_ctx = crypto_skcipher_ctx(tfm);
++  struct lea_xts_ctx *ctx = crypto_tfm_ctx(tfm_ctx);
++  struct skcipher_request subreq;
++  struct skcipher_walk walk;
++
++  int ret;
++  u32 nblocks;
++  u32 tail = req->cryptlen % LEA_BLOCK_SIZE;
++  u32 edge_tail = 0;
++
++  if (req->cryptlen < LEA_BLOCK_SIZE) {
++    return -EINVAL;
++  }
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  if (unlikely(tail != 0 && walk.nbytes < walk.total)) {
++    u32 req_len = req->cryptlen - LEA_BLOCK_SIZE - tail;
++    skcipher_walk_abort(&walk);
++
++    skcipher_request_set_tfm(&subreq, tfm);
++    skcipher_request_set_callback(&subreq, skcipher_request_flags(req), NULL,
++                                  NULL);
++    skcipher_request_set_crypt(&subreq, req->src, req->dst, req_len, req->iv);
++    req = &subreq;
++    ret = skcipher_walk_virt(&walk, req, false);
++    if (ret) {
++      return ret;
++    }
++    edge_tail = tail;
++    tail = 0;
++  }
++
++  __crypto_lea_encrypt(ctx->raw_tweak_ctx, walk.iv, walk.iv);
++
++  while ((nblocks = walk.nbytes / LEA_BLOCK_SIZE) > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    bool is_tail = tail != 0 && (nblocks + 1) * LEA_BLOCK_SIZE > walk.total;
++
++    if (unlikely(is_tail)) {
++      nblocks -= 1;
++    }
++
++    kernel_fpu_begin();
++
++    for (; nblocks >= LEA_SSE2_PARALLEL_BLOCKS;
++         nblocks -= LEA_SSE2_PARALLEL_BLOCKS) {
++      lea_xts_enc_4way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks > 0; nblocks -= 1) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++      xts_next_tweak(walk.iv, walk.iv);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(is_tail)) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(buffer, walk.iv, buffer);
++
++      memcpy(dst, buffer, LEA_BLOCK_SIZE);
++      memcpy(buffer, src + LEA_BLOCK_SIZE, tail);
++      memcpy(dst + LEA_BLOCK_SIZE, dst, tail);
++
++      xts_next_tweak(walk.iv, walk.iv);
++
++      xor_1blk(buffer, walk.iv, buffer);
++      __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++
++      nbytes -= LEA_BLOCK_SIZE + tail;
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, nbytes);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  if (unlikely(edge_tail != 0)) {
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++    struct scatterlist sg_src[2];
++    struct scatterlist sg_dst[2];
++    struct scatterlist *scatter_src;
++    struct scatterlist *scatter_dst;
++    const u8 *src;
++    u8 *dst;
++    scatter_src = scatterwalk_ffwd(sg_src, req->src, req->cryptlen);
++    if (req->src == req->dst) {
++      scatter_dst = scatter_src;
++    } else {
++      scatter_dst = scatterwalk_ffwd(sg_dst, req->dst, req->cryptlen);
++    }
++
++    skcipher_request_set_crypt(req, scatter_src, scatter_dst,
++                               LEA_BLOCK_SIZE + edge_tail, req->iv);
++
++    ret = skcipher_walk_virt(&walk, req, false);
++
++    src = walk.src.virt.addr;
++    dst = walk.dst.virt.addr;
++
++    kernel_fpu_begin();
++
++    xor_1blk(buffer, walk.iv, src);
++    __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(buffer, walk.iv, buffer);
++
++    memcpy(dst, buffer, LEA_BLOCK_SIZE);
++    memcpy(buffer, src + LEA_BLOCK_SIZE, edge_tail);
++    memcpy(dst + LEA_BLOCK_SIZE, dst, edge_tail);
++
++    xts_next_tweak(walk.iv, walk.iv);
++
++    xor_1blk(buffer, walk.iv, buffer);
++    __crypto_lea_encrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(dst, walk.iv, buffer);
++
++    kernel_fpu_end();
++
++    ret = skcipher_walk_done(&walk, 0);
++  }
++
++  return ret;
++}
++
++static int xts_decrypt_4way(struct skcipher_request *req) {
++  struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
++  struct crypto_tfm *tfm_ctx = crypto_skcipher_ctx(tfm);
++  struct lea_xts_ctx *ctx = crypto_tfm_ctx(tfm_ctx);
++  struct skcipher_request subreq;
++  struct skcipher_walk walk;
++
++  int ret;
++  u32 nblocks;
++  u32 tail = req->cryptlen % LEA_BLOCK_SIZE;
++  u32 edge_tail = 0;
++
++  if (req->cryptlen < LEA_BLOCK_SIZE) {
++    return -EINVAL;
++  }
++
++  ret = skcipher_walk_virt(&walk, req, false);
++  if (ret) {
++    return ret;
++  }
++
++  if (unlikely(tail != 0 && walk.nbytes < walk.total)) {
++    u32 req_len = req->cryptlen - LEA_BLOCK_SIZE - tail;
++    skcipher_walk_abort(&walk);
++
++    skcipher_request_set_tfm(&subreq, tfm);
++    skcipher_request_set_callback(&subreq, skcipher_request_flags(req), NULL,
++                                  NULL);
++    skcipher_request_set_crypt(&subreq, req->src, req->dst, req_len, req->iv);
++    req = &subreq;
++    ret = skcipher_walk_virt(&walk, req, false);
++    if (ret) {
++      return ret;
++    }
++    edge_tail = tail;
++    tail = 0;
++  }
++
++  __crypto_lea_encrypt(ctx->raw_tweak_ctx, walk.iv, walk.iv);
++
++  while ((nblocks = walk.nbytes / LEA_BLOCK_SIZE) > 0) {
++    u32 nbytes = walk.nbytes;
++    const u8 *src = walk.src.virt.addr;
++    u8 *dst = walk.dst.virt.addr;
++    bool is_tail = tail != 0 && (nblocks + 1) * LEA_BLOCK_SIZE > walk.total;
++
++    if (unlikely(is_tail)) {
++      nblocks -= 1;
++    }
++    
++    kernel_fpu_begin();
++
++    for (; nblocks >= LEA_SSE2_PARALLEL_BLOCKS;
++         nblocks -= LEA_SSE2_PARALLEL_BLOCKS) {
++      lea_xts_dec_4way(ctx->raw_crypt_ctx, dst, src, walk.iv);
++      src += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      dst += LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++      nbytes -= LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE;
++    }
++
++    for (; nblocks > 0; nblocks -= 1) {
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, walk.iv, buffer);
++      xts_next_tweak(walk.iv, walk.iv);
++
++      src += LEA_BLOCK_SIZE;
++      dst += LEA_BLOCK_SIZE;
++      nbytes -= LEA_BLOCK_SIZE;
++    }
++
++    if (unlikely(is_tail)) {
++      u8 __aligned(16) ntweak[16] = {
++          0,
++      };
++      u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++
++      memcpy(ntweak, walk.iv, LEA_BLOCK_SIZE);
++      xts_next_tweak(walk.iv, ntweak);
++
++      xor_1blk(buffer, walk.iv, src);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(buffer, walk.iv, buffer);
++
++      memcpy(dst, buffer, LEA_BLOCK_SIZE);
++
++      memcpy(buffer, src + 16, tail);
++      memcpy(dst + 16, dst, tail);
++
++      xor_1blk(buffer, ntweak, buffer);
++      __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++      xor_1blk(dst, ntweak, buffer);
++
++      nbytes -= LEA_BLOCK_SIZE + tail;
++
++      kernel_fpu_end();
++      return skcipher_walk_done(&walk, nbytes);
++    }
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, nbytes);
++    if (ret) {
++      return ret;
++    }
++  }
++
++  if (unlikely(edge_tail != 0)) {
++    u8 __aligned(16) ntweak[16] = {
++        0,
++    };
++    u8 __aligned(16) buffer[LEA_BLOCK_SIZE];
++    struct scatterlist sg_src[2];
++    struct scatterlist sg_dst[2];
++    struct scatterlist *scatter_src;
++    struct scatterlist *scatter_dst;
++    const u8 *src;
++    u8 *dst;
++    scatter_src = scatterwalk_ffwd(sg_src, req->src, req->cryptlen);
++    if (req->src == req->dst) {
++      scatter_dst = scatter_src;
++    } else {
++      scatter_dst = scatterwalk_ffwd(sg_dst, req->dst, req->cryptlen);
++    }
++
++    skcipher_request_set_crypt(req, scatter_src, scatter_dst,
++                               LEA_BLOCK_SIZE + edge_tail, req->iv);
++
++    ret = skcipher_walk_virt(&walk, req, false);
++
++    src = walk.src.virt.addr;
++    dst = walk.dst.virt.addr;
++
++    kernel_fpu_begin();
++
++    memcpy(ntweak, walk.iv, LEA_BLOCK_SIZE);
++    xts_next_tweak(walk.iv, ntweak);
++
++    xor_1blk(buffer, walk.iv, src);
++    __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(buffer, walk.iv, buffer);
++
++    memcpy(dst, buffer, LEA_BLOCK_SIZE);
++
++    memcpy(buffer, src + 16, edge_tail);
++    memcpy(dst + 16, dst, edge_tail);
++
++    xor_1blk(buffer, ntweak, buffer);
++    __crypto_lea_decrypt(ctx->raw_crypt_ctx, buffer, buffer);
++    xor_1blk(dst, ntweak, buffer);
++
++    kernel_fpu_end();
++    ret = skcipher_walk_done(&walk, 0);
++  }
++
++  return ret;
++}
++
++static int xts_lea_set_key(struct crypto_skcipher *tfm, const u8 *key,
++                           u32 keylen) {
++  struct crypto_tfm *tfm_ctx = crypto_skcipher_ctx(tfm);
++  struct lea_xts_ctx *ctx = crypto_tfm_ctx(tfm_ctx);
++
++  struct crypto_lea_ctx *crypt_key =
++      (struct crypto_lea_ctx *)(ctx->raw_crypt_ctx);
++  struct crypto_lea_ctx *tweak_key =
++      (struct crypto_lea_ctx *)(ctx->raw_tweak_ctx);
++
++  int result = _crypto_lea_set_key(crypt_key, key, keylen / 2);
++  if (result != 0) {
++    return result;
++  }
++  return _crypto_lea_set_key(tweak_key, key + (keylen / 2), keylen / 2);
++}
++#endif
++
++static int _lea_set_key(struct crypto_skcipher *tfm, const u8 *key,
++                        u32 keylen) {
++  return _crypto_lea_set_key(crypto_skcipher_ctx(tfm), key, keylen);
++}
++
++static struct skcipher_alg lea_sse2_algs[] = {
++    {
++        .base.cra_name = "__ecb(lea)",
++        .base.cra_driver_name = "__ecb-lea-sse2",
++        .base.cra_priority = 300 - 1,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .walksize = LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = ecb_encrypt_4way,
++        .decrypt = ecb_decrypt_4way,
++    },
++    {
++        .base.cra_name = "__cbc(lea)",
++        .base.cra_driver_name = "__cbc-lea-sse2",
++        .base.cra_priority = 300 - 1,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .walksize = LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = cbc_encrypt,
++        .decrypt = cbc_decrypt_4way,
++    },
++#if defined(__x86_64__)
++    {
++        .base.cra_name = "__xts(lea)",
++        .base.cra_driver_name = "__xts-lea-sse2-single",
++        .base.cra_priority = 300 - 1,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct lea_xts_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE * 2,
++        .max_keysize = LEA_MAX_KEY_SIZE * 2,
++        .walksize = LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = xts_lea_set_key,
++        .encrypt = xts_encrypt_4way,
++        .decrypt = xts_decrypt_4way,
++    },
++#endif
++};
++
++static struct skcipher_alg lea_sse2_movbe_algs[] = {
++    {
++        .base.cra_name = "__ctr(lea)",
++        .base.cra_driver_name = "__ctr-lea-sse2",
++        .base.cra_priority = 300 - 1,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = 1,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .chunksize = LEA_BLOCK_SIZE,
++        .walksize = LEA_SSE2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = ctr_encrypt_4way,
++        .decrypt = ctr_encrypt_4way,
++    },
++};
++
++static struct skcipher_alg lea_avx2_algs[] = {
++    {
++        .base.cra_name = "__ecb(lea)",
++        .base.cra_driver_name = "__ecb-lea-avx2",
++        .base.cra_priority = 300,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .walksize = LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = ecb_encrypt_8way,
++        .decrypt = ecb_decrypt_8way,
++    },
++    {
++        .base.cra_name = "__ctr(lea)",
++        .base.cra_driver_name = "__ctr-lea-avx2",
++        .base.cra_priority = 300,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = 1,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .chunksize = LEA_BLOCK_SIZE,
++        .walksize = LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = ctr_encrypt_8way,
++        .decrypt = ctr_encrypt_8way,
++    },
++#if defined(__x86_64__)
++    {
++        .base.cra_name = "__cbc(lea)",
++        .base.cra_driver_name = "__cbc-lea-avx2",
++        .base.cra_priority = 300,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct crypto_lea_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE,
++        .max_keysize = LEA_MAX_KEY_SIZE,
++        .walksize = LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = _lea_set_key,
++        .encrypt = cbc_encrypt,
++        .decrypt = cbc_decrypt_8way,
++    },
++    {
++        .base.cra_name = "__xts(lea)",
++        .base.cra_driver_name = "__xts-lea-avx2-single",
++        .base.cra_priority = 300,
++        .base.cra_flags = CRYPTO_ALG_INTERNAL,
++        .base.cra_blocksize = LEA_BLOCK_SIZE,
++        .base.cra_ctxsize = sizeof(struct lea_xts_ctx),
++        .base.cra_module = THIS_MODULE,
++        .min_keysize = LEA_MIN_KEY_SIZE * 2,
++        .max_keysize = LEA_MAX_KEY_SIZE * 2,
++        .walksize = LEA_AVX2_PARALLEL_BLOCKS * LEA_BLOCK_SIZE,
++        .ivsize = LEA_BLOCK_SIZE,
++        .setkey = xts_lea_set_key,
++        .encrypt = xts_encrypt_8way,
++        .decrypt = xts_decrypt_8way,
++    },
++#endif
++};
++
++static struct simd_skcipher_alg *lea_sse2_simd_algs[ARRAY_SIZE(lea_sse2_algs)];
++static struct simd_skcipher_alg
++    *lea_sse2_movbe_simd_algs[ARRAY_SIZE(lea_sse2_movbe_algs)];
++static struct simd_skcipher_alg *lea_avx2_simd_algs[ARRAY_SIZE(lea_avx2_algs)];
++
++static bool sse2_loaded = false;
++static bool avx2_loaded = false;
++
++static int __init crypto_lea_simd_init(void) {
++  const char *feature_name;
++  u32 result;
++
++  if (!boot_cpu_has(X86_FEATURE_XMM2)) {
++    pr_info("SSE2 instructions are not detected.\n");
++    return -ENODEV;
++  }
++
++  sse2_loaded = true;
++
++  if (!cpu_has_xfeatures(XFEATURE_MASK_SSE, &feature_name)) {
++    pr_info("CPU feature '%s' is not supported.\n", feature_name);
++    return -ENODEV;
++  }
++  printk(KERN_DEBUG "Crypto LEA SIMD SSE2 Load.");
++  result = simd_register_skciphers_compat(
++      lea_sse2_algs, ARRAY_SIZE(lea_sse2_algs), lea_sse2_simd_algs);
++  if (result) {
++    return result;
++  }
++
++  if (!boot_cpu_has(X86_FEATURE_MOVBE)) {
++    lea_sse2_movbe_algs[0].encrypt = ctr_encrypt_4way_no_movbe;
++    lea_sse2_movbe_algs[0].decrypt = ctr_encrypt_4way_no_movbe;
++    result = simd_register_skciphers_compat(lea_sse2_movbe_algs,
++                                            ARRAY_SIZE(lea_sse2_movbe_algs),
++                                            lea_sse2_movbe_simd_algs);
++    return result;
++  }
++
++  result = simd_register_skciphers_compat(lea_sse2_movbe_algs,
++                                          ARRAY_SIZE(lea_sse2_movbe_algs),
++                                          lea_sse2_movbe_simd_algs);
++  if (result) {
++    return result;
++  }
++
++  if (!boot_cpu_has(X86_FEATURE_AVX2) || !boot_cpu_has(X86_FEATURE_AVX)) {
++    return result;
++  }
++
++  if (!cpu_has_xfeatures(XFEATURE_MASK_YMM, &feature_name)) {
++    return result;
++  }
++
++  avx2_loaded = true;
++
++  printk(KERN_DEBUG "Crypto LEA SIMD AVX2 Load.");
++  return simd_register_skciphers_compat(
++      lea_avx2_algs, ARRAY_SIZE(lea_avx2_algs), lea_avx2_simd_algs);
++}
++
++static void __exit crypto_lea_simd_exit(void) {
++  if (!sse2_loaded) {
++    return;
++  }
++
++  simd_unregister_skciphers(lea_sse2_movbe_algs,
++                            ARRAY_SIZE(lea_sse2_movbe_algs),
++                            lea_sse2_movbe_simd_algs);
++
++  simd_unregister_skciphers(lea_sse2_algs, ARRAY_SIZE(lea_sse2_algs),
++                            lea_sse2_simd_algs);
++
++  if (!avx2_loaded) {
++    return;
++  }
++  simd_unregister_skciphers(lea_avx2_algs, ARRAY_SIZE(lea_avx2_algs),
++                            lea_avx2_simd_algs);
++}
++
++module_init(crypto_lea_simd_init);
++module_exit(crypto_lea_simd_exit);
++
++MODULE_DESCRIPTION("LEA Cipher Algorithm, AVX2, SSE2 SIMD");
++MODULE_AUTHOR("Dongsoo Lee <letrhee@nsr.re.kr>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS_CRYPTO("lea");
++MODULE_ALIAS_CRYPTO("lea-simd");
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_sse2-asm.S b/crypto/lea/crypto_lea_sse2-asm.S
+new file mode 100644
+index 000000000..3ff82c7aa
+--- /dev/null
++++ b/crypto/lea/crypto_lea_sse2-asm.S
+@@ -0,0 +1,136 @@
++#define XAR_SSE2(v0, v1, cur, pre, tmp, rk1, rk2) \
++    movd   rk2, tmp; \
++    pshufd $0, tmp, tmp; \
++    pxor   tmp, cur; \
++    movd   rk1, tmp; \
++    pshufd $0, tmp, tmp; \
++    pxor   pre, tmp; \
++    paddd  cur, tmp; \
++    movdqa tmp, cur; \
++    psrld  v0, tmp; \
++    pslld  v1, cur; \
++    pxor   tmp, cur;
++
++
++#define XSR_SSE2(v0, v1, cur, pre, tmp, rk1, rk2) \
++    movdqa cur, tmp; \
++    psrld  v0, cur; \
++    pslld  v1, tmp; \
++    pxor   tmp, cur; \
++    movd   rk1, tmp; \
++    pshufd $0, tmp, tmp; \
++    pxor   pre, tmp; \
++    psubd  tmp, cur; \
++    movd   rk2, tmp; \
++    pshufd $0, tmp, tmp; \
++    pxor   tmp, cur;
++
++
++
++#define XAR3_SSE2(cur, pre, tmp, rk1, rk2) \
++    XAR_SSE2($3, $29, cur, pre, tmp, rk1, rk2)
++
++#define XAR5_SSE2(cur, pre, tmp, rk1, rk2) \
++    XAR_SSE2($5, $27, cur, pre, tmp, rk1, rk2)
++
++#define XAR9_SSE2(cur, pre, tmp, rk1, rk2) \
++    XAR_SSE2($23, $9, cur, pre, tmp, rk1, rk2)
++
++
++#define XSR9_SSE2(cur, pre, tmp, rk1, rk2) \
++    XSR_SSE2($9, $23, cur, pre, tmp, rk1, rk2)
++    
++#define XSR5_SSE2(cur, pre, tmp, rk1, rk2) \
++    XSR_SSE2($27, $5, cur, pre, tmp, rk1, rk2)
++
++#define XSR3_SSE2(cur, pre, tmp, rk1, rk2) \
++    XSR_SSE2($29, $3, cur, pre, tmp, rk1, rk2)
++
++#define LOAD_BLOCK4(x0, x1, x2, x3, mem) \
++	movdqu 0 * 16(mem), x0; \
++    movdqu 1 * 16(mem), x1; \
++    movdqu 2 * 16(mem), x2; \
++    movdqu 3 * 16(mem), x3;
++
++#define JOIN_BLOCK4(x0, x1, out_x2, x3, tmp, in_x2) \
++    movdqa x0, out_x2; \
++    movdqa in_x2, tmp; \
++    punpckhdq x1, out_x2; \
++    punpckldq x1, x0; \
++    punpckhdq x3, in_x2; \
++    punpckldq x3, tmp; \
++    \
++    movdqa x0, x1; \
++    movdqa out_x2, x3; \
++    punpcklqdq tmp, x0; \
++    punpckhqdq tmp, x1; \
++    punpcklqdq in_x2, out_x2; \
++    punpckhqdq in_x2, x3;
++
++#define SPLIT_BLOCK4(x0, x1, out_x2, x3, tmp, in_x2) \
++    movdqa x0, out_x2; \
++    movdqa in_x2, tmp; \
++    punpckldq x1, x0; \
++    punpckhdq x1, out_x2; \
++    punpckldq x3, tmp; \
++    punpckhdq x3, in_x2; \
++    \
++    movdqa x0, x1; \
++    movdqa out_x2, x3; \
++    punpcklqdq tmp, x0; \
++    punpckhqdq tmp, x1; \
++    punpcklqdq in_x2, out_x2; \
++    punpckhqdq in_x2, x3;
++
++#define XOR_BLOCK3(x0, x1, x2, tmp0, tmp1, tmp2, mem) \
++    movdqu 0 * 16(mem), tmp0; \
++    movdqu 1 * 16(mem), tmp1; \
++    movdqu 2 * 16(mem), tmp2; \
++    pxor tmp0, x0;            \
++    pxor tmp1, x1;            \
++    pxor tmp2, x2;
++
++#define STORE_BLOCK4(x0, x1, x2, x3, mem) \
++    movdqu x0, 0 * 16(mem); \
++    movdqu x1, 1 * 16(mem); \
++    movdqu x2, 2 * 16(mem); \
++    movdqu x3, 3 * 16(mem);
++
++#define LEA_1ROUND_ENC(x0, x1, x2, x3, tmp, rk, rnd_num) \
++    XAR3_SSE2(x3, x2, tmp, (((rnd_num) * 6 + 4) * 4)(rk), (((rnd_num) * 6 + 5) * 4)(rk)); \
++    XAR5_SSE2(x2, x1, tmp, (((rnd_num) * 6 + 2) * 4)(rk), (((rnd_num) * 6 + 3) * 4)(rk)); \
++    XAR9_SSE2(x1, x0, tmp, (((rnd_num) * 6 + 0) * 4)(rk), (((rnd_num) * 6 + 1) * 4)(rk));
++
++#define LEA_4ROUND_ENC(x0, x1, x2, x3, tmp, rk, rnd_num) \
++    LEA_1ROUND_ENC(x0, x1, x2, x3, tmp, rk, rnd_num + 0); \
++    LEA_1ROUND_ENC(x1, x2, x3, x0, tmp, rk, rnd_num + 1); \
++    LEA_1ROUND_ENC(x2, x3, x0, x1, tmp, rk, rnd_num + 2); \
++    LEA_1ROUND_ENC(x3, x0, x1, x2, tmp, rk, rnd_num + 3);
++
++#define LEA_1ROUND_DEC(x0, x1, x2, x3, tmp, rk, rnd_num) \
++    XSR9_SSE2(x0, x3, tmp, (((rnd_num) * 6 + 0) * 4)(rk), (((rnd_num) * 6 + 1) * 4)(rk)); \
++    XSR5_SSE2(x1, x0, tmp, (((rnd_num) * 6 + 2) * 4)(rk), (((rnd_num) * 6 + 3) * 4)(rk)); \
++    XSR3_SSE2(x2, x1, tmp, (((rnd_num) * 6 + 4) * 4)(rk), (((rnd_num) * 6 + 5) * 4)(rk));
++
++#define LEA_4ROUND_DEC(x0, x1, x2, x3, tmp, rk, rnd_num) \
++    LEA_1ROUND_DEC(x0, x1, x2, x3, tmp, rk, rnd_num + 3); \
++    LEA_1ROUND_DEC(x3, x0, x1, x2, tmp, rk, rnd_num + 2); \
++    LEA_1ROUND_DEC(x2, x3, x0, x1, tmp, rk, rnd_num + 1); \
++    LEA_1ROUND_DEC(x1, x2, x3, x0, tmp, rk, rnd_num + 0);
++
++
++.section	.rodata.lea_sse2.xts_tweak_mask
++.align 16
++.Lxts_tweak_mask:
++	.octa 0x00000000000000010000000000000087
++
++#define XTS_LOAD_TWEAK_MASK(mask) \
++    movdqa .Lxts_tweak_mask, mask;
++
++#define XTS_NEXT_TWEAK_1BLOCK(out0, in0, tmp0, mask) \
++    pshufd $0x13, in0, tmp0; \
++    movdqa in0, out0; \
++    psrad $31, tmp0; \
++    pand mask, tmp0; \
++    psllq $1, out0; \
++    pxor tmp0, out0;
+diff --git a/crypto/lea/crypto_lea_sse2_i586-asm.S b/crypto/lea/crypto_lea_sse2_i586-asm.S
+new file mode 100644
+index 000000000..71ac24dca
+--- /dev/null
++++ b/crypto/lea/crypto_lea_sse2_i586-asm.S
+@@ -0,0 +1,282 @@
++#include <linux/linkage.h>
++#include <asm/frame.h>
++#include "crypto_lea_sse2-asm.S"
++#include "crypto_lea_util_x86-asm.S"
++
++.file "crypto_lea_sse2_i586-asm.S"
++
++#define LEA_MAX_KEYLENGTH (32 * 6 * 4)
++
++.text
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_enc_4way)
++	/* input:
++	 *	%edi: ctx, CTX
++	 *	%xmm0..%xmm3: 4 plaintext blocks
++	 * output:
++	 *	%xmm0..%xmm3: 4 encrypted blocks
++	 */
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 0);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 4);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 8);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 12);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 16);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 20);
++
++    cmpl $24, LEA_MAX_KEYLENGTH(%edi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 24);
++
++    cmpl $28, LEA_MAX_KEYLENGTH(%edi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 28);
++
++.Lenc_done:
++	RET;
++SYM_FUNC_END(__lea_enc_4way)
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_dec_4way)
++	/* input:
++	 *	%edi: ctx, CTX
++	 *	%xmm0..%xmm3: 4 encrypted blocks
++	 * output:
++	 *	%xmm0..%xmm3: 4 plaintext blocks
++	 */
++    cmpl $28, LEA_MAX_KEYLENGTH(%edi);
++    jbe .Lenc_24;
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 28);
++
++.Lenc_24:
++    cmpl $24, LEA_MAX_KEYLENGTH(%edi);
++    jbe .Lenc_20;
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 24);
++
++.Lenc_20:
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 20);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 16);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 12);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 8);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 4);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %edi, 0);
++ 
++	RET;
++SYM_FUNC_END(__lea_dec_4way)
++
++.align 8
++SYM_FUNC_START(lea_ecb_enc_4way)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++
++    movl (arg_ctx + 4*1)(%esp), %edi;
++    movl (arg_src + 4*1)(%esp), %eax;
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way
++
++    movl (arg_dst + 4*1)(%esp), %eax;
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_enc_4way)
++
++.align 8
++SYM_FUNC_START(lea_ecb_dec_4way)
++    /* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++
++    movl (arg_ctx + 4*1)(%esp), %edi;
++    movl (arg_src + 4*1)(%esp), %eax;
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_dec_4way
++
++    movl (arg_dst + 4*1)(%esp), %eax;
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_dec_4way)
++
++
++.align 8
++SYM_FUNC_START(lea_cbc_dec_4way)
++    /* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++
++    movl (arg_ctx + 4*1)(%esp), %edi;
++    movl (arg_src + 4*1)(%esp), %eax;
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_dec_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    XOR_BLOCK3(%xmm1, %xmm5, %xmm3, %xmm4, %xmm6, %xmm7, %eax);
++
++    movl (arg_dst + 4*1)(%esp), %eax;
++
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %eax);
++
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_cbc_dec_4way)
++
++SYM_FUNC_START(lea_ctr_enc_4way_no_movbe)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++     *  arg_iv (%esp): iv
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++    push %edx;
++    push CTR_32_l3;
++    push CTR_32_l2;
++    push CTR_32_l1;
++    push CTR_32_l0;
++
++    movl (arg_ctx + 4*6)(%esp), %edi;
++    movl (arg_iv  + 4*6)(%esp), %eax;
++
++    mov (%eax), CTR_32_l3;
++    mov 4(%eax), CTR_32_l2;
++    mov 8(%eax), CTR_32_l1;
++    mov 12(%eax), CTR_32_l0;
++    bswap CTR_32_l3;
++    bswap CTR_32_l2;
++    bswap CTR_32_l1;
++    bswap CTR_32_l0;
++
++    movdqu (%eax), %xmm0;
++    PROC_NEXT_CTR_NO_MOVBE(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3, %edx);
++    movdqu (%eax), %xmm1;
++    PROC_NEXT_CTR_NO_MOVBE(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3, %edx);
++    movdqu (%eax), %xmm5;
++    PROC_NEXT_CTR_NO_MOVBE(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3, %edx);
++    movdqu (%eax), %xmm3;
++    PROC_NEXT_CTR_NO_MOVBE(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3, %edx);
++    
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way;
++
++    movl (arg_src + 4*6)(%esp), %eax;
++    movl (arg_dst + 4*6)(%esp), %edi;
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    LOAD_BLOCK4(%xmm2, %xmm4, %xmm6, %xmm7, %eax);
++
++    pxor %xmm2, %xmm0;
++    pxor %xmm4, %xmm1;
++    pxor %xmm6, %xmm5;
++    pxor %xmm7, %xmm3;
++
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %edi);
++
++    pop CTR_32_l0;
++    pop CTR_32_l1;
++    pop CTR_32_l2;
++    pop CTR_32_l3;
++    pop %edx;
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_4way_no_movbe)
++
++SYM_FUNC_START(lea_ctr_enc_4way)
++	/* input:
++	 *	arg_ctx(%esp): ctx, CTX
++	 *	arg_dst(%esp): dst
++	 *	arg_src(%esp): src
++     *  arg_iv (%esp): iv
++	 */
++	FRAME_BEGIN
++
++    push %edi;
++    push CTR_32_l3;
++    push CTR_32_l2;
++    push CTR_32_l1;
++    push CTR_32_l0;
++
++    movl (arg_iv  + 4*5)(%esp), %eax;
++    movl (arg_ctx + 4*5)(%esp), %edi;
++
++    movbe (%eax), CTR_32_l3;
++    movbe 4(%eax), CTR_32_l2;
++    movbe 8(%eax), CTR_32_l1;
++    movbe 12(%eax), CTR_32_l0;
++
++    movdqu (%eax), %xmm0;
++    PROC_NEXT_CTR(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    movdqu (%eax), %xmm1;
++    PROC_NEXT_CTR(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    movdqu (%eax), %xmm5;
++    PROC_NEXT_CTR(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    movdqu (%eax), %xmm3;
++    PROC_NEXT_CTR(%eax, 0, CTR_32_l0, CTR_32_l1, CTR_32_l2, CTR_32_l3);
++    
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way;
++
++    movl (arg_src + 4*5)(%esp), %eax;
++    movl (arg_dst + 4*5)(%esp), %edi;
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    LOAD_BLOCK4(%xmm2, %xmm4, %xmm6, %xmm7, %eax);
++
++    pxor %xmm2, %xmm0;
++    pxor %xmm4, %xmm1;
++    pxor %xmm6, %xmm5;
++    pxor %xmm7, %xmm3;
++
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %edi);
++
++    pop CTR_32_l0;
++    pop CTR_32_l1;
++    pop CTR_32_l2;
++    pop CTR_32_l3;
++    pop %edi;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_4way)
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_sse2_x86_64-asm.S b/crypto/lea/crypto_lea_sse2_x86_64-asm.S
+new file mode 100644
+index 000000000..e0c3f1c08
+--- /dev/null
++++ b/crypto/lea/crypto_lea_sse2_x86_64-asm.S
+@@ -0,0 +1,334 @@
++#include <linux/linkage.h>
++#include <asm/frame.h>
++
++.file "crypto_lea_sse2_x86_64-asm.S"
++
++#include "crypto_lea_util_x64-asm.S"
++#include "crypto_lea_sse2-asm.S"
++
++.section .text
++
++#define LEA_MAX_KEYLENGTH (32 * 6 * 4)
++
++#define XTS_TW0 %xmm8
++#define XTS_TW1 %xmm9
++#define XTS_TW2 %xmm10
++#define XTS_TW3 %xmm11
++#define XTS_MASK  %xmm7
++
++#define CTR_64_low %rax
++#define CTR_64_high %r9
++#define CTR_64s_low %r8
++#define CTR_64s_high %r11
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_enc_4way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%xmm0..%xmm3: 4 plaintext blocks
++	 * output:
++	 *	%xmm0..%xmm3: 4 encrypted blocks
++	 */
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 0);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 4);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 8);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 12);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 16);
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 20);
++
++    cmpl $24, LEA_MAX_KEYLENGTH(%rdi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 24);
++
++    cmpl $28, LEA_MAX_KEYLENGTH(%rdi);
++    je .Lenc_done;
++    LEA_4ROUND_ENC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 28);
++
++.Lenc_done:
++	RET;
++SYM_FUNC_END(__lea_enc_4way)
++
++.align 8
++SYM_FUNC_START_LOCAL(__lea_dec_4way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%xmm0..%xmm3: 4 encrypted blocks
++	 * output:
++	 *	%xmm0..%xmm3: 4 plaintext blocks
++	 */
++    cmpl $28, LEA_MAX_KEYLENGTH(%rdi);
++    jbe .Lenc_24;
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 28);
++
++.Lenc_24:
++    cmpl $24, LEA_MAX_KEYLENGTH(%rdi);
++    jbe .Lenc_20;
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 24);
++
++.Lenc_20:
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 20);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 16);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 12);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 8);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 4);
++    LEA_4ROUND_DEC(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %rdi, 0);
++ 
++	RET;
++SYM_FUNC_END(__lea_dec_4way)
++
++SYM_FUNC_START(lea_ecb_enc_4way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++	 */
++	FRAME_BEGIN
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rdx);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_enc_4way)
++
++SYM_FUNC_START(lea_ecb_dec_4way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++	 */
++	FRAME_BEGIN
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rdx);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_dec_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ecb_dec_4way)
++
++SYM_FUNC_START(lea_cbc_dec_4way)
++    /* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++	 */
++	FRAME_BEGIN
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rdx);
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_dec_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    XOR_BLOCK3(%xmm1, %xmm5, %xmm3, %xmm4, %xmm6, %xmm7, %rdx);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_cbc_dec_4way)
++
++SYM_FUNC_START(lea_xts_enc_4way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++     *	%rcx: tweak
++	 */
++	FRAME_BEGIN
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rdx);
++    movdqu (%rcx), XTS_TW0;
++    XTS_LOAD_TWEAK_MASK(XTS_MASK);
++    pxor XTS_TW0, %xmm0;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW1, XTS_TW0, %xmm4, XTS_MASK);
++    pxor XTS_TW1, %xmm1;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW2, XTS_TW1, %xmm4, XTS_MASK);
++    pxor XTS_TW2, %xmm5;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW3, XTS_TW2, %xmm4, XTS_MASK);
++    pxor XTS_TW3, %xmm3;
++    
++
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++
++    pxor XTS_TW0, %xmm0;
++    pxor XTS_TW1, %xmm1;
++    pxor XTS_TW2, %xmm5;
++    pxor XTS_TW3, %xmm3;
++
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW0, XTS_TW3, %xmm4, XTS_MASK);
++    movdqu XTS_TW0, (%rcx);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_enc_4way)
++
++SYM_FUNC_START(lea_xts_dec_4way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++     *	%rcx: tweak
++	 */
++	FRAME_BEGIN
++
++    LOAD_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rdx);
++    movdqu (%rcx), XTS_TW0;
++    XTS_LOAD_TWEAK_MASK(XTS_MASK);
++    pxor XTS_TW0, %xmm0;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW1, XTS_TW0, %xmm4, XTS_MASK);
++    pxor XTS_TW1, %xmm1;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW2, XTS_TW1, %xmm4, XTS_MASK);
++    pxor XTS_TW2, %xmm5;
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW3, XTS_TW2, %xmm4, XTS_MASK);
++    pxor XTS_TW3, %xmm3;
++
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_dec_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++
++    pxor XTS_TW0, %xmm0;
++    pxor XTS_TW1, %xmm1;
++    pxor XTS_TW2, %xmm5;
++    pxor XTS_TW3, %xmm3;
++
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW0, XTS_TW3, %xmm4, XTS_MASK);
++    movdqu XTS_TW0, (%rcx);
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_dec_4way)
++
++SYM_FUNC_START(lea_xts_next_tweak_sse2)
++	/* input:
++	 *	%rdi: tweak_out
++     *	%rsi: tweak_in
++	 */
++	FRAME_BEGIN
++
++    movdqu (%rsi), XTS_TW0;
++    XTS_LOAD_TWEAK_MASK(XTS_MASK);
++    XTS_NEXT_TWEAK_1BLOCK(XTS_TW0, XTS_TW0, %xmm5, XTS_MASK);
++    movdqu XTS_TW0, (%rdi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_next_tweak_sse2)
++
++SYM_FUNC_START(lea_xts_xor_1block)
++	/* input:
++	 *	%rdi: dst
++	 *	%rsi: src1
++	 *	%rdx: src2
++	 */
++	FRAME_BEGIN
++
++    movdqu (%rdx), %xmm7
++    movdqu (%rsi), %xmm5;
++    pxor %xmm7, %xmm5;
++    movdqu %xmm5, (%rdi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_xts_xor_1block)
++
++SYM_FUNC_START(lea_ctr_enc_4way_no_movbe)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++     *	%rcx: ctr
++	 */
++	FRAME_BEGIN
++
++    push CTR_64s_high;
++
++    mov (%rcx), CTR_64_high;
++    mov 8(%rcx), CTR_64_low;
++    bswap CTR_64_high;
++    bswap CTR_64_low;
++
++    movdqu (%rcx), %xmm0;
++    PROC_NEXT_CTR_NO_MOVBE(%rcx, 0, CTR_64_low, CTR_64_high, CTR_64s_low, CTR_64s_high);
++    movdqu (%rcx), %xmm1;
++    PROC_NEXT_CTR_NO_MOVBE(%rcx, 0, CTR_64_low, CTR_64_high, CTR_64s_low, CTR_64s_high);
++    movdqu (%rcx), %xmm5;
++    PROC_NEXT_CTR_NO_MOVBE(%rcx, 0, CTR_64_low, CTR_64_high, CTR_64s_low, CTR_64s_high);
++    movdqu (%rcx), %xmm3;
++    PROC_NEXT_CTR_NO_MOVBE(%rcx, 0, CTR_64_low, CTR_64_high, CTR_64s_low, CTR_64s_high);
++
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    LOAD_BLOCK4(%xmm6, %xmm7, %xmm8, %xmm9, %rdx);
++    
++    pxor %xmm6, %xmm0;
++    pxor %xmm7, %xmm1;
++    pxor %xmm8, %xmm5;
++    pxor %xmm9, %xmm3;
++
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    pop CTR_64s_high;
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_4way_no_movbe)
++
++SYM_FUNC_START(lea_ctr_enc_4way)
++	/* input:
++	 *	%rdi: ctx, CTX
++	 *	%rsi: dst (4 blocks)
++	 *	%rdx: src (4 blocks)
++     *	%rcx: ctr
++	 */
++	FRAME_BEGIN
++
++    movbe (%rcx), CTR_64_high;
++    movbe 8(%rcx), CTR_64_low;
++
++    movdqu (%rcx), %xmm0;
++    PROC_NEXT_CTR(%rcx, 0, CTR_64_low, CTR_64_high);
++    movdqu (%rcx), %xmm1;
++    PROC_NEXT_CTR(%rcx, 0, CTR_64_low, CTR_64_high);
++    movdqu (%rcx), %xmm5;
++    PROC_NEXT_CTR(%rcx, 0, CTR_64_low, CTR_64_high);
++    movdqu (%rcx), %xmm3;
++    PROC_NEXT_CTR(%rcx, 0, CTR_64_low, CTR_64_high);
++
++    JOIN_BLOCK4(%xmm0, %xmm1, %xmm2, %xmm3, %xmm4, %xmm5);
++
++    call __lea_enc_4way;
++
++    SPLIT_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %xmm4, %xmm2);
++    LOAD_BLOCK4(%xmm6, %xmm7, %xmm8, %xmm9, %rdx);
++    
++    pxor %xmm6, %xmm0;
++    pxor %xmm7, %xmm1;
++    pxor %xmm8, %xmm5;
++    pxor %xmm9, %xmm3;
++    
++    STORE_BLOCK4(%xmm0, %xmm1, %xmm5, %xmm3, %rsi);
++
++    FRAME_END
++	RET;
++SYM_FUNC_END(lea_ctr_enc_4way)
+\ No newline at end of file
+diff --git a/crypto/lea/crypto_lea_util_x64-asm.S b/crypto/lea/crypto_lea_util_x64-asm.S
+new file mode 100644
+index 000000000..a42f58628
+--- /dev/null
++++ b/crypto/lea/crypto_lea_util_x64-asm.S
+@@ -0,0 +1,17 @@
++#define ADD_CTR1_R(low, high) \
++    add $1, low; \
++    adc $0, high;
++
++#define PROC_NEXT_CTR(addr, blk_offset, low, high) \
++    ADD_CTR1_R(low, high); \
++    movbe high, (blk_offset * 16)(addr); \
++    movbe low, (blk_offset * 16 + 8)(addr);
++
++#define PROC_NEXT_CTR_NO_MOVBE(addr, blk_offset, low, high, low_s, high_s) \
++    ADD_CTR1_R(low, high); \
++    mov high, high_s; \
++    mov low, low_s; \
++    bswap high_s; \
++    bswap low_s; \
++    mov high_s, (blk_offset * 16)(addr); \
++    mov low_s, (blk_offset * 16 + 8)(addr);
+diff --git a/crypto/lea/crypto_lea_util_x86-asm.S b/crypto/lea/crypto_lea_util_x86-asm.S
+new file mode 100644
+index 000000000..617b8c785
+--- /dev/null
++++ b/crypto/lea/crypto_lea_util_x86-asm.S
+@@ -0,0 +1,39 @@
++
++#define arg_ctx 8
++#define arg_dst 12
++#define arg_src 16
++#define arg_iv  20
++#define arg_buf 24
++
++#define CTR_32_l0 %ebx
++#define CTR_32_l1 %ecx
++#define CTR_32_l2 %edx
++#define CTR_32_l3 %esi
++
++#define ADD_CTR1_E(l0, l1, l2, l3) \
++    add $1, l0; \
++    adc $0, l1; \
++    adc $0, l2; \
++    adc $0, l3;
++
++#define PROC_NEXT_CTR(addr, blk_offset, l0, l1, l2, l3) \
++    ADD_CTR1_E(l0, l1, l2, l3); \
++    movbe l3, (blk_offset * 16)(addr); \
++    movbe l2, (blk_offset * 16 + 4)(addr); \
++    movbe l1, (blk_offset * 16 + 8)(addr); \
++    movbe l0, (blk_offset * 16 + 12)(addr); 
++
++#define PROC_NEXT_CTR_NO_MOVBE(addr, blk_offset, l0, l1, l2, l3, t0) \
++    ADD_CTR1_E(l0, l1, l2, l3); \
++    mov l3, t0; \
++    bswap t0; \
++    mov t0, (blk_offset * 16)(addr); \
++    mov l2, t0; \
++    bswap t0; \
++    mov t0, (blk_offset * 16 + 4)(addr); \
++    mov l1, t0; \
++    bswap t0; \
++    mov t0, (blk_offset * 16 + 8)(addr); \
++    mov l0, t0; \
++    bswap t0; \
++    mov t0, (blk_offset * 16 + 12)(addr); 
+diff --git a/crypto/lea/ecb_cbc_helpers.h b/crypto/lea/ecb_cbc_helpers.h
+new file mode 100644
+index 000000000..eaa15c7b2
+--- /dev/null
++++ b/crypto/lea/ecb_cbc_helpers.h
+@@ -0,0 +1,76 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++
++#ifndef _CRYPTO_ECB_CBC_HELPER_H
++#define _CRYPTO_ECB_CBC_HELPER_H
++
++#include <crypto/internal/skcipher.h>
++#include <asm/fpu/api.h>
++
++/*
++ * Mode helpers to instantiate parameterized skcipher ECB/CBC modes without
++ * having to rely on indirect calls and retpolines.
++ */
++
++#define ECB_WALK_START(req, bsize, fpu_blocks) do {			\
++	void *ctx = crypto_skcipher_ctx(crypto_skcipher_reqtfm(req));	\
++	const int __bsize = (bsize);					\
++	struct skcipher_walk walk;					\
++	int err = skcipher_walk_virt(&walk, (req), false);		\
++	while (walk.nbytes > 0) {					\
++		unsigned int nbytes = walk.nbytes;			\
++		bool do_fpu = (fpu_blocks) != -1 &&			\
++			      nbytes >= (fpu_blocks) * __bsize;		\
++		const u8 *src = walk.src.virt.addr;			\
++		u8 *dst = walk.dst.virt.addr;				\
++		u8 __maybe_unused buf[(bsize)];				\
++		if (do_fpu) kernel_fpu_begin()
++
++#define CBC_WALK_START(req, bsize, fpu_blocks)				\
++	ECB_WALK_START(req, bsize, fpu_blocks)
++
++#define ECB_WALK_ADVANCE(blocks) do {					\
++	dst += (blocks) * __bsize;					\
++	src += (blocks) * __bsize;					\
++	nbytes -= (blocks) * __bsize;					\
++} while (0)
++
++#define ECB_BLOCK(blocks, func) do {					\
++	while (nbytes >= (blocks) * __bsize) {				\
++		(func)(ctx, dst, src);					\
++		ECB_WALK_ADVANCE(blocks);				\
++	}								\
++} while (0)
++
++#define CBC_ENC_BLOCK(func) do {					\
++	const u8 *__iv = walk.iv;					\
++	while (nbytes >= __bsize) {					\
++		crypto_xor_cpy(dst, src, __iv, __bsize);		\
++		(func)(ctx, dst, dst);					\
++		__iv = dst;						\
++		ECB_WALK_ADVANCE(1);					\
++	}								\
++	memcpy(walk.iv, __iv, __bsize);					\
++} while (0)
++
++#define CBC_DEC_BLOCK(blocks, func) do {				\
++	while (nbytes >= (blocks) * __bsize) {				\
++		const u8 *__iv = src + ((blocks) - 1) * __bsize;	\
++		if (dst == src)						\
++			__iv = memcpy(buf, __iv, __bsize);		\
++		(func)(ctx, dst, src);					\
++		crypto_xor(dst, walk.iv, __bsize);			\
++		memcpy(walk.iv, __iv, __bsize);				\
++		ECB_WALK_ADVANCE(blocks);				\
++	}								\
++} while (0)
++
++#define ECB_WALK_END()							\
++		if (do_fpu) kernel_fpu_end();				\
++		err = skcipher_walk_done(&walk, nbytes);		\
++	}								\
++	return err;							\
++} while (0)
++
++#define CBC_WALK_END() ECB_WALK_END()
++
++#endif
