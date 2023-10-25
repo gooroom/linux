@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 031/351] timekeeping: Split jiffies seqlock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a342f5aed55ec0615985281f556def2909aa3b11
+Subject: [PATCH 031/353] timekeeping: Split jiffies seqlock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e67616dbfa0b4e559a51d108930dbdf3b5ec8a8e
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -76,7 +76,7 @@ index 0a3cc37e4b83..7bd136b646d4 100644
  		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 48403fb653c2..e774a49176cc 100644
+index 25c6efa2c557..0491c4c4a5cf 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -68,7 +68,8 @@ static void tick_do_update_jiffies64(ktime_t now)
@@ -121,7 +121,7 @@ index 48403fb653c2..e774a49176cc 100644
  	return period;
  }
  
-@@ -656,10 +661,10 @@ static ktime_t tick_nohz_next_event(struct tick_sched *ts, int cpu)
+@@ -668,10 +673,10 @@ static ktime_t tick_nohz_next_event(struct tick_sched *ts, int cpu)
  
  	/* Read jiffies and the time when jiffies were updated last */
  	do {

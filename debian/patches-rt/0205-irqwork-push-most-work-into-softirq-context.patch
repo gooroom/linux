@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 205/351] irqwork: push most work into softirq context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3061f788ba9b0f332281c8117a8d9df4a1fda0d9
+Subject: [PATCH 205/353] irqwork: push most work into softirq context
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c11f2c43e5bc12c20b6e8179f771e3b40a60d4d3
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -234,10 +234,10 @@ index 02e85cd233d4..208af1181bf5 100644
  
  	init_dl_bw(&rd->dl_bw);
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 2b0ddd50e879..4d31ec98e968 100644
+index 562d015b2401..ce873626893d 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -236,6 +236,7 @@ static void nohz_full_kick_func(struct irq_work *work)
+@@ -241,6 +241,7 @@ static void nohz_full_kick_func(struct irq_work *work)
  
  static DEFINE_PER_CPU(struct irq_work, nohz_full_kick_work) = {
  	.func = nohz_full_kick_func,

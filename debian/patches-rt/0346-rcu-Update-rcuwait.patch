@@ -1,7 +1,7 @@
 From: Daniel Wagner <wagi@monom.org>
 Date: Mon, 24 Oct 2022 10:58:29 +0200
-Subject: [PATCH 346/351] rcu: Update rcuwait
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6f1be9e81d653b56aeefbff1883d1f762e8b594e
+Subject: [PATCH 346/353] rcu: Update rcuwait
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=587f7f0c0ba24632fa86dd7122366221664f116f
 
 This is an all in one commit backporting updates for rcuwait:
  - 03f4b48edae7 ("rcuwait: Annotate task_struct with __rcu")
@@ -109,10 +109,10 @@ index 90bfa3279a01..4fe9ecd56aac 100644
  
  #endif /* _LINUX_RCUWAIT_H_ */
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 2a414fc71b87..cf68896a94fa 100644
+index 51b36d58c872..94a51c53985b 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -291,8 +291,9 @@ struct task_struct *task_rcu_dereference(struct task_struct **ptask)
+@@ -338,8 +338,9 @@ struct task_struct *task_rcu_dereference(struct task_struct **ptask)
  	return task;
  }
  
@@ -123,7 +123,7 @@ index 2a414fc71b87..cf68896a94fa 100644
  	struct task_struct *task;
  
  	rcu_read_lock();
-@@ -316,8 +317,10 @@ void rcuwait_wake_up(struct rcuwait *w)
+@@ -363,8 +364,10 @@ void rcuwait_wake_up(struct rcuwait *w)
  	 */
  	task = rcu_dereference(w->task);
  	if (task)

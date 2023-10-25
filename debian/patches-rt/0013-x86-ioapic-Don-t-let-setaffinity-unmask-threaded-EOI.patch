@@ -1,8 +1,8 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 17 Jul 2018 18:25:31 +0200
-Subject: [PATCH 013/351] x86/ioapic: Don't let setaffinity unmask threaded EOI
+Subject: [PATCH 013/353] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2291d37f1f88b1e7c56dcc321af436a85891e3d5
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6a012e6bfc9f9eee8339a470aedd643034212801
 
 There is an issue with threaded interrupts which are marked ONESHOT
 and using the fasteoi handler.
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 677508baf95a..b1a7f453415f 100644
+index af59aa9c5523..5d7590e6feb1 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
 @@ -1732,7 +1732,7 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)

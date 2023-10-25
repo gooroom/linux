@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 29 May 2019 18:52:27 +0200
-Subject: [PATCH 284/351] workqueue: rework
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=03a1d47bc6d2f2e32d7c26fae2809fd8050a8226
+Subject: [PATCH 284/353] workqueue: rework
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=11c0b968a11a4a0c4e9b0e4f4129c5d3dbf995ac
 
 [ Upstream commit d15a862f24df983458533aebd6fa207ecdd1095a ]
 
@@ -34,7 +34,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  delete mode 100644 include/linux/kthread-cgroup.h
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index a67a50dd714a..ed6ae335756d 100644
+index aa40960ef4c0..732913d4966c 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -973,7 +973,7 @@ void blk_queue_exit(struct request_queue *q)
@@ -152,7 +152,7 @@ index 82f21fd4afb0..1ef937d799e4 100644
  	kfree(packages);
  }
 diff --git a/fs/aio.c b/fs/aio.c
-index 303e85033965..6deff68b92c7 100644
+index 50fe29490ec7..adcb7913159d 100644
 --- a/fs/aio.c
 +++ b/fs/aio.c
 @@ -121,7 +121,7 @@ struct kioctx {
@@ -164,7 +164,7 @@ index 303e85033965..6deff68b92c7 100644
  
  	/*
  	 * signals when all in-flight requests are done
-@@ -609,9 +609,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
+@@ -613,9 +613,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
   * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
   * now it's safe to cancel any that need to be.
   */
@@ -176,7 +176,7 @@ index 303e85033965..6deff68b92c7 100644
  	struct aio_kiocb *req;
  
  	spin_lock_irq(&ctx->ctx_lock);
-@@ -633,8 +633,8 @@ static void free_ioctx_users(struct percpu_ref *ref)
+@@ -637,8 +637,8 @@ static void free_ioctx_users(struct percpu_ref *ref)
  {
  	struct kioctx *ctx = container_of(ref, struct kioctx, users);
  
@@ -352,10 +352,10 @@ index 6bbd391f0d9c..c8cf4731ced8 100644
  /**
   * kthread_associate_blkcg - associate blkcg to current kthread
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5473824aee5b..ea275b4b3d0a 100644
+index ab64a3c261bc..dded9ca916eb 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3612,6 +3612,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
+@@ -3614,6 +3614,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
  {
  	if (!tsk->state)
  		return;
@@ -364,7 +364,7 @@ index 5473824aee5b..ea275b4b3d0a 100644
  	 * If a worker went to sleep, notify and ask workqueue whether
  	 * it wants to wake up a task to maintain concurrency.
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index bbc408f24f5d..eb2db7e6a241 100644
+index 6e19604eaa00..92ee6cf49c24 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -748,29 +748,6 @@ static void hrtimer_switch_to_hres(void)

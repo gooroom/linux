@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:14 -0500
-Subject: [PATCH 308/351] sched: migrate_enable: Use stop_one_cpu_nowait()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=1c8f8380a7031358ac5fc4177bbbe5d03bc6cfd2
+Subject: [PATCH 308/353] sched: migrate_enable: Use stop_one_cpu_nowait()
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9a569a7f7c153ae5367090acad55faedba51cf23
 
 [ Upstream commit 6b39a1fa8c53cae08dc03afdae193b7d3a78a173 ]
 
@@ -34,10 +34,10 @@ index ccdaa8fd5657..150e886ed83d 100644
  
  int stop_one_cpu(unsigned int cpu, cpu_stop_fn_t fn, void *arg);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a2c0f199f362..eeb53ea1483c 100644
+index 451d07a772bc..04690e9c9232 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -990,6 +990,7 @@ static struct rq *move_queued_task(struct rq *rq, struct rq_flags *rf,
+@@ -993,6 +993,7 @@ static struct rq *move_queued_task(struct rq *rq, struct rq_flags *rf,
  struct migration_arg {
  	struct task_struct *task;
  	int dest_cpu;
@@ -45,7 +45,7 @@ index a2c0f199f362..eeb53ea1483c 100644
  };
  
  /*
-@@ -1025,6 +1026,11 @@ static int migration_cpu_stop(void *data)
+@@ -1028,6 +1029,11 @@ static int migration_cpu_stop(void *data)
  	struct task_struct *p = arg->task;
  	struct rq *rq = this_rq();
  	struct rq_flags rf;
@@ -57,7 +57,7 @@ index a2c0f199f362..eeb53ea1483c 100644
  
  	/*
  	 * The original target CPU might have gone down and we might
-@@ -1047,9 +1053,9 @@ static int migration_cpu_stop(void *data)
+@@ -1050,9 +1056,9 @@ static int migration_cpu_stop(void *data)
  	 */
  	if (task_rq(p) == rq) {
  		if (task_on_rq_queued(p))
@@ -69,7 +69,7 @@ index a2c0f199f362..eeb53ea1483c 100644
  	}
  	rq_unlock(rq, &rf);
  	raw_spin_unlock(&p->pi_lock);
-@@ -7317,6 +7323,7 @@ void migrate_enable(void)
+@@ -7319,6 +7325,7 @@ void migrate_enable(void)
  	WARN_ON(smp_processor_id() != cpu);
  	if (!is_cpu_allowed(p, cpu)) {
  		struct migration_arg arg = { p };
@@ -77,7 +77,7 @@ index a2c0f199f362..eeb53ea1483c 100644
  		struct rq_flags rf;
  
  		rq = task_rq_lock(p, &rf);
-@@ -7324,15 +7331,11 @@ void migrate_enable(void)
+@@ -7326,15 +7333,11 @@ void migrate_enable(void)
  		arg.dest_cpu = select_fallback_rq(cpu, p);
  		task_rq_unlock(rq, p, &rf);
  

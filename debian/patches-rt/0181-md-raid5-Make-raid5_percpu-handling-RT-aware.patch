@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 6 Apr 2010 16:51:31 +0200
-Subject: [PATCH 181/351] md: raid5: Make raid5_percpu handling RT aware
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=215c75ad291ac658b1b6756853fcf92b7e781daa
+Subject: [PATCH 181/353] md: raid5: Make raid5_percpu handling RT aware
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6903e12a02cec96bb490da0d8a8dda162a457e14
 
 __raid_run_ops() disables preemption with get_cpu() around the access
 to the raid5_percpu variables. That causes scheduling while atomic
@@ -19,7 +19,7 @@ Tested-by: Udo van den Heuvel <udovdh@xs4all.nl>
  2 files changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
-index 7fe0619c487a..fdbe17d1b1c4 100644
+index 7eeae0301ccc..a93f05b9e3a2 100644
 --- a/drivers/md/raid5.c
 +++ b/drivers/md/raid5.c
 @@ -2070,8 +2070,9 @@ static void raid_run_ops(struct stripe_head *sh, unsigned long ops_request)

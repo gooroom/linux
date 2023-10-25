@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 098/351] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 098/353] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bd0ab4b50f5c1acee380ca0e57f43d8300d6c6b8
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=81d6386fe5a38dafb8561c5d8caae248bb3456c8
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -169,7 +169,7 @@ index fac994367189..ac015d1dd16c 100644
  					     current->timer_slack_ns);
  	}
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 32ee24f5142a..1e03d7fab81c 100644
+index 8512f06f0ebe..23c89873bf60 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -1715,13 +1715,44 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
@@ -249,7 +249,7 @@ index 32ee24f5142a..1e03d7fab81c 100644
  	hrtimer_set_expires_range_ns(&t.timer, timespec64_to_ktime(*rqtp), slack);
  	ret = do_nanosleep(&t, mode);
  	if (ret != -ERESTART_RESTARTBLOCK)
-@@ -2003,11 +2031,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
+@@ -2005,11 +2033,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
  		return -EINTR;
  	}
  

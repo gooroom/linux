@@ -1,10 +1,10 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 16:56:02 +0100
-Subject: [PATCH 139/351] rbtree: don't include the rcu header
+Subject: [PATCH 139/353] rbtree: don't include the rcu header
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3aae1dd0ed999b612c527c0a456f2ff5db5042e2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=01edc3f9e31e5153bde8f96cab83edc1259da691
 
 The RCU header pulls in spinlock.h and fails due not yet defined types:
 
@@ -29,8 +29,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 56 insertions(+), 49 deletions(-)
  create mode 100644 include/linux/rcu_assign_pointer.h
 
-diff --git a/include/linux/rbtree.h b/include/linux/rbtree.h
-index fcbeed4053ef..2aa2aec354c2 100644
 --- a/include/linux/rbtree.h
 +++ b/include/linux/rbtree.h
 @@ -31,7 +31,7 @@
@@ -42,9 +40,6 @@ index fcbeed4053ef..2aa2aec354c2 100644
  
  struct rb_node {
  	unsigned long  __rb_parent_color;
-diff --git a/include/linux/rcu_assign_pointer.h b/include/linux/rcu_assign_pointer.h
-new file mode 100644
-index 000000000000..7066962a4379
 --- /dev/null
 +++ b/include/linux/rcu_assign_pointer.h
 @@ -0,0 +1,54 @@
@@ -102,8 +97,6 @@ index 000000000000..7066962a4379
 +})
 +
 +#endif
-diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index 027c58cdbb6e..e6733d7911e9 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -42,6 +42,7 @@
@@ -114,11 +107,10 @@ index 027c58cdbb6e..e6733d7911e9 100644
  
  #define ULONG_CMP_GE(a, b)	(ULONG_MAX / 2 >= (a) - (b))
  #define ULONG_CMP_LT(a, b)	(ULONG_MAX / 2 < (a) - (b))
-@@ -369,54 +370,6 @@ static inline void rcu_preempt_sleep_check(void) { }
- 	((typeof(*p) __force __kernel *)(________p1)); \
+@@ -370,54 +371,6 @@ static inline void rcu_preempt_sleep_che
  })
  
--/**
+ /**
 - * RCU_INITIALIZER() - statically initialize an RCU-protected global variable
 - * @v: The value to statically initialize with.
 - */
@@ -166,6 +158,7 @@ index 027c58cdbb6e..e6733d7911e9 100644
 -	_r_a_p__v;							      \
 -})
 -
- /**
-  * rcu_swap_protected() - swap an RCU and a regular pointer
-  * @rcu_ptr: RCU pointer
+-/**
+  * rcu_replace_pointer() - replace an RCU pointer, returning its old value
+  * @rcu_ptr: RCU pointer, whose old value is returned
+  * @ptr: regular pointer

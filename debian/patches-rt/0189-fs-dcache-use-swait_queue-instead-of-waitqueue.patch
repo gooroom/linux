@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 189/351] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6af69d2bbc226ecdacb1f944d8798b02c19c738
+Subject: [PATCH 189/353] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=61d4045b9c6beeffcdd2c05d35c3214d65c595ed
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -97,7 +97,7 @@ index 6098e0c7f87b..9ce28840684a 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index c34ee9653559..83294b91b6bf 100644
+index 9e8fca598acc..277508fc3cbc 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -1646,7 +1646,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
@@ -176,10 +176,10 @@ index e3f10c110b74..accc230079bb 100644
  		if (IS_ERR(child))
  			goto end_instantiate;
 diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index c95f32b83a94..75f500cb7e74 100644
+index 7c62a526506c..499f67bf01e6 100644
 --- a/fs/proc/proc_sysctl.c
 +++ b/fs/proc/proc_sysctl.c
-@@ -681,7 +681,7 @@ static bool proc_sys_fill_cache(struct file *file,
+@@ -682,7 +682,7 @@ static bool proc_sys_fill_cache(struct file *file,
  
  	child = d_lookup(dir, &qname);
  	if (!child) {

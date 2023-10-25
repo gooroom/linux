@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
-Subject: [PATCH 270/351] timers: Redo the notification of canceling timers on
+Subject: [PATCH 270/353] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f8b3a6db4434a0ee962dcb2dc5b1fc160d0cfeaa
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c8867b2f2275355c1aec09e3b07c2020fc6234fa
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -135,7 +135,7 @@ index 0571b498db73..3e6c91bdf2ef 100644
  
  /*
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index f4c8cfde00b0..e7b983df6996 100644
+index dec68f9dab7b..85c7f4a6b9c1 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
 @@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
@@ -148,7 +148,7 @@ index f4c8cfde00b0..e7b983df6996 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index aa8f3177580a..bbc408f24f5d 100644
+index 1992f107599e..6e19604eaa00 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -981,33 +981,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -216,7 +216,7 @@ index aa8f3177580a..bbc408f24f5d 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -2014,9 +1998,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -2016,9 +2000,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
@@ -317,7 +317,7 @@ index 2d29b269dc83..54632ed51c65 100644
  			 * We need to handle case when timer was or is in the
  			 * middle of firing. In other cases we already freed
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index 2cf5aa704106..3fd433d2a767 100644
+index 36ee80652208..9f1d4c092f54 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
 @@ -821,25 +821,20 @@ static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
-Subject: [PATCH 066/351] buffer_head: Replace bh_uptodate_lock for -rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=26279f7db2149b404506e6dec0c13effa245c8b6
+Subject: [PATCH 066/353] buffer_head: Replace bh_uptodate_lock for -rt
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b7112c7f2393168be4998583652cd82cfba26657
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 46 insertions(+), 25 deletions(-)
 
 diff --git a/fs/buffer.c b/fs/buffer.c
-index 356e289d19f2..ab18ec733ed3 100644
+index 5bc0877f223f..85ce01feffe9 100644
 --- a/fs/buffer.c
 +++ b/fs/buffer.c
 @@ -274,8 +274,7 @@ static void end_buffer_async_read(struct buffer_head *bh, int uptodate)
@@ -86,7 +86,7 @@ index 356e289d19f2..ab18ec733ed3 100644
  		__this_cpu_inc(bh_accounting.nr);
  		recalc_bh_state();
 diff --git a/fs/ext4/page-io.c b/fs/ext4/page-io.c
-index 3de933354a08..838d9f4fc554 100644
+index bf910f266469..391308566035 100644
 --- a/fs/ext4/page-io.c
 +++ b/fs/ext4/page-io.c
 @@ -95,8 +95,7 @@ static void ext4_finish_bio(struct bio *bio)

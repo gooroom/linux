@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
-Subject: [PATCH 185/351] block: blk-mq: move blk_queue_usage_counter_release()
+Subject: [PATCH 185/353] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ea6963bba2bb29ce40ebaf69a1911cb113ffb0f2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=598cc45494b90c42a2f400150aaa3164ae26236a
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
 | in_atomic(): 1, irqs_disabled(): 0, pid: 255, name: kworker/u257:6
@@ -51,7 +51,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 461a93c08c14..02835970ef1e 100644
+index 24b1d8b195d8..3872abb222be 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -973,12 +973,21 @@ void blk_queue_exit(struct request_queue *q)
@@ -85,7 +85,7 @@ index 461a93c08c14..02835970ef1e 100644
  
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
-@@ -3967,6 +3977,8 @@ int __init blk_dev_init(void)
+@@ -3964,6 +3974,8 @@ int __init blk_dev_init(void)
  	if (!kblockd_workqueue)
  		panic("Failed to create kblockd\n");
  
