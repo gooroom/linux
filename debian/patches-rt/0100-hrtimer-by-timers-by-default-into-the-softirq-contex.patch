@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 100/353] hrtimer: by timers by default into the softirq
+Subject: [PATCH 100/354] hrtimer: by timers by default into the softirq
  context
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f29c49b257f3002eb54b6303ac0fc6551f3180b2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9e206d0caa6d175533fd2973ecbb54d48c6f1bd1
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
 the timers are deferred to the softirq context by default.
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 027941e3df68..9699f3735a55 100644
+index 256b00f456e6..83c3421499aa 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2262,7 +2262,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -2266,7 +2266,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -41,7 +41,7 @@ index 027941e3df68..9699f3735a55 100644
  
  	/*
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 8714f1a37d84..082147c07831 100644
+index 684241f87e4d..f8b4818e6e08 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -42,6 +42,7 @@ enum hrtimer_mode {
@@ -65,7 +65,7 @@ index 8714f1a37d84..082147c07831 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 2bf4b6b109bf..69524886cc89 100644
+index 4182e265176d..daeff994ae9c 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1108,7 +1108,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -77,7 +77,7 @@ index 2bf4b6b109bf..69524886cc89 100644
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -9311,7 +9311,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
+@@ -9372,7 +9372,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
  	if (!is_sampling_event(event))
  		return;
  
@@ -113,7 +113,7 @@ index 9243d0049714..52acbb31a777 100644
  }
  
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index bd9a375c45f4..6d1911b08b7f 100644
+index 3f6a613be8c3..802471dbb24d 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4998,9 +4998,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
@@ -129,7 +129,7 @@ index bd9a375c45f4..6d1911b08b7f 100644
  	cfs_b->distribute_running = 0;
  }
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index a068884c369f..b15428ede6cf 100644
+index 0768ba9d2860..41e73baf41ab 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
 @@ -45,8 +45,8 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
@@ -144,7 +144,7 @@ index a068884c369f..b15428ede6cf 100644
  }
  
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index ab38b51a96cc..beb81024c287 100644
+index 478ff82abd33..764c360568f1 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -1202,7 +1202,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,

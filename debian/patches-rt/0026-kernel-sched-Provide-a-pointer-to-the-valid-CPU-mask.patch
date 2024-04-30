@@ -1,11 +1,11 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 026/353] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 026/354] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=00783413cf324a173918f6f46c53eb248a11de23
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=118cce869ba59f58717eb40f3ac2a72e4e97e71e
 
 In commit 4b53a3412d66 ("sched/core: Remove the tsk_nr_cpus_allowed()
 wrapper") the tsk_nr_cpus_allowed() wrapper was removed. There was not
@@ -209,7 +209,7 @@ index bb670249bebf..deced4654e66 100644
  			  current->pid, current->comm,
  			  cpumask_pr_args(proc_mask));
 diff --git a/drivers/infiniband/hw/hfi1/sdma.c b/drivers/infiniband/hw/hfi1/sdma.c
-index 33ff9eca28f6..6115a9902435 100644
+index 245f9505a9ac..f5f97eeb4056 100644
 --- a/drivers/infiniband/hw/hfi1/sdma.c
 +++ b/drivers/infiniband/hw/hfi1/sdma.c
 @@ -853,14 +853,13 @@ struct sdma_engine *sdma_select_user_engine(struct hfi1_devdata *dd,
@@ -572,7 +572,7 @@ index 29ed5d8d30d6..9243d0049714 100644
  				     !dl_task(task) ||
  				     !task_on_rq_queued(task))) {
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index d19981efd980..bd9a375c45f4 100644
+index 2814b6b085bc..3f6a613be8c3 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -1691,7 +1691,7 @@ static void task_numa_compare(struct task_numa_env *env,
@@ -719,10 +719,10 @@ index d19981efd980..bd9a375c45f4 100644
  							    flags);
  				env.flags |= LBF_ALL_PINNED;
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index 9c6c3572b131..a068884c369f 100644
+index 394c66442cff..0768ba9d2860 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
-@@ -1623,7 +1623,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
+@@ -1626,7 +1626,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
  static int pick_rt_task(struct rq *rq, struct task_struct *p, int cpu)
  {
  	if (!task_running(rq, p) &&
@@ -731,7 +731,7 @@ index 9c6c3572b131..a068884c369f 100644
  		return 1;
  
  	return 0;
-@@ -1760,7 +1760,7 @@ static struct rq *find_lock_lowest_rq(struct task_struct *task, struct rq *rq)
+@@ -1763,7 +1763,7 @@ static struct rq *find_lock_lowest_rq(struct task_struct *task, struct rq *rq)
  			 * Also make sure that it wasn't scheduled on its rq.
  			 */
  			if (unlikely(task_rq(task) != rq ||

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 5 Oct 2011 11:59:38 -0700
-Subject: [PATCH 158/353] rcu: Merge RCU-bh into RCU-preempt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ea7433159b2ffcf58ecc592690f31311034372c7
+Subject: [PATCH 158/354] rcu: Merge RCU-bh into RCU-preempt
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=9f5b41077696c1c5d7d2f00c3fa5a73b303c1920
 
 The Linux kernel has long RCU-bh read-side critical sections that
 intolerably increase scheduling latency under mainline's RCU-bh rules,
@@ -34,7 +34,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 73 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index e6733d7911e9..08d64e5713fc 100644
+index de6f65f69a71..f30feeb1cbab 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -56,7 +56,11 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func);
@@ -64,7 +64,7 @@ index e6733d7911e9..08d64e5713fc 100644
  int rcu_read_lock_sched_held(void);
  
  #else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
-@@ -661,10 +672,14 @@ static inline void rcu_read_unlock(void)
+@@ -727,10 +738,14 @@ static inline void rcu_read_unlock(void)
  static inline void rcu_read_lock_bh(void)
  {
  	local_bh_disable();
@@ -79,7 +79,7 @@ index e6733d7911e9..08d64e5713fc 100644
  }
  
  /*
-@@ -674,10 +689,14 @@ static inline void rcu_read_lock_bh(void)
+@@ -740,10 +755,14 @@ static inline void rcu_read_lock_bh(void)
   */
  static inline void rcu_read_unlock_bh(void)
  {

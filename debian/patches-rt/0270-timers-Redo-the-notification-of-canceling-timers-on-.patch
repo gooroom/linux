@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
-Subject: [PATCH 270/353] timers: Redo the notification of canceling timers on
+Subject: [PATCH 270/354] timers: Redo the notification of canceling timers on
  -RT
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c8867b2f2275355c1aec09e3b07c2020fc6234fa
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f3beb62163e553487a4e1edb78d0409869cbde42
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
 
@@ -57,7 +57,7 @@ index 82d0f52414a6..f845093466be 100644
  
  	/*
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 082147c07831..aee31b1f0cc3 100644
+index f8b4818e6e08..5112913e419f 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -22,7 +22,6 @@
@@ -148,7 +148,7 @@ index dec68f9dab7b..85c7f4a6b9c1 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 1992f107599e..6e19604eaa00 100644
+index 8f315ad08cd1..fb28793cb87b 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -981,33 +981,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -317,10 +317,10 @@ index 2d29b269dc83..54632ed51c65 100644
  			 * We need to handle case when timer was or is in the
  			 * middle of firing. In other cases we already freed
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index 36ee80652208..9f1d4c092f54 100644
+index eae555df7ea3..ba508c0924b9 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
-@@ -821,25 +821,20 @@ static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,
+@@ -826,25 +826,20 @@ static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,
  		hrtimer_start_expires(timer, HRTIMER_MODE_ABS);
  }
  
@@ -356,7 +356,7 @@ index 36ee80652208..9f1d4c092f54 100644
  }
  
  /* Set a POSIX.1b interval timer. */
-@@ -901,21 +896,21 @@ static int do_timer_settime(timer_t timer_id, int flags,
+@@ -906,21 +901,21 @@ static int do_timer_settime(timer_t timer_id, int flags,
  	if (!timr)
  		return -EINVAL;
  
@@ -382,7 +382,7 @@ index 36ee80652208..9f1d4c092f54 100644
  
  	return error;
  }
-@@ -977,13 +972,21 @@ int common_timer_del(struct k_itimer *timer)
+@@ -982,13 +977,21 @@ int common_timer_del(struct k_itimer *timer)
  	return 0;
  }
  
@@ -406,7 +406,7 @@ index 36ee80652208..9f1d4c092f54 100644
  }
  
  /* Delete a POSIX.1b interval timer. */
-@@ -997,15 +1000,8 @@ SYSCALL_DEFINE1(timer_delete, timer_t, timer_id)
+@@ -1002,15 +1005,8 @@ SYSCALL_DEFINE1(timer_delete, timer_t, timer_id)
  	if (!timer)
  		return -EINVAL;
  
@@ -423,7 +423,7 @@ index 36ee80652208..9f1d4c092f54 100644
  
  	spin_lock(&current->sighand->siglock);
  	list_del(&timer->list);
-@@ -1031,20 +1027,9 @@ static void itimer_delete(struct k_itimer *timer)
+@@ -1036,20 +1032,9 @@ static void itimer_delete(struct k_itimer *timer)
  retry_delete:
  	spin_lock_irqsave(&timer->it_lock, flags);
  

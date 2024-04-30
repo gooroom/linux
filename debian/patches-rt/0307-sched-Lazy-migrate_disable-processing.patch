@@ -1,7 +1,7 @@
 From: Scott Wood <swood@redhat.com>
 Date: Sat, 12 Oct 2019 01:52:13 -0500
-Subject: [PATCH 307/353] sched: Lazy migrate_disable processing
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e59f409c017d0df927609e4fe742e7db56c48fe5
+Subject: [PATCH 307/354] sched: Lazy migrate_disable processing
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=56d627e63870618c3968cb3a77b0970003cebae4
 
 [ Upstream commit 425c5b38779a860062aa62219dc920d374b13c17 ]
 
@@ -44,7 +44,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  7 files changed, 129 insertions(+), 182 deletions(-)
 
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index bddccdcd00ba..7f41ac9cf2ad 100644
+index 90985dbce8f4..0ce8ca019734 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
 @@ -124,8 +124,6 @@ extern void cpu_hotplug_disable(void);
@@ -120,7 +120,7 @@ index 634becebd713..45b84137c4b3 100644
  	.active_mm	= &init_mm,
  	.restart_block	= {
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 4bf82665f28c..f603ea80af2e 100644
+index e0b8387ac924..00c78fb73172 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -78,11 +78,6 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {

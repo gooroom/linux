@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 236/353] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=091e3b619256c38a1ca8760bea7e44d40b465fef
+Subject: [PATCH 236/354] sched: Add support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ec120f921bf1ff7f3d689a805e139127117b89a1
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -69,7 +69,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  13 files changed, 228 insertions(+), 29 deletions(-)
 
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index ed8413e7140f..9c74a019bf57 100644
+index 302f491b05ec..29ecd13afdda 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
 @@ -180,6 +180,20 @@ extern void preempt_count_sub(int val);
@@ -215,7 +215,7 @@ index 62dbecfe9132..57a3d99dc067 100644
  #ifndef CONFIG_HAVE_ARCH_WITHIN_STACK_FRAMES
  static inline int arch_within_stack_frames(const void * const stack,
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index 1cc4d2da954c..72864a11cec0 100644
+index 963c19f03bef..61011ac41b41 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -64,6 +64,7 @@ struct trace_entry {
@@ -244,7 +244,7 @@ index 907d72b3ba95..306567f72a3e 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 6ae5b18bf3a5..396394ebbc5b 100644
+index 605276e96143..9547c5bcbbc4 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -307,11 +307,13 @@ void pin_current_cpu(void)
@@ -419,7 +419,7 @@ index 41219ea235eb..e581ce1edc12 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index bd9a375c45f4..430248f46f72 100644
+index 3f6a613be8c3..b735b6088124 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4151,7 +4151,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -529,7 +529,7 @@ index 637c408fb2dc..87a05bb90124 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index b1c82b1dc3a6..d137601eed0e 100644
+index 61fdbe0ddeb1..3484c741261d 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2153,6 +2153,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -550,7 +550,7 @@ index b1c82b1dc3a6..d137601eed0e 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3364,15 +3366,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -3370,15 +3372,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -577,7 +577,7 @@ index b1c82b1dc3a6..d137601eed0e 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3410,15 +3414,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -3416,15 +3420,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  		   tgid ? tgid_space : space);
  	seq_printf(m, "#                          %s / _----=> need-resched\n",
  		   tgid ? tgid_space : space);
@@ -601,7 +601,7 @@ index b1c82b1dc3a6..d137601eed0e 100644
  }
  
 diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 0923d1b18d1f..80a2d3f56c35 100644
+index f4d83b552a47..00fbf2cb505c 100644
 --- a/kernel/trace/trace.h
 +++ b/kernel/trace/trace.h
 @@ -127,6 +127,7 @@ struct kretprobe_trace_entry_head {

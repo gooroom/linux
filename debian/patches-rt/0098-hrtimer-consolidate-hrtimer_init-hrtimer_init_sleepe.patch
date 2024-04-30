@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 098/353] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 098/354] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=81d6386fe5a38dafb8561c5d8caae248bb3456c8
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2ca12213cb0d12355a4962b1e5f51063170dd120
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
 hrtimer object with hrtimer_init(). Lets make the initialisation of
@@ -62,7 +62,7 @@ index 034d86869772..d089b2cb5dd7 100644
  
  	while (1) {
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 542b4fa2cda9..cbd041b22088 100644
+index 3bdaa92a2cab..4b7ef1c6decb 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -364,10 +364,17 @@ DECLARE_PER_CPU(struct tick_device, tick_cpu_device);
@@ -125,7 +125,7 @@ index 189da6e44756..523c68edc48a 100644
  		hrtimer_start_range_ns(&__t.timer, timeout,			\
  				       current->timer_slack_ns,			\
 diff --git a/kernel/futex.c b/kernel/futex.c
-index fac994367189..ac015d1dd16c 100644
+index 3fdcf5add961..585082311ea3 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
 @@ -2816,10 +2816,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
@@ -169,7 +169,7 @@ index fac994367189..ac015d1dd16c 100644
  					     current->timer_slack_ns);
  	}
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 8512f06f0ebe..23c89873bf60 100644
+index bf74f43e42af..1b2aeab41c0b 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -1715,13 +1715,44 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
@@ -249,7 +249,7 @@ index 8512f06f0ebe..23c89873bf60 100644
  	hrtimer_set_expires_range_ns(&t.timer, timespec64_to_ktime(*rqtp), slack);
  	ret = do_nanosleep(&t, mode);
  	if (ret != -ERESTART_RESTARTBLOCK)
-@@ -2005,11 +2033,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
+@@ -1996,11 +2024,9 @@ schedule_hrtimeout_range_clock(ktime_t *expires, u64 delta,
  		return -EINTR;
  	}
  
@@ -263,7 +263,7 @@ index 8512f06f0ebe..23c89873bf60 100644
  
  	if (likely(t.task))
 diff --git a/net/core/pktgen.c b/net/core/pktgen.c
-index 3714cd9e3111..2cea192b1475 100644
+index 3ade60ec4512..8aac00b6d491 100644
 --- a/net/core/pktgen.c
 +++ b/net/core/pktgen.c
 @@ -2160,7 +2160,8 @@ static void spin(struct pktgen_dev *pkt_dev, ktime_t spin_until)

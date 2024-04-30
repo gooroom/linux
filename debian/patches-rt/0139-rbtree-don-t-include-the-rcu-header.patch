@@ -1,10 +1,10 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 16:56:02 +0100
-Subject: [PATCH 139/353] rbtree: don't include the rcu header
+Subject: [PATCH 139/354] rbtree: don't include the rcu header
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=01edc3f9e31e5153bde8f96cab83edc1259da691
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=04dfb0f69dd66c9eab3498d4134bf7a04e6a0638
 
 The RCU header pulls in spinlock.h and fails due not yet defined types:
 
@@ -25,10 +25,12 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
  include/linux/rbtree.h             |  2 +-
  include/linux/rcu_assign_pointer.h | 54 ++++++++++++++++++++++++++++++
- include/linux/rcupdate.h           | 49 +--------------------------
- 3 files changed, 56 insertions(+), 49 deletions(-)
+ include/linux/rcupdate.h           |  1 +
+ 3 files changed, 56 insertions(+), 1 deletion(-)
  create mode 100644 include/linux/rcu_assign_pointer.h
 
+diff --git a/include/linux/rbtree.h b/include/linux/rbtree.h
+index fcbeed4053ef..2aa2aec354c2 100644
 --- a/include/linux/rbtree.h
 +++ b/include/linux/rbtree.h
 @@ -31,7 +31,7 @@
@@ -40,6 +42,9 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  struct rb_node {
  	unsigned long  __rb_parent_color;
+diff --git a/include/linux/rcu_assign_pointer.h b/include/linux/rcu_assign_pointer.h
+new file mode 100644
+index 000000000000..7066962a4379
 --- /dev/null
 +++ b/include/linux/rcu_assign_pointer.h
 @@ -0,0 +1,54 @@
@@ -97,6 +102,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 +})
 +
 +#endif
+diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
+index 18262dd58476..de6f65f69a71 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -42,6 +42,7 @@
@@ -107,58 +114,3 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  #define ULONG_CMP_GE(a, b)	(ULONG_MAX / 2 >= (a) - (b))
  #define ULONG_CMP_LT(a, b)	(ULONG_MAX / 2 < (a) - (b))
-@@ -370,54 +371,6 @@ static inline void rcu_preempt_sleep_che
- })
- 
- /**
-- * RCU_INITIALIZER() - statically initialize an RCU-protected global variable
-- * @v: The value to statically initialize with.
-- */
--#define RCU_INITIALIZER(v) (typeof(*(v)) __force __rcu *)(v)
--
--/**
-- * rcu_assign_pointer() - assign to RCU-protected pointer
-- * @p: pointer to assign to
-- * @v: value to assign (publish)
-- *
-- * Assigns the specified value to the specified RCU-protected
-- * pointer, ensuring that any concurrent RCU readers will see
-- * any prior initialization.
-- *
-- * Inserts memory barriers on architectures that require them
-- * (which is most of them), and also prevents the compiler from
-- * reordering the code that initializes the structure after the pointer
-- * assignment.  More importantly, this call documents which pointers
-- * will be dereferenced by RCU read-side code.
-- *
-- * In some special cases, you may use RCU_INIT_POINTER() instead
-- * of rcu_assign_pointer().  RCU_INIT_POINTER() is a bit faster due
-- * to the fact that it does not constrain either the CPU or the compiler.
-- * That said, using RCU_INIT_POINTER() when you should have used
-- * rcu_assign_pointer() is a very bad thing that results in
-- * impossible-to-diagnose memory corruption.  So please be careful.
-- * See the RCU_INIT_POINTER() comment header for details.
-- *
-- * Note that rcu_assign_pointer() evaluates each of its arguments only
-- * once, appearances notwithstanding.  One of the "extra" evaluations
-- * is in typeof() and the other visible only to sparse (__CHECKER__),
-- * neither of which actually execute the argument.  As with most cpp
-- * macros, this execute-arguments-only-once property is important, so
-- * please be careful when making changes to rcu_assign_pointer() and the
-- * other macros that it invokes.
-- */
--#define rcu_assign_pointer(p, v)					      \
--({									      \
--	uintptr_t _r_a_p__v = (uintptr_t)(v);				      \
--									      \
--	if (__builtin_constant_p(v) && (_r_a_p__v) == (uintptr_t)NULL)	      \
--		WRITE_ONCE((p), (typeof(p))(_r_a_p__v));		      \
--	else								      \
--		smp_store_release(&p, RCU_INITIALIZER((typeof(p))_r_a_p__v)); \
--	_r_a_p__v;							      \
--})
--
--/**
-  * rcu_replace_pointer() - replace an RCU pointer, returning its old value
-  * @rcu_ptr: RCU pointer, whose old value is returned
-  * @ptr: regular pointer

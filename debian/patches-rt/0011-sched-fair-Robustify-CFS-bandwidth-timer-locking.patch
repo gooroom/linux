@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 7 Jan 2019 13:52:31 +0100
-Subject: [PATCH 011/353] sched/fair: Robustify CFS-bandwidth timer locking
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=23a5dc393375842c47361eba6404190b31263bfb
+Subject: [PATCH 011/354] sched/fair: Robustify CFS-bandwidth timer locking
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3d179a735692f4f5484e6a3bddee1363a64b9015
 
 Traditionally hrtimer callbacks were run with IRQs disabled, but with
 the introduction of HRTIMER_MODE_SOFT it is possible they run from
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 16 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index eb67f42fb96b..d19981efd980 100644
+index 09f82c84474b..2814b6b085bc 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4644,7 +4644,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)

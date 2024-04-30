@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 189/353] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=61d4045b9c6beeffcdd2c05d35c3214d65c595ed
+Subject: [PATCH 189/354] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=68ab83929039c1bf3c95833d1055613830ef96fb
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -84,7 +84,7 @@ index 1ae163d54925..6e1c0b4c04f4 100644
  	hlist_bl_unlock(b);
  	INIT_HLIST_NODE(&dentry->d_u.d_alias);
 diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index 6098e0c7f87b..9ce28840684a 100644
+index 0e03adbcf942..68df4ac61c30 100644
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
 @@ -1234,7 +1234,7 @@ static int fuse_direntplus_link(struct file *file,
@@ -97,7 +97,7 @@ index 6098e0c7f87b..9ce28840684a 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 9e8fca598acc..277508fc3cbc 100644
+index 60b57e0bc174..219c3bd94a8f 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -1646,7 +1646,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
@@ -109,7 +109,7 @@ index 9e8fca598acc..277508fc3cbc 100644
  
  	/* Don't go there if it's already dead */
  	if (unlikely(IS_DEADDIR(inode)))
-@@ -3136,7 +3136,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3156,7 +3156,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -163,7 +163,7 @@ index ce9100b5604d..839bfa76f41e 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index e3f10c110b74..accc230079bb 100644
+index 69f48794b550..26334fa56e18 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -1889,7 +1889,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,

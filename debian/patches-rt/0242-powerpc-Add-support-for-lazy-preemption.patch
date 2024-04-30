@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH 242/353] powerpc: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=11f2dca2c4c3c03a672652346d9b11e8543018e4
+Subject: [PATCH 242/354] powerpc: Add support for lazy preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f0261a63d9f224979b3642ab6913ebbde09a23a0
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -15,10 +15,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 33 insertions(+), 11 deletions(-)
 
 diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index f4517f4be192..4536d047cdff 100644
+index cd338d971df2..3d9a02fb5879 100644
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
-@@ -217,6 +217,7 @@ config PPC
+@@ -218,6 +218,7 @@ config PPC
  	select HAVE_HARDLOCKUP_DETECTOR_PERF	if PERF_EVENTS && HAVE_PERF_EVENTS_NMI && !HAVE_HARDLOCKUP_DETECTOR_ARCH
  	select HAVE_PERF_REGS
  	select HAVE_PERF_USER_STACK_DUMP
@@ -76,10 +76,10 @@ index 3c0002044bc9..ce316076bc52 100644
  /* Bits in local_flags */
  /* Don't move TLF_NAPPING without adjusting the code in entry_32.S */
 diff --git a/arch/powerpc/kernel/asm-offsets.c b/arch/powerpc/kernel/asm-offsets.c
-index 50400f213bbf..1bb82c5dc1d9 100644
+index c2288c73d56d..082d01ba2ecb 100644
 --- a/arch/powerpc/kernel/asm-offsets.c
 +++ b/arch/powerpc/kernel/asm-offsets.c
-@@ -156,6 +156,7 @@ int main(void)
+@@ -159,6 +159,7 @@ int main(void)
  	OFFSET(TI_FLAGS, thread_info, flags);
  	OFFSET(TI_LOCAL_FLAGS, thread_info, local_flags);
  	OFFSET(TI_PREEMPT, thread_info, preempt_count);
