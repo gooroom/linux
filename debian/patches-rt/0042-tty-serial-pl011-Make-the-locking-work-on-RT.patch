@@ -1,8 +1,8 @@
-From 1db3dc8a6af68447b52efbbf8dbb4d210d23d57b Mon Sep 17 00:00:00 2001
+From b678686111c2ee215cb28eca6ebf09576c8692d1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 8 Jan 2013 21:36:51 +0100
-Subject: [PATCH 42/62] tty/serial/pl011: Make the locking work on RT
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.69-rt21.tar.xz
+Subject: [PATCH 42/64] tty/serial/pl011: Make the locking work on RT
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
 
 The lock is a sleeping lock and local_irq_save() is not the optimsation
 we are looking for. Redo it to make it work on -RT and non-RT.
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 11 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/tty/serial/amba-pl011.c b/drivers/tty/serial/amba-pl011.c
-index c74eaf2552c3..38eb30b8491b 100644
+index 2f0f05259778..eee5141ecd3a 100644
 --- a/drivers/tty/serial/amba-pl011.c
 +++ b/drivers/tty/serial/amba-pl011.c
 @@ -2316,18 +2316,24 @@ pl011_console_write(struct console *co, const char *s, unsigned int count)
@@ -56,5 +56,5 @@ index c74eaf2552c3..38eb30b8491b 100644
  	clk_disable(uap->clk);
  }
 -- 
-2.43.0
+2.44.0
 

@@ -24,20 +24,18 @@ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
  security/lockdown/lockdown.c      |    2 +-
  5 files changed, 27 insertions(+), 3 deletions(-)
 
-Index: debian-kernel/arch/x86/kernel/setup.c
-===================================================================
---- debian-kernel.orig/arch/x86/kernel/setup.c
-+++ debian-kernel/arch/x86/kernel/setup.c
-@@ -979,6 +979,8 @@ void __init setup_arch(char **cmdline_p)
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -1031,6 +1031,8 @@ void __init setup_arch(char **cmdline_p)
  	if (efi_enabled(EFI_BOOT))
  		efi_init();
  
 +	efi_set_secure_boot(boot_params.secure_boot);
 +
- 	dmi_setup();
+ 	x86_init.resources.dmi_setup();
  
  	/*
-@@ -1130,8 +1132,6 @@ void __init setup_arch(char **cmdline_p)
+@@ -1200,8 +1202,6 @@ void __init setup_arch(char **cmdline_p)
  	/* Allocate bigger log buffer */
  	setup_log_buf(1);
  
@@ -46,10 +44,8 @@ Index: debian-kernel/arch/x86/kernel/setup.c
  	reserve_initrd();
  
  	acpi_table_upgrade();
-Index: debian-kernel/drivers/firmware/efi/secureboot.c
-===================================================================
---- debian-kernel.orig/drivers/firmware/efi/secureboot.c
-+++ debian-kernel/drivers/firmware/efi/secureboot.c
+--- a/drivers/firmware/efi/secureboot.c
++++ b/drivers/firmware/efi/secureboot.c
 @@ -15,6 +15,7 @@
  #include <linux/efi.h>
  #include <linux/kernel.h>
@@ -69,11 +65,9 @@ Index: debian-kernel/drivers/firmware/efi/secureboot.c
  			pr_info("Secure boot enabled\n");
  			break;
  		default:
-Index: debian-kernel/include/linux/security.h
-===================================================================
---- debian-kernel.orig/include/linux/security.h
-+++ debian-kernel/include/linux/security.h
-@@ -451,6 +451,7 @@ int security_inode_notifysecctx(struct i
+--- a/include/linux/security.h
++++ b/include/linux/security.h
+@@ -481,6 +481,7 @@ int security_inode_notifysecctx(struct i
  int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
  int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
  int security_locked_down(enum lockdown_reason what);
@@ -81,7 +75,7 @@ Index: debian-kernel/include/linux/security.h
  #else /* CONFIG_SECURITY */
  
  static inline int call_blocking_lsm_notifier(enum lsm_event event, void *data)
-@@ -1291,6 +1292,11 @@ static inline int security_locked_down(e
+@@ -1381,6 +1382,11 @@ static inline int security_locked_down(e
  {
  	return 0;
  }
@@ -93,10 +87,8 @@ Index: debian-kernel/include/linux/security.h
  #endif	/* CONFIG_SECURITY */
  
  #if defined(CONFIG_SECURITY) && defined(CONFIG_WATCH_QUEUE)
-Index: debian-kernel/security/lockdown/Kconfig
-===================================================================
---- debian-kernel.orig/security/lockdown/Kconfig
-+++ debian-kernel/security/lockdown/Kconfig
+--- a/security/lockdown/Kconfig
++++ b/security/lockdown/Kconfig
 @@ -45,3 +45,18 @@ config LOCK_DOWN_KERNEL_FORCE_CONFIDENTI
  	 disabled.
  
@@ -116,10 +108,8 @@ Index: debian-kernel/security/lockdown/Kconfig
 +
 +	  Enabling this option results in kernel lockdown being
 +	  triggered in integrity mode if EFI Secure Boot is set.
-Index: debian-kernel/security/lockdown/lockdown.c
-===================================================================
---- debian-kernel.orig/security/lockdown/lockdown.c
-+++ debian-kernel/security/lockdown/lockdown.c
+--- a/security/lockdown/lockdown.c
++++ b/security/lockdown/lockdown.c
 @@ -23,7 +23,7 @@ static const enum lockdown_reason lockdo
  /*
   * Put the kernel into lock-down mode.

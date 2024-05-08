@@ -1,8 +1,8 @@
-From 87194c420f8ef3b1a8b9b63ae640180e2414e8c4 Mon Sep 17 00:00:00 2001
+From 9ee683f4f85373204d8fd50d4ac8f6ab8154cf4b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 32/62] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.69-rt21.tar.xz
+Subject: [PATCH 32/64] sched: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -69,10 +69,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  12 files changed, 260 insertions(+), 35 deletions(-)
 
 diff --git a/include/linux/preempt.h b/include/linux/preempt.h
-index 8cfcc5d45451..9fc4c4bb320f 100644
+index 9aa6358a1a16..e9f0d08733f4 100644
 --- a/include/linux/preempt.h
 +++ b/include/linux/preempt.h
-@@ -207,6 +207,20 @@ extern void preempt_count_sub(int val);
+@@ -208,6 +208,20 @@ extern void preempt_count_sub(int val);
  #define preempt_count_inc() preempt_count_add(1)
  #define preempt_count_dec() preempt_count_sub(1)
  
@@ -93,7 +93,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  #ifdef CONFIG_PREEMPT_COUNT
  
  #define preempt_disable() \
-@@ -215,6 +229,12 @@ do { \
+@@ -216,6 +230,12 @@ do { \
  	barrier(); \
  } while (0)
  
@@ -106,7 +106,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  #define sched_preempt_enable_no_resched() \
  do { \
  	barrier(); \
-@@ -246,6 +266,18 @@ do { \
+@@ -247,6 +267,18 @@ do { \
  		__preempt_schedule(); \
  } while (0)
  
@@ -125,7 +125,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  #else /* !CONFIG_PREEMPTION */
  #define preempt_enable() \
  do { \
-@@ -253,6 +285,12 @@ do { \
+@@ -254,6 +286,12 @@ do { \
  	preempt_count_dec(); \
  } while (0)
  
@@ -138,7 +138,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  #define preempt_enable_notrace() \
  do { \
  	barrier(); \
-@@ -293,6 +331,9 @@ do { \
+@@ -294,6 +332,9 @@ do { \
  #define preempt_enable_notrace()		barrier()
  #define preemptible()				0
  
@@ -148,7 +148,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  #endif /* CONFIG_PREEMPT_COUNT */
  
  #ifdef MODULE
-@@ -311,7 +352,7 @@ do { \
+@@ -312,7 +353,7 @@ do { \
  } while (0)
  #define preempt_fold_need_resched() \
  do { \
@@ -157,7 +157,7 @@ index 8cfcc5d45451..9fc4c4bb320f 100644
  		set_preempt_need_resched(); \
  } while (0)
  
-@@ -427,8 +468,15 @@ extern void migrate_enable(void);
+@@ -428,8 +469,15 @@ extern void migrate_enable(void);
  
  #else
  
@@ -557,10 +557,10 @@ index b62d53d7c264..f2577f511a41 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  extern bool sched_rt_bandwidth_account(struct rt_rq *rt_rq);
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 87eca95b57fb..462564d652be 100644
+index f667d6bdddda..3bc4f34507f0 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2616,11 +2616,19 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
+@@ -2644,11 +2644,19 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
  	if (softirq_count() >> (SOFTIRQ_SHIFT + 1))
  		trace_flags |= TRACE_FLAG_BH_OFF;
  
@@ -582,7 +582,7 @@ index 87eca95b57fb..462564d652be 100644
  		(min_t(unsigned int, migration_disable_value(), 0xf)) << 4;
  }
  
-@@ -4212,15 +4220,17 @@ unsigned long trace_total_entries(struct trace_array *tr)
+@@ -4240,15 +4248,17 @@ unsigned long trace_total_entries(struct trace_array *tr)
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -609,7 +609,7 @@ index 87eca95b57fb..462564d652be 100644
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -4254,14 +4264,16 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
+@@ -4282,14 +4292,16 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
  
  	print_event_info(buf, m);
  
@@ -647,7 +647,7 @@ index a6d2f99f847d..493c3f9cf01a 100644
  	return ret;
  }
 diff --git a/kernel/trace/trace_output.c b/kernel/trace/trace_output.c
-index 5cd4fb656306..3c227e2843ae 100644
+index bf1965b18099..133f15d3b886 100644
 --- a/kernel/trace/trace_output.c
 +++ b/kernel/trace/trace_output.c
 @@ -442,6 +442,7 @@ int trace_print_lat_fmt(struct trace_seq *s, struct trace_entry *entry)
@@ -710,5 +710,5 @@ index 5cd4fb656306..3c227e2843ae 100644
  		trace_seq_printf(s, "%x", entry->preempt_count >> 4);
  	else
 -- 
-2.43.0
+2.44.0
 

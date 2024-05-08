@@ -1,8 +1,8 @@
-From 5c27e6fdf46d68180a46fdf7944aa7e4668680c3 Mon Sep 17 00:00:00 2001
+From 6db82c40bca31549afa8f2520992a3a46f1cf89a Mon Sep 17 00:00:00 2001
 From: Wander Lairson Costa <wander@redhat.com>
 Date: Wed, 14 Jun 2023 09:23:22 -0300
-Subject: [PATCH 57/62] sched: avoid false lockdep splat in put_task_struct()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.69-rt21.tar.xz
+Subject: [PATCH 57/64] sched: avoid false lockdep splat in put_task_struct()
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
 
 In put_task_struct(), a spin_lock is indirectly acquired under the kernel
 stock. When running the kernel in real-time (RT) configuration, the
@@ -30,7 +30,7 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
-index 7291fb6399d2..de7ebd2bf3ba 100644
+index aaa25ed1a8fe..a51c36397324 100644
 --- a/include/linux/sched/task.h
 +++ b/include/linux/sched/task.h
 @@ -141,8 +141,12 @@ static inline void put_task_struct(struct task_struct *t)
@@ -46,7 +46,7 @@ index 7291fb6399d2..de7ebd2bf3ba 100644
 +	}
  }
  
- static inline void put_task_struct_many(struct task_struct *t, int nr)
+ DEFINE_FREE(put_task, struct task_struct *, if (_T) put_task_struct(_T))
 -- 
-2.43.0
+2.44.0
 

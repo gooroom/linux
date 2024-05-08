@@ -22,8 +22,6 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  4 files changed, 95 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
 
-diff --git a/drivers/net/ethernet/microsoft/Kconfig b/drivers/net/ethernet/microsoft/Kconfig
-index fe4e7a7d9c0b..090e6b983243 100644
 --- a/drivers/net/ethernet/microsoft/Kconfig
 +++ b/drivers/net/ethernet/microsoft/Kconfig
 @@ -19,6 +19,7 @@ config MICROSOFT_MANA
@@ -31,11 +29,9 @@ index fe4e7a7d9c0b..090e6b983243 100644
  	depends on PCI_MSI && X86_64
  	depends on PCI_HYPERV
 +	select AUXILIARY_BUS
+ 	select PAGE_POOL
  	help
  	  This driver supports Microsoft Azure Network Adapter (MANA).
- 	  So far, the driver is only supported on X86_64.
-diff --git a/drivers/net/ethernet/microsoft/mana/gdma.h b/drivers/net/ethernet/microsoft/mana/gdma.h
-index 68684a8bcead..df0ffe35db92 100644
 --- a/drivers/net/ethernet/microsoft/mana/gdma.h
 +++ b/drivers/net/ethernet/microsoft/mana/gdma.h
 @@ -204,6 +204,8 @@ struct gdma_dev {
@@ -47,9 +43,6 @@ index 68684a8bcead..df0ffe35db92 100644
  };
  
  #define MINIMUM_SUPPORTED_PAGE_SIZE PAGE_SIZE
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h b/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
-new file mode 100644
-index 000000000000..373d59756846
 --- /dev/null
 +++ b/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
 @@ -0,0 +1,10 @@
@@ -63,11 +56,9 @@ index 000000000000..373d59756846
 +	struct auxiliary_device adev;
 +	struct gdma_dev *mdev;
 +};
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index aec4bab6be56..b9e2723ce167 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -13,6 +13,19 @@
+@@ -14,6 +14,19 @@
  #include <net/ip6_checksum.h>
  
  #include "mana.h"
@@ -87,7 +78,7 @@ index aec4bab6be56..b9e2723ce167 100644
  
  /* Microsoft Azure Network Adapter (MANA) functions */
  
-@@ -2112,6 +2125,69 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
+@@ -2145,6 +2158,69 @@ free_net:
  	return err;
  }
  
@@ -157,7 +148,7 @@ index aec4bab6be56..b9e2723ce167 100644
  int mana_probe(struct gdma_dev *gd, bool resuming)
  {
  	struct gdma_context *gc = gd->gdma_context;
-@@ -2179,6 +2255,8 @@ int mana_probe(struct gdma_dev *gd, bool resuming)
+@@ -2212,6 +2288,8 @@ int mana_probe(struct gdma_dev *gd, bool
  				break;
  		}
  	}
@@ -166,7 +157,7 @@ index aec4bab6be56..b9e2723ce167 100644
  out:
  	if (err)
  		mana_remove(gd, false);
-@@ -2195,6 +2273,10 @@ void mana_remove(struct gdma_dev *gd, bool suspending)
+@@ -2228,6 +2306,10 @@ void mana_remove(struct gdma_dev *gd, bo
  	int err;
  	int i;
  
@@ -177,7 +168,7 @@ index aec4bab6be56..b9e2723ce167 100644
  	for (i = 0; i < ac->num_ports; i++) {
  		ndev = ac->ports[i];
  		if (!ndev) {
-@@ -2227,7 +2309,6 @@ void mana_remove(struct gdma_dev *gd, bool suspending)
+@@ -2260,7 +2342,6 @@ void mana_remove(struct gdma_dev *gd, bo
  	}
  
  	mana_destroy_eq(ac);
@@ -185,6 +176,3 @@ index aec4bab6be56..b9e2723ce167 100644
  out:
  	mana_gd_deregister_device(gd);
  
--- 
-2.40.1
-
