@@ -1,9 +1,9 @@
-From 81c7a4f07d75acdc0e6b46fd76e1b99707fa13b2 Mon Sep 17 00:00:00 2001
+From f8b70b3bf4f6fbd99e12724a0045c96482c303db Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 30 Jun 2020 11:45:14 +0200
 Subject: [PATCH 33/64] x86/entry: Use should_resched() in
  idtentry_exit_cond_resched()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
 
 The TIF_NEED_RESCHED bit is inlined on x86 into the preemption counter.
 By using should_resched(0) instead of need_resched() the same check can
@@ -19,10 +19,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/entry/common.c b/kernel/entry/common.c
-index be61332c66b5..97ff5faad4fb 100644
+index ccf2b1e1b40b..2083274d3005 100644
 --- a/kernel/entry/common.c
 +++ b/kernel/entry/common.c
-@@ -386,7 +386,7 @@ void raw_irqentry_exit_cond_resched(void)
+@@ -392,7 +392,7 @@ void raw_irqentry_exit_cond_resched(void)
  		rcu_irq_exit_check_preempt();
  		if (IS_ENABLED(CONFIG_DEBUG_ENTRY))
  			WARN_ON_ONCE(!on_thread_stack());
@@ -32,5 +32,5 @@ index be61332c66b5..97ff5faad4fb 100644
  	}
  }
 -- 
-2.44.0
+2.45.2
 

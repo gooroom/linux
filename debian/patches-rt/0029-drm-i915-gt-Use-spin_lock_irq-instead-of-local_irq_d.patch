@@ -1,9 +1,9 @@
-From 340ffe2a83fe37ae1cb0995f401c6727bc65136c Mon Sep 17 00:00:00 2001
+From 9118b0ed56b711cd46b41813edb5d731cbf8e64f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 8 Sep 2021 19:03:41 +0200
 Subject: [PATCH 29/64] drm/i915/gt: Use spin_lock_irq() instead of
  local_irq_disable() + spin_lock()
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
 
 execlists_dequeue() is invoked from a function which uses
 local_irq_disable() to disable interrupts so the spin_lock() behaves
@@ -28,7 +28,7 @@ Reviewed-by: Maarten Lankhorst <maarten.lankhorst@linux.intel.com>
  1 file changed, 5 insertions(+), 12 deletions(-)
 
 diff --git a/drivers/gpu/drm/i915/gt/intel_execlists_submission.c b/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
-index f903ee1ce06e..f54059b63ea9 100644
+index eae138b9f2df..eade91a5fa1f 100644
 --- a/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
 +++ b/drivers/gpu/drm/i915/gt/intel_execlists_submission.c
 @@ -1302,7 +1302,7 @@ static void execlists_dequeue(struct intel_engine_cs *engine)
@@ -91,5 +91,5 @@ index f903ee1ce06e..f54059b63ea9 100644
  	}
  
 -- 
-2.44.0
+2.45.2
 

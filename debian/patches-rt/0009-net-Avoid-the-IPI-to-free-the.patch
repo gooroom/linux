@@ -1,8 +1,8 @@
-From cf980049b46f0e4ff30b373f992fdfd2671ee76c Mon Sep 17 00:00:00 2001
+From 8ef62eb88b04ef4f39b4ffe61078fdb9fdd1acde Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 15 Aug 2022 17:29:50 +0200
 Subject: [PATCH 09/64] net: Avoid the IPI to free the
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
 
 skb_attempt_defer_free() collects a skbs, which was allocated on a
 remote CPU, on a per-CPU list. These skbs are either freed on that
@@ -41,7 +41,7 @@ index 0373e0935990..55d698367883 100644
  
  static inline void input_queue_head_incr(struct softnet_data *sd)
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 41226d92755b..d01dbab0d338 100644
+index daf5fcfd5298..522cb8b1b36c 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -4621,15 +4621,6 @@ static void rps_trigger_softirq(void *data)
@@ -60,7 +60,7 @@ index 41226d92755b..d01dbab0d338 100644
  /*
   * Check if this softnet_data structure is another cpu one
   * If yes, queue it to our IPI list and return 1
-@@ -6687,6 +6678,30 @@ static void skb_defer_free_flush(struct softnet_data *sd)
+@@ -6690,6 +6681,30 @@ static void skb_defer_free_flush(struct softnet_data *sd)
  	}
  }
  
@@ -91,7 +91,7 @@ index 41226d92755b..d01dbab0d338 100644
  static __latent_entropy void net_rx_action(struct softirq_action *h)
  {
  	struct softnet_data *sd = this_cpu_ptr(&softnet_data);
-@@ -11447,7 +11462,11 @@ static int __init net_dev_init(void)
+@@ -11451,7 +11466,11 @@ static int __init net_dev_init(void)
  		INIT_CSD(&sd->csd, rps_trigger_softirq, sd);
  		sd->cpu = i;
  #endif
@@ -104,10 +104,10 @@ index 41226d92755b..d01dbab0d338 100644
  
  		init_gro_hash(&sd->backlog);
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index d4bd10f8723d..02445cd294ab 100644
+index 4d46788cd493..541008c9da86 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -6683,6 +6683,11 @@ nodefer:	__kfree_skb(skb);
+@@ -6702,6 +6702,11 @@ nodefer:	__kfree_skb(skb);
  	/* Make sure to trigger NET_RX_SOFTIRQ on the remote CPU
  	 * if we are unlucky enough (this seems very unlikely).
  	 */
@@ -121,5 +121,5 @@ index d4bd10f8723d..02445cd294ab 100644
 +	}
  }
 -- 
-2.44.0
+2.45.2
 

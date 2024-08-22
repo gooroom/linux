@@ -39,6 +39,11 @@ build-arch: debian/control
 # without standard flags, but are not exposed to untrusted input.
 # Kernel code needs different hardening options that blhc doesn't know
 # about.
+
+# The tools/perf/tests/workloads/.* programs are deliberately compiled
+# without -O2, so instruct blhc to ignore those
+	@printf '%s\n' 'blhc: ignore-line-regexp: .* -o .*tools/perf/tests/workloads/.*'
+
 # We need to use terse builds in CI due to the log size limit.  This
 # mostly affects the output for builds of kernel code, which need
 # different options for hardening anyway.

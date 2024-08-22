@@ -1,8 +1,8 @@
-From debe22b69f94f95a3cd10f6477386c2cd3942909 Mon Sep 17 00:00:00 2001
+From 543af3c21cec5dd35930817af84427c291dd30ad Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 1 Dec 2021 17:41:09 +0100
 Subject: [PATCH 12/64] softirq: Use a dedicated thread for timer wakeups.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
 
 A timer/hrtimer softirq is raised in-IRQ context. With threaded
 interrupts enabled or on PREEMPT_RT this leads to waking the ksoftirqd
@@ -73,10 +73,10 @@ index 4a1dc88ddbff..0efba74a835c 100644
  
  static inline struct task_struct *this_cpu_ksoftirqd(void)
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index c8a6913c067d..ed6d7c41aa17 100644
+index a47396161843..82bc8a20ebf2 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -637,6 +637,29 @@ static inline void tick_irq_exit(void)
+@@ -641,6 +641,29 @@ static inline void tick_irq_exit(void)
  #endif
  }
  
@@ -106,7 +106,7 @@ index c8a6913c067d..ed6d7c41aa17 100644
  static inline void __irq_exit_rcu(void)
  {
  #ifndef __ARCH_IRQ_EXIT_IRQS_DISABLED
-@@ -646,8 +669,13 @@ static inline void __irq_exit_rcu(void)
+@@ -650,8 +673,13 @@ static inline void __irq_exit_rcu(void)
  #endif
  	account_hardirq_exit(current);
  	preempt_count_sub(HARDIRQ_OFFSET);
@@ -122,7 +122,7 @@ index c8a6913c067d..ed6d7c41aa17 100644
  
  	tick_irq_exit();
  }
-@@ -976,12 +1004,70 @@ static struct smp_hotplug_thread softirq_threads = {
+@@ -980,12 +1008,70 @@ static struct smp_hotplug_thread softirq_threads = {
  	.thread_comm		= "ksoftirqd/%u",
  };
  
@@ -217,10 +217,10 @@ index 9bb88836c42e..11c704bfd4fb 100644
  
  	__hrtimer_run_queues(cpu_base, now, flags, HRTIMER_ACTIVE_HARD);
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 717fcb9fb14a..e6219da89933 100644
+index e09852be4e63..591cac6f03ec 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
-@@ -1822,7 +1822,7 @@ static void run_local_timers(void)
+@@ -1852,7 +1852,7 @@ static void run_local_timers(void)
  		if (time_before(jiffies, base->next_expiry))
  			return;
  	}
@@ -230,5 +230,5 @@ index 717fcb9fb14a..e6219da89933 100644
  
  /*
 -- 
-2.44.0
+2.45.2
 

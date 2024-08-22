@@ -1,9 +1,9 @@
-From 09d6df4cd7bb30b5ebe0dff908a97f8fbd65d870 Mon Sep 17 00:00:00 2001
+From ee73f1955a4c9e0460bbee6233f4125f5c1e2592 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Aug 2022 16:17:37 +0200
 Subject: [PATCH 06/64] net: Remove the obsolte u64_stats_fetch_*_irq() users
  (net).
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.82-rt27.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
 
 Now that the 32bit UP oddity is gone and 32bit uses always a sequence
 count, there is no need for the fetch_irq() variants anymore.
@@ -88,10 +88,10 @@ index 9ffd40b8270c..bc75fa1e4666 100644
  		u64_stats_add(&stats->rx_packets, rxpackets);
  		u64_stats_add(&stats->rx_bytes, rxbytes);
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 60619fe8af5f..41226d92755b 100644
+index 20d8b9195ef6..daf5fcfd5298 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10508,12 +10508,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
+@@ -10512,12 +10512,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
  
  		stats = per_cpu_ptr(netstats, cpu);
  		do {
@@ -107,7 +107,7 @@ index 60619fe8af5f..41226d92755b 100644
  		s->rx_packets += rx_packets;
  		s->rx_bytes   += rx_bytes;
 diff --git a/net/core/drop_monitor.c b/net/core/drop_monitor.c
-index 8e0a90b45df2..4d5e8b317c47 100644
+index 522657b597d9..6445b93f60ad 100644
 --- a/net/core/drop_monitor.c
 +++ b/net/core/drop_monitor.c
 @@ -1432,9 +1432,9 @@ static void net_dm_stats_read(struct net_dm_stats *stats)
@@ -227,10 +227,10 @@ index 5fe075bf479e..28ee63ec1d1d 100644
  		data[1] += tx_bytes;
  		data[2] += rx_packets;
 diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
-index 9408dc3bb42d..b4aaecb4b3ee 100644
+index cc013be9b02c..8b0e3d50a383 100644
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1732,9 +1732,9 @@ u64 snmp_get_cpu_field64(void __percpu *mib, int cpu, int offt,
+@@ -1736,9 +1736,9 @@ u64 snmp_get_cpu_field64(void __percpu *mib, int cpu, int offt,
  	bhptr = per_cpu_ptr(mib, cpu);
  	syncp = (struct u64_stats_sync *)(bhptr + syncp_offset);
  	do {
@@ -243,7 +243,7 @@ index 9408dc3bb42d..b4aaecb4b3ee 100644
  	return v;
  }
 diff --git a/net/ipv6/seg6_local.c b/net/ipv6/seg6_local.c
-index 8370726ae7bf..487f8e98deaa 100644
+index 33cb0381b574..0ab95b936025 100644
 --- a/net/ipv6/seg6_local.c
 +++ b/net/ipv6/seg6_local.c
 @@ -1644,13 +1644,13 @@ static int put_nla_counters(struct sk_buff *skb, struct seg6_local_lwt *slwt)
@@ -263,7 +263,7 @@ index 8370726ae7bf..487f8e98deaa 100644
  		counters.packets += packets;
  		counters.bytes += bytes;
 diff --git a/net/mac80211/sta_info.c b/net/mac80211/sta_info.c
-index bd56015b2925..a87823b1976a 100644
+index f388b3953174..d51200a5bf8c 100644
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
 @@ -2402,9 +2402,9 @@ static inline u64 sta_get_tidstats_msdu(struct ieee80211_sta_rx_stats *rxstats,
@@ -327,10 +327,10 @@ index 17a1b731a76b..2be696513629 100644
  		seq_printf(seq, "%3X %8LX %8LX %8LX %16LX %16LX\n",
  			   i, (u64)conns, (u64)inpkts,
 diff --git a/net/netfilter/nf_tables_api.c b/net/netfilter/nf_tables_api.c
-index d3ba947f4376..0e20aa179fc6 100644
+index 1c4b7a8ec2cc..70404fe2d0d6 100644
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -1695,10 +1695,10 @@ static int nft_dump_stats(struct sk_buff *skb, struct nft_stats __percpu *stats)
+@@ -1713,10 +1713,10 @@ static int nft_dump_stats(struct sk_buff *skb, struct nft_stats __percpu *stats)
  	for_each_possible_cpu(cpu) {
  		cpu_stats = per_cpu_ptr(stats, cpu);
  		do {
@@ -389,5 +389,5 @@ index d4a2db0b2299..0a0e4c283f02 100644
  			masks_and_count[i].counter += counter;
  		}
 -- 
-2.44.0
+2.45.2
 

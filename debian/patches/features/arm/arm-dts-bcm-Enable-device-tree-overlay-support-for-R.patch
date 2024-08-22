@@ -1,0 +1,80 @@
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 30 May 2023 19:56:24 +0200
+Subject: [PATCH] arm: dts: bcm: Enable device-tree overlay support for RPi devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Origin: https://git.kernel.org/linus/e925743edc0d86fb846d952190d005bac8a6e373
+
+Add the '-@' DTC option for the Raspberry Pi devices. This option
+populates the '__symbols__' node that contains all the necessary symbols
+for supporting device-tree overlays (for instance from the firmware or
+the bootloader) on these devices.
+
+The Rasbperry Pi devices are well known for their GPIO header, that
+allow various "HATs" or other modules do be connected and this enables
+users to create out-of-tree device-tree overlays for these modules.
+
+Please note that this change does increase the size of the resulting DTB
+by ~40%. For example, with v6.4-rc1 increase in size is as follows:
+
+  bcm2711-rpi-400.dtb       27556 -> 38141 bytes
+  bcm2711-rpi-4-b.dtb       27484 -> 38069 bytes
+  bcm2711-rpi-cm4-io.dtb    27373 -> 38076 bytes
+  bcm2835-rpi-a.dtb         12879 -> 18235 bytes
+  bcm2835-rpi-a-plus.dtb    13015 -> 18371 bytes
+  bcm2835-rpi-b.dtb         12997 -> 18377 bytes
+  bcm2835-rpi-b-plus.dtb    13237 -> 18666 bytes
+  bcm2835-rpi-b-rev2.dtb    13085 -> 18514 bytes
+  bcm2835-rpi-cm1-io1.dtb   13109 -> 18528 bytes
+  bcm2835-rpi-zero.dtb      12923 -> 18311 bytes
+  bcm2835-rpi-zero-w.dtb    13449 -> 18889 bytes
+  bcm2836-rpi-2-b.dtb       14500 -> 20252 bytes
+  bcm2837-rpi-3-a-plus.dtb  14930 -> 20713 bytes
+  bcm2837-rpi-3-b.dtb       15107 -> 20979 bytes
+  bcm2837-rpi-3-b-plus.dtb  15463 -> 21443 bytes
+  bcm2837-rpi-cm3-io3.dtb   14429 -> 20098 bytes
+  bcm2837-rpi-zero-2-w.dtb  14781 -> 20524 bytes
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Link: https://lore.kernel.org/r/20220410225940.135744-3-aurelien@aurel32.net
+[ukleinek: rebased to v6.4-rc1]
+Signed-off-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/Makefile | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 59829fc90315..68e89f9289ef 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -85,6 +85,24 @@ dtb-$(CONFIG_SOC_SP7021) += \
+ 	sunplus-sp7021-demo-v3.dtb
+ dtb-$(CONFIG_ARCH_AXXIA) += \
+ 	axm5516-amarillo.dtb
++# Enables support for device-tree overlays
++DTC_FLAGS_bcm2835-rpi-b := -@
++DTC_FLAGS_bcm2835-rpi-a := -@
++DTC_FLAGS_bcm2835-rpi-b-rev2 := -@
++DTC_FLAGS_bcm2835-rpi-b-plus := -@
++DTC_FLAGS_bcm2835-rpi-a-plus := -@
++DTC_FLAGS_bcm2835-rpi-cm1-io1 := -@
++DTC_FLAGS_bcm2836-rpi-2-b := -@
++DTC_FLAGS_bcm2837-rpi-3-a-plus := -@
++DTC_FLAGS_bcm2837-rpi-3-b := -@
++DTC_FLAGS_bcm2837-rpi-3-b-plus := -@
++DTC_FLAGS_bcm2837-rpi-cm3-io3 := -@
++DTC_FLAGS_bcm2837-rpi-zero-2-w := -@
++DTC_FLAGS_bcm2711-rpi-400 := -@
++DTC_FLAGS_bcm2711-rpi-4-b := -@
++DTC_FLAGS_bcm2711-rpi-cm4-io := -@
++DTC_FLAGS_bcm2835-rpi-zero := -@
++DTC_FLAGS_bcm2835-rpi-zero-w := -@
+ dtb-$(CONFIG_ARCH_BCM2835) += \
+ 	bcm2835-rpi-b.dtb \
+ 	bcm2835-rpi-a.dtb \
+-- 
+2.43.0
+
