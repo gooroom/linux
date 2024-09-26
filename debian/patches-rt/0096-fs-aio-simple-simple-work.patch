@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 16 Feb 2015 18:49:10 +0100
-Subject: [PATCH 096/354] fs/aio: simple simple work
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6f2737df5a64e62bdf8d1c34ff2b5d1ce6274d83
+Subject: [PATCH 096/351] fs/aio: simple simple work
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=43f181c98e41a3fa0fb05ffedb3a0f2c9c49cb55
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:768
 |in_atomic(): 1, irqs_disabled(): 0, pid: 26, name: rcuos/2
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 2 deletions(-)
 
 diff --git a/fs/aio.c b/fs/aio.c
-index 1bd934eccbf6..ab1bb9260056 100644
+index 146681fb7e8a..9d028b87259b 100644
 --- a/fs/aio.c
 +++ b/fs/aio.c
 @@ -42,6 +42,7 @@
@@ -56,7 +56,7 @@ index 1bd934eccbf6..ab1bb9260056 100644
  	aio_mnt = kern_mount(&aio_fs);
  	if (IS_ERR(aio_mnt))
  		panic("Failed to create aio fs mount.");
-@@ -612,9 +615,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
+@@ -623,9 +626,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
   * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
   * now it's safe to cancel any that need to be.
   */
@@ -68,7 +68,7 @@ index 1bd934eccbf6..ab1bb9260056 100644
  	struct aio_kiocb *req;
  
  	spin_lock_irq(&ctx->ctx_lock);
-@@ -632,6 +635,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
+@@ -643,6 +646,14 @@ static void free_ioctx_users(struct percpu_ref *ref)
  	percpu_ref_put(&ctx->reqs);
  }
  

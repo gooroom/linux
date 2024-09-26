@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 22 Jul 2011 17:58:40 +0200
-Subject: [PATCH 057/354] printk: Add a printk kill switch
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3b0bd8c73adefa7c822cad0561539e02ed4dcf25
+Subject: [PATCH 057/351] printk: Add a printk kill switch
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d40e1a0a64f085c6c63adc06b4d0a3a576a03001
 
 Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
 it does not dead-lock with the early printk code.
@@ -30,7 +30,7 @@ index f4d7e643f010..586be4c5df96 100644
  
  #ifdef CONFIG_PRINTK_NMI
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 2ba16c426ba5..963c20ab9548 100644
+index 66c78dfd1792..90677e2749e3 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -407,6 +407,58 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
@@ -92,7 +92,7 @@ index 2ba16c426ba5..963c20ab9548 100644
  #ifdef CONFIG_PRINTK
  DECLARE_WAIT_QUEUE_HEAD(log_wait);
  /* the next printk record to read by syslog(READ) or /proc/kmsg */
-@@ -1935,6 +1987,13 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -1941,6 +1993,13 @@ asmlinkage int vprintk_emit(int facility, int level,
  	unsigned long flags;
  	u64 curr_log_seq;
  
@@ -106,7 +106,7 @@ index 2ba16c426ba5..963c20ab9548 100644
  	if (level == LOGLEVEL_SCHED) {
  		level = LOGLEVEL_DEFAULT;
  		in_sched = true;
-@@ -2079,26 +2138,6 @@ static bool suppress_message_printing(int level) { return false; }
+@@ -2085,26 +2144,6 @@ static bool suppress_message_printing(int level) { return false; }
  
  #endif /* CONFIG_PRINTK */
  

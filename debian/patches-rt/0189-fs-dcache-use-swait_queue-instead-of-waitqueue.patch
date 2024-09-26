@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 189/354] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=68ab83929039c1bf3c95833d1055613830ef96fb
+Subject: [PATCH 189/351] fs/dcache: use swait_queue instead of waitqueue
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e5c7fc72b0bb752a39a2b5dab9754019751b6e7f
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -35,10 +35,10 @@ index 3925a7bfc74d..33f7723fb83e 100644
  	cifs_dbg(FYI, "%s: for %s\n", __func__, name->name);
  
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 1ae163d54925..6e1c0b4c04f4 100644
+index 7eaa226696c4..4c18a2b927cd 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2423,21 +2423,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
+@@ -2424,21 +2424,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
  
  static void d_wait_lookup(struct dentry *dentry)
  {
@@ -74,7 +74,7 @@ index 1ae163d54925..6e1c0b4c04f4 100644
  {
  	unsigned int hash = name->hash;
  	struct hlist_bl_head *b = in_lookup_hash(parent, hash);
-@@ -2552,7 +2555,7 @@ void __d_lookup_done(struct dentry *dentry)
+@@ -2553,7 +2556,7 @@ void __d_lookup_done(struct dentry *dentry)
  	hlist_bl_lock(b);
  	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
  	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
@@ -84,7 +84,7 @@ index 1ae163d54925..6e1c0b4c04f4 100644
  	hlist_bl_unlock(b);
  	INIT_HLIST_NODE(&dentry->d_u.d_alias);
 diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index 0e03adbcf942..68df4ac61c30 100644
+index 16252727ec2e..b981415d5fb3 100644
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
 @@ -1234,7 +1234,7 @@ static int fuse_direntplus_link(struct file *file,

@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 12 Nov 2011 14:00:48 +0100
-Subject: [PATCH 219/354] scsi/fcoe: Make RT aware.
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c1cb9f2990ed6cea247ab6b0c7bfafdf32dacc07
+Subject: [PATCH 219/351] scsi/fcoe: Make RT aware.
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c3617883f67e4fd5664e0d71d81051e192f0f4b6
 
 Do not disable preemption while taking sleeping locks. All user look safe
 for migrate_diable() only.
@@ -72,10 +72,10 @@ index c5c4805435f6..4316a451c67d 100644
  }
  
 diff --git a/drivers/scsi/fcoe/fcoe_ctlr.c b/drivers/scsi/fcoe/fcoe_ctlr.c
-index c49986eba47b..df686ef0fd82 100644
+index 1e087a206f48..27624aac530f 100644
 --- a/drivers/scsi/fcoe/fcoe_ctlr.c
 +++ b/drivers/scsi/fcoe/fcoe_ctlr.c
-@@ -840,7 +840,7 @@ static unsigned long fcoe_ctlr_age_fcfs(struct fcoe_ctlr *fip)
+@@ -838,7 +838,7 @@ static unsigned long fcoe_ctlr_age_fcfs(struct fcoe_ctlr *fip)
  
  	INIT_LIST_HEAD(&del_list);
  
@@ -84,7 +84,7 @@ index c49986eba47b..df686ef0fd82 100644
  
  	list_for_each_entry_safe(fcf, next, &fip->fcfs, list) {
  		deadline = fcf->time + fcf->fka_period + fcf->fka_period / 2;
-@@ -876,7 +876,7 @@ static unsigned long fcoe_ctlr_age_fcfs(struct fcoe_ctlr *fip)
+@@ -874,7 +874,7 @@ static unsigned long fcoe_ctlr_age_fcfs(struct fcoe_ctlr *fip)
  				sel_time = fcf->time;
  		}
  	}

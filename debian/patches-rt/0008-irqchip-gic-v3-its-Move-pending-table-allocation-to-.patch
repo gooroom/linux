@@ -1,8 +1,8 @@
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Fri, 27 Jul 2018 13:38:54 +0100
-Subject: [PATCH 008/354] irqchip/gic-v3-its: Move pending table allocation to
+Subject: [PATCH 008/351] irqchip/gic-v3-its: Move pending table allocation to
  init time
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=d4e6b70ea06e3e38867c8881d2f396bbfb99d4d5
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=df549b09e30a880488b6a0fb84357dff320d10e9
 
 Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -12,7 +12,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 53 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/irqchip/irq-gic-v3-its.c b/drivers/irqchip/irq-gic-v3-its.c
-index 86334aef4bd0..f51970b6b51a 100644
+index 6b58194c1e34..002a404e6a29 100644
 --- a/drivers/irqchip/irq-gic-v3-its.c
 +++ b/drivers/irqchip/irq-gic-v3-its.c
 @@ -178,6 +178,7 @@ static DEFINE_RAW_SPINLOCK(vmovp_lock);
@@ -106,7 +106,7 @@ index 86334aef4bd0..f51970b6b51a 100644
  }
  
  static void its_cpu_init_collection(struct its_node *its)
-@@ -3584,16 +3606,6 @@ static int redist_disable_lpis(void)
+@@ -3579,16 +3601,6 @@ static int redist_disable_lpis(void)
  	u64 timeout = USEC_PER_SEC;
  	u64 val;
  
@@ -123,7 +123,7 @@ index 86334aef4bd0..f51970b6b51a 100644
  	if (!gic_rdists_supports_plpis()) {
  		pr_info("CPU%d: LPIs not supported\n", smp_processor_id());
  		return -ENXIO;
-@@ -3603,7 +3615,18 @@ static int redist_disable_lpis(void)
+@@ -3598,7 +3610,18 @@ static int redist_disable_lpis(void)
  	if (!(val & GICR_CTLR_ENABLE_LPIS))
  		return 0;
  
@@ -143,7 +143,7 @@ index 86334aef4bd0..f51970b6b51a 100644
  		smp_processor_id());
  	add_taint(TAINT_CRAP, LOCKDEP_STILL_OK);
  
-@@ -3859,7 +3882,8 @@ int __init its_init(struct fwnode_handle *handle, struct rdists *rdists,
+@@ -3854,7 +3877,8 @@ int __init its_init(struct fwnode_handle *handle, struct rdists *rdists,
  	}
  
  	gic_rdists = rdists;

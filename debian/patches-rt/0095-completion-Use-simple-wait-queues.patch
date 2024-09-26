@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/354] completion: Use simple wait queues
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c9b4932b83923af134e46dbd6f0734587fea051c
+Subject: [PATCH 095/351] completion: Use simple wait queues
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=70bbaa8e5ddc485b6a5a6f10e1f4f787f12849f4
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -54,7 +54,7 @@ index a04d59843022..e0046c35a0bd 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index a8791b140679..7b557a1338e8 100644
+index 7294586b08dc..088f8686abdd 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
 @@ -1631,7 +1631,7 @@ static void ffs_data_put(struct ffs_data *ffs)
@@ -192,10 +192,10 @@ index 6737ae6ffbae..7f90441a6238 100644
  
  	return error;
 diff --git a/kernel/power/suspend.c b/kernel/power/suspend.c
-index 0bd595a0b610..a4456772d98e 100644
+index 7a080015a1b3..6d0d6c5a0c6d 100644
 --- a/kernel/power/suspend.c
 +++ b/kernel/power/suspend.c
-@@ -600,6 +600,8 @@ static int enter_state(suspend_state_t state)
+@@ -601,6 +601,8 @@ static int enter_state(suspend_state_t state)
  	return error;
  }
  
@@ -204,7 +204,7 @@ index 0bd595a0b610..a4456772d98e 100644
  /**
   * pm_suspend - Externally visible function for suspending the system.
   * @state: System sleep state to enter.
-@@ -614,6 +616,7 @@ int pm_suspend(suspend_state_t state)
+@@ -615,6 +617,7 @@ int pm_suspend(suspend_state_t state)
  	if (state <= PM_SUSPEND_ON || state >= PM_SUSPEND_MAX)
  		return -EINVAL;
  
@@ -212,7 +212,7 @@ index 0bd595a0b610..a4456772d98e 100644
  	pr_info("suspend entry (%s)\n", mem_sleep_labels[state]);
  	error = enter_state(state);
  	if (error) {
-@@ -623,6 +626,7 @@ int pm_suspend(suspend_state_t state)
+@@ -624,6 +627,7 @@ int pm_suspend(suspend_state_t state)
  		suspend_stats.success++;
  	}
  	pr_info("suspend exit\n");

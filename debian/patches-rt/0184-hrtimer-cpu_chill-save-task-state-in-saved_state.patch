@@ -1,8 +1,8 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 12:31:10 +0100
-Subject: [PATCH 184/354] hrtimer: cpu_chill(): save task state in
+Subject: [PATCH 184/351] hrtimer: cpu_chill(): save task state in
  ->saved_state()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7eadb4d1ffee649bab16b22b7328d9fcbc5376ac
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8c28682b2e952563bf9bda2e50f86f6ae3b8a747
 
 In the previous change I saved the current task state on stack. This was
 bad because while the task is scheduled-out it might receive a wake-up.
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 983c29fe0ff7..8f315ad08cd1 100644
+index c5ad551c362e..d79deb5396a3 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1969,20 +1969,28 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct compat_timespec __user *, rqtp,
+@@ -1970,20 +1970,28 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct compat_timespec __user *, rqtp,
   */
  void cpu_chill(void)
  {

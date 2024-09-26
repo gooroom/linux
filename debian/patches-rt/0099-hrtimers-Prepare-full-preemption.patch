@@ -1,7 +1,7 @@
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 099/354] hrtimers: Prepare full preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ea1a57d171dca96fde02fae81ca8d97eb756b8c6
+Subject: [PATCH 099/351] hrtimers: Prepare full preemption
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=757270187f5cdf65b7f0ce98631472ff390e7acb
 
 Make cancellation of a running callback in softirq context safe
 against preemption.
@@ -35,7 +35,7 @@ index d69ad801eb80..82d0f52414a6 100644
  
  	/*
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 4b7ef1c6decb..684241f87e4d 100644
+index e1b9a5f827f3..25b2e4c61956 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -22,6 +22,7 @@
@@ -46,7 +46,7 @@ index 4b7ef1c6decb..684241f87e4d 100644
  
  struct hrtimer_clock_base;
  struct hrtimer_cpu_base;
-@@ -216,6 +217,9 @@ struct hrtimer_cpu_base {
+@@ -218,6 +219,9 @@ struct hrtimer_cpu_base {
  	ktime_t				expires_next;
  	struct hrtimer			*next_timer;
  	ktime_t				softirq_expires_next;
@@ -56,7 +56,7 @@ index 4b7ef1c6decb..684241f87e4d 100644
  	struct hrtimer			*softirq_next_timer;
  	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
  } ____cacheline_aligned;
-@@ -433,6 +437,13 @@ static inline void hrtimer_restart(struct hrtimer *timer)
+@@ -435,6 +439,13 @@ static inline void hrtimer_restart(struct hrtimer *timer)
  	hrtimer_start_expires(timer, HRTIMER_MODE_ABS);
  }
  
@@ -70,7 +70,7 @@ index 4b7ef1c6decb..684241f87e4d 100644
  /* Query timers: */
  extern ktime_t __hrtimer_get_remaining(const struct hrtimer *timer, bool adjust);
  
-@@ -464,7 +475,7 @@ static inline bool hrtimer_is_queued(struct hrtimer *timer)
+@@ -466,7 +477,7 @@ static inline bool hrtimer_is_queued(struct hrtimer *timer)
   * Helper function to check, whether the timer is running the callback
   * function
   */
@@ -107,7 +107,7 @@ index 56af8a97cf2d..dec68f9dab7b 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 1b2aeab41c0b..478ff82abd33 100644
+index 59741b4d15c3..9da5f7b706cc 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -957,6 +957,33 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -144,7 +144,7 @@ index 1b2aeab41c0b..478ff82abd33 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1238,7 +1265,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1239,7 +1266,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -153,7 +153,7 @@ index 1b2aeab41c0b..478ff82abd33 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1544,6 +1571,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1545,6 +1572,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -161,10 +161,10 @@ index 1b2aeab41c0b..478ff82abd33 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1915,6 +1943,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
- 	cpu_base->softirq_next_timer = NULL;
+@@ -1917,6 +1945,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
+ 	cpu_base->online = 1;
 +#ifdef CONFIG_PREEMPT_RT_BASE
 +	init_waitqueue_head(&cpu_base->wait);
 +#endif

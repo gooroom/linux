@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 031/354] timekeeping: Split jiffies seqlock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5fbd37b3a06031c2ac2b59675834a623c5f0cc32
+Subject: [PATCH 031/351] timekeeping: Split jiffies seqlock
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=69fead91b5883386a72b3e105db914fb76996afd
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -76,7 +76,7 @@ index 0a3cc37e4b83..7bd136b646d4 100644
  		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 25c6efa2c557..0491c4c4a5cf 100644
+index e858522cbd15..e5946d2decab 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -68,7 +68,8 @@ static void tick_do_update_jiffies64(ktime_t now)
@@ -135,7 +135,7 @@ index 25c6efa2c557..0491c4c4a5cf 100644
  	ts->timer_expires_base = basemono;
  
 diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
-index 087f71183c3f..3d41ca395dd1 100644
+index e43706e2c038..a61dbcc3ff1e 100644
 --- a/kernel/time/timekeeping.c
 +++ b/kernel/time/timekeeping.c
 @@ -2407,8 +2407,10 @@ EXPORT_SYMBOL(hardpps);

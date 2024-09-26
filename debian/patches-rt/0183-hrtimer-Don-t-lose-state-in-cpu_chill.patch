@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 19 Feb 2019 16:59:15 +0100
-Subject: [PATCH 183/354] hrtimer: Don't lose state in cpu_chill()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b78f6c6c48e7f2394b77cdb736f146ea9f8b9ea6
+Subject: [PATCH 183/351] hrtimer: Don't lose state in cpu_chill()
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=797fc4d921d4b7783d461c65e7bbf9057409157d
 
 In cpu_chill() the state is set to TASK_UNINTERRUPTIBLE and a timer is
 programmed. On return the state is always TASK_RUNNING which means we
@@ -19,10 +19,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 0ab19aa36357..983c29fe0ff7 100644
+index 75c994bfccca..c5ad551c362e 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1971,15 +1971,18 @@ void cpu_chill(void)
+@@ -1972,15 +1972,18 @@ void cpu_chill(void)
  {
  	ktime_t chill_time;
  	unsigned int freeze_flag = current->flags & PF_NOFREEZE;

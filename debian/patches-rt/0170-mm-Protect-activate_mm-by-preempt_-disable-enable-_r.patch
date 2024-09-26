@@ -1,8 +1,8 @@
 From: Yong Zhang <yong.zhang0@gmail.com>
 Date: Tue, 15 May 2012 13:53:56 +0800
-Subject: [PATCH 170/354] mm: Protect activate_mm() by
+Subject: [PATCH 170/351] mm: Protect activate_mm() by
  preempt_[disable&enable]_rt()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ca2a6dce0220e2384068a38b64a46d253e06ff3e
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b977dda9f9befa6da724d94e54356d2a2c68b17b
 
 User preempt_*_rt instead of local_irq_*_rt or otherwise there will be
 warning on ARM like below:
@@ -37,10 +37,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 4 insertions(+)
 
 diff --git a/fs/exec.c b/fs/exec.c
-index 28e3b5eb2f4a..2c15772a1feb 100644
+index 7ada94402ec9..952de0d5b9bd 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -1028,6 +1028,7 @@ static int exec_mmap(struct mm_struct *mm)
+@@ -1029,6 +1029,7 @@ static int exec_mmap(struct mm_struct *mm)
  		}
  	}
  	task_lock(tsk);
@@ -48,7 +48,7 @@ index 28e3b5eb2f4a..2c15772a1feb 100644
  
  	local_irq_disable();
  	active_mm = tsk->active_mm;
-@@ -1047,6 +1048,7 @@ static int exec_mmap(struct mm_struct *mm)
+@@ -1048,6 +1049,7 @@ static int exec_mmap(struct mm_struct *mm)
  		local_irq_enable();
  	tsk->mm->vmacache_seqnum = 0;
  	vmacache_flush(tsk);
