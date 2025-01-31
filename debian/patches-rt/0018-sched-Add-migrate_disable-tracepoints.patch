@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:15 +0200
 Subject: [PATCH 018/323] sched: Add migrate_disable() tracepoints
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=0c639d26b763de420497936147940909f93a3bb8
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=86da09f10ec4e857e1bcbeaf28c72e8e33152994
 
 XXX write a tracer:
 
@@ -22,10 +22,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/include/trace/events/sched.h b/include/trace/events/sched.h
-index c96a4337afe6..e48f584abf5f 100644
+index 5039af667645..a5d81cec7f0a 100644
 --- a/include/trace/events/sched.h
 +++ b/include/trace/events/sched.h
-@@ -650,6 +650,18 @@ DECLARE_TRACE(sched_update_nr_running_tp,
+@@ -734,6 +734,18 @@ DECLARE_TRACE(sched_update_nr_running_tp,
  	TP_PROTO(struct rq *rq, int change),
  	TP_ARGS(rq, change));
  
@@ -45,7 +45,7 @@ index c96a4337afe6..e48f584abf5f 100644
  
  /* This part must be outside protection */
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b041cfe48d9e..1077f97526f4 100644
+index 108c547a57f4..f5996eb2a1b1 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1739,6 +1739,8 @@ void migrate_disable(void)

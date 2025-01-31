@@ -1,22 +1,23 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:14:22 +0200
 Subject: [PATCH 167/323] locking/rtmutex: Provide rt_mutex_slowlock_locked()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=552e355c7e1739c608ce4661b552dbb429d6e4aa
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=6e2ee20982df36fa677db8dd3c6a568b8d7669fc
 
 This is the inner-part of rt_mutex_slowlock(), required for rwsem-rt.
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[bwh: Keep the extra argument to rt_mutext_handle_deadlock() that was
- added by "rtmutex: Drop rt_mutex::wait_lock before scheduling",
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  kernel/locking/rtmutex.c        | 67 +++++++++++++++++++--------------
  kernel/locking/rtmutex_common.h |  7 ++++
  2 files changed, 45 insertions(+), 29 deletions(-)
 
+diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
+index 1ddb34ee446a..febebbce7f42 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1236,35 +1236,16 @@ static void rt_mutex_handle_deadlock(int
+@@ -1237,35 +1237,16 @@ static void rt_mutex_handle_deadlock(int res, int detect_deadlock,
  	}
  }
  
@@ -58,7 +59,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	set_current_state(state);
  
-@@ -1272,16 +1253,16 @@ rt_mutex_slowlock(struct rt_mutex *lock,
+@@ -1273,16 +1254,16 @@ rt_mutex_slowlock(struct rt_mutex *lock, int state,
  	if (unlikely(timeout))
  		hrtimer_start_expires(&timeout->timer, HRTIMER_MODE_ABS);
  
@@ -79,7 +80,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  
  	/*
-@@ -1289,6 +1270,34 @@ rt_mutex_slowlock(struct rt_mutex *lock,
+@@ -1290,6 +1271,34 @@ rt_mutex_slowlock(struct rt_mutex *lock, int state,
  	 * unconditionally. We might have to fix that up.
  	 */
  	fixup_rt_mutex_waiters(lock);
@@ -114,6 +115,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
  
+diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
+index 37cd6b3bf6f4..b5a2affa59d5 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
 @@ -15,6 +15,7 @@
@@ -124,7 +127,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  /*
   * This is the control structure for tasks blocked on a rt_mutex,
-@@ -153,6 +154,12 @@ extern bool __rt_mutex_futex_unlock(stru
+@@ -153,6 +154,12 @@ extern bool __rt_mutex_futex_unlock(struct rt_mutex *lock,
  				 struct wake_q_head *wqh);
  
  extern void rt_mutex_postunlock(struct wake_q_head *wake_q);

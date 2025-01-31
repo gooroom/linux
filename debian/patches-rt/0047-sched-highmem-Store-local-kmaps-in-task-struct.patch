@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 3 Nov 2020 10:27:36 +0100
 Subject: [PATCH 047/323] sched: highmem: Store local kmaps in task struct
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=76ba585fd0bcd446149dbeadd99054f6b223ce9c
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=10a74f84fbce779badd47923bcface79600f2625
 
 Instead of storing the map per CPU provide and use per task storage. That
 prepares for local kmaps which are preemptible.
@@ -117,7 +117,7 @@ index 8b8a5a172b15..459842c72126 100644
  #ifdef CONFIG_FAULT_INJECTION
  	tsk->fail_nth = 0;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 2b752e0789cb..492cba4543a0 100644
+index 2b5c47973750..0a1a1033ee6a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4089,6 +4089,22 @@ static inline void finish_lock_switch(struct rq *rq)

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 7 Oct 2020 12:11:33 +0200
 Subject: [PATCH 159/323] locking/rtmutex: Remove rt_mutex_timed_lock()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bc4cc0e63b2ea93778a5688abf8c5ce55d7d80ed
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=b4c1524264f36168b2d6d25e7e4a28a36a1488a1
 
 rt_mutex_timed_lock() has no callers since commit
    c051b21f71d1f ("rtmutex: Confine deadlock logic to futex")
@@ -29,10 +29,10 @@ index 2dc10b582d4a..243fabc2c85f 100644
  
  extern void rt_mutex_unlock(struct rt_mutex *lock);
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 9aa4d545020a..b5d5c570a8ac 100644
+index c9e5748cb4fe..36e59d620535 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1405,21 +1405,6 @@ rt_mutex_fastlock(struct rt_mutex *lock, int state,
+@@ -1408,21 +1408,6 @@ rt_mutex_fastlock(struct rt_mutex *lock, int state,
  	return slowfn(lock, state, NULL, RT_MUTEX_MIN_CHAINWALK);
  }
  
@@ -54,7 +54,7 @@ index 9aa4d545020a..b5d5c570a8ac 100644
  static inline int
  rt_mutex_fasttrylock(struct rt_mutex *lock,
  		     int (*slowfn)(struct rt_mutex *lock))
-@@ -1527,37 +1512,6 @@ int __sched __rt_mutex_futex_trylock(struct rt_mutex *lock)
+@@ -1530,37 +1515,6 @@ int __sched __rt_mutex_futex_trylock(struct rt_mutex *lock)
  	return __rt_mutex_slowtrylock(lock);
  }
  

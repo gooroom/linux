@@ -2,7 +2,7 @@ From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:01 +0200
 Subject: [PATCH 004/323] sched/hotplug: Ensure only per-cpu kthreads run
  during hotplug
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c6c261f7763f431271547b2bb6eb591715fe5b27
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8b0f3534339ce943883c088407b98ca2ebc4506b
 
 In preparation for migrate_disable(), make sure only per-cpu kthreads
 are allowed to run on !active CPUs.
@@ -27,7 +27,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 118 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e032c4b730e0..c159f0492816 100644
+index 04a570aa8172..c38549f2fb1c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3532,8 +3532,10 @@ static inline struct callback_head *splice_balance_callbacks(struct rq *rq)
@@ -202,7 +202,7 @@ index e032c4b730e0..c159f0492816 100644
  		return ret;
  	}
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 60d142fc2e2e..c3a4c390eeff 100644
+index 4a35e28f0dd1..688b7afc0a7f 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -976,6 +976,7 @@ struct rq {

@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH 184/323] fs/dcache: use swait_queue instead of waitqueue
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=64c2804ada662f35dcbe34b41ebc8c080e068f37
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c5b40b504e98aceb624f7ec4364ac24c725425b6
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -177,10 +177,10 @@ index b27ebdccef70..f86c98a7ed04 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 712948e97991..585d0afd1af6 100644
+index b955ba5db72c..ddf2ab7c12d7 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -96,6 +96,7 @@
+@@ -97,6 +97,7 @@
  #include <linux/posix-timers.h>
  #include <linux/time_namespace.h>
  #include <linux/resctrl.h>
@@ -188,7 +188,7 @@ index 712948e97991..585d0afd1af6 100644
  #include <trace/events/oom.h>
  #include "internal.h"
  #include "fd.h"
-@@ -2066,7 +2067,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
+@@ -2125,7 +2126,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
  
  	child = d_hash_and_lookup(dir, &qname);
  	if (!child) {

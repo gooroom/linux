@@ -1,7 +1,7 @@
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 258/323] sched: Add support for lazy preemption
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e580472ad0150b60e263ff0c39d94713d1b7c64a
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7af1d4e563762e23a3ba433e6ef6a3708bd7d5f9
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -247,7 +247,7 @@ index f3040b0b4b23..3cb02ced141b 100644
  #ifndef CONFIG_HAVE_ARCH_WITHIN_STACK_FRAMES
  static inline int arch_within_stack_frames(const void * const stack,
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index 865d376c2291..2a90e79f6a5d 100644
+index e55ee1a7229a..7563332111af 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -70,6 +70,7 @@ struct trace_entry {
@@ -295,7 +295,7 @@ index cbe3aa495519..b5cd1e278eb5 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 7722384237fd..4795ca46b44b 100644
+index 1635b661f0c0..da67575c2729 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -656,6 +656,48 @@ void resched_curr(struct rq *rq)
@@ -444,7 +444,7 @@ index 7722384237fd..4795ca46b44b 100644
  	 * The idle tasks have their own, simple scheduling class:
  	 */
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index a6a755aec32b..8a6e015e8377 100644
+index 9f8cb265589b..02196f4fba6d 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4569,7 +4569,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -501,7 +501,7 @@ index a6a755aec32b..8a6e015e8377 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -11058,7 +11058,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -11039,7 +11039,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -510,7 +510,7 @@ index a6a755aec32b..8a6e015e8377 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -11085,7 +11085,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -11066,7 +11066,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -534,7 +534,7 @@ index 402fd37fb340..bc2466af142e 100644
  
  /*
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 4919dc29a482..d3e1e82ce3d1 100644
+index 34db470c843a..f0fc599cf79c 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1997,6 +1997,15 @@ extern void reweight_task(struct task_struct *p, const struct load_weight *lw);
@@ -554,10 +554,10 @@ index 4919dc29a482..d3e1e82ce3d1 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 78a7c776fd9b..a8285643a7cc 100644
+index 5a82d9c809bc..b7f28907bbad 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2630,8 +2630,16 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
+@@ -2628,8 +2628,16 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
  		trace_flags |= TRACE_FLAG_NEED_RESCHED;
  	if (test_preempt_need_resched())
  		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
@@ -641,7 +641,7 @@ index 636fb7df3714..245b8289ecdf 100644
  	return ret;
  }
 diff --git a/kernel/trace/trace_output.c b/kernel/trace/trace_output.c
-index 8bd207443f4f..18f091dceea3 100644
+index b3619b21217c..5a71964ade3a 100644
 --- a/kernel/trace/trace_output.c
 +++ b/kernel/trace/trace_output.c
 @@ -451,6 +451,7 @@ int trace_print_lat_fmt(struct trace_seq *s, struct trace_entry *entry)

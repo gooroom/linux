@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 3 Feb 2021 11:05:24 -0500
 Subject: [PATCH 077/323] tracing: Inline tracing_gen_ctx_flags()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=229bb29bdbf28d4b77e165130adf1be36655491c
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=5ee305801cb9f0343a3448b227145bfb7265bdf1
 
 Inline tracing_gen_ctx_flags(). This allows to have one ifdef
 CONFIG_TRACE_IRQFLAGS_SUPPORT.
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 53 insertions(+), 58 deletions(-)
 
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index 474200844d1c..a1eaedf34177 100644
+index 3e056c7f4cb1..bc707ca498e6 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -164,9 +164,57 @@ static inline void tracing_generic_entry_update(struct trace_entry *entry,
@@ -88,10 +88,10 @@ index 474200844d1c..a1eaedf34177 100644
  struct trace_event_file;
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 348cbbb9a39b..414577651327 100644
+index 42181841ef89..f0a649875a00 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2603,20 +2603,13 @@ enum print_line_t trace_handle_return(struct trace_seq *s)
+@@ -2601,20 +2601,13 @@ enum print_line_t trace_handle_return(struct trace_seq *s)
  }
  EXPORT_SYMBOL_GPL(trace_handle_return);
  
@@ -114,7 +114,7 @@ index 348cbbb9a39b..414577651327 100644
  	if (pc & NMI_MASK)
  		trace_flags |= TRACE_FLAG_NMI;
  	if (pc & HARDIRQ_MASK)
-@@ -2632,33 +2625,6 @@ unsigned int tracing_gen_ctx_flags(unsigned long irqflags)
+@@ -2630,33 +2623,6 @@ unsigned int tracing_gen_ctx_flags(unsigned long irqflags)
  	return (trace_flags << 16) | (pc & 0xff);
  }
  

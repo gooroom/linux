@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Mar 2021 09:42:11 +0100
 Subject: [PATCH 139/323] net: jme: Replace link-change tasklet with work
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f3321aa9dd56b6e970ceafd31bedec3a35615c89
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=30bcd280dc2fc5108c36f26c710c2aefbcb20707
 
 The link change tasklet disables the tasklets for tx/rx processing while
 upating hw parameters and then enables the tasklets again.
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/net/ethernet/jme.c b/drivers/net/ethernet/jme.c
-index e9efe074edc1..f1b9284e0bea 100644
+index 80858206c514..290cc59d2a20 100644
 --- a/drivers/net/ethernet/jme.c
 +++ b/drivers/net/ethernet/jme.c
-@@ -1265,9 +1265,9 @@ jme_stop_shutdown_timer(struct jme_adapter *jme)
+@@ -1263,9 +1263,9 @@ jme_stop_shutdown_timer(struct jme_adapter *jme)
  	jwrite32f(jme, JME_APMC, apmc);
  }
  
@@ -35,7 +35,7 @@ index e9efe074edc1..f1b9284e0bea 100644
  	struct net_device *netdev = jme->dev;
  	int rc;
  
-@@ -1510,7 +1510,7 @@ jme_intr_msi(struct jme_adapter *jme, u32 intrstat)
+@@ -1508,7 +1508,7 @@ jme_intr_msi(struct jme_adapter *jme, u32 intrstat)
  		 * all other events are ignored
  		 */
  		jwrite32(jme, JME_IEVE, intrstat);
@@ -44,7 +44,7 @@ index e9efe074edc1..f1b9284e0bea 100644
  		goto out_reenable;
  	}
  
-@@ -1832,7 +1832,6 @@ jme_open(struct net_device *netdev)
+@@ -1830,7 +1830,6 @@ jme_open(struct net_device *netdev)
  	jme_clear_pm_disable_wol(jme);
  	JME_NAPI_ENABLE(jme);
  
@@ -52,7 +52,7 @@ index e9efe074edc1..f1b9284e0bea 100644
  	tasklet_setup(&jme->txclean_task, jme_tx_clean_tasklet);
  	tasklet_setup(&jme->rxclean_task, jme_rx_clean_tasklet);
  	tasklet_setup(&jme->rxempty_task, jme_rx_empty_tasklet);
-@@ -1920,7 +1919,7 @@ jme_close(struct net_device *netdev)
+@@ -1918,7 +1917,7 @@ jme_close(struct net_device *netdev)
  
  	JME_NAPI_DISABLE(jme);
  
@@ -61,7 +61,7 @@ index e9efe074edc1..f1b9284e0bea 100644
  	tasklet_kill(&jme->txclean_task);
  	tasklet_kill(&jme->rxclean_task);
  	tasklet_kill(&jme->rxempty_task);
-@@ -3035,6 +3034,7 @@ jme_init_one(struct pci_dev *pdev,
+@@ -3033,6 +3032,7 @@ jme_init_one(struct pci_dev *pdev,
  	atomic_set(&jme->rx_empty, 1);
  
  	tasklet_setup(&jme->pcc_task, jme_pcc_tasklet);

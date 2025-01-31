@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 18 Aug 2020 10:30:00 +0200
 Subject: [PATCH 207/323] mm: memcontrol: Provide a local_lock for per-CPU
  memcg_stock
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=57d36a00c64194a7a93a0a650b0c5deec919369e
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a97c0766ecee803afc734bc88d41d05f9a8d37bc
 
 The interrupts are disabled to ensure CPU-local access to the per-CPU
 variable `memcg_stock'.
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 18 insertions(+), 13 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index b6e4b83fab8c..9d3dd11bf95f 100644
+index eac63bc5cd65..a1b6cf4637b7 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
 @@ -2202,6 +2202,7 @@ void unlock_page_memcg(struct page *page)
@@ -121,7 +121,7 @@ index b6e4b83fab8c..9d3dd11bf95f 100644
  }
  
  int obj_cgroup_charge(struct obj_cgroup *objcg, gfp_t gfp, size_t size)
-@@ -7164,9 +7165,13 @@ static int __init mem_cgroup_init(void)
+@@ -7181,9 +7182,13 @@ static int __init mem_cgroup_init(void)
  	cpuhp_setup_state_nocalls(CPUHP_MM_MEMCQ_DEAD, "mm/memctrl:dead", NULL,
  				  memcg_hotplug_cpu_dead);
  

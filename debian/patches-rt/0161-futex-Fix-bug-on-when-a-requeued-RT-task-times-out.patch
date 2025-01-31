@@ -1,7 +1,7 @@
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 161/323] futex: Fix bug on when a requeued RT task times out
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=412722b56bb09f5313de3a5e83362f34bcd6deb0
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e1bbca716785bb78ff4834d930cd8103eb9f4a89
 
 Requeue with timeout causes a bug with PREEMPT_RT.
 
@@ -52,7 +52,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 31 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 2ef5a6eb95da..d8755d5ef227 100644
+index c1a37ce74217..ab947be42f5e 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -138,7 +138,8 @@ static void fixup_rt_mutex_waiters(struct rt_mutex *lock)
@@ -65,7 +65,7 @@ index 2ef5a6eb95da..d8755d5ef227 100644
  }
  
  /*
-@@ -1720,6 +1721,34 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+@@ -1723,6 +1724,34 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  	if (try_to_take_rt_mutex(lock, task, NULL))
  		return 1;
  

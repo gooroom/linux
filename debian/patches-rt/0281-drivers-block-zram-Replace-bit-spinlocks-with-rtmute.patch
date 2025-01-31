@@ -2,7 +2,7 @@ From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
 Subject: [PATCH 281/323] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e84d3ffa9e751941ed6627004b4cc5640c33fc9f
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f914b6bf32d8f04b099575be1ec4a3e9d482e2d5
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
 OTOH, they're a lot less wasteful than an rtmutex per page.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 37 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 0636df6b67db..1a7523cefbe9 100644
+index 16db4fae5145..1d78ccef5157 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -59,6 +59,40 @@ static void zram_free_page(struct zram *zram, size_t index);
@@ -67,7 +67,7 @@ index 0636df6b67db..1a7523cefbe9 100644
  
  static inline bool init_done(struct zram *zram)
  {
-@@ -1165,6 +1200,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
+@@ -1171,6 +1206,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
  
  	if (!huge_class_size)
  		huge_class_size = zs_huge_class_size(zram->mem_pool);

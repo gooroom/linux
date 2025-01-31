@@ -1,7 +1,7 @@
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 23 Oct 2020 12:12:05 +0200
 Subject: [PATCH 008/323] sched: Fix hotplug vs CPU bandwidth control
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=82cc7c47c3d4fe75ae80940c6ba1d59a181607a2
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8f3126871be57135a713229aec96b6e19bedc955
 
 Since we now migrate tasks away before DYING, we should also move
 bandwidth unthrottle, otherwise we can gain tasks from unthrottle
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 12 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 45edba914d62..eadf55fcf067 100644
+index 5072d8156f12..46e83c7ce4b6 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -6976,6 +6976,8 @@ int sched_cpu_activate(unsigned int cpu)

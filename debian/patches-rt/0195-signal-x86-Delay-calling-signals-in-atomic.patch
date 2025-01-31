@@ -1,7 +1,7 @@
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 195/323] signal/x86: Delay calling signals in atomic
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=87d411994f18c3558cc2b39c7165849f0d8a2a1d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2843cdda6bc237f719dc2ad6e15a3f2678cdeca7
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -96,7 +96,7 @@ index e6a66de1202a..e6da86039ccf 100644
  			uprobe_notify_resume(regs);
  
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 0720a598bd0a..f6a9067715d7 100644
+index 0163f089c08d..65feab0726df 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -1314,6 +1314,34 @@ force_sig_info_to_task(struct kernel_siginfo *info, struct task_struct *t)

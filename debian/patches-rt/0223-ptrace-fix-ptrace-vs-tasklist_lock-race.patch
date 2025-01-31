@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
 Subject: [PATCH 223/323] ptrace: fix ptrace vs tasklist_lock race
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=e2093b08cc7a996efb5f4c2e8dde0d7c1d8d3eae
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f587f8747a8f3594b4c269a5beee97d09524a747
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -119,7 +119,7 @@ index aab480e24bd6..71acb6341e63 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 27f75c3b4fca..7722384237fd 100644
+index 801c5da3b45e..1635b661f0c0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2584,6 +2584,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,

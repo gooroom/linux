@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 6 Oct 2020 13:07:17 +0200
 Subject: [PATCH 177/323] locking/rtmutex: Use custom scheduling function for
  spin-schedule()
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=8745ec4b76c90cb21032ae83774ed6c6aaefcf5d
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=bf696f34de1bb77be7666976154658aeb1c1fa19
 
 PREEMPT_RT builds the rwsem, mutex, spinlock and rwlock typed locks on
 top of a rtmutex lock. While blocked task->pi_blocked_on is set
@@ -106,7 +106,7 @@ index e5af028c08b4..994c25640e15 100644
  
  extern void normalize_rt_tasks(void);
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index c095d1b92f70..2fe178651254 100644
+index 194eab4907f4..0893512f8769 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1067,7 +1067,7 @@ void __sched rt_spin_lock_slowlock_locked(struct rt_mutex *lock,
@@ -132,7 +132,7 @@ index 1ee16b8fedd7..16be7111aae7 100644
  		raw_spin_lock_irqsave(&m->wait_lock, flags);
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 8ccb45f2a5b1..a251ee38e1ca 100644
+index c06b2ceb1318..f6b1e818c79c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -4998,7 +4998,7 @@ pick_next_task(struct rq *rq, struct task_struct *prev, struct rq_flags *rf)

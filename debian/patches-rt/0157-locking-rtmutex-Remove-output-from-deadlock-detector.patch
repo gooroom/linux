@@ -2,7 +2,7 @@ From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 29 Sep 2020 16:05:11 +0200
 Subject: [PATCH 157/323] locking/rtmutex: Remove output from deadlock
  detector.
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7d3ecd54fc1af0a43c8b620b09cff473d8265fec
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=82a4b6d13285e8d6b46b7810e0a8b4edd69ed750
 
 In commit
   f5694788ad8da ("rt_mutex: Add lockdep annotations")
@@ -23,17 +23,18 @@ It looks like lockdep is better suited for reporting deadlocks.
 Remove rtmutex' debug print on deadlock detection.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-[bwh: Adjust context to apply after "rtmutex: Drop rt_mutex::wait_lock
- before scheduling" included in 5.10.226.]
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
 ---
  include/linux/rtmutex.h         |  7 ---
  kernel/locking/rtmutex-debug.c  | 97 ---------------------------------
  kernel/locking/rtmutex-debug.h  | 11 ----
- kernel/locking/rtmutex.c        |  9 ---
+ kernel/locking/rtmutex.c        | 10 +---
  kernel/locking/rtmutex.h        |  7 ---
  kernel/locking/rtmutex_common.h |  4 --
- 6 files changed, 135 deletions(-)
+ 6 files changed, 1 insertion(+), 135 deletions(-)
 
+diff --git a/include/linux/rtmutex.h b/include/linux/rtmutex.h
+index 16f974a22f51..88a0ba806066 100644
 --- a/include/linux/rtmutex.h
 +++ b/include/linux/rtmutex.h
 @@ -31,9 +31,6 @@ struct rt_mutex {
@@ -71,6 +72,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	__DEP_MAP_RT_MUTEX_INITIALIZER(mutexname)}
  
  #define DEFINE_RT_MUTEX(mutexname) \
+diff --git a/kernel/locking/rtmutex-debug.c b/kernel/locking/rtmutex-debug.c
+index 7e411b946d4c..fb150100335f 100644
 --- a/kernel/locking/rtmutex-debug.c
 +++ b/kernel/locking/rtmutex-debug.c
 @@ -32,105 +32,12 @@
@@ -179,7 +182,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void debug_rt_mutex_lock(struct rt_mutex *lock)
  {
  }
-@@ -153,12 +60,10 @@ void debug_rt_mutex_proxy_unlock(struct
+@@ -153,12 +60,10 @@ void debug_rt_mutex_proxy_unlock(struct rt_mutex *lock)
  void debug_rt_mutex_init_waiter(struct rt_mutex_waiter *waiter)
  {
  	memset(waiter, 0x11, sizeof(*waiter));
@@ -192,7 +195,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	memset(waiter, 0x22, sizeof(*waiter));
  }
  
-@@ -168,10 +73,8 @@ void debug_rt_mutex_init(struct rt_mutex
+@@ -168,10 +73,8 @@ void debug_rt_mutex_init(struct rt_mutex *lock, const char *name, struct lock_cl
  	 * Make sure we are not reinitializing a held lock:
  	 */
  	debug_check_no_locks_freed((void *)lock, sizeof(*lock));
@@ -203,9 +206,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #endif
  }
 -
+diff --git a/kernel/locking/rtmutex-debug.h b/kernel/locking/rtmutex-debug.h
+index fc549713bba3..659e93e256c6 100644
 --- a/kernel/locking/rtmutex-debug.h
 +++ b/kernel/locking/rtmutex-debug.h
-@@ -18,20 +18,9 @@ extern void debug_rt_mutex_unlock(struct
+@@ -18,20 +18,9 @@ extern void debug_rt_mutex_unlock(struct rt_mutex *lock);
  extern void debug_rt_mutex_proxy_lock(struct rt_mutex *lock,
  				      struct task_struct *powner);
  extern void debug_rt_mutex_proxy_unlock(struct rt_mutex *lock);
@@ -226,9 +231,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -{
 -	debug_rt_mutex_print_deadlock(w);
 -}
+diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
+index cac92e9fcb65..c9e5748cb4fe 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -597,7 +597,6 @@ static int rt_mutex_adjust_prio_chain(st
+@@ -597,7 +597,6 @@ static int rt_mutex_adjust_prio_chain(struct task_struct *task,
  	 * walk, we detected a deadlock.
  	 */
  	if (lock == orig_lock || rt_mutex_owner(lock) == top_task) {
@@ -236,7 +243,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		raw_spin_unlock(&lock->wait_lock);
  		ret = -EDEADLK;
  		goto out_unlock_pi;
-@@ -1189,8 +1188,6 @@ __rt_mutex_slowlock(struct rt_mutex *loc
+@@ -1189,8 +1188,6 @@ __rt_mutex_slowlock(struct rt_mutex *lock, int state,
  
  		raw_spin_unlock_irq(&lock->wait_lock);
  
@@ -245,7 +252,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		schedule();
  
  		raw_spin_lock_irq(&lock->wait_lock);
-@@ -1213,10 +1210,6 @@ static void rt_mutex_handle_deadlock(int
+@@ -1213,10 +1210,7 @@ static void rt_mutex_handle_deadlock(int res, int detect_deadlock,
  		return;
  
  	raw_spin_unlock_irq(&lock->wait_lock);
@@ -253,10 +260,11 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 -	 * Yell lowdly and stop the task right here.
 -	 */
 -	rt_mutex_print_deadlock(w);
++
  	while (1) {
  		set_current_state(TASK_INTERRUPTIBLE);
  		schedule();
-@@ -1765,8 +1758,6 @@ int __rt_mutex_start_proxy_lock(struct r
+@@ -1765,8 +1759,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  		ret = 0;
  	}
  
@@ -265,6 +273,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	return ret;
  }
  
+diff --git a/kernel/locking/rtmutex.h b/kernel/locking/rtmutex.h
+index 732f96abf462..338ccd29119a 100644
 --- a/kernel/locking/rtmutex.h
 +++ b/kernel/locking/rtmutex.h
 @@ -19,15 +19,8 @@
@@ -283,6 +293,8 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  static inline bool debug_rt_mutex_detect_deadlock(struct rt_mutex_waiter *w,
  						  enum rtmutex_chainwalk walk)
  {
+diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
+index e6913103d7ff..b1455dc2366f 100644
 --- a/kernel/locking/rtmutex_common.h
 +++ b/kernel/locking/rtmutex_common.h
 @@ -29,10 +29,6 @@ struct rt_mutex_waiter {

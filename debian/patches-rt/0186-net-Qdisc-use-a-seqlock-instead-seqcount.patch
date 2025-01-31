@@ -1,7 +1,7 @@
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 186/323] net/Qdisc: use a seqlock instead seqcount
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=22e9f653f8c90de4dd13b86bc28679a4412aca4e
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=89964d488d5b4eb21cc3db572705e7071418690e
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -98,7 +98,7 @@ index 000000000000..95a497a72e51
 +
 +#endif
 diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index a62677be7452..8ce663a9b4f4 100644
+index 4db11c4695cf..9fc38e917d09 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -10,6 +10,7 @@
@@ -249,10 +249,10 @@ index e491b083b348..ef432cea2e10 100644
  			 struct gnet_stats_basic_cpu __percpu *cpu,
  			 struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 5c2d230790db..a5430619ca5f 100644
+index b4e405676600..1f1fe26c1601 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
-@@ -1275,7 +1275,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
+@@ -1280,7 +1280,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
  		rcu_assign_pointer(sch->stab, stab);
  	}
  	if (tca[TCA_RATE]) {
