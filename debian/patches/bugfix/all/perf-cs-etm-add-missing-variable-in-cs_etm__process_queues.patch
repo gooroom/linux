@@ -1,0 +1,25 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Fri, 31 Jan 2025 23:52:43 +0100
+Subject: perf cs-etm: Add missing variable in cs_etm__process_queues()
+
+Commit 5afd032961e8 "perf cs-etm: Don't flush when packet_queue fills
+up" uses i as a loop counter in cs_etm__process_queues().  It was
+backported to the 5.10 stable branch, but the i variable doesn't exist
+here as it was only added in 5.15.
+
+Declare i with the expected type.
+
+Fixes: 26db806fa23e ("perf cs-etm: Don't flush when packet_queue fills up")
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+--- a/tools/perf/util/cs-etm.c
++++ b/tools/perf/util/cs-etm.c
+@@ -2171,7 +2171,7 @@ static int cs_etm__process_timeless_queu
+ static int cs_etm__process_queues(struct cs_etm_auxtrace *etm)
+ {
+ 	int ret = 0;
+-	unsigned int cs_queue_nr, queue_nr;
++	unsigned int cs_queue_nr, queue_nr, i;
+ 	u8 trace_chan_id;
+ 	u64 timestamp;
+ 	struct auxtrace_queue *queue;
