@@ -1,8 +1,8 @@
-From 83d94747841f0cd828c0ed9ebf1dc58aef744655 Mon Sep 17 00:00:00 2001
+From 551af79312ed7e3704fcf68f3948e41cf53a8f75 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Jun 2023 10:34:30 +0200
 Subject: [PATCH 59/69] bpf: Remove in_atomic() from bpf_link_put().
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.120-rt47.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 bpf_free_inode() is invoked as a RCU callback. Usually RCU callbacks are
 invoked within softirq context. By setting rcutree.use_softirq=0 boot
@@ -35,7 +35,7 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  1 file changed, 16 insertions(+), 13 deletions(-)
 
 diff --git a/kernel/bpf/syscall.c b/kernel/bpf/syscall.c
-index 2c2085643566..0f746392edab 100644
+index 75d52db3aad2..08979646845c 100644
 --- a/kernel/bpf/syscall.c
 +++ b/kernel/bpf/syscall.c
 @@ -2775,28 +2775,31 @@ static void bpf_link_put_deferred(struct work_struct *work)
@@ -79,7 +79,7 @@ index 2c2085643566..0f746392edab 100644
  	return 0;
  }
  
-@@ -4726,7 +4729,7 @@ static int link_update(union bpf_attr *attr)
+@@ -4731,7 +4734,7 @@ static int link_update(union bpf_attr *attr)
  	if (ret)
  		bpf_prog_put(new_prog);
  out_put_link:
@@ -88,7 +88,7 @@ index 2c2085643566..0f746392edab 100644
  	return ret;
  }
  
-@@ -4749,7 +4752,7 @@ static int link_detach(union bpf_attr *attr)
+@@ -4754,7 +4757,7 @@ static int link_detach(union bpf_attr *attr)
  	else
  		ret = -EOPNOTSUPP;
  
@@ -97,7 +97,7 @@ index 2c2085643566..0f746392edab 100644
  	return ret;
  }
  
-@@ -4819,7 +4822,7 @@ static int bpf_link_get_fd_by_id(const union bpf_attr *attr)
+@@ -4824,7 +4827,7 @@ static int bpf_link_get_fd_by_id(const union bpf_attr *attr)
  
  	fd = bpf_link_new_fd(link);
  	if (fd < 0)
@@ -106,7 +106,7 @@ index 2c2085643566..0f746392edab 100644
  
  	return fd;
  }
-@@ -4896,7 +4899,7 @@ static int bpf_iter_create(union bpf_attr *attr)
+@@ -4901,7 +4904,7 @@ static int bpf_iter_create(union bpf_attr *attr)
  		return PTR_ERR(link);
  
  	err = bpf_iter_new_fd(link);
@@ -116,5 +116,5 @@ index 2c2085643566..0f746392edab 100644
  	return err;
  }
 -- 
-2.47.1
+2.48.1
 

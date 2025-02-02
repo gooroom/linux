@@ -1,9 +1,9 @@
-From b1a808d3c1c5cc0029171043a09cdf0db4fbaae8 Mon Sep 17 00:00:00 2001
+From 8853d32fb0ffd82cc7fdd8e58c4acc6720aef133 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Aug 2022 16:15:44 +0200
 Subject: [PATCH 05/69] net: Remove the obsolte u64_stats_fetch_*_irq() users
  (drivers).
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.120-rt47.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 Now that the 32bit UP oddity is gone and 32bit uses always a sequence
 count, there is no need for the fetch_irq() variants anymore.
@@ -253,7 +253,7 @@ index 5b6209f5a801..6001d81bdd3a 100644
  
  static void b44_get_wol(struct net_device *dev, struct ethtool_wolinfo *wol)
 diff --git a/drivers/net/ethernet/broadcom/bcmsysport.c b/drivers/net/ethernet/broadcom/bcmsysport.c
-index 1693f6c60efc..99c17409fae8 100644
+index e53ab9b5482e..2ff9e5c982e7 100644
 --- a/drivers/net/ethernet/broadcom/bcmsysport.c
 +++ b/drivers/net/ethernet/broadcom/bcmsysport.c
 @@ -457,10 +457,10 @@ static void bcm_sysport_update_tx_stats(struct bcm_sysport_priv *priv,
@@ -1193,10 +1193,10 @@ index bbcdab562513..6a6ad1094eac 100644
  		stats->rx_packets += rx_packets;
  		stats->rx_bytes   += rx_bytes;
 diff --git a/drivers/net/ethernet/marvell/sky2.c b/drivers/net/ethernet/marvell/sky2.c
-index ab33ba1c3023..ff97b140886a 100644
+index 31bcced59f2f..c408256e2276 100644
 --- a/drivers/net/ethernet/marvell/sky2.c
 +++ b/drivers/net/ethernet/marvell/sky2.c
-@@ -3894,19 +3894,19 @@ static void sky2_get_stats(struct net_device *dev,
+@@ -3895,19 +3895,19 @@ static void sky2_get_stats(struct net_device *dev,
  	u64 _bytes, _packets;
  
  	do {
@@ -1531,7 +1531,7 @@ index 0fb15a17b547..d716e6fe26e1 100644
  
  static void rhine_set_rx_mode(struct net_device *dev)
 diff --git a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
-index ce0dd78826af..0c144c7ade1a 100644
+index a95772158176..f53f84bd03db 100644
 --- a/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 +++ b/drivers/net/ethernet/xilinx/xilinx_axienet_main.c
 @@ -1319,16 +1319,16 @@ axienet_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
@@ -1854,10 +1854,10 @@ index 9a1a5b203624..e470e3398abc 100644
  
  static int
 diff --git a/drivers/net/team/team.c b/drivers/net/team/team.c
-index 293eaf6b3ec9..eccf9df0c88c 100644
+index 872640a9e73a..80c800ef3b6d 100644
 --- a/drivers/net/team/team.c
 +++ b/drivers/net/team/team.c
-@@ -1868,13 +1868,13 @@ team_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+@@ -1869,13 +1869,13 @@ team_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
  	for_each_possible_cpu(i) {
  		p = per_cpu_ptr(team->pcpu_stats, i);
  		do {
@@ -2062,10 +2062,10 @@ index ef70bb7c88ad..3f72ae943b29 100644
  
  static void mhi_mbim_ul_callback(struct mhi_device *mhi_dev,
 diff --git a/drivers/net/xen-netfront.c b/drivers/net/xen-netfront.c
-index 95b5ab4b964e..cb4b06994e0d 100644
+index 8425226c09f0..7e4cc551e71f 100644
 --- a/drivers/net/xen-netfront.c
 +++ b/drivers/net/xen-netfront.c
-@@ -1393,16 +1393,16 @@ static void xennet_get_stats64(struct net_device *dev,
+@@ -1396,16 +1396,16 @@ static void xennet_get_stats64(struct net_device *dev,
  		unsigned int start;
  
  		do {
@@ -2087,5 +2087,5 @@ index 95b5ab4b964e..cb4b06994e0d 100644
  		tot->rx_packets += rx_packets;
  		tot->tx_packets += tx_packets;
 -- 
-2.47.1
+2.48.1
 
