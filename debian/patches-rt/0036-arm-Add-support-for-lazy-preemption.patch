@@ -1,8 +1,8 @@
-From f074619c83a342f854d89f3cb27956c99d0135af Mon Sep 17 00:00:00 2001
+From ee7b6830fdd854f91b9f02f054a6e87e24278b9c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 36/63] arm: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.111-rt42.tar.xz
+Subject: [PATCH 36/69] arm: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 Implement the arm pieces for lazy preempt.
 
@@ -78,10 +78,10 @@ index 2c8d76fd7c66..c3bdec7d2df9 100644
    DEFINE(TI_CPU_DOMAIN,		offsetof(struct thread_info, cpu_domain));
    DEFINE(TI_CPU_SAVE,		offsetof(struct thread_info, cpu_context));
 diff --git a/arch/arm/kernel/entry-armv.S b/arch/arm/kernel/entry-armv.S
-index c39303e5c234..cfb4660e9fea 100644
+index 2ea37314e8a8..301f18636fc6 100644
 --- a/arch/arm/kernel/entry-armv.S
 +++ b/arch/arm/kernel/entry-armv.S
-@@ -222,11 +222,18 @@ ENDPROC(__dabt_svc)
+@@ -223,11 +223,18 @@ ENDPROC(__dabt_svc)
  
  #ifdef CONFIG_PREEMPTION
  	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
@@ -102,7 +102,7 @@ index c39303e5c234..cfb4660e9fea 100644
  #endif
  
  	svc_exit r5, irq = 1			@ return from exception
-@@ -241,8 +248,14 @@ ENDPROC(__irq_svc)
+@@ -242,8 +249,14 @@ ENDPROC(__irq_svc)
  1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
  	ldr	r0, [tsk, #TI_FLAGS]		@ get new tasks TI_FLAGS
  	tst	r0, #_TIF_NEED_RESCHED
@@ -133,5 +133,5 @@ index e07f359254c3..b50a3248e79f 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.46.0
+2.48.1
 

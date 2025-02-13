@@ -13,6 +13,9 @@ variables:
   # Current runners have 2 CPUs but have slow I/O so 'parallel=4' is
   # a bit faster.
   DEB_BUILD_OPTIONS: 'terse parallel=4'
+  # Suppress 'aliased-location' as usrmerge-migration is not done in
+  # bookworm
+  SALSA_CI_LINTIAN_SUPPRESS_TAGS: 'aliased-location'
 
 # Add stages for signed packages
 stages:
@@ -141,7 +144,8 @@ build:
     # Do the same as the common .build-definition script
     - !reference [.build-before-script]
     - !reference [.build-script]
-    - mv ${CCACHE_TMP_DIR} ${CCACHE_WORK_DIR}
+  after_script:
+    - !reference [.build-after-script]
   dependencies:
     - extract-source
 
@@ -308,7 +312,8 @@ build-signed:
     # Do the same as the common .build-definition script
     - !reference [.build-before-script]
     - !reference [.build-script]
-    - mv ${CCACHE_TMP_DIR} ${CCACHE_WORK_DIR}
+  after_script:
+    - !reference [.build-after-script]
   artifacts:
     # This should include the linux-signed source package, its binary
     # packages, and (for piuparts) the versioned dependencies produced

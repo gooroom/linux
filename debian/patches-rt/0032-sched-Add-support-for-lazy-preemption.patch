@@ -1,8 +1,8 @@
-From 058bd9bff6fff8236a3bb12763e4addaa95689fc Mon Sep 17 00:00:00 2001
+From a4e3cd025c9d4a6fc51227e5d553ac781e53b105 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 32/63] sched: Add support for lazy preemption
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.111-rt42.tar.xz
+Subject: [PATCH 32/69] sched: Add support for lazy preemption
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -176,10 +176,10 @@ index 9aa6358a1a16..e9f0d08733f4 100644
  #endif /* CONFIG_SMP */
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 0cac69902ec5..67ec36dbfacf 100644
+index e87a68b136da..0d9eee39c170 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -2061,6 +2061,43 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -2062,6 +2062,43 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -247,7 +247,7 @@ index 9f392ec76f2b..779e0e96b9cb 100644
  #ifndef CONFIG_HAVE_ARCH_WITHIN_STACK_FRAMES
  static inline int arch_within_stack_frames(const void * const stack,
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index f70624ec4188..1d4253b47214 100644
+index f042574d1fb6..92e8134a2f45 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -70,6 +70,7 @@ struct trace_entry {
@@ -301,7 +301,7 @@ index c2f1fd95a821..260c08efeb48 100644
  	bool
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f26fe3e7ae03..21ea4332fdf6 100644
+index c71bebd1fca6..d050f75e096f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1039,6 +1039,46 @@ void resched_curr(struct rq *rq)
@@ -447,7 +447,7 @@ index f26fe3e7ae03..21ea4332fdf6 100644
  	 * The idle tasks have their own, simple scheduling class:
  	 */
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 1e12f731a033..50024a984c9b 100644
+index cf3bbddd4b7f..39b9c3968e24 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -4913,7 +4913,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -557,10 +557,10 @@ index f0c3d0d4a0dd..7a79f27deab1 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  extern bool sched_rt_bandwidth_account(struct rt_rq *rt_rq);
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index c9b52e920b8f..c2ef2443686f 100644
+index acc176aa1cbe..277c82284190 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2644,11 +2644,19 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
+@@ -2642,11 +2642,19 @@ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status)
  	if (softirq_count() >> (SOFTIRQ_SHIFT + 1))
  		trace_flags |= TRACE_FLAG_BH_OFF;
  
@@ -582,7 +582,7 @@ index c9b52e920b8f..c2ef2443686f 100644
  		(min_t(unsigned int, migration_disable_value(), 0xf)) << 4;
  }
  
-@@ -4242,15 +4250,17 @@ unsigned long trace_total_entries(struct trace_array *tr)
+@@ -4240,15 +4248,17 @@ unsigned long trace_total_entries(struct trace_array *tr)
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -609,7 +609,7 @@ index c9b52e920b8f..c2ef2443686f 100644
  }
  
  static void print_event_info(struct array_buffer *buf, struct seq_file *m)
-@@ -4284,14 +4294,16 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
+@@ -4282,14 +4292,16 @@ static void print_func_help_header_irq(struct array_buffer *buf, struct seq_file
  
  	print_event_info(buf, m);
  
@@ -635,7 +635,7 @@ index c9b52e920b8f..c2ef2443686f 100644
  
  void
 diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
-index 24859d964505..8d9a21d40f5a 100644
+index 94bb5f9251b1..6f2fd8337137 100644
 --- a/kernel/trace/trace_events.c
 +++ b/kernel/trace/trace_events.c
 @@ -208,6 +208,7 @@ static int trace_define_common_fields(void)
@@ -647,7 +647,7 @@ index 24859d964505..8d9a21d40f5a 100644
  	return ret;
  }
 diff --git a/kernel/trace/trace_output.c b/kernel/trace/trace_output.c
-index bf1965b18099..133f15d3b886 100644
+index 5cd4fb656306..3c227e2843ae 100644
 --- a/kernel/trace/trace_output.c
 +++ b/kernel/trace/trace_output.c
 @@ -442,6 +442,7 @@ int trace_print_lat_fmt(struct trace_seq *s, struct trace_entry *entry)
@@ -710,5 +710,5 @@ index bf1965b18099..133f15d3b886 100644
  		trace_seq_printf(s, "%x", entry->preempt_count >> 4);
  	else
 -- 
-2.46.0
+2.48.1
 

@@ -1,9 +1,9 @@
-From 07c445f01ddc28ae81927dfc6b19de7dc75ad529 Mon Sep 17 00:00:00 2001
+From 8293c98e94c5aa395ed0108d903486dd58ba53fb Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Tue, 25 Apr 2023 17:03:13 +0200
-Subject: [PATCH 56/63] debugobjects,locking: Annotate debug_object_fill_pool()
+Subject: [PATCH 56/69] debugobjects,locking: Annotate debug_object_fill_pool()
  wait type violation
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.111-rt42.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 There is an explicit wait-type violation in debug_object_fill_pool()
 for PREEMPT_RT=n kernels which allows them to more easily fill the
@@ -32,7 +32,7 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  4 files changed, 49 insertions(+), 9 deletions(-)
 
 diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
-index 1023f349af71..a3329fb49b33 100644
+index f7702c202bb4..48187867427b 100644
 --- a/include/linux/lockdep.h
 +++ b/include/linux/lockdep.h
 @@ -339,6 +339,16 @@ extern void lock_unpin_lock(struct lockdep_map *lock, struct pin_cookie);
@@ -83,7 +83,7 @@ index d22430840b53..59f4fb1626ea 100644
  };
  
 diff --git a/kernel/locking/lockdep.c b/kernel/locking/lockdep.c
-index 3b38303ed27b..a046e03c7ead 100644
+index 7fb9731bc5f5..9bea1c7ff94e 100644
 --- a/kernel/locking/lockdep.c
 +++ b/kernel/locking/lockdep.c
 @@ -2245,6 +2245,9 @@ static inline bool usage_match(struct lock_list *entry, void *mask)
@@ -145,10 +145,10 @@ index 3b38303ed27b..a046e03c7ead 100644
  	}
  
 diff --git a/lib/debugobjects.c b/lib/debugobjects.c
-index 5dfa582dbadd..d42f2839a222 100644
+index 8c3b483a8fb4..e7c5889094d3 100644
 --- a/lib/debugobjects.c
 +++ b/lib/debugobjects.c
-@@ -600,10 +600,21 @@ static void debug_objects_fill_pool(void)
+@@ -601,10 +601,21 @@ static void debug_objects_fill_pool(void)
  {
  	/*
  	 * On RT enabled kernels the pool refill must happen in preemptible
@@ -173,5 +173,5 @@ index 5dfa582dbadd..d42f2839a222 100644
  
  static void
 -- 
-2.46.0
+2.48.1
 
