@@ -2,7 +2,7 @@ From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 11:39:36 +0200
 Subject: [PATCH 229/323] mm/vmalloc: Another preempt disable region which
  sucks
-Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=f3286e3b846290664bf475df8dc95fc1ba0aa866
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ec6a56c9d3e6746e9c60fdbbd544059a0a03104c
 
 Avoid the preempt disable version of get_cpu_var(). The inner-lock should
 provide enough serialisation.
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 8 insertions(+), 5 deletions(-)
 
 diff --git a/mm/vmalloc.c b/mm/vmalloc.c
-index d6a4794fa8ca..8113e4f0d2f2 100644
+index fd1c8f51aa53..2898459630d1 100644
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
 @@ -1542,7 +1542,7 @@ static void *new_vmap_block(unsigned int order, gfp_t gfp_mask)
