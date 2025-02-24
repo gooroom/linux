@@ -1,0 +1,34 @@
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Mon, 24 Feb 2025 02:02:26 +0100
+Subject: Revert "xen/swiotlb: add alignment check for dma buffers"
+Bug-Debian: https://bugs.debian.org/1087807
+Bug-Debian: https://bugs.debian.org/1088159
+Bug-Debian: https://bugs.debian.org/1093371
+
+This reverts commit a0a8b7bebe1b1f9017b09e1e045f16725e871f9c, which
+was commit 9f40ec84a7976d95c34e7cc070939deb103652b0 upstream.  This
+caused regressions for a number of drivers under Xen.
+---
+ drivers/xen/swiotlb-xen.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/drivers/xen/swiotlb-xen.c b/drivers/xen/swiotlb-xen.c
+index 000d02ea4f7d..ad3ee4857e15 100644
+--- a/drivers/xen/swiotlb-xen.c
++++ b/drivers/xen/swiotlb-xen.c
+@@ -91,15 +91,9 @@ static inline int range_straddles_page_boundary(phys_addr_t p, size_t size)
+ {
+ 	unsigned long next_bfn, xen_pfn = XEN_PFN_DOWN(p);
+ 	unsigned int i, nr_pages = XEN_PFN_UP(xen_offset_in_page(p) + size);
+-	phys_addr_t algn = 1ULL << (get_order(size) + PAGE_SHIFT);
+ 
+ 	next_bfn = pfn_to_bfn(xen_pfn);
+ 
+-	/* If buffer is physically aligned, ensure DMA alignment. */
+-	if (IS_ALIGNED(p, algn) &&
+-	    !IS_ALIGNED((phys_addr_t)next_bfn << XEN_PAGE_SHIFT, algn))
+-		return 1;
+-
+ 	for (i = 1; i < nr_pages; i++)
+ 		if (pfn_to_bfn(++xen_pfn) != ++next_bfn)
+ 			return 1;
