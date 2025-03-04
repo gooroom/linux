@@ -1,7 +1,7 @@
-From 91c3cd2a2d7d20a2851c4fb9640e4b8d74ed683c Mon Sep 17 00:00:00 2001
+From dc905df9e6b007e54502b700cd5309b0d2b4052c Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Tue, 2 Apr 2024 12:48:36 -0700
-Subject: [PATCH 32/34] net: mana: Fix Rx DMA datasize and skb_over_panic
+Subject: [PATCH 32/44] net: mana: Fix Rx DMA datasize and skb_over_panic
 
 mana_get_rxbuf_cfg() aligns the RX buffer's DMA datasize to be
 multiple of 64. So a packet slightly bigger than mtu+14, say 1536,
@@ -41,7 +41,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  2 files changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index a6f256ff0c3f..3b74a23fddfe 100644
+index 3d4b853edf0c..65d877d2ebf3 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
 @@ -527,7 +527,7 @@ static void mana_get_rxbuf_cfg(int mtu, u32 *datasize, u32 *alloc_size,
@@ -54,7 +54,7 @@ index a6f256ff0c3f..3b74a23fddfe 100644
  
  static int mana_pre_alloc_rxbufs(struct mana_port_context *mpc, int new_mtu)
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index c048c72aec06..0f82f0d50223 100644
+index 45f94f485311..bfc9050b1f5e 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
 @@ -37,7 +37,6 @@ enum TRI_STATE {
@@ -66,5 +66,5 @@ index c048c72aec06..0f82f0d50223 100644
  #define MAX_SEND_BUFFERS_PER_QUEUE 256
  
 -- 
-2.45.2
+2.49.0
 

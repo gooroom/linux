@@ -1,7 +1,7 @@
-From 55fc4febdeb026e423f5fd75ec70b6f0a09f90e0 Mon Sep 17 00:00:00 2001
+From e7c7356cd3b173f06d67b2cba44b94be266d0191 Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Sat, 13 May 2023 23:18:15 -0700
-Subject: [PATCH 24/34] RDMA/mana_ib: Use v2 version of cfg_rx_steer_req to
+Subject: [PATCH 24/44] RDMA/mana_ib: Use v2 version of cfg_rx_steer_req to
  enable RX coalescing
 
 With RX coalescing, one CQE entry can be used to indicate multiple packets
@@ -22,7 +22,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index a393d34d696b..cb7cfcd51532 100644
+index 5000bff40704..a1c8b3c9a1ef 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
 @@ -982,7 +982,7 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
@@ -52,10 +52,10 @@ index a393d34d696b..cb7cfcd51532 100644
  	if (update_key)
  		memcpy(&req->hashkey, apc->hashkey, MANA_HASH_KEY_SIZE);
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 3abfce420594..46b5769a5b6a 100644
+index 9cd1b085281b..5d55e0bdaa81 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -576,7 +576,7 @@ struct mana_fence_rq_resp {
+@@ -579,7 +579,7 @@ struct mana_fence_rq_resp {
  }; /* HW DATA */
  
  /* Configure vPort Rx Steering */
@@ -64,7 +64,7 @@ index 3abfce420594..46b5769a5b6a 100644
  	struct gdma_req_hdr hdr;
  	mana_handle_t vport;
  	u16 num_indir_entries;
-@@ -589,6 +589,8 @@ struct mana_cfg_rx_steer_req {
+@@ -592,6 +592,8 @@ struct mana_cfg_rx_steer_req {
  	u8 reserved;
  	mana_handle_t default_rxobj;
  	u8 hashkey[MANA_HASH_KEY_SIZE];
@@ -74,5 +74,5 @@ index 3abfce420594..46b5769a5b6a 100644
  
  struct mana_cfg_rx_steer_resp {
 -- 
-2.45.2
+2.49.0
 

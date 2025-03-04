@@ -1,7 +1,7 @@
-From b0eab73b223270074643df79df46080316171007 Mon Sep 17 00:00:00 2001
+From 7b5230b30aa3665275ea91fef6fdb171a04e51df Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Fri, 26 May 2023 08:38:57 -0700
-Subject: [PATCH 22/34] net: mana: Fix perf regression: remove rx_cqes, tx_cqes
+Subject: [PATCH 22/44] net: mana: Fix perf regression: remove rx_cqes, tx_cqes
  counters
 
 The apc->eth_stats.rx_cqes is one per NIC (vport), and it's on the
@@ -39,7 +39,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  3 files changed, 14 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 68e7518b6758..4e94b0545547 100644
+index 8ca95633f845..cde9226ed139 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
 @@ -1281,8 +1281,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
@@ -102,10 +102,10 @@ index a64c81410dc1..0dc78679f620 100644
  					rx_coalesced_err)},
  	{"rx_cqe_unknown_type", offsetof(struct mana_ethtool_stats,
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 4f19d73b66ae..3abfce420594 100644
+index 4ffb1ced9e19..9cd1b085281b 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -347,10 +347,8 @@ struct mana_tx_qp {
+@@ -350,10 +350,8 @@ struct mana_tx_qp {
  struct mana_ethtool_stats {
  	u64 stop_queue;
  	u64 wake_queue;
@@ -117,5 +117,5 @@ index 4f19d73b66ae..3abfce420594 100644
  	u64 rx_cqe_unknown_type;
  };
 -- 
-2.45.2
+2.49.0
 
