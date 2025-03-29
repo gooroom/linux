@@ -1,7 +1,7 @@
-From 2da1097b65681e61dddcfc620c05f4657e4743b2 Mon Sep 17 00:00:00 2001
+From 4dfd77c0cf21bc8ff0c2a1f4f3d7995f8c9e7204 Mon Sep 17 00:00:00 2001
 From: Souradeep Chakrabarti <schakrabarti@linux.microsoft.com>
 Date: Wed, 2 Aug 2023 04:07:40 -0700
-Subject: [PATCH 28/34] net: mana: Configure hwc timeout from hardware
+Subject: [PATCH 28/44] net: mana: Configure hwc timeout from hardware
 
 At present hwc timeout value is a fixed value. This patch sets the hwc
 timeout from the hardware. It now uses a new hardware capability
@@ -78,10 +78,10 @@ index 6108a481edcb..4fa1901a2789 100644
  }
  
 diff --git a/drivers/net/ethernet/microsoft/mana/hw_channel.c b/drivers/net/ethernet/microsoft/mana/hw_channel.c
-index 2bd1d74021f7..9d1cd3bfcf66 100644
+index d9fe8c1c6cf0..88d18677cb4f 100644
 --- a/drivers/net/ethernet/microsoft/mana/hw_channel.c
 +++ b/drivers/net/ethernet/microsoft/mana/hw_channel.c
-@@ -174,7 +174,25 @@ static void mana_hwc_init_event_handler(void *ctx, struct gdma_queue *q_self,
+@@ -182,7 +182,25 @@ static void mana_hwc_init_event_handler(void *ctx, struct gdma_queue *q_self,
  		complete(&hwc->hwc_init_eqe_comp);
  		break;
  
@@ -107,7 +107,7 @@ index 2bd1d74021f7..9d1cd3bfcf66 100644
  		/* Ignore unknown events, which should never happen. */
  		break;
  	}
-@@ -696,6 +714,7 @@ int mana_hwc_create_channel(struct gdma_context *gc)
+@@ -702,6 +720,7 @@ int mana_hwc_create_channel(struct gdma_context *gc)
  	gd->driver_data = hwc;
  	hwc->gdma_dev = gd;
  	hwc->dev = gc->dev;
@@ -115,7 +115,7 @@ index 2bd1d74021f7..9d1cd3bfcf66 100644
  
  	/* HWC's instance number is always 0. */
  	gd->dev_id.as_uint32 = 0;
-@@ -770,6 +789,8 @@ void mana_hwc_destroy_channel(struct gdma_context *gc)
+@@ -776,6 +795,8 @@ void mana_hwc_destroy_channel(struct gdma_context *gc)
  	hwc->gdma_dev->doorbell = INVALID_DOORBELL;
  	hwc->gdma_dev->pdid = INVALID_PDID;
  
@@ -124,7 +124,7 @@ index 2bd1d74021f7..9d1cd3bfcf66 100644
  	kfree(hwc);
  	gc->hwc.driver_data = NULL;
  	gc->hwc.gdma_context = NULL;
-@@ -825,7 +846,8 @@ int mana_hwc_send_request(struct hw_channel_context *hwc, u32 req_len,
+@@ -831,7 +852,8 @@ int mana_hwc_send_request(struct hw_channel_context *hwc, u32 req_len,
  		goto out;
  	}
  
@@ -213,5 +213,5 @@ index 6a757a6e2732..3d3b5c881bc1 100644
  	struct hwc_caller_ctx *caller_ctx;
  };
 -- 
-2.45.2
+2.49.0
 

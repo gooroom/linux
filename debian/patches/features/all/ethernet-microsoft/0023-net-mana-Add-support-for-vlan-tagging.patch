@@ -1,7 +1,7 @@
-From 924eb0e64f82cb08c32eb85eca451a023b8da789 Mon Sep 17 00:00:00 2001
+From 3a2b51992a5c31d1e87dcc3721cb2aeccd290b41 Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Fri, 9 Jun 2023 05:47:17 -0700
-Subject: [PATCH 23/34] net: mana: Add support for vlan tagging
+Subject: [PATCH 23/44] net: mana: Add support for vlan tagging
 
 To support vlan, use MANA_LONG_PKT_FMT if vlan tag is present in TX
 skb. Then extract the vlan tag from the skb struct, and save it to
@@ -19,7 +19,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 4e94b0545547..a393d34d696b 100644
+index cde9226ed139..5000bff40704 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
 @@ -180,6 +180,14 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
@@ -50,7 +50,7 @@ index 4e94b0545547..a393d34d696b 100644
  	u64_stats_update_begin(&rx_stats->syncp);
  	rx_stats->packets++;
  	rx_stats->bytes += pkt_len;
-@@ -2487,8 +2501,9 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
+@@ -2497,8 +2511,9 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
  	ndev->hw_features |= NETIF_F_RXCSUM;
  	ndev->hw_features |= NETIF_F_TSO | NETIF_F_TSO6;
  	ndev->hw_features |= NETIF_F_RXHASH;
@@ -63,5 +63,5 @@ index 4e94b0545547..a393d34d696b 100644
  	err = register_netdev(ndev);
  	if (err) {
 -- 
-2.45.2
+2.49.0
 
