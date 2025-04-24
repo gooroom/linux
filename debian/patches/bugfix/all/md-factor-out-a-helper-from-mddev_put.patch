@@ -1,0 +1,71 @@
+From: Yu Kuai <yukuai3@huawei.com>
+Date: Wed, 27 Sep 2023 14:12:40 +0800
+Subject: md: factor out a helper from mddev_put()
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable-rc.git/commit?id=630ad10e9b31ae0e6932c09642fcf402bc7ebf45
+
+commit 3d8d32873c7b6d9cec5b40c2ddb8c7c55961694f upstream.
+
+There are no functional changes, prepare to simplify md_seq_ops in next
+patch.
+
+Signed-off-by: Yu Kuai <yukuai3@huawei.com>
+Signed-off-by: Song Liu <song@kernel.org>
+Link: https://lore.kernel.org/r/20230927061241.1552837-2-yukuai1@huaweicloud.com
+[minor context conflict]
+Signed-off-by: Yu Kuai <yukuai3@huawei.com>
+Cc: Salvatore Bonaccorso <carnil@debian.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/md/md.c | 32 ++++++++++++++++++--------------
+ 1 file changed, 18 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/md/md.c b/drivers/md/md.c
+index 5e2751d42f64..639fe8ebaa68 100644
+--- a/drivers/md/md.c
++++ b/drivers/md/md.c
+@@ -667,24 +667,28 @@ static inline struct mddev *mddev_get(struct mddev *mddev)
+ 
+ static void mddev_delayed_delete(struct work_struct *ws);
+ 
++static void __mddev_put(struct mddev *mddev)
++{
++	if (mddev->raid_disks || !list_empty(&mddev->disks) ||
++	    mddev->ctime || mddev->hold_active)
++		return;
++
++	/* Array is not configured at all, and not held active, so destroy it */
++	set_bit(MD_DELETED, &mddev->flags);
++
++	/*
++	 * Call queue_work inside the spinlock so that flush_workqueue() after
++	 * mddev_find will succeed in waiting for the work to be done.
++	 */
++	INIT_WORK(&mddev->del_work, mddev_delayed_delete);
++	queue_work(md_misc_wq, &mddev->del_work);
++}
++
+ void mddev_put(struct mddev *mddev)
+ {
+ 	if (!atomic_dec_and_lock(&mddev->active, &all_mddevs_lock))
+ 		return;
+-	if (!mddev->raid_disks && list_empty(&mddev->disks) &&
+-	    mddev->ctime == 0 && !mddev->hold_active) {
+-		/* Array is not configured at all, and not held active,
+-		 * so destroy it */
+-		set_bit(MD_DELETED, &mddev->flags);
+-
+-		/*
+-		 * Call queue_work inside the spinlock so that
+-		 * flush_workqueue() after mddev_find will succeed in waiting
+-		 * for the work to be done.
+-		 */
+-		INIT_WORK(&mddev->del_work, mddev_delayed_delete);
+-		queue_work(md_misc_wq, &mddev->del_work);
+-	}
++	__mddev_put(mddev);
+ 	spin_unlock(&all_mddevs_lock);
+ }
+ 
+-- 
+2.49.0
+
