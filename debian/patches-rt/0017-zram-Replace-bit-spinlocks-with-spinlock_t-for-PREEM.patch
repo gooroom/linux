@@ -1,9 +1,9 @@
-From 8150fe2f699288f84e7e7f31456e9be21e16f3f6 Mon Sep 17 00:00:00 2001
+From a270d24544199b2a1afee98d1af5566ed518d413 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
-Subject: [PATCH 17/64] zram: Replace bit spinlocks with spinlock_t for
+Subject: [PATCH 17/69] zram: Replace bit spinlocks with spinlock_t for
  PREEMPT_RT.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 The bit spinlock disables preemption on PREEMPT_RT. With disabled preemption it
 is not allowed to acquire other sleeping locks which includes invoking
@@ -21,7 +21,7 @@ Link: https://lkml.kernel.org/r/YqIbMuHCPiQk+Ac2@linutronix.de
  2 files changed, 39 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 966aab902d19..ee69e4443691 100644
+index bef5388e4e28..2e3ee890ffe7 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -57,6 +57,40 @@ static void zram_free_page(struct zram *zram, size_t index);
@@ -73,7 +73,7 @@ index 966aab902d19..ee69e4443691 100644
  
  static inline bool init_done(struct zram *zram)
  {
-@@ -1187,6 +1222,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
+@@ -1198,6 +1233,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
  
  	if (!huge_class_size)
  		huge_class_size = zs_huge_class_size(zram->mem_pool);
@@ -96,5 +96,5 @@ index a2bda53020fd..ae7950b26db5 100644
  	ktime_t ac_time;
  #endif
 -- 
-2.45.2
+2.48.1
 

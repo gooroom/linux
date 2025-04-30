@@ -1,7 +1,7 @@
-From 8334d5a28eb711b8f464e0bd3ec0f76b0594bf95 Mon Sep 17 00:00:00 2001
+From 8077c735d745e91852319e7aa62f538c2b6c40d0 Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Thu, 3 Nov 2022 12:16:23 -0700
-Subject: [PATCH 07/23] net: mana: Export Work Queue functions for use by RDMA
+Subject: [PATCH 07/44] net: mana: Export Work Queue functions for use by RDMA
  driver
 
 RDMA device may need to create Ethernet device queues for use by Queue
@@ -34,10 +34,10 @@ index bc00a7d07232..d9be0f3044ea 100644
  int mana_gd_alloc_memory(struct gdma_context *gc, unsigned int length,
  			 struct gdma_mem_info *gmi)
 diff --git a/drivers/net/ethernet/microsoft/mana/mana.h b/drivers/net/ethernet/microsoft/mana/mana.h
-index 2883a08dbfb5..6e9e86fb4c02 100644
+index 6ce11e5a9a00..1f6f502dee3b 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana.h
 +++ b/drivers/net/ethernet/microsoft/mana/mana.h
-@@ -635,6 +635,15 @@ struct mana_tx_package {
+@@ -638,6 +638,15 @@ struct mana_tx_package {
  	struct gdma_posted_wqe_info wqe_info;
  };
  
@@ -54,10 +54,10 @@ index 2883a08dbfb5..6e9e86fb4c02 100644
  		   u32 doorbell_pg_id);
  void mana_uncfg_vport(struct mana_port_context *apc);
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index c5ab5cb63cb7..a526657f4edb 100644
+index 934b360145ac..ce73963faf06 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -792,11 +792,11 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
+@@ -793,11 +793,11 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
  	return err;
  }
  
@@ -74,7 +74,7 @@ index c5ab5cb63cb7..a526657f4edb 100644
  {
  	struct mana_create_wqobj_resp resp = {};
  	struct mana_create_wqobj_req req = {};
-@@ -845,9 +845,10 @@ static int mana_create_wq_obj(struct mana_port_context *apc,
+@@ -846,9 +846,10 @@ static int mana_create_wq_obj(struct mana_port_context *apc,
  out:
  	return err;
  }
@@ -87,7 +87,7 @@ index c5ab5cb63cb7..a526657f4edb 100644
  {
  	struct mana_destroy_wqobj_resp resp = {};
  	struct mana_destroy_wqobj_req req = {};
-@@ -872,6 +873,7 @@ static void mana_destroy_wq_obj(struct mana_port_context *apc, u32 wq_type,
+@@ -873,6 +874,7 @@ static void mana_destroy_wq_obj(struct mana_port_context *apc, u32 wq_type,
  		netdev_err(ndev, "Failed to destroy WQ object: %d, 0x%x\n", err,
  			   resp.hdr.status);
  }
@@ -96,5 +96,5 @@ index c5ab5cb63cb7..a526657f4edb 100644
  static void mana_destroy_eq(struct mana_context *ac)
  {
 -- 
-2.40.1
+2.49.0
 

@@ -1,7 +1,7 @@
-From 5e6b27eabf53e70c084cf61e3d3860cd6ed1c321 Mon Sep 17 00:00:00 2001
+From 5f8f3be2b8d1d99bf6d0fe241481c1ac6f287c73 Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Thu, 3 Nov 2022 12:16:26 -0700
-Subject: [PATCH 10/23] net: mana: Define max values for SGL entries
+Subject: [PATCH 10/44] net: mana: Define max values for SGL entries
 
 The number of maximum SGl entries should be computed from the maximum
 WQE size for the intended queue type and the corresponding OOB data
@@ -22,10 +22,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  3 files changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index c0421c4a80d4..958e55c936b5 100644
+index 220d44e55da9..65637aa333a4 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -189,7 +189,7 @@ int mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -190,7 +190,7 @@ int mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  	pkg.wqe_req.client_data_unit = 0;
  
  	pkg.wqe_req.num_sge = 1 + skb_shinfo(skb)->nr_frags;
@@ -53,10 +53,10 @@ index 86d8a9e36005..11fc1cc67c01 100644
  	u32 cqe_data[GDMA_COMP_DATA_SIZE / 4];
  
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 6e9e86fb4c02..713a8f8cca9a 100644
+index 1f6f502dee3b..a3baf498df67 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -265,8 +265,6 @@ struct mana_cq {
+@@ -268,8 +268,6 @@ struct mana_cq {
  	int budget;
  };
  
@@ -65,7 +65,7 @@ index 6e9e86fb4c02..713a8f8cca9a 100644
  struct mana_recv_buf_oob {
  	/* A valid GDMA work request representing the data buffer. */
  	struct gdma_wqe_request wqe_req;
-@@ -276,7 +274,7 @@ struct mana_recv_buf_oob {
+@@ -279,7 +277,7 @@ struct mana_recv_buf_oob {
  
  	/* SGL of the buffer going to be sent has part of the work request. */
  	u32 num_sge;
@@ -75,5 +75,5 @@ index 6e9e86fb4c02..713a8f8cca9a 100644
  	/* Required to store the result of mana_gd_post_work_request.
  	 * gdma_posted_wqe_info.wqe_size_in_bu is required for progressing the
 -- 
-2.40.1
+2.49.0
 

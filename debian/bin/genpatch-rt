@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import argparse
-import io
 import os
 import os.path
 import re
@@ -65,12 +64,12 @@ def main(source, version, verify_signature):
 
             args = ['git', 'format-patch',
                     'v%s..v%s-rebase' % (up_ver, version)]
-            format_proc = subprocess.Popen(args,
-                                           cwd=patch_dir,
-                                           env=env, stdout=subprocess.PIPE)
-            with io.open(format_proc.stdout.fileno(), encoding='utf-8') \
-                 as pipe:
-                for line in pipe:
+            with subprocess.Popen(args,
+                                  cwd=patch_dir,
+                                  env=env, stdout=subprocess.PIPE,
+                                  text=True) \
+                 as format_proc:
+                for line in format_proc.stdout:
                     name = line.strip('\n')
                     with open(os.path.join(patch_dir, name)) as source_patch:
                         patch_from = source_patch.readline()

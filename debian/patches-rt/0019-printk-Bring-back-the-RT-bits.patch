@@ -1,8 +1,8 @@
-From 92b300ee4fad2fc151a0e31e14257bb0bb0acb9a Mon Sep 17 00:00:00 2001
+From ab78455bb368dde32726e911e08e27deb629e391 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 19 Jul 2022 20:08:01 +0200
-Subject: [PATCH 19/64] printk: Bring back the RT bits.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.96-rt35.tar.xz
+Subject: [PATCH 19/69] printk: Bring back the RT bits.
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
 
 This is a revert of the commits:
 | 07a22b61946f0 Revert "printk: add functions to prefer direct printing"
@@ -195,7 +195,7 @@ index d947ca6c84f9..e7d8578860ad 100644
  int vprintk_store(int facility, int level,
  		  const struct dev_printk_info *dev_info,
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 0ae06d5046bb..65b2b5ceb05a 100644
+index 5a88134fba79..43bc197ef8c3 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -220,6 +220,36 @@ int devkmsg_sysctl_set_loglvl(struct ctl_table *table, int write,
@@ -1208,10 +1208,10 @@ index 45693fb3e08d..f366008298ac 100644
  
  	return HRTIMER_RESTART;
 diff --git a/kernel/watchdog_hld.c b/kernel/watchdog_hld.c
-index 1e8a49dc956e..7c977b945c92 100644
+index 8ba4b269ab89..0cbe90634654 100644
 --- a/kernel/watchdog_hld.c
 +++ b/kernel/watchdog_hld.c
-@@ -135,6 +135,8 @@ static void watchdog_overflow_callback(struct perf_event *event,
+@@ -139,6 +139,8 @@ static void watchdog_overflow_callback(struct perf_event *event,
  		if (__this_cpu_read(hard_watchdog_warn) == true)
  			return;
  
@@ -1220,7 +1220,7 @@ index 1e8a49dc956e..7c977b945c92 100644
  		pr_emerg("Watchdog detected hard LOCKUP on cpu %d\n",
  			 this_cpu);
  		print_modules();
-@@ -155,6 +157,8 @@ static void watchdog_overflow_callback(struct perf_event *event,
+@@ -159,6 +161,8 @@ static void watchdog_overflow_callback(struct perf_event *event,
  		if (hardlockup_panic)
  			nmi_panic(regs, "Hard LOCKUP");
  
@@ -1230,5 +1230,5 @@ index 1e8a49dc956e..7c977b945c92 100644
  		return;
  	}
 -- 
-2.45.2
+2.48.1
 

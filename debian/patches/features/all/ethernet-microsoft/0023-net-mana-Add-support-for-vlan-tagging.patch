@@ -1,7 +1,7 @@
-From dc801500fea4fd5ddecc4007acffb5716a761f51 Mon Sep 17 00:00:00 2001
+From 3a2b51992a5c31d1e87dcc3721cb2aeccd290b41 Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Fri, 9 Jun 2023 05:47:17 -0700
-Subject: [PATCH 23/23] net: mana: Add support for vlan tagging
+Subject: [PATCH 23/44] net: mana: Add support for vlan tagging
 
 To support vlan, use MANA_LONG_PKT_FMT if vlan tag is present in TX
 skb. Then extract the vlan tag from the skb struct, and save it to
@@ -19,10 +19,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  1 file changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 25b17213e54d..808dbf55beef 100644
+index cde9226ed139..5000bff40704 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -179,6 +179,14 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -180,6 +180,14 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  		pkg.tx_oob.s_oob.short_vp_offset = txq->vp_offset;
  	}
  
@@ -37,7 +37,7 @@ index 25b17213e54d..808dbf55beef 100644
  	pkg.tx_oob.s_oob.pkt_fmt = pkt_fmt;
  
  	if (pkt_fmt == MANA_SHORT_PKT_FMT) {
-@@ -1458,6 +1466,12 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
+@@ -1463,6 +1471,12 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
  			skb_set_hash(skb, hash_value, PKT_HASH_TYPE_L3);
  	}
  
@@ -50,7 +50,7 @@ index 25b17213e54d..808dbf55beef 100644
  	u64_stats_update_begin(&rx_stats->syncp);
  	rx_stats->packets++;
  	rx_stats->bytes += pkt_len;
-@@ -2454,8 +2468,9 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
+@@ -2497,8 +2511,9 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
  	ndev->hw_features |= NETIF_F_RXCSUM;
  	ndev->hw_features |= NETIF_F_TSO | NETIF_F_TSO6;
  	ndev->hw_features |= NETIF_F_RXHASH;
@@ -63,5 +63,5 @@ index 25b17213e54d..808dbf55beef 100644
  	err = register_netdev(ndev);
  	if (err) {
 -- 
-2.40.1
+2.49.0
 

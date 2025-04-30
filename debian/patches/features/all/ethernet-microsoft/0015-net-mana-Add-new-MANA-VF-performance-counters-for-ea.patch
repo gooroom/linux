@@ -1,7 +1,7 @@
-From fbefc731a4cc001fe7ce5786e08053d707dde85f Mon Sep 17 00:00:00 2001
+From c9ae820f1c1472f9e2904999598dfbe4df0adbf4 Mon Sep 17 00:00:00 2001
 From: Shradha Gupta <shradhagupta@linux.microsoft.com>
 Date: Wed, 15 Mar 2023 04:55:13 -0700
-Subject: [PATCH 15/23] net: mana: Add new MANA VF performance counters for
+Subject: [PATCH 15/44] net: mana: Add new MANA VF performance counters for
  easier troubleshooting
 
 Extended performance counter stats in 'ethtool -S <interface>' output
@@ -18,9 +18,11 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  include/net/mana/mana.h                       | 18 ++++++
  3 files changed, 128 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
+index 8de0a7fbbdd9..d5fcbf7e857b 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -157,6 +157,7 @@ netdev_tx_t mana_start_xmit(struct sk_bu
+@@ -157,6 +157,7 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  	struct mana_txq *txq;
  	struct mana_cq *cq;
  	int err, len;
@@ -28,7 +30,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  
  	if (unlikely(!apc->port_is_up))
  		goto tx_drop;
-@@ -167,6 +168,7 @@ netdev_tx_t mana_start_xmit(struct sk_bu
+@@ -167,6 +168,7 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  	txq = &apc->tx_qp[txq_idx].txq;
  	gdma_sq = txq->gdma_sq;
  	cq = &apc->tx_qp[txq_idx].tx_cq;
@@ -36,7 +38,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  
  	pkg.tx_oob.s_oob.vcq_num = cq->gdma_id;
  	pkg.tx_oob.s_oob.vsq_frame = txq->vsq_frame;
-@@ -180,10 +182,17 @@ netdev_tx_t mana_start_xmit(struct sk_bu
+@@ -180,10 +182,17 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  
  	pkg.tx_oob.s_oob.pkt_fmt = pkt_fmt;
  
@@ -56,7 +58,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  
  	pkg.wqe_req.inline_oob_data = &pkg.tx_oob;
  	pkg.wqe_req.flags = 0;
-@@ -233,9 +242,35 @@ netdev_tx_t mana_start_xmit(struct sk_bu
+@@ -233,9 +242,35 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  						 &ipv6_hdr(skb)->daddr, 0,
  						 IPPROTO_TCP, 0);
  		}
@@ -92,7 +94,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  		if (csum_type == IPPROTO_TCP) {
  			pkg.tx_oob.s_oob.is_outer_ipv4 = ipv4;
  			pkg.tx_oob.s_oob.is_outer_ipv6 = ipv6;
-@@ -255,8 +290,12 @@ netdev_tx_t mana_start_xmit(struct sk_bu
+@@ -255,8 +290,12 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
  		}
  	}
  
@@ -106,7 +108,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  
  	skb_queue_tail(&txq->pending_skbs, skb);
  
-@@ -1039,6 +1078,8 @@ static void mana_poll_tx_cq(struct mana_
+@@ -1039,6 +1078,8 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  	if (comp_read < 1)
  		return;
  
@@ -115,7 +117,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	for (i = 0; i < comp_read; i++) {
  		struct mana_tx_comp_oob *cqe_oob;
  
-@@ -1067,6 +1108,7 @@ static void mana_poll_tx_cq(struct mana_
+@@ -1067,6 +1108,7 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  				netdev_err(ndev, "TX: CQE error %d\n",
  					   cqe_oob->cqe_hdr.cqe_type);
  
@@ -123,7 +125,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  			break;
  
  		default:
-@@ -1077,6 +1119,7 @@ static void mana_poll_tx_cq(struct mana_
+@@ -1077,6 +1119,7 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  				netdev_err(ndev, "TX: unknown CQE type %d\n",
  					   cqe_oob->cqe_hdr.cqe_type);
  
@@ -131,7 +133,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  			break;
  		}
  
-@@ -1123,6 +1166,8 @@ static void mana_poll_tx_cq(struct mana_
+@@ -1123,6 +1166,8 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  		WARN_ON_ONCE(1);
  
  	cq->work_done = pkt_transmitted;
@@ -140,7 +142,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  }
  
  static void mana_post_pkt_rxq(struct mana_rxq *rxq)
-@@ -1257,12 +1302,15 @@ static void mana_process_rx_cqe(struct m
+@@ -1257,12 +1302,15 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
  	struct gdma_context *gc = rxq->gdma_rq->gdma_dev->gdma_context;
  	struct net_device *ndev = rxq->ndev;
  	struct mana_recv_buf_oob *rxbuf_oob;
@@ -156,7 +158,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	switch (oob->cqe_hdr.cqe_type) {
  	case CQE_RX_OKAY:
  		break;
-@@ -1275,6 +1323,7 @@ static void mana_process_rx_cqe(struct m
+@@ -1275,6 +1323,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
  
  	case CQE_RX_COALESCED_4:
  		netdev_err(ndev, "RX coalescing is unsupported\n");
@@ -164,7 +166,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  		return;
  
  	case CQE_RX_OBJECT_FENCE:
-@@ -1284,6 +1333,7 @@ static void mana_process_rx_cqe(struct m
+@@ -1284,6 +1333,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
  	default:
  		netdev_err(ndev, "Unknown RX CQE type = %d\n",
  			   oob->cqe_hdr.cqe_type);
@@ -172,7 +174,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  		return;
  	}
  
-@@ -1346,11 +1396,15 @@ static void mana_poll_rx_cq(struct mana_
+@@ -1346,11 +1396,15 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
  {
  	struct gdma_comp *comp = cq->gdma_comp_buf;
  	struct mana_rxq *rxq = cq->rxq;
@@ -188,7 +190,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	rxq->xdp_flush = false;
  
  	for (i = 0; i < comp_read; i++) {
-@@ -1362,6 +1416,8 @@ static void mana_poll_rx_cq(struct mana_
+@@ -1362,6 +1416,8 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
  			return;
  
  		mana_process_rx_cqe(rxq, cq, &comp[i]);
@@ -197,6 +199,8 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	}
  
  	if (rxq->xdp_flush)
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
+index 5b776a33a817..a64c81410dc1 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 @@ -13,6 +13,15 @@ static const struct {
@@ -215,7 +219,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  };
  
  static int mana_get_sset_count(struct net_device *ndev, int stringset)
-@@ -23,7 +32,8 @@ static int mana_get_sset_count(struct ne
+@@ -23,7 +32,8 @@ static int mana_get_sset_count(struct net_device *ndev, int stringset)
  	if (stringset != ETH_SS_STATS)
  		return -EINVAL;
  
@@ -225,7 +229,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  }
  
  static void mana_get_strings(struct net_device *ndev, u32 stringset, u8 *data)
-@@ -61,6 +71,22 @@ static void mana_get_strings(struct net_
+@@ -61,6 +71,22 @@ static void mana_get_strings(struct net_device *ndev, u32 stringset, u8 *data)
  		p += ETH_GSTRING_LEN;
  		sprintf(p, "tx_%d_xdp_xmit", i);
  		p += ETH_GSTRING_LEN;
@@ -248,7 +252,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	}
  }
  
-@@ -78,6 +104,14 @@ static void mana_get_ethtool_stats(struc
+@@ -78,6 +104,14 @@ static void mana_get_ethtool_stats(struct net_device *ndev,
  	u64 xdp_xmit;
  	u64 xdp_drop;
  	u64 xdp_tx;
@@ -263,7 +267,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	int q, i = 0;
  
  	if (!apc->port_is_up)
-@@ -113,11 +147,27 @@ static void mana_get_ethtool_stats(struc
+@@ -113,11 +147,27 @@ static void mana_get_ethtool_stats(struct net_device *ndev,
  			packets = tx_stats->packets;
  			bytes = tx_stats->bytes;
  			xdp_xmit = tx_stats->xdp_xmit;
@@ -291,6 +295,8 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	}
  }
  
+diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
+index 3ada48e12c2c..11bd602bdee5 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
 @@ -48,6 +48,10 @@ enum TRI_STATE {
@@ -319,7 +325,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	struct u64_stats_sync syncp;
  };
  
-@@ -331,6 +343,12 @@ struct mana_tx_qp {
+@@ -334,6 +346,12 @@ struct mana_tx_qp {
  struct mana_ethtool_stats {
  	u64 stop_queue;
  	u64 wake_queue;
@@ -332,3 +338,6 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  };
  
  struct mana_context {
+-- 
+2.49.0
+

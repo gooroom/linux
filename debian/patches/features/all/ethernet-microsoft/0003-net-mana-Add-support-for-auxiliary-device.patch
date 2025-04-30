@@ -1,7 +1,7 @@
-From 63ea159035f1c00da99016a1c71380d90f156ad4 Mon Sep 17 00:00:00 2001
+From c71235ece1c06792ace0ab231d50a05793ba1cff Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Thu, 3 Nov 2022 12:16:19 -0700
-Subject: [PATCH 03/23] net: mana: Add support for auxiliary device
+Subject: [PATCH 03/44] net: mana: Add support for auxiliary device
 
 In preparation for supporting MANA RDMA driver, add support for auxiliary
 device in the Ethernet driver. The RDMA device is modeled as an auxiliary
@@ -22,6 +22,8 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  4 files changed, 95 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
 
+diff --git a/drivers/net/ethernet/microsoft/Kconfig b/drivers/net/ethernet/microsoft/Kconfig
+index 8b6c4cc37c53..01eb7445ead9 100644
 --- a/drivers/net/ethernet/microsoft/Kconfig
 +++ b/drivers/net/ethernet/microsoft/Kconfig
 @@ -19,6 +19,7 @@ config MICROSOFT_MANA
@@ -32,6 +34,8 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	select PAGE_POOL
  	help
  	  This driver supports Microsoft Azure Network Adapter (MANA).
+diff --git a/drivers/net/ethernet/microsoft/mana/gdma.h b/drivers/net/ethernet/microsoft/mana/gdma.h
+index 68684a8bcead..df0ffe35db92 100644
 --- a/drivers/net/ethernet/microsoft/mana/gdma.h
 +++ b/drivers/net/ethernet/microsoft/mana/gdma.h
 @@ -204,6 +204,8 @@ struct gdma_dev {
@@ -43,6 +47,9 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  };
  
  #define MINIMUM_SUPPORTED_PAGE_SIZE PAGE_SIZE
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h b/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
+new file mode 100644
+index 000000000000..373d59756846
 --- /dev/null
 +++ b/drivers/net/ethernet/microsoft/mana/mana_auxiliary.h
 @@ -0,0 +1,10 @@
@@ -56,6 +63,8 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
 +	struct auxiliary_device adev;
 +	struct gdma_dev *mdev;
 +};
+diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
+index 8bf4919dc960..4c14a4e15188 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
 @@ -14,6 +14,19 @@
@@ -78,7 +87,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  
  /* Microsoft Azure Network Adapter (MANA) functions */
  
-@@ -2145,6 +2158,69 @@ free_net:
+@@ -2155,6 +2168,69 @@ static int mana_probe_port(struct mana_context *ac, int port_idx,
  	return err;
  }
  
@@ -148,7 +157,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  int mana_probe(struct gdma_dev *gd, bool resuming)
  {
  	struct gdma_context *gc = gd->gdma_context;
-@@ -2212,6 +2288,8 @@ int mana_probe(struct gdma_dev *gd, bool
+@@ -2222,6 +2298,8 @@ int mana_probe(struct gdma_dev *gd, bool resuming)
  				break;
  		}
  	}
@@ -157,7 +166,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  out:
  	if (err)
  		mana_remove(gd, false);
-@@ -2228,6 +2306,10 @@ void mana_remove(struct gdma_dev *gd, bo
+@@ -2238,6 +2316,10 @@ void mana_remove(struct gdma_dev *gd, bool suspending)
  	int err;
  	int i;
  
@@ -168,7 +177,7 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  	for (i = 0; i < ac->num_ports; i++) {
  		ndev = ac->ports[i];
  		if (!ndev) {
-@@ -2260,7 +2342,6 @@ void mana_remove(struct gdma_dev *gd, bo
+@@ -2270,7 +2352,6 @@ void mana_remove(struct gdma_dev *gd, bool suspending)
  	}
  
  	mana_destroy_eq(ac);
@@ -176,3 +185,6 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  out:
  	mana_gd_deregister_device(gd);
  
+-- 
+2.49.0
+

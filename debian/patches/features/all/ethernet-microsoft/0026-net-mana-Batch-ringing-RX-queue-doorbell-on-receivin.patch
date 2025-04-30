@@ -1,7 +1,7 @@
-From ad96bbb0b221f0cc22fba13a28234636bf7fb9f5 Mon Sep 17 00:00:00 2001
+From 37f08d570a33040979908d4140e5f2a499cff4c0 Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Mon, 17 Jul 2023 12:35:38 -0700
-Subject: [PATCH 26/30] net: mana: Batch ringing RX queue doorbell on receiving
+Subject: [PATCH 26/44] net: mana: Batch ringing RX queue doorbell on receiving
  packets
 
 It's inefficient to ring the doorbell page every time a WQE is posted to
@@ -30,10 +30,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 7d82b8949a1e..75c1f81ce64f 100644
+index a1c8b3c9a1ef..d982af3093e8 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -1387,8 +1387,8 @@ static void mana_post_pkt_rxq(struct mana_rxq *rxq)
+@@ -1392,8 +1392,8 @@ static void mana_post_pkt_rxq(struct mana_rxq *rxq)
  
  	recv_buf_oob = &rxq->rx_oobs[curr_index];
  
@@ -44,7 +44,7 @@ index 7d82b8949a1e..75c1f81ce64f 100644
  	if (WARN_ON_ONCE(err))
  		return;
  
-@@ -1660,6 +1660,12 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1665,6 +1665,12 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
  		mana_process_rx_cqe(rxq, cq, &comp[i]);
  	}
  
@@ -58,5 +58,5 @@ index 7d82b8949a1e..75c1f81ce64f 100644
  		xdp_do_flush();
  }
 -- 
-2.40.1
+2.49.0
 

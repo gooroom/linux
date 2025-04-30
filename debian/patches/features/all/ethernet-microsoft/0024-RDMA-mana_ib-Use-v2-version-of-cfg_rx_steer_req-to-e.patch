@@ -1,7 +1,7 @@
-From 672aac0622254a8f1f5f9d2aa8cee2319654d083 Mon Sep 17 00:00:00 2001
+From e7c7356cd3b173f06d67b2cba44b94be266d0191 Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Sat, 13 May 2023 23:18:15 -0700
-Subject: [PATCH 24/30] RDMA/mana_ib: Use v2 version of cfg_rx_steer_req to
+Subject: [PATCH 24/44] RDMA/mana_ib: Use v2 version of cfg_rx_steer_req to
  enable RX coalescing
 
 With RX coalescing, one CQE entry can be used to indicate multiple packets
@@ -22,10 +22,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 808dbf55beef..7d82b8949a1e 100644
+index 5000bff40704..a1c8b3c9a1ef 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -981,7 +981,7 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
+@@ -982,7 +982,7 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
  				   bool update_tab)
  {
  	u16 num_entries = MANA_INDIRECT_TABLE_SIZE;
@@ -34,7 +34,7 @@ index 808dbf55beef..7d82b8949a1e 100644
  	struct mana_cfg_rx_steer_resp resp = {};
  	struct net_device *ndev = apc->ndev;
  	mana_handle_t *req_indir_tab;
-@@ -996,6 +996,8 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
+@@ -997,6 +997,8 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
  	mana_gd_init_req_hdr(&req->hdr, MANA_CONFIG_VPORT_RX, req_buf_size,
  			     sizeof(resp));
  
@@ -43,7 +43,7 @@ index 808dbf55beef..7d82b8949a1e 100644
  	req->vport = apc->port_handle;
  	req->num_indir_entries = num_entries;
  	req->indir_tab_offset = sizeof(*req);
-@@ -1005,6 +1007,7 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
+@@ -1006,6 +1008,7 @@ static int mana_cfg_vport_steering(struct mana_port_context *apc,
  	req->update_hashkey = update_key;
  	req->update_indir_tab = update_tab;
  	req->default_rxobj = apc->default_rxobj;
@@ -52,10 +52,10 @@ index 808dbf55beef..7d82b8949a1e 100644
  	if (update_key)
  		memcpy(&req->hashkey, apc->hashkey, MANA_HASH_KEY_SIZE);
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 3abfce420594..46b5769a5b6a 100644
+index 9cd1b085281b..5d55e0bdaa81 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -576,7 +576,7 @@ struct mana_fence_rq_resp {
+@@ -579,7 +579,7 @@ struct mana_fence_rq_resp {
  }; /* HW DATA */
  
  /* Configure vPort Rx Steering */
@@ -64,7 +64,7 @@ index 3abfce420594..46b5769a5b6a 100644
  	struct gdma_req_hdr hdr;
  	mana_handle_t vport;
  	u16 num_indir_entries;
-@@ -589,6 +589,8 @@ struct mana_cfg_rx_steer_req {
+@@ -592,6 +592,8 @@ struct mana_cfg_rx_steer_req {
  	u8 reserved;
  	mana_handle_t default_rxobj;
  	u8 hashkey[MANA_HASH_KEY_SIZE];
@@ -74,5 +74,5 @@ index 3abfce420594..46b5769a5b6a 100644
  
  struct mana_cfg_rx_steer_resp {
 -- 
-2.40.1
+2.49.0
 

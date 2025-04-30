@@ -1,7 +1,7 @@
-From a6967df15a72ffd53963492b8cf52438cf0c27f7 Mon Sep 17 00:00:00 2001
+From 7b5230b30aa3665275ea91fef6fdb171a04e51df Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Fri, 26 May 2023 08:38:57 -0700
-Subject: [PATCH 22/23] net: mana: Fix perf regression: remove rx_cqes, tx_cqes
+Subject: [PATCH 22/44] net: mana: Fix perf regression: remove rx_cqes, tx_cqes
  counters
 
 The apc->eth_stats.rx_cqes is one per NIC (vport), and it's on the
@@ -39,10 +39,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  3 files changed, 14 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index fc19e62c9c84..25b17213e54d 100644
+index 8ca95633f845..cde9226ed139 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -1280,8 +1280,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1281,8 +1281,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  	if (comp_read < 1)
  		return;
  
@@ -51,7 +51,7 @@ index fc19e62c9c84..25b17213e54d 100644
  	for (i = 0; i < comp_read; i++) {
  		struct mana_tx_comp_oob *cqe_oob;
  
-@@ -1364,8 +1362,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1369,8 +1367,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
  		WARN_ON_ONCE(1);
  
  	cq->work_done = pkt_transmitted;
@@ -60,7 +60,7 @@ index fc19e62c9c84..25b17213e54d 100644
  }
  
  static void mana_post_pkt_rxq(struct mana_rxq *rxq)
-@@ -1629,15 +1625,11 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1634,15 +1630,11 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
  {
  	struct gdma_comp *comp = cq->gdma_comp_buf;
  	struct mana_rxq *rxq = cq->rxq;
@@ -76,7 +76,7 @@ index fc19e62c9c84..25b17213e54d 100644
  	rxq->xdp_flush = false;
  
  	for (i = 0; i < comp_read; i++) {
-@@ -1649,8 +1641,6 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1654,8 +1646,6 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
  			return;
  
  		mana_process_rx_cqe(rxq, cq, &comp[i]);
@@ -102,10 +102,10 @@ index a64c81410dc1..0dc78679f620 100644
  					rx_coalesced_err)},
  	{"rx_cqe_unknown_type", offsetof(struct mana_ethtool_stats,
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 4f19d73b66ae..3abfce420594 100644
+index 4ffb1ced9e19..9cd1b085281b 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -347,10 +347,8 @@ struct mana_tx_qp {
+@@ -350,10 +350,8 @@ struct mana_tx_qp {
  struct mana_ethtool_stats {
  	u64 stop_queue;
  	u64 wake_queue;
@@ -117,5 +117,5 @@ index 4f19d73b66ae..3abfce420594 100644
  	u64 rx_cqe_unknown_type;
  };
 -- 
-2.40.1
+2.49.0
 

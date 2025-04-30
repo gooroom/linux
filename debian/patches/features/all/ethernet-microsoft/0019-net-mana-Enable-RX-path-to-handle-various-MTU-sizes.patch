@@ -1,7 +1,7 @@
-From 8640f747acafd65c43be07bd7db9a431b5926db3 Mon Sep 17 00:00:00 2001
+From 3c0274a0f4e4380ad2bf796f846ae4a9540b3866 Mon Sep 17 00:00:00 2001
 From: Haiyang Zhang <haiyangz@microsoft.com>
 Date: Wed, 12 Apr 2023 14:16:02 -0700
-Subject: [PATCH 19/23] net: mana: Enable RX path to handle various MTU sizes
+Subject: [PATCH 19/44] net: mana: Enable RX path to handle various MTU sizes
 
 Update RX data path to allocate and use RX queue DMA buffers with
 proper size based on potentially various MTU sizes.
@@ -17,10 +17,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  2 files changed, 35 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index af0c0ee95d87..afbbe447de1d 100644
+index 7b957573e155..966baac0d3d5 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -1185,10 +1185,10 @@ static void mana_post_pkt_rxq(struct mana_rxq *rxq)
+@@ -1190,10 +1190,10 @@ static void mana_post_pkt_rxq(struct mana_rxq *rxq)
  	WARN_ON_ONCE(recv_buf_oob->wqe_inf.wqe_size_in_bu != 1);
  }
  
@@ -34,7 +34,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  
  	if (!skb)
  		return NULL;
-@@ -1196,11 +1196,12 @@ static struct sk_buff *mana_build_skb(void *buf_va, uint pkt_len,
+@@ -1201,11 +1201,12 @@ static struct sk_buff *mana_build_skb(void *buf_va, uint pkt_len,
  	if (xdp->data_hard_start) {
  		skb_reserve(skb, xdp->data - xdp->data_hard_start);
  		skb_put(skb, xdp->data_end - xdp->data);
@@ -50,7 +50,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  	return skb;
  }
  
-@@ -1233,7 +1234,7 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
+@@ -1238,7 +1239,7 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
  	if (act != XDP_PASS && act != XDP_TX)
  		goto drop_xdp;
  
@@ -59,7 +59,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  
  	if (!skb)
  		goto drop;
-@@ -1301,6 +1302,14 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1306,6 +1307,14 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
  	if (rxq->xdp_save_va) {
  		va = rxq->xdp_save_va;
  		rxq->xdp_save_va = NULL;
@@ -74,7 +74,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  	} else {
  		page = dev_alloc_page();
  		if (!page)
-@@ -1309,7 +1318,7 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1314,7 +1323,7 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
  		va = page_to_virt(page);
  	}
  
@@ -83,7 +83,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  			     DMA_FROM_DEVICE);
  
  	if (dma_mapping_error(dev, *da)) {
-@@ -1732,7 +1741,7 @@ static int mana_alloc_rx_wqe(struct mana_port_context *apc,
+@@ -1747,7 +1756,7 @@ static int mana_alloc_rx_wqe(struct mana_port_context *apc,
  	u32 buf_idx;
  	int ret;
  
@@ -92,7 +92,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  
  	*rxq_size = 0;
  	*cq_size = 0;
-@@ -1788,6 +1797,7 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
+@@ -1803,6 +1812,7 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
  	struct gdma_dev *gd = apc->ac->gdma_dev;
  	struct mana_obj_spec wq_spec;
  	struct mana_obj_spec cq_spec;
@@ -100,7 +100,7 @@ index af0c0ee95d87..afbbe447de1d 100644
  	struct gdma_queue_spec spec;
  	struct mana_cq *cq = NULL;
  	struct gdma_context *gc;
-@@ -1807,7 +1817,15 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
+@@ -1822,7 +1832,15 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
  	rxq->rxq_idx = rxq_idx;
  	rxq->rxobj = INVALID_MANA_HANDLE;
  
@@ -118,10 +118,10 @@ index af0c0ee95d87..afbbe447de1d 100644
  	err = mana_alloc_rx_wqe(apc, rxq, &rq_size, &cq_size);
  	if (err)
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index da556246233e..42795849d68c 100644
+index e4a953c6c73a..c30a1390e78b 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -291,6 +291,11 @@ struct mana_recv_buf_oob {
+@@ -294,6 +294,11 @@ struct mana_recv_buf_oob {
  	struct gdma_posted_wqe_info wqe_inf;
  };
  
@@ -133,7 +133,7 @@ index da556246233e..42795849d68c 100644
  struct mana_rxq {
  	struct gdma_queue *gdma_rq;
  	/* Cache the gdma receive queue id */
-@@ -300,6 +305,8 @@ struct mana_rxq {
+@@ -303,6 +308,8 @@ struct mana_rxq {
  	u32 rxq_idx;
  
  	u32 datasize;
@@ -143,5 +143,5 @@ index da556246233e..42795849d68c 100644
  	mana_handle_t rxobj;
  
 -- 
-2.40.1
+2.49.0
 

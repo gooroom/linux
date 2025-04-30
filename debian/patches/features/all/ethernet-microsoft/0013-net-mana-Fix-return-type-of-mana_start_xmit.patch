@@ -1,7 +1,7 @@
-From 37ec026c96afe1091f91d40515a91463ea50c150 Mon Sep 17 00:00:00 2001
+From d8eb3c5f56162d221d07432929866d9dd5f36ebe Mon Sep 17 00:00:00 2001
 From: Nathan Huckleberry <nhuck@google.com>
 Date: Tue, 8 Nov 2022 17:26:30 -0700
-Subject: [PATCH 13/23] net: mana: Fix return type of mana_start_xmit()
+Subject: [PATCH 13/44] net: mana: Fix return type of mana_start_xmit()
 
 The ndo_start_xmit field in net_device_ops is expected to be of type
 netdev_tx_t (*ndo_start_xmit)(struct sk_buff *skb, struct net_device *dev).
@@ -36,10 +36,10 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 9bce13714b25..2f6a048dee90 100644
+index 9eaa53f00ca1..8de0a7fbbdd9 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -141,7 +141,7 @@ static int mana_map_skb(struct sk_buff *skb, struct mana_port_context *apc,
+@@ -142,7 +142,7 @@ static int mana_map_skb(struct sk_buff *skb, struct mana_port_context *apc,
  	return -ENOMEM;
  }
  
@@ -49,10 +49,10 @@ index 9bce13714b25..2f6a048dee90 100644
  	enum mana_tx_pkt_format pkt_fmt = MANA_SHORT_PKT_FMT;
  	struct mana_port_context *apc = netdev_priv(ndev);
 diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 713a8f8cca9a..575ea36ce606 100644
+index a3baf498df67..3ada48e12c2c 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
-@@ -390,7 +390,7 @@ struct mana_port_context {
+@@ -393,7 +393,7 @@ struct mana_port_context {
  	struct mana_ethtool_stats eth_stats;
  };
  
@@ -62,5 +62,5 @@ index 713a8f8cca9a..575ea36ce606 100644
  		    bool update_hash, bool update_tab);
  
 -- 
-2.40.1
+2.49.0
 

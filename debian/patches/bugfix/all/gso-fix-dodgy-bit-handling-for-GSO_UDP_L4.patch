@@ -1,0 +1,80 @@
+From: Yan Zhai <yan@cloudflare.com>
+Date: Thu, 13 Jul 2023 10:28:00 -0700
+Subject: gso: fix dodgy bit handling for GSO_UDP_L4
+Origin: https://git.kernel.org/linus/9840036786d90cea11a90d1f30b6dc003b34ee67
+
+Commit 1fd54773c267 ("udp: allow header check for dodgy GSO_UDP_L4
+packets.") checks DODGY bit for UDP, but for packets that can be fed
+directly to the device after gso_segs reset, it actually falls through
+to fragmentation:
+
+https://lore.kernel.org/all/CAJPywTKDdjtwkLVUW6LRA2FU912qcDmQOQGt2WaDo28KzYDg+A@mail.gmail.com/
+
+This change restores the expected behavior of GSO_UDP_L4 packets.
+
+Fixes: 1fd54773c267 ("udp: allow header check for dodgy GSO_UDP_L4 packets.")
+Suggested-by: Willem de Bruijn <willemdebruijn.kernel@gmail.com>
+Signed-off-by: Yan Zhai <yan@cloudflare.com>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Acked-by: Jason Wang <jasowang@redhat.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/ipv4/udp_offload.c | 16 +++++++++++-----
+ net/ipv6/udp_offload.c |  3 +--
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+diff --git a/net/ipv4/udp_offload.c b/net/ipv4/udp_offload.c
+index 75aa4de5b731..f402946da344 100644
+--- a/net/ipv4/udp_offload.c
++++ b/net/ipv4/udp_offload.c
+@@ -274,13 +274,20 @@ struct sk_buff *__udp_gso_segment(struct sk_buff *gso_skb,
+ 	__sum16 check;
+ 	__be16 newlen;
+ 
+-	if (skb_shinfo(gso_skb)->gso_type & SKB_GSO_FRAGLIST)
+-		return __udp_gso_segment_list(gso_skb, features, is_ipv6);
+-
+ 	mss = skb_shinfo(gso_skb)->gso_size;
+ 	if (gso_skb->len <= sizeof(*uh) + mss)
+ 		return ERR_PTR(-EINVAL);
+ 
++	if (skb_gso_ok(gso_skb, features | NETIF_F_GSO_ROBUST)) {
++		/* Packet is from an untrusted source, reset gso_segs. */
++		skb_shinfo(gso_skb)->gso_segs = DIV_ROUND_UP(gso_skb->len - sizeof(*uh),
++							     mss);
++		return NULL;
++	}
++
++	if (skb_shinfo(gso_skb)->gso_type & SKB_GSO_FRAGLIST)
++		return __udp_gso_segment_list(gso_skb, features, is_ipv6);
++
+ 	skb_pull(gso_skb, sizeof(*uh));
+ 
+ 	/* clear destructor to avoid skb_segment assigning it to tail */
+@@ -388,8 +395,7 @@ static struct sk_buff *udp4_ufo_fragment(struct sk_buff *skb,
+ 	if (!pskb_may_pull(skb, sizeof(struct udphdr)))
+ 		goto out;
+ 
+-	if (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4 &&
+-	    !skb_gso_ok(skb, features | NETIF_F_GSO_ROBUST))
++	if (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4)
+ 		return __udp_gso_segment(skb, features, false);
+ 
+ 	mss = skb_shinfo(skb)->gso_size;
+diff --git a/net/ipv6/udp_offload.c b/net/ipv6/udp_offload.c
+index ad3b8726873e..09fa7a42cb93 100644
+--- a/net/ipv6/udp_offload.c
++++ b/net/ipv6/udp_offload.c
+@@ -43,8 +43,7 @@ static struct sk_buff *udp6_ufo_fragment(struct sk_buff *skb,
+ 		if (!pskb_may_pull(skb, sizeof(struct udphdr)))
+ 			goto out;
+ 
+-		if (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4 &&
+-		    !skb_gso_ok(skb, features | NETIF_F_GSO_ROBUST))
++		if (skb_shinfo(skb)->gso_type & SKB_GSO_UDP_L4)
+ 			return __udp_gso_segment(skb, features, true);
+ 
+ 		mss = skb_shinfo(skb)->gso_size;
+-- 
+2.45.2
+
