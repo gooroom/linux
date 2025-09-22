@@ -1,11 +1,9 @@
 #!/usr/bin/python3
 
-import hashlib
 import json
 import os.path
 import pathlib
 import re
-import ssl
 import subprocess
 import sys
 
@@ -28,8 +26,10 @@ class Gencontrol(Base):
         self.version = VersionLinux(config_entry['source'])
 
         # Check config version matches changelog version
-        assert self.version.complete == re.sub(r'\+b\d+$', r'',
-                                               image_binary_version)
+        # Gooroom: Also strip +grmXuY suffix for version comparison
+        changelog_version = re.sub(r'\+b\d+$', r'', image_binary_version)
+        changelog_version = re.sub(r'\+grm\w+$', r'', changelog_version)
+        assert self.version.complete == changelog_version
 
         self.abiname = config_entry['abiname']
         self.vars = {
@@ -122,9 +122,7 @@ class Gencontrol(Base):
     def do_arch_setup(self, vars, makeflags, arch, extra):
         super(Gencontrol, self).do_main_setup(vars, makeflags, extra)
 
-        abiname_part = '-%s' % self.config.merge('abi', arch)['abiname']
-        makeflags['ABINAME'] = vars['abiname'] = \
-            self.config['version', ]['abiname_base'] + abiname_part
+        makeflags['ABINAME'] = vars['abiname']
 
     def do_arch_packages(self, arch, vars, makeflags, extra):
         udeb_packages = self.installer_packages.get(arch, [])
@@ -275,63 +273,14 @@ linux-signed@source_suffix@-@arch@ (@signedsourceversion@) @distribution@; urgen
                     f.write(d)
 
     def write_files_json(self):
-        # Can't raise from a lambda function :-(
-        def raise_func(e):
-            raise e
-
-        # Some functions in openssl work with multiple concatenated
-        # PEM-format certificates, but others do not.
-        def get_certs(file_name):
-            certs = []
-            BEGIN, MIDDLE = 0, 1
-            state = BEGIN
-            with open(file_name) as f:
-                for line in f:
-                    if line == '-----BEGIN CERTIFICATE-----\n':
-                        assert state == BEGIN
-                        certs.append([])
-                        state = MIDDLE
-                    elif line == '-----END CERTIFICATE-----\n':
-                        assert state == MIDDLE
-                        state = BEGIN
-                    else:
-                        assert line[0] != '-'
-                        assert state == MIDDLE
-                    certs[-1].append(line)
-            assert state == BEGIN
-            return [''.join(cert_lines) for cert_lines in certs]
-
-        def get_cert_fingerprint(cert, algo):
-            hasher = hashlib.new(algo)
-            hasher.update(ssl.PEM_cert_to_DER_cert(cert))
-            return hasher.hexdigest()
-
         all_files = {'packages': {}}
 
-        for image_suffix, image_package_name, cert_file_name in \
-                self.image_packages:
-            package_dir = 'debian/%s' % image_package_name
+        for image_suffix, image_package_name in self.image_packages:
             package_files = []
-            package_modules = []
             package_files.append({'sig_type': 'efi',
                                   'file': 'boot/vmlinuz-%s' % image_suffix})
-            for root, dirs, files in os.walk('%s/lib/modules' % package_dir,
-                                             onerror=raise_func):
-                for name in files:
-                    if name.endswith('.ko'):
-                        package_modules.append(
-                            '%s/%s' %
-                            (root[(len(package_dir) + 1):], name))
-            package_modules.sort()
-            for module in package_modules:
-                package_files.append(
-                    {'sig_type': 'linux-module',
-                     'file': module})
-            package_certs = [get_cert_fingerprint(cert, 'sha256')
-                             for cert in get_certs(cert_file_name)]
-            assert len(package_certs) >= 1
             all_files['packages'][image_package_name] = {
-                'trusted_certs': package_certs,
+                'trusted_certs': [],
                 'files': package_files
             }
 

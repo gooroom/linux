@@ -1,9 +1,9 @@
-From e3e02a3e0d07f51e256b55e64ff4c2deaf57dec9 Mon Sep 17 00:00:00 2001
+From bbe10348cd31b1680733525990f0dbc5d9727354 Mon Sep 17 00:00:00 2001
 From: Frederic Weisbecker <frederic@kernel.org>
 Date: Tue, 5 Apr 2022 03:07:51 +0200
-Subject: [PATCH 13/69] rcutorture: Also force sched priority to timersd on
+Subject: [PATCH 13/68] rcutorture: Also force sched priority to timersd on
  boosting test.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
 
 ksoftirqd is statically boosted to the priority level right above the
 one of rcu_torture_boost() so that timers, which torture readers rely on,
@@ -35,7 +35,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
-index 0efba74a835c..f459b0f27c94 100644
+index b0da2976f899..c84f90a15f48 100644
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
 @@ -610,6 +610,7 @@ extern void raise_softirq_irqoff(unsigned int nr);
@@ -64,10 +64,10 @@ index c14517912cfa..8cebf6d8f10d 100644
  
  	/* Don't allow time recalculation while creating a new task. */
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 82bc8a20ebf2..800b0cc57a37 100644
+index 92cc1de67205..5b436a4be593 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -642,7 +642,7 @@ static inline void tick_irq_exit(void)
+@@ -667,7 +667,7 @@ static inline void tick_irq_exit(void)
  }
  
  #ifdef CONFIG_PREEMPT_RT
@@ -77,5 +77,5 @@ index 82bc8a20ebf2..800b0cc57a37 100644
  
  static unsigned int local_pending_timers(void)
 -- 
-2.48.1
+2.49.0
 

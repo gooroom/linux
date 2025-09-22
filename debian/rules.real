@@ -68,6 +68,7 @@ source: $(STAMPS_DIR)/source_$(FEATURESET)
 $(BUILD_DIR)/config.$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(KCONFIG)
 	mkdir -p '$(dir $@)'
 	debian/bin/kconfig.py '$@' $(KCONFIG) $(KCONFIG_OPTIONS) \
+		-o MODULE_SIG_KEY=\"output/signing_key.pem\" \
 		$(call if_profile, pkg.linux.nokerneldbginfo pkg.linux.quick,-o DEBUG_INFO_NONE=y -o DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=n)
 
 define copy_source
@@ -159,14 +160,41 @@ endif
 	echo 'DEBIAN_KERNEL_NO_CC_VERSION_CHECK = y' >> '$(DIR)/.kernelvariables'
 	+$(MAKE_CLEAN) -C '$(SOURCE_DIR)' O='$(CURDIR)/$(DIR)' listnewconfig
 	+yes "" | $(MAKE_CLEAN) -C '$(SOURCE_DIR)' O='$(CURDIR)/$(DIR)' oldconfig >/dev/null
+	debian/bin/buildcheck.py $(DIR) $(ARCH) $(FEATURESET) $(FLAVOUR) setup
 	@$(stamp)
 
 $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR): DIR=$(BUILD_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
+$(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR): OUTPUT_DIR=$(DIR)/output/image
+$(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR): OUTPUT_DIR_DBG=$(DIR)/output/image-dbg
+$(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR): export KBUILD_SIGN_PIN = $(shell dd if=/dev/random bs=16 count=1 status=none | base64)
 $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR): $(STAMPS_DIR)/setup_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
-
 $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR):
+	rm -rf '$(DIR)/output'
+	install -d '$(DIR)/output'
+
+	openssl req -new -utf8 -sha256 -days 36500 \
+		-batch -x509 -config certs/default_x509.genkey \
+		-passout env:KBUILD_SIGN_PIN \
+		-outform PEM -out $(DIR)/output/signing_key.pem \
+		-keyout $(DIR)/output/signing_key.pem \
+		-newkey ec -pkeyopt ec_paramgen_curve:secp384r1 2>&1
+
 	+$(MAKE_CLEAN) -C '$(DIR)'
-	debian/bin/buildcheck.py $(DIR) $(ARCH) $(FEATURESET) $(FLAVOUR)
+	debian/bin/buildcheck.py $(DIR) $(ARCH) $(FEATURESET) $(FLAVOUR) build
+
+	+$(MAKE_CLEAN) -C $(DIR) modules_install \
+		DEPMOD='$(CURDIR)/debian/bin/no-depmod' \
+		INSTALL_MOD_PATH='$(CURDIR)/$(OUTPUT_DIR)' \
+		INSTALL_MOD_STRIP=1
+
+	rm $(DIR)/output/signing_key.pem
+
+# cmd_sign=: Don't sign modules
+	+$(MAKE_CLEAN) -C $(DIR) modules_install \
+		cmd_sign= \
+		DEPMOD='$(CURDIR)/debian/bin/no-depmod' \
+		INSTALL_MOD_PATH='$(CURDIR)/$(OUTPUT_DIR_DBG)/usr/lib/debug'
+
 	@$(stamp)
 
 $(STAMPS_DIR)/build-doc: DIR=$(BUILD_DIR)/build-doc
@@ -367,7 +395,15 @@ endif
 	+$(MAKE_SELF) \
 	  binary_image_dt \
 	  DIR='$(DIR)' DESTDIR='$(DESTDIR)' REAL_VERSION='$(REAL_VERSION)'
-	+$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH=$(DESTDIR) INSTALL_MOD_STRIP=1
+	dh_install --sourcedir=$(DIR)/output/image lib
+
+	# Gooroom: Check if module signing should be disabled
+	+@if [ -f debian/.disable-module-signing ] || [ "$$DISABLE_MODULE_SIGNING" = "1" ]; then \
+		echo "[Gooroom] Installing modules without signing..."; \
+		$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH=$(DESTDIR) INSTALL_MOD_STRIP=1 CONFIG_MODULE_SIG_ALL=; \
+	else \
+		$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH=$(DESTDIR) INSTALL_MOD_STRIP=1; \
+	fi
 ifeq ($(call if_package,linux-image-$(ABINAME)$(LOCALVERSION)-dbg,y),y)
 # We are building debug info, so add debug links
 	set -o pipefail; \
@@ -376,7 +412,8 @@ ifeq ($(call if_package,linux-image-$(ABINAME)$(LOCALVERSION)-dbg,y),y)
 	done
 # stripping the modules removes signatures as well - if automated signing is enabled with
 # an ephemeral key, re-do the sign step
-	+if grep -qs '^CONFIG_MODULE_SIG_ALL=y' $(DIR)/.config; then \
+# Gooroom: Skip re-signing if module signing is disabled
+	+if grep -qs '^CONFIG_MODULE_SIG_ALL=y' $(DIR)/.config && [ ! -f debian/.disable-module-signing ] && [ "$$DISABLE_MODULE_SIGNING" != "1" ]; then \
 		$(MAKE_CLEAN) -C $(DIR) modules_sign INSTALL_MOD_PATH=$(DESTDIR); \
 	fi
 endif
@@ -435,7 +472,17 @@ binary_image-dbg: $(STAMPS_DIR)/build_$(ARCH)_$(FEATURESET)_$(FLAVOUR)
 	dh_installdirs usr/lib/debug usr/lib/debug/boot usr/share/lintian/overrides/
 	install -m644 $(DIR)/vmlinux $(DEBUG_DIR)/boot/vmlinux-$(REAL_VERSION)
 	install -m644 $(DIR)/System.map $(DEBUG_DIR)/boot/System.map-$(REAL_VERSION)
-	+$(MAKE_CLEAN) -C $(DIR) modules_install DEPMOD='$(CURDIR)/debian/bin/no-depmod' INSTALL_MOD_PATH=$(DEBUG_DIR)
+
+	dh_install --sourcedir=$(DIR)/output/image-dbg usr/lib/debug
+
+# Verify we don't have any signed modules installed
+	@if find $(DEBUG_DIR)/lib/modules/$(REAL_VERSION) -name '*.ko' | xargs grep -q '~Module signature appended~'; then \
+		echo; \
+		echo 'Signed modules to be installed into debug package $(PACKAGE_NAME)'; \
+		echo; \
+		exit 1; \
+	fi
+
 	find $(DEBUG_DIR)/lib/modules/$(REAL_VERSION)/ -mindepth 1 -maxdepth 1 \! -name kernel -exec rm {} \+
 	rm $(DEBUG_DIR)/lib/firmware -rf
 ifeq ($(VDSO),True)
@@ -461,21 +508,9 @@ build_signed-template:
 
 binary_signed-template: CODE_SIGNING_DIR = $(DESTDIR)/usr/share/code-signing/$(PACKAGE_NAME)
 binary_signed-template:
-	dh_testdir
-	dh_testroot
-	dh_prep
-	rm -rf $(CODE_SIGNING_DIR)
-	mkdir -p $(CODE_SIGNING_DIR)
-	PYTHONHASHSEED=0 debian/bin/gencontrol_signed.py $(ARCH)
-	cp -R	debian/copyright \
-		debian/linux-image.NEWS \
-		debian/signing_templates/README.source \
-		debian/signing_templates/rules \
-		debian/signing_templates/rules.real \
-		debian/signing_templates/sign-file-attach \
-		debian/signing_templates/source \
-		$(CODE_SIGNING_DIR)/source-template/debian/
-	+$(MAKE_SELF) install-base
+# Gooroom: Skip signed-template build for Jenkins
+	@echo "[Gooroom] Skipping signed-template build (no signing infrastructure)"
+	@exit 0
 
 build_udeb:
 build_udeb_test:

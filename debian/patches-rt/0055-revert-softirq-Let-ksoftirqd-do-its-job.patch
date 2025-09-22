@@ -1,8 +1,8 @@
-From f56c639bdc1bf0304cfeff0fc3e4dcb8d41d2ecf Mon Sep 17 00:00:00 2001
+From 1ccbfbb6e5e51e740203a2cfe986d1db8c34255d Mon Sep 17 00:00:00 2001
 From: Paolo Abeni <pabeni@redhat.com>
 Date: Mon, 8 May 2023 08:17:44 +0200
-Subject: [PATCH 55/69] revert: "softirq: Let ksoftirqd do its job"
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
+Subject: [PATCH 55/68] revert: "softirq: Let ksoftirqd do its job"
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
 
 Due to the mentioned commit, when the ksoftirqd processes take charge
 of softirq processing, the system can experience high latencies.
@@ -50,7 +50,7 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  1 file changed, 2 insertions(+), 20 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 24d0cb2a2338..e1a6e53a8ceb 100644
+index 8a3cb530a9fd..911d0627970d 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -80,21 +80,6 @@ static void wakeup_softirqd(void)
@@ -75,7 +75,7 @@ index 24d0cb2a2338..e1a6e53a8ceb 100644
  #ifdef CONFIG_TRACE_IRQFLAGS
  DEFINE_PER_CPU(int, hardirqs_enabled);
  DEFINE_PER_CPU(int, hardirq_context);
-@@ -236,7 +221,7 @@ void __local_bh_enable_ip(unsigned long ip, unsigned int cnt)
+@@ -252,7 +237,7 @@ void __local_bh_enable_ip(unsigned long ip, unsigned int cnt)
  		goto out;
  
  	pending = local_softirq_pending();
@@ -84,7 +84,7 @@ index 24d0cb2a2338..e1a6e53a8ceb 100644
  		goto out;
  
  	/*
-@@ -432,9 +417,6 @@ static inline bool should_wake_ksoftirqd(void)
+@@ -457,9 +442,6 @@ static inline bool should_wake_ksoftirqd(void)
  
  static inline void invoke_softirq(void)
  {
@@ -94,7 +94,7 @@ index 24d0cb2a2338..e1a6e53a8ceb 100644
  	if (!force_irqthreads() || !__this_cpu_read(ksoftirqd)) {
  #ifdef CONFIG_HAVE_IRQ_EXIT_ON_IRQ_STACK
  		/*
-@@ -468,7 +450,7 @@ asmlinkage __visible void do_softirq(void)
+@@ -493,7 +475,7 @@ asmlinkage __visible void do_softirq(void)
  
  	pending = local_softirq_pending();
  
@@ -104,5 +104,5 @@ index 24d0cb2a2338..e1a6e53a8ceb 100644
  
  	local_irq_restore(flags);
 -- 
-2.48.1
+2.49.0
 

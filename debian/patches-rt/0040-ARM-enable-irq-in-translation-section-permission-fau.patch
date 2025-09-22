@@ -1,12 +1,12 @@
-From a4dffd1783a2b24396fbdf0f7ae5ce66a8179f4c Mon Sep 17 00:00:00 2001
+From 988cdadb6652b3c0a0eae6674bfcc6e1cab07d14 Mon Sep 17 00:00:00 2001
 From: "Yadi.hu" <yadi.hu@windriver.com>
 Date: Wed, 10 Dec 2014 10:32:09 +0800
-Subject: [PATCH 40/69] ARM: enable irq in translation/section permission fault
+Subject: [PATCH 40/68] ARM: enable irq in translation/section permission fault
  handlers
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
 
 Probably happens on all ARM, with
 CONFIG_PREEMPT_RT
@@ -69,10 +69,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+)
 
 diff --git a/arch/arm/mm/fault.c b/arch/arm/mm/fault.c
-index b0db85310331..77877dcb54ed 100644
+index 16a7765511f8..dfe21371d492 100644
 --- a/arch/arm/mm/fault.c
 +++ b/arch/arm/mm/fault.c
-@@ -400,6 +400,9 @@ do_translation_fault(unsigned long addr, unsigned int fsr,
+@@ -407,6 +407,9 @@ do_translation_fault(unsigned long addr, unsigned int fsr,
  	if (addr < TASK_SIZE)
  		return do_page_fault(addr, fsr, regs);
  
@@ -82,7 +82,7 @@ index b0db85310331..77877dcb54ed 100644
  	if (user_mode(regs))
  		goto bad_area;
  
-@@ -470,6 +473,9 @@ do_translation_fault(unsigned long addr, unsigned int fsr,
+@@ -477,6 +480,9 @@ do_translation_fault(unsigned long addr, unsigned int fsr,
  static int
  do_sect_fault(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
  {
@@ -93,5 +93,5 @@ index b0db85310331..77877dcb54ed 100644
  	return 0;
  }
 -- 
-2.48.1
+2.49.0
 

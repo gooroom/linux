@@ -1,9 +1,9 @@
-From 9ddef3458366eec5163a98212f2afb6b5cb27ca4 Mon Sep 17 00:00:00 2001
+From 69ba5506e5c5f6f82fb96ee3f365140e54a788a4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Aug 2022 16:17:37 +0200
-Subject: [PATCH 06/69] net: Remove the obsolte u64_stats_fetch_*_irq() users
+Subject: [PATCH 06/68] net: Remove the obsolte u64_stats_fetch_*_irq() users
  (net).
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
 
 Now that the 32bit UP oddity is gone and 32bit uses always a sequence
 count, there is no need for the fetch_irq() variants anymore.
@@ -33,10 +33,10 @@ Acked-by: Peter Zijlstra (Intel) <peterz@infradead.org>
  16 files changed, 44 insertions(+), 45 deletions(-)
 
 diff --git a/net/8021q/vlan_dev.c b/net/8021q/vlan_dev.c
-index d3e511e1eba8..0fa52bcc296b 100644
+index c08228d48834..a7126e1c21fe 100644
 --- a/net/8021q/vlan_dev.c
 +++ b/net/8021q/vlan_dev.c
-@@ -712,13 +712,13 @@ static void vlan_dev_get_stats64(struct net_device *dev,
+@@ -689,13 +689,13 @@ static void vlan_dev_get_stats64(struct net_device *dev,
  
  		p = per_cpu_ptr(vlan_dev_priv(dev)->vlan_pcpu_stats, i);
  		do {
@@ -69,10 +69,10 @@ index 3cd2b648408d..454cd7a21c31 100644
  		mcast_stats_add_dir(tdst.igmp_v1queries, temp.igmp_v1queries);
  		mcast_stats_add_dir(tdst.igmp_v2queries, temp.igmp_v2queries);
 diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
-index 9ffd40b8270c..bc75fa1e4666 100644
+index 23a82567fe62..5f8207275322 100644
 --- a/net/bridge/br_vlan.c
 +++ b/net/bridge/br_vlan.c
-@@ -1389,12 +1389,12 @@ void br_vlan_get_stats(const struct net_bridge_vlan *v,
+@@ -1391,12 +1391,12 @@ void br_vlan_get_stats(const struct net_bridge_vlan *v,
  
  		cpu_stats = per_cpu_ptr(v->stats, i);
  		do {
@@ -88,10 +88,10 @@ index 9ffd40b8270c..bc75fa1e4666 100644
  		u64_stats_add(&stats->rx_packets, rxpackets);
  		u64_stats_add(&stats->rx_bytes, rxbytes);
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 90559cb66803..b541291fd6ec 100644
+index 212a909b4840..8e57eae40221 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10577,12 +10577,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
+@@ -10608,12 +10608,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
  
  		stats = per_cpu_ptr(netstats, cpu);
  		do {
@@ -107,7 +107,7 @@ index 90559cb66803..b541291fd6ec 100644
  		s->rx_packets += rx_packets;
  		s->rx_bytes   += rx_bytes;
 diff --git a/net/core/drop_monitor.c b/net/core/drop_monitor.c
-index 522657b597d9..6445b93f60ad 100644
+index fef94f3b03de..2eade9268caf 100644
 --- a/net/core/drop_monitor.c
 +++ b/net/core/drop_monitor.c
 @@ -1432,9 +1432,9 @@ static void net_dm_stats_read(struct net_dm_stats *stats)
@@ -208,7 +208,7 @@ index f1c6bd727a83..f6b660604e29 100644
  		u64_stats_add(&stats->rx_packets, rx_packets);
  		u64_stats_add(&stats->rx_bytes, rx_bytes);
 diff --git a/net/dsa/slave.c b/net/dsa/slave.c
-index 5fe075bf479e..28ee63ec1d1d 100644
+index caeb7e75b287..e1782ac21b0d 100644
 --- a/net/dsa/slave.c
 +++ b/net/dsa/slave.c
 @@ -976,12 +976,12 @@ static void dsa_slave_get_ethtool_stats(struct net_device *dev,
@@ -307,7 +307,7 @@ index f1f43894efb8..dc5165d3eec4 100644
  		stats->rx_packets	+= local.rx_packets;
  		stats->rx_bytes		+= local.rx_bytes;
 diff --git a/net/netfilter/ipvs/ip_vs_ctl.c b/net/netfilter/ipvs/ip_vs_ctl.c
-index 18e37b32a5d6..fc750ab4c039 100644
+index 6cc50f05c46c..6134d33ab14f 100644
 --- a/net/netfilter/ipvs/ip_vs_ctl.c
 +++ b/net/netfilter/ipvs/ip_vs_ctl.c
 @@ -2299,13 +2299,13 @@ static int ip_vs_stats_percpu_show(struct seq_file *seq, void *v)
@@ -327,7 +327,7 @@ index 18e37b32a5d6..fc750ab4c039 100644
  		seq_printf(seq, "%3X %8LX %8LX %8LX %16LX %16LX\n",
  			   i, (u64)conns, (u64)inpkts,
 diff --git a/net/netfilter/nf_tables_api.c b/net/netfilter/nf_tables_api.c
-index 8176533c50ab..e8e0087b9ea2 100644
+index 0bf347a0a1dd..5c0cf877cd9b 100644
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
 @@ -1714,10 +1714,10 @@ static int nft_dump_stats(struct sk_buff *skb, struct nft_stats __percpu *stats)
@@ -344,7 +344,7 @@ index 8176533c50ab..e8e0087b9ea2 100644
  		total.bytes += bytes;
  	}
 diff --git a/net/openvswitch/datapath.c b/net/openvswitch/datapath.c
-index 3c7b24535409..0953f531f984 100644
+index a2d8b1b4c83e..4fa781b5dd6d 100644
 --- a/net/openvswitch/datapath.c
 +++ b/net/openvswitch/datapath.c
 @@ -716,9 +716,9 @@ static void get_dp_stats(const struct datapath *dp, struct ovs_dp_stats *stats,
@@ -389,5 +389,5 @@ index d4a2db0b2299..0a0e4c283f02 100644
  			masks_and_count[i].counter += counter;
  		}
 -- 
-2.48.1
+2.49.0
 

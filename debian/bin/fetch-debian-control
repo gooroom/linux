@@ -1,0 +1,117 @@
+#!/bin/bash
+#
+# Fetch debian/control and debian/rules.gen from Debian upstream
+# This is used when jinja2 is not available locally
+#
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEBIAN_DIR="$(dirname "${SCRIPT_DIR}")"
+
+# Parse DSC URL from command line or use default
+if [ -n "$1" ]; then
+    DSC_URL="$1"
+else
+    # Default to bookworm-security 6.1.148-1
+    DSC_URL="http://deb.debian.org/debian/pool/main/l/linux/linux_6.1.148-1.dsc"
+fi
+
+echo "[Fetch] Downloading Debian control files from: ${DSC_URL}"
+
+# Create temporary directory
+TMPDIR=$(mktemp -d)
+cd "${TMPDIR}"
+
+# Download the DSC and extract source package
+if command -v dget >/dev/null 2>&1; then
+    echo "[Fetch] Using dget to download source package..."
+    dget -d "${DSC_URL}"
+else
+    echo "[Fetch] Using wget to download source package..."
+    DSC_FILE=$(basename "${DSC_URL}")
+    wget "${DSC_URL}"
+    
+    # Parse version from DSC URL
+    VERSION_PART=$(echo "${DSC_URL}" | sed 's/.*linux_\(.*\)\.dsc/\1/')
+    KERNEL_VER=$(echo "${VERSION_PART}" | cut -d'-' -f1)
+    BASE_URL=$(dirname "${DSC_URL}")
+    
+    # Download the orig.tar.xz and debian.tar.xz
+    wget "${BASE_URL}/linux_${KERNEL_VER}.orig.tar.xz" || true
+    wget "${BASE_URL}/linux_${VERSION_PART}.debian.tar.xz" || true
+fi
+
+# Extract the source package
+DSC_FILE=$(ls -1 *.dsc 2>/dev/null | head -1)
+if [ -z "${DSC_FILE}" ]; then
+    echo "[Fetch] ERROR: No .dsc file found"
+    cd /
+    rm -rf "${TMPDIR}"
+    exit 1
+fi
+
+echo "[Fetch] Extracting source package..."
+dpkg-source -x "${DSC_FILE}"
+
+# Find the extracted directory
+SRC_DIR=$(find . -maxdepth 1 -type d -name "linux-*" | head -1)
+if [ -z "${SRC_DIR}" ]; then
+    echo "[Fetch] ERROR: Failed to find extracted source directory"
+    cd /
+    rm -rf "${TMPDIR}"
+    exit 1
+fi
+
+# Copy control and rules.gen to our debian directory
+echo "[Fetch] Copying control and rules.gen..."
+cp "${SRC_DIR}/debian/control" "${DEBIAN_DIR}/control"
+cp "${SRC_DIR}/debian/rules.gen" "${DEBIAN_DIR}/rules.gen"
+
+# Also save originals for reference
+cp "${SRC_DIR}/debian/control" "${DEBIAN_DIR}/control.debian-orig"
+cp "${SRC_DIR}/debian/rules.gen" "${DEBIAN_DIR}/rules.gen.debian-orig"
+
+# Generate config.defines.dump if possible, or copy if exists
+if [ -f "${SRC_DIR}/debian/config.defines.dump" ]; then
+    echo "[Fetch] Copying existing config.defines.dump..."
+    cp "${SRC_DIR}/debian/config.defines.dump" "${DEBIAN_DIR}/config.defines.dump"
+else
+    echo "[Fetch] Trying to generate config.defines.dump..."
+    # Try to run gencontrol.py in the extracted source to generate config.defines.dump
+    cd "${SRC_DIR}"
+    if python3 debian/bin/gencontrol.py 2>/dev/null; then
+        if [ -f debian/config.defines.dump ]; then
+            echo "[Fetch] Successfully generated config.defines.dump"
+            cp debian/config.defines.dump "${DEBIAN_DIR}/config.defines.dump"
+        fi
+    fi
+    cd "${TMPDIR}"
+fi
+
+# Copy signing_templates if exists
+if [ -d "${SRC_DIR}/debian/signing_templates" ]; then
+    echo "[Fetch] Copying signing templates..."
+    cp -r "${SRC_DIR}/debian/signing_templates" "${DEBIAN_DIR}/"
+fi
+
+# Copy certificates if they exist
+if [ -d "${SRC_DIR}/debian/certs" ]; then
+    echo "[Fetch] Copying certificates..."
+    cp -r "${SRC_DIR}/debian/certs" "${DEBIAN_DIR}/"
+fi
+
+# Cleanup
+cd /
+rm -rf "${TMPDIR}"
+
+echo "[Fetch] Successfully fetched debian/control and debian/rules.gen from upstream"
+echo "[Fetch] Original files saved as *.debian-orig for reference"
+
+# Check if we should disable module signing (for build environments without signing infrastructure)
+if [ "$DISABLE_MODULE_SIGNING" = "1" ] || [ -f "${DEBIAN_DIR}/.disable-module-signing" ]; then
+    echo "[Fetch] Disabling module signing as requested..."
+    if [ -x "${DEBIAN_DIR}/bin/disable-module-signing" ]; then
+        bash "${DEBIAN_DIR}/bin/disable-module-signing"
+    fi
+fi

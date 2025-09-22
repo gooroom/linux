@@ -1,8 +1,8 @@
-From 16e81f651a0cdc0851e0884c9d6fa9a4d14c0a33 Mon Sep 17 00:00:00 2001
+From 1c7feaa35503253ca5eed36d4aae81be93c8b8a6 Mon Sep 17 00:00:00 2001
 From: Junxiao Chang <junxiao.chang@intel.com>
 Date: Mon, 20 Feb 2023 09:12:20 +0100
-Subject: [PATCH 15/69] softirq: Wake ktimers thread also in softirq.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.127-rt48.tar.xz
+Subject: [PATCH 15/68] softirq: Wake ktimers thread also in softirq.
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
 
 If the hrtimer is raised while a softirq is processed then it does not
 wake the corresponding ktimers thread. This is due to the optimisation in the
@@ -23,10 +23,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 5 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index c7331f0c7021..24d0cb2a2338 100644
+index e7435d623658..8a3cb530a9fd 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -668,13 +668,12 @@ static inline void __irq_exit_rcu(void)
+@@ -693,13 +693,12 @@ static inline void __irq_exit_rcu(void)
  #endif
  	account_hardirq_exit(current);
  	preempt_count_sub(HARDIRQ_OFFSET);
@@ -46,5 +46,5 @@ index c7331f0c7021..24d0cb2a2338 100644
  	tick_irq_exit();
  }
 -- 
-2.48.1
+2.49.0
 

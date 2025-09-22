@@ -6,7 +6,7 @@ shopt -s extglob
 # Set defaults from the running kernel
 arch="$(dpkg --print-architecture)"
 kernelabi="$(uname -r)"
-ff="${kernelabi#+([^-])-@(trunk|?(rc)+([0-9])|0.@(bpo|deb+([0-9])).+([0-9]))-}"
+ff="${kernelabi##+([^-])-?(@(trunk|?(rc)+([0-9])|0.@(bpo|deb+([0-9])).+([0-9]))-)}"
 if [ "x$ff" != "x$kernelabi" ]; then
     flavour="${ff#@(openvz|rt|vserver|xen)-}"
     if [ "x$flavour" != "x$ff" ]; then
@@ -34,7 +34,7 @@ while true; do
 	--) shift 1; break ;;
     esac
 done
-	    
+
 if [ $# -lt 1 ]; then
     echo >&2 "Usage: $0 [<options>] <patch>..."
     cat >&2 <<EOF
@@ -62,6 +62,14 @@ fi
 # Check build-dependencies early if possible
 if [ -f debian/control ]; then
     dpkg-checkbuilddeps -P"$profiles"
+fi
+
+# Provide defaults for DEBEMAIL and DEBFULLNAME
+if [[ -z "${DEBEMAIL}" && -z "${EMAIL}" ]]; then
+    export DEBEMAIL=test-patches@mail.invalid
+fi
+if [[ -z "${DEBFULLNAME}" && -z "${NAME}" ]]; then
+    export DEBFULLNAME=test-patches
 fi
 
 # Append 'a~test' to Debian version; this should be less than any official

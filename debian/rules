@@ -6,6 +6,7 @@ VERSION := $(shell dpkg-parsechangelog -SVersion)
 VERSION_UPSTREAM := $(shell echo "$(VERSION)" | sed -e 's,-[^-]*$$,,')
 VERSION_BINNMU := $(shell echo "$(VERSION)" | sed -rne 's,.*\+b([0-9]+)$$,\1,p')
 VERSION_SOURCE := $(patsubst %+b$(VERSION_BINNMU),%,$(VERSION))
+DEB_DISTRIBUTION := $(shell dpkg-parsechangelog -SDistribution)
 
 include debian/rules.defs
 
@@ -33,7 +34,7 @@ setup: debian/control
 
 build: build-arch build-indep
 
-build-arch: debian/control
+build-arch:
 	dh_testdir
 # The perf-read-vdso* programs are built for different architectures,
 # without standard flags, but are not exposed to untrusted input.
@@ -50,7 +51,7 @@ build-arch: debian/control
 	@printf '%s\n' 'blhc: ignore-line-regexp: (.* -o *[^ ]*/perf-read-vdso.*|.* -D__KERNEL__ .*$(if $(filter terse,$(DEB_BUILD_OPTIONS)),| *(CC(LD)?|LD|LINK)\b.*))'
 	$(MAKE) -f debian/rules.gen build-arch_$(DEB_HOST_ARCH)
 
-build-indep: debian/control
+build-indep:
 	dh_testdir
 	$(MAKE) -f debian/rules.gen build-indep
 
@@ -80,7 +81,7 @@ else
 	tar -C ../orig -xaf $(TAR_ORIG)
 endif
 
-CLEAN_PATTERNS := $(BUILD_DIR) $(STAMPS_DIR) debian/lib/python/debian_linux/*.pyc debian/lib/python/debian_linux/__pycache__ $$(find debian -maxdepth 1 -type d -name 'linux-*') debian/*-modules-*-di* debian/kernel-image-*-di* debian/*-tmp debian/*.substvars
+CLEAN_PATTERNS := $(BUILD_DIR) $(STAMPS_DIR) debian/lib/python/debian_linux/*.pyc debian/lib/python/debian_linux/__pycache__ debian/bin/__pycache__ debian/bin/*.pyc $$(find debian -maxdepth 1 -type d -name 'linux-*') debian/*-modules-*-di* debian/kernel-image-*-di* debian/*-tmp debian/*.substvars
 
 maintainerclean:
 	rm -rf $(CLEAN_PATTERNS)
@@ -116,12 +117,12 @@ CONTROL_FILES += debian/config/defines $(wildcard debian/config/*/defines) $(wil
 CONTROL_FILES += debian/installer/kernel-versions debian/installer/package-list
 
 # debian/bin/gencontrol.py uses debian/changelog as input, but the
-# output only depends on the source name and version.  To avoid
+# output only depends on the source name, version, and suite.  To avoid
 # frequent changes to debian/control.md5sum, include only those fields
 # in the checksum.
 $(BUILD_DIR)/version-info: debian/changelog
 	mkdir -p $(@D)
-	printf >$@ 'Source: %s\nVersion: %s\n' $(SOURCE) $(VERSION_SOURCE)
+	printf >$@ 'Source: %s\nVersion: %s\nDistribution: %s\n' $(SOURCE) $(VERSION_SOURCE) $(DEB_DISTRIBUTION)
 
 debian/control debian/rules.gen: debian/bin/gencontrol.py $(CONTROL_FILES)
 ifeq ($(wildcard debian/control.md5sum),)
@@ -133,7 +134,21 @@ endif
 
 debian/control-real: debian/bin/gencontrol.py $(CONTROL_FILES)
 # Hash randomisation makes the pickled config unreproducible
-	PYTHONHASHSEED=0 $<
+# PYTHONDONTWRITEBYTECODE=1 prevents .pyc file generation
+# Gooroom: If jinja2 is not available, fetch directly from Debian upstream
+	@if PYTHONHASHSEED=0 PYTHONDONTWRITEBYTECODE=1 $< 2>&1; then \
+		echo "[Gooroom] Generated debian/control and debian/rules.gen using gencontrol.py"; \
+	elif [ -x debian/bin/fetch-debian-control ]; then \
+		echo "[Gooroom] Fetching debian/control and debian/rules.gen from Debian upstream..."; \
+		echo "[Gooroom] Auto-disabling module signing for build environment..."; \
+		touch debian/.disable-module-signing; \
+		DSC_URL="http://deb.debian.org/debian/pool/main/l/linux/linux_6.1.148-1.dsc"; \
+		bash debian/bin/fetch-debian-control "$$DSC_URL"; \
+		exit 0; \
+	else \
+		echo "[Gooroom] ERROR: jinja2 not available and cannot fetch from upstream"; \
+		exit 1; \
+	fi
 	md5sum $^ > debian/control.md5sum
 	@echo
 	@echo This target is made to fail intentionally, to make sure
