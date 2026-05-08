@@ -1,0 +1,46 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Thu, 7 May 2026 22:17:01 +0200
+Subject: rxrpc: input: Open-code skb_unshare()
+
+As preparation for a later fix, replace the call to skb_unshare() from
+rxrpc_input_packet() with an open-coded version.  The same
+transformation was done as part of upstream commit 1f2740150f90
+"rxrpc: Fix potential UAF after skb_unshare() failure", but that
+depends on much larger changes in 6.2 that cannot be backported.
+
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ net/rxrpc/input.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+--- a/net/rxrpc/input.c
++++ b/net/rxrpc/input.c
+@@ -1313,19 +1313,20 @@ int rxrpc_input_packet(struct sock *udp_
+ 		/* Unshare the packet so that it can be modified for in-place
+ 		 * decryption.
+ 		 */
+-		if (sp->hdr.securityIndex != 0) {
+-			struct sk_buff *nskb = skb_unshare(skb, GFP_ATOMIC);
++		if (sp->hdr.securityIndex != 0 &&
++		    skb_cloned(skb)) {
++			struct sk_buff *nskb = skb_copy(skb, GFP_ATOMIC);
+ 			if (!nskb) {
++				kfree_skb(skb);
+ 				rxrpc_eaten_skb(skb, rxrpc_skb_unshared_nomem);
+ 				goto out;
+ 			}
+ 
+-			if (nskb != skb) {
+-				rxrpc_eaten_skb(skb, rxrpc_skb_received);
+-				skb = nskb;
+-				rxrpc_new_skb(skb, rxrpc_skb_unshared);
+-				sp = rxrpc_skb(skb);
+-			}
++			consume_skb(skb);
++			rxrpc_eaten_skb(skb, rxrpc_skb_received);
++			skb = nskb;
++			rxrpc_new_skb(skb, rxrpc_skb_unshared);
++			sp = rxrpc_skb(skb);
+ 		}
+ 		break;
+ 

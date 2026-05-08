@@ -1,9 +1,9 @@
-From 69ba5506e5c5f6f82fb96ee3f365140e54a788a4 Mon Sep 17 00:00:00 2001
+From de6431d6245842f97b1bc40858cd02424f9ef510 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Aug 2022 16:17:37 +0200
-Subject: [PATCH 06/68] net: Remove the obsolte u64_stats_fetch_*_irq() users
+Subject: [PATCH 06/67] net: Remove the obsolte u64_stats_fetch_*_irq() users
  (net).
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.141-rt52.tar.xz
+Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
 
 Now that the 32bit UP oddity is gone and 32bit uses always a sequence
 count, there is no need for the fetch_irq() variants anymore.
@@ -53,10 +53,10 @@ index c08228d48834..a7126e1c21fe 100644
  		stats->rx_packets	+= rxpackets;
  		stats->rx_bytes		+= rxbytes;
 diff --git a/net/bridge/br_multicast.c b/net/bridge/br_multicast.c
-index 3cd2b648408d..454cd7a21c31 100644
+index 140dbcfc8b94..eb759d34f268 100644
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -4907,9 +4907,9 @@ void br_multicast_get_stats(const struct net_bridge *br,
+@@ -5010,9 +5010,9 @@ void br_multicast_get_stats(const struct net_bridge *br,
  		unsigned int start;
  
  		do {
@@ -69,7 +69,7 @@ index 3cd2b648408d..454cd7a21c31 100644
  		mcast_stats_add_dir(tdst.igmp_v1queries, temp.igmp_v1queries);
  		mcast_stats_add_dir(tdst.igmp_v2queries, temp.igmp_v2queries);
 diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
-index 23a82567fe62..5f8207275322 100644
+index 54b0f24eb08f..1656f1c1d3b7 100644
 --- a/net/bridge/br_vlan.c
 +++ b/net/bridge/br_vlan.c
 @@ -1391,12 +1391,12 @@ void br_vlan_get_stats(const struct net_bridge_vlan *v,
@@ -88,10 +88,10 @@ index 23a82567fe62..5f8207275322 100644
  		u64_stats_add(&stats->rx_packets, rxpackets);
  		u64_stats_add(&stats->rx_bytes, rxbytes);
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 212a909b4840..8e57eae40221 100644
+index 114fc8bc37f8..00a527ae1ca0 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -10608,12 +10608,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
+@@ -10620,12 +10620,12 @@ void dev_fetch_sw_netstats(struct rtnl_link_stats64 *s,
  
  		stats = per_cpu_ptr(netstats, cpu);
  		do {
@@ -243,10 +243,10 @@ index 4f3c932e37ed..6164cb06fbdd 100644
  	return v;
  }
 diff --git a/net/ipv6/seg6_local.c b/net/ipv6/seg6_local.c
-index 33cb0381b574..0ab95b936025 100644
+index b7d9a68a265d..be0cc249b4de 100644
 --- a/net/ipv6/seg6_local.c
 +++ b/net/ipv6/seg6_local.c
-@@ -1644,13 +1644,13 @@ static int put_nla_counters(struct sk_buff *skb, struct seg6_local_lwt *slwt)
+@@ -1642,13 +1642,13 @@ static int put_nla_counters(struct sk_buff *skb, struct seg6_local_lwt *slwt)
  
  		pcounters = per_cpu_ptr(slwt->pcpu_counters, i);
  		do {
@@ -263,10 +263,10 @@ index 33cb0381b574..0ab95b936025 100644
  		counters.packets += packets;
  		counters.bytes += bytes;
 diff --git a/net/mac80211/sta_info.c b/net/mac80211/sta_info.c
-index dd1864f6549f..33ab891f7d32 100644
+index e9ae92094794..d2dd8b701156 100644
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -2419,9 +2419,9 @@ static inline u64 sta_get_tidstats_msdu(struct ieee80211_sta_rx_stats *rxstats,
+@@ -2420,9 +2420,9 @@ static inline u64 sta_get_tidstats_msdu(struct ieee80211_sta_rx_stats *rxstats,
  	u64 value;
  
  	do {
@@ -278,7 +278,7 @@ index dd1864f6549f..33ab891f7d32 100644
  
  	return value;
  }
-@@ -2487,9 +2487,9 @@ static inline u64 sta_get_stats_bytes(struct ieee80211_sta_rx_stats *rxstats)
+@@ -2488,9 +2488,9 @@ static inline u64 sta_get_stats_bytes(struct ieee80211_sta_rx_stats *rxstats)
  	u64 value;
  
  	do {
@@ -291,7 +291,7 @@ index dd1864f6549f..33ab891f7d32 100644
  	return value;
  }
 diff --git a/net/mpls/af_mpls.c b/net/mpls/af_mpls.c
-index f1f43894efb8..dc5165d3eec4 100644
+index 2d29d230f569..56b84f65ae54 100644
 --- a/net/mpls/af_mpls.c
 +++ b/net/mpls/af_mpls.c
 @@ -1079,9 +1079,9 @@ static void mpls_get_stats(struct mpls_dev *mdev,
@@ -327,7 +327,7 @@ index 6cc50f05c46c..6134d33ab14f 100644
  		seq_printf(seq, "%3X %8LX %8LX %8LX %16LX %16LX\n",
  			   i, (u64)conns, (u64)inpkts,
 diff --git a/net/netfilter/nf_tables_api.c b/net/netfilter/nf_tables_api.c
-index 0bf347a0a1dd..5c0cf877cd9b 100644
+index df83224bef06..6a13770519be 100644
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
 @@ -1714,10 +1714,10 @@ static int nft_dump_stats(struct sk_buff *skb, struct nft_stats __percpu *stats)
@@ -389,5 +389,5 @@ index d4a2db0b2299..0a0e4c283f02 100644
  			masks_and_count[i].counter += counter;
  		}
 -- 
-2.49.0
+2.51.1
 

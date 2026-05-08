@@ -38,11 +38,9 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  include/net/mana/mana.h                            |  2 --
  3 files changed, 14 deletions(-)
 
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 8ca95633f845..cde9226ed139 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -1281,8 +1281,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1287,8 +1287,6 @@ static void mana_poll_tx_cq(struct mana_
  	if (comp_read < 1)
  		return;
  
@@ -51,7 +49,7 @@ index 8ca95633f845..cde9226ed139 100644
  	for (i = 0; i < comp_read; i++) {
  		struct mana_tx_comp_oob *cqe_oob;
  
-@@ -1369,8 +1367,6 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1375,8 +1373,6 @@ static void mana_poll_tx_cq(struct mana_
  		WARN_ON_ONCE(1);
  
  	cq->work_done = pkt_transmitted;
@@ -60,7 +58,7 @@ index 8ca95633f845..cde9226ed139 100644
  }
  
  static void mana_post_pkt_rxq(struct mana_rxq *rxq)
-@@ -1634,15 +1630,11 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1640,11 +1636,8 @@ static void mana_poll_rx_cq(struct mana_
  {
  	struct gdma_comp *comp = cq->gdma_comp_buf;
  	struct mana_rxq *rxq = cq->rxq;
@@ -69,14 +67,18 @@ index 8ca95633f845..cde9226ed139 100644
  
 -	apc = netdev_priv(rxq->ndev);
 -
- 	comp_read = mana_gd_poll_cq(cq->gdma_cq, comp, CQE_POLLING_BUFFER);
+ 	/* Limit CQEs polled to 4 wraparounds of the CQ to ensure the
+ 	 * doorbell can be rung in time for the hardware's requirement
+ 	 * of at least one doorbell ring every 8 wraparounds.
+@@ -1655,7 +1648,6 @@ static void mana_poll_rx_cq(struct mana_
+ 					 CQE_POLLING_BUFFER));
  	WARN_ON_ONCE(comp_read > CQE_POLLING_BUFFER);
  
 -	apc->eth_stats.rx_cqes = comp_read;
  	rxq->xdp_flush = false;
  
  	for (i = 0; i < comp_read; i++) {
-@@ -1654,8 +1646,6 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1667,8 +1659,6 @@ static void mana_poll_rx_cq(struct mana_
  			return;
  
  		mana_process_rx_cqe(rxq, cq, &comp[i]);
@@ -85,8 +87,6 @@ index 8ca95633f845..cde9226ed139 100644
  	}
  
  	if (rxq->xdp_flush)
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
-index a64c81410dc1..0dc78679f620 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 @@ -13,11 +13,9 @@ static const struct {
@@ -101,8 +101,6 @@ index a64c81410dc1..0dc78679f620 100644
  	{"rx_coalesced_err", offsetof(struct mana_ethtool_stats,
  					rx_coalesced_err)},
  	{"rx_cqe_unknown_type", offsetof(struct mana_ethtool_stats,
-diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 4ffb1ced9e19..9cd1b085281b 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
 @@ -350,10 +350,8 @@ struct mana_tx_qp {
@@ -116,6 +114,3 @@ index 4ffb1ced9e19..9cd1b085281b 100644
  	u64 rx_coalesced_err;
  	u64 rx_cqe_unknown_type;
  };
--- 
-2.49.0
-

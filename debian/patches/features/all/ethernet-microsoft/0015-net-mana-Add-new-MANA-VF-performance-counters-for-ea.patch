@@ -18,11 +18,9 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  include/net/mana/mana.h                       | 18 ++++++
  3 files changed, 128 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index 8de0a7fbbdd9..d5fcbf7e857b 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -157,6 +157,7 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -157,6 +157,7 @@ netdev_tx_t mana_start_xmit(struct sk_bu
  	struct mana_txq *txq;
  	struct mana_cq *cq;
  	int err, len;
@@ -30,7 +28,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  
  	if (unlikely(!apc->port_is_up))
  		goto tx_drop;
-@@ -167,6 +168,7 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -167,6 +168,7 @@ netdev_tx_t mana_start_xmit(struct sk_bu
  	txq = &apc->tx_qp[txq_idx].txq;
  	gdma_sq = txq->gdma_sq;
  	cq = &apc->tx_qp[txq_idx].tx_cq;
@@ -38,7 +36,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  
  	pkg.tx_oob.s_oob.vcq_num = cq->gdma_id;
  	pkg.tx_oob.s_oob.vsq_frame = txq->vsq_frame;
-@@ -180,10 +182,17 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -180,10 +182,17 @@ netdev_tx_t mana_start_xmit(struct sk_bu
  
  	pkg.tx_oob.s_oob.pkt_fmt = pkt_fmt;
  
@@ -58,7 +56,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  
  	pkg.wqe_req.inline_oob_data = &pkg.tx_oob;
  	pkg.wqe_req.flags = 0;
-@@ -233,9 +242,35 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -233,9 +242,35 @@ netdev_tx_t mana_start_xmit(struct sk_bu
  						 &ipv6_hdr(skb)->daddr, 0,
  						 IPPROTO_TCP, 0);
  		}
@@ -94,7 +92,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  		if (csum_type == IPPROTO_TCP) {
  			pkg.tx_oob.s_oob.is_outer_ipv4 = ipv4;
  			pkg.tx_oob.s_oob.is_outer_ipv6 = ipv6;
-@@ -255,8 +290,12 @@ netdev_tx_t mana_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+@@ -255,8 +290,12 @@ netdev_tx_t mana_start_xmit(struct sk_bu
  		}
  	}
  
@@ -108,7 +106,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  
  	skb_queue_tail(&txq->pending_skbs, skb);
  
-@@ -1039,6 +1078,8 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1045,6 +1084,8 @@ static void mana_poll_tx_cq(struct mana_
  	if (comp_read < 1)
  		return;
  
@@ -117,7 +115,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  	for (i = 0; i < comp_read; i++) {
  		struct mana_tx_comp_oob *cqe_oob;
  
-@@ -1067,6 +1108,7 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1073,6 +1114,7 @@ static void mana_poll_tx_cq(struct mana_
  				netdev_err(ndev, "TX: CQE error %d\n",
  					   cqe_oob->cqe_hdr.cqe_type);
  
@@ -125,7 +123,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  			break;
  
  		default:
-@@ -1077,6 +1119,7 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1083,6 +1125,7 @@ static void mana_poll_tx_cq(struct mana_
  				netdev_err(ndev, "TX: unknown CQE type %d\n",
  					   cqe_oob->cqe_hdr.cqe_type);
  
@@ -133,7 +131,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  			break;
  		}
  
-@@ -1123,6 +1166,8 @@ static void mana_poll_tx_cq(struct mana_cq *cq)
+@@ -1129,6 +1172,8 @@ static void mana_poll_tx_cq(struct mana_
  		WARN_ON_ONCE(1);
  
  	cq->work_done = pkt_transmitted;
@@ -142,7 +140,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  }
  
  static void mana_post_pkt_rxq(struct mana_rxq *rxq)
-@@ -1257,12 +1302,15 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
+@@ -1263,12 +1308,15 @@ static void mana_process_rx_cqe(struct m
  	struct gdma_context *gc = rxq->gdma_rq->gdma_dev->gdma_context;
  	struct net_device *ndev = rxq->ndev;
  	struct mana_recv_buf_oob *rxbuf_oob;
@@ -158,7 +156,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  	switch (oob->cqe_hdr.cqe_type) {
  	case CQE_RX_OKAY:
  		break;
-@@ -1275,6 +1323,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
+@@ -1281,6 +1329,7 @@ static void mana_process_rx_cqe(struct m
  
  	case CQE_RX_COALESCED_4:
  		netdev_err(ndev, "RX coalescing is unsupported\n");
@@ -166,7 +164,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  		return;
  
  	case CQE_RX_OBJECT_FENCE:
-@@ -1284,6 +1333,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
+@@ -1290,6 +1339,7 @@ static void mana_process_rx_cqe(struct m
  	default:
  		netdev_err(ndev, "Unknown RX CQE type = %d\n",
  			   oob->cqe_hdr.cqe_type);
@@ -174,7 +172,7 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  		return;
  	}
  
-@@ -1346,11 +1396,15 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1352,8 +1402,11 @@ static void mana_poll_rx_cq(struct mana_
  {
  	struct gdma_comp *comp = cq->gdma_comp_buf;
  	struct mana_rxq *rxq = cq->rxq;
@@ -183,14 +181,18 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  
 +	apc = netdev_priv(rxq->ndev);
 +
- 	comp_read = mana_gd_poll_cq(cq->gdma_cq, comp, CQE_POLLING_BUFFER);
+ 	/* Limit CQEs polled to 4 wraparounds of the CQ to ensure the
+ 	 * doorbell can be rung in time for the hardware's requirement
+ 	 * of at least one doorbell ring every 8 wraparounds.
+@@ -1364,6 +1417,7 @@ static void mana_poll_rx_cq(struct mana_
+ 					 CQE_POLLING_BUFFER));
  	WARN_ON_ONCE(comp_read > CQE_POLLING_BUFFER);
  
 +	apc->eth_stats.rx_cqes = comp_read;
  	rxq->xdp_flush = false;
  
  	for (i = 0; i < comp_read; i++) {
-@@ -1362,6 +1416,8 @@ static void mana_poll_rx_cq(struct mana_cq *cq)
+@@ -1375,6 +1429,8 @@ static void mana_poll_rx_cq(struct mana_
  			return;
  
  		mana_process_rx_cqe(rxq, cq, &comp[i]);
@@ -199,8 +201,6 @@ index 8de0a7fbbdd9..d5fcbf7e857b 100644
  	}
  
  	if (rxq->xdp_flush)
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
-index 5b776a33a817..a64c81410dc1 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_ethtool.c
 @@ -13,6 +13,15 @@ static const struct {
@@ -219,7 +219,7 @@ index 5b776a33a817..a64c81410dc1 100644
  };
  
  static int mana_get_sset_count(struct net_device *ndev, int stringset)
-@@ -23,7 +32,8 @@ static int mana_get_sset_count(struct net_device *ndev, int stringset)
+@@ -23,7 +32,8 @@ static int mana_get_sset_count(struct ne
  	if (stringset != ETH_SS_STATS)
  		return -EINVAL;
  
@@ -229,7 +229,7 @@ index 5b776a33a817..a64c81410dc1 100644
  }
  
  static void mana_get_strings(struct net_device *ndev, u32 stringset, u8 *data)
-@@ -61,6 +71,22 @@ static void mana_get_strings(struct net_device *ndev, u32 stringset, u8 *data)
+@@ -61,6 +71,22 @@ static void mana_get_strings(struct net_
  		p += ETH_GSTRING_LEN;
  		sprintf(p, "tx_%d_xdp_xmit", i);
  		p += ETH_GSTRING_LEN;
@@ -252,7 +252,7 @@ index 5b776a33a817..a64c81410dc1 100644
  	}
  }
  
-@@ -78,6 +104,14 @@ static void mana_get_ethtool_stats(struct net_device *ndev,
+@@ -78,6 +104,14 @@ static void mana_get_ethtool_stats(struc
  	u64 xdp_xmit;
  	u64 xdp_drop;
  	u64 xdp_tx;
@@ -267,7 +267,7 @@ index 5b776a33a817..a64c81410dc1 100644
  	int q, i = 0;
  
  	if (!apc->port_is_up)
-@@ -113,11 +147,27 @@ static void mana_get_ethtool_stats(struct net_device *ndev,
+@@ -113,11 +147,27 @@ static void mana_get_ethtool_stats(struc
  			packets = tx_stats->packets;
  			bytes = tx_stats->bytes;
  			xdp_xmit = tx_stats->xdp_xmit;
@@ -295,8 +295,6 @@ index 5b776a33a817..a64c81410dc1 100644
  	}
  }
  
-diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index 3ada48e12c2c..11bd602bdee5 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
 @@ -48,6 +48,10 @@ enum TRI_STATE {
@@ -338,6 +336,3 @@ index 3ada48e12c2c..11bd602bdee5 100644
  };
  
  struct mana_context {
--- 
-2.49.0
-

@@ -1,0 +1,29 @@
+From 72b4164d7ececc483d4ffd6ec8fe347d0a99f250 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Fri, 27 Mar 2026 12:08:14 +0100
+Subject: [PATCH 1/8] Revert "RDMA/rxe: Fix double free in rxe_srq_from_init"
+
+This reverts commit d286f0d4e3ad3caf5f0e673cdad7bf89bf37d947, which
+was commit 0beefd0e15d962f497aad750b2d5e9c3570b66d1 upstream.  The
+backported version did not move but duplicated the problematic
+assignment, so it did not fix the bug.  A proper backport will follow.
+
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ drivers/infiniband/sw/rxe/rxe_srq.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/infiniband/sw/rxe/rxe_srq.c b/drivers/infiniband/sw/rxe/rxe_srq.c
+index 115ff5428f6c..02b39498c370 100644
+--- a/drivers/infiniband/sw/rxe/rxe_srq.c
++++ b/drivers/infiniband/sw/rxe/rxe_srq.c
+@@ -87,9 +87,6 @@ int rxe_srq_from_init(struct rxe_dev *rxe, struct rxe_srq *srq,
+ 		}
+ 	}
+ 
+-	srq->rq.queue = q;
+-	init->attr.max_wr = srq->rq.max_wr;
+-
+ 	return 0;
+ }
+ 

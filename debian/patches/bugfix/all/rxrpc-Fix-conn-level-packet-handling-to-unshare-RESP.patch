@@ -1,0 +1,79 @@
+From: David Howells <dhowells@redhat.com>
+Date: Wed, 22 Apr 2026 17:14:33 +0100
+Subject: rxrpc: Fix conn-level packet handling to unshare RESPONSE packets
+Origin: https://git.kernel.org/linus/24481a7f573305706054c59e275371f8d0fe919f
+
+The security operations that verify the RESPONSE packets decrypt bits of it
+in place - however, the sk_buff may be shared with a packet sniffer, which
+would lead to the sniffer seeing an apparently corrupt packet (actually
+decrypted).
+
+Fix this by handing a copy of the packet off to the specific security
+handler if the packet was cloned.
+
+Fixes: 17926a79320a ("[AF_RXRPC]: Provide secure RxRPC sockets for use by userspace and kernel both")
+Closes: https://sashiko.dev/#/patchset/20260408121252.2249051-1-dhowells%40redhat.com
+Signed-off-by: David Howells <dhowells@redhat.com>
+cc: Marc Dionne <marc.dionne@auristor.com>
+cc: Jeffrey Altman <jaltman@auristor.com>
+cc: Simon Horman <horms@kernel.org>
+cc: linux-afs@lists.infradead.org
+Link: https://patch.msgid.link/20260422161438.2593376-5-dhowells@redhat.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+[bwh: Backported to 6.1:
+ - rxrpc_security::verify_response() takes an additional parameter, so make
+   rxrpc_verify_response() pass that through
+ - Use trace event enumerators that are available here
+]
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ net/rxrpc/conn_event.c | 31 ++++++++++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
+
+--- a/net/rxrpc/conn_event.c
++++ b/net/rxrpc/conn_event.c
+@@ -285,6 +285,35 @@ static void rxrpc_call_is_secure(struct
+ 	}
+ }
+ 
++static int rxrpc_verify_response(struct rxrpc_connection *conn,
++				 struct sk_buff *skb,
++				 u32 *_abort_code)
++{
++	int ret;
++
++	if (skb_cloned(skb)) {
++		/* Copy the packet if shared so that we can do in-place
++		 * decryption.
++		 */
++		struct sk_buff *nskb = skb_copy(skb, GFP_NOFS);
++
++		if (nskb) {
++			rxrpc_new_skb(nskb, rxrpc_skb_unshared);
++			ret = conn->security->verify_response(conn, nskb,
++							      _abort_code);
++			rxrpc_free_skb(nskb, rxrpc_skb_freed);
++		} else {
++			/* OOM - Drop the packet. */
++			rxrpc_see_skb(skb, rxrpc_skb_unshared_nomem);
++			ret = -ENOMEM;
++		}
++	} else {
++		ret = conn->security->verify_response(conn, skb, _abort_code);
++	}
++
++	return ret;
++}
++
+ /*
+  * connection-level Rx packet processor
+  */
+@@ -337,7 +366,7 @@ static int rxrpc_process_event(struct rx
+ 							    _abort_code);
+ 
+ 	case RXRPC_PACKET_TYPE_RESPONSE:
+-		ret = conn->security->verify_response(conn, skb, _abort_code);
++		ret = rxrpc_verify_response(conn, skb, _abort_code);
+ 		if (ret < 0)
+ 			return ret;
+ 

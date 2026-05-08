@@ -1,0 +1,47 @@
+From 99fbadf6dd178bb806464b2324c707940ed5100f Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Sun, 19 Apr 2026 18:30:46 +0200
+Subject: [PATCH 7/8] x86/CPU: Only try to mitigate FPDSS on Zen1
+
+The backports of commit e55d98e77561 to 5.10-6.1 wrongly added
+reporting of and a mitigation for FPDSS on all generations of Zen
+processors.  This happened because these kernel versions only have a
+single function for Zen-specific initialisation, rather than one per
+generation.
+
+Add the necessary family/model check using cpu_has_amd_erratum().
+
+Fixes: 1272cfedf4cd ("x86/CPU: Fix FPDSS on Zen1")
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ arch/x86/kernel/cpu/amd.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/amd.c b/arch/x86/kernel/cpu/amd.c
+index 1ba9fcfde6d2..5b59782e55f4 100644
+--- a/arch/x86/kernel/cpu/amd.c
++++ b/arch/x86/kernel/cpu/amd.c
+@@ -80,6 +80,10 @@ static const int amd_div0[] =
+ 	AMD_LEGACY_ERRATUM(AMD_MODEL_RANGE(0x17, 0x00, 0x0, 0x2f, 0xf),
+ 			   AMD_MODEL_RANGE(0x17, 0x50, 0x0, 0x5f, 0xf));
+ 
++static const int amd_fpdss[] =
++	AMD_LEGACY_ERRATUM(AMD_MODEL_RANGE(0x17, 0x00, 0x0, 0x2f, 0xf),
++			   AMD_MODEL_RANGE(0x17, 0x50, 0x0, 0x5f, 0xf));
++
+ static const int amd_erratum_1485[] =
+ 	AMD_LEGACY_ERRATUM(AMD_MODEL_RANGE(0x19, 0x10, 0x0, 0x1f, 0xf),
+ 			   AMD_MODEL_RANGE(0x19, 0x60, 0x0, 0xaf, 0xf));
+@@ -1052,8 +1056,10 @@ static void init_amd_zn(struct cpuinfo_x86 *c)
+ 			set_cpu_cap(c, X86_FEATURE_BTC_NO);
+ 	}
+ 
+-	pr_notice_once("AMD Zen1 FPDSS bug detected, enabling mitigation.\n");
+-	msr_set_bit(MSR_AMD64_FP_CFG, MSR_AMD64_FP_CFG_ZEN1_DENORM_FIX_BIT);
++	if (cpu_has_amd_erratum(c, amd_fpdss)) {
++		pr_notice_once("AMD Zen1 FPDSS bug detected, enabling mitigation.\n");
++		msr_set_bit(MSR_AMD64_FP_CFG, MSR_AMD64_FP_CFG_ZEN1_DENORM_FIX_BIT);
++	}
+ }
+ 
+ static bool cpu_has_zenbleed_microcode(void)

@@ -1,0 +1,51 @@
+From: Hyunwoo Kim <imv4bel@gmail.com>
+Date: Thu, 30 Apr 2026 08:35:55 +0900
+Subject: rxrpc: Also unshare DATA/RESPONSE packets when paged frags are present
+
+The DATA-packet handler in rxrpc_input_call_event() and the RESPONSE
+handler in rxrpc_verify_response() copy the skb to a linear one before
+calling into the security ops only when skb_cloned() is true.  An skb
+that is not cloned but still carries paged fragments (skb->data_len != 0)
+falls through to the in-place decryption path, which binds the frag
+pages directly into the AEAD/skcipher SGL via skb_to_sgvec().
+
+Extend the gate so that any skb with non-linear data is also copied,
+ensuring the security handler always operates on a fully linear skb.
+The OOM/trace handling already in place is reused.
+
+Fixes: d0d5c0cd1e71 ("rxrpc: Use skb_unshare() rather than skb_cow_data()")
+Signed-off-by: Hyunwoo Kim <imv4bel@gmail.com>
+[bwh: Backported to 6.1: The cloning of input data packets is in
+ rxrpc_input_packet() here]
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ net/rxrpc/conn_event.c | 2 +-
+ net/rxrpc/input.c      | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/net/rxrpc/conn_event.c b/net/rxrpc/conn_event.c
+index 7769f664e955..09fee80aa161 100644
+--- a/net/rxrpc/conn_event.c
++++ b/net/rxrpc/conn_event.c
+@@ -291,7 +291,7 @@ static int rxrpc_verify_response(struct rxrpc_connection *conn,
+ {
+ 	int ret;
+ 
+-	if (skb_cloned(skb)) {
++	if (skb_cloned(skb) || skb_is_nonlinear(skb)) {
+ 		/* Copy the packet if shared so that we can do in-place
+ 		 * decryption.
+ 		 */
+diff --git a/net/rxrpc/input.c b/net/rxrpc/input.c
+index 3fe253f3e97a..be735c8e73f4 100644
+--- a/net/rxrpc/input.c
++++ b/net/rxrpc/input.c
+@@ -1314,7 +1314,7 @@ int rxrpc_input_packet(struct sock *udp_sk, struct sk_buff *skb)
+ 		 * decryption.
+ 		 */
+ 		if (sp->hdr.securityIndex != 0 &&
+-		    skb_cloned(skb)) {
++		    (skb_cloned(skb) || skb_is_nonlinear(skb))) {
+ 			struct sk_buff *nskb = skb_copy(skb, GFP_ATOMIC);
+ 			if (!nskb) {
+ 				kfree_skb(skb);

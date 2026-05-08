@@ -114,11 +114,7 @@ class Main(object):
                               RuntimeWarning)
 
     def tar(self, orig_date):
-        out = os.path.join("../orig", self.orig_tar)
-        try:
-            os.mkdir("../orig")
-        except OSError:
-            pass
+        out = os.path.join("..", self.orig_tar)
         try:
             os.stat(out)
             raise RuntimeError("Destination already exists")
@@ -151,11 +147,6 @@ class Main(object):
             except OSError:
                 pass
             raise
-        try:
-            os.symlink(os.path.join('orig', self.orig_tar),
-                       os.path.join('..', self.orig_tar))
-        except OSError:
-            pass
 
 
 if __name__ == '__main__':

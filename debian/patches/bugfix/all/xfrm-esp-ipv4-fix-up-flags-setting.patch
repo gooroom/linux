@@ -1,0 +1,35 @@
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Fri, 8 May 2026 16:26:10 +0200
+Subject: xfrm: esp: ipv4: fix up flags setting
+Origin: https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git/commit?id=8253aab4659ca16116b522203c2a6b18dccacea7
+
+In commit 5d55c7336f80 ("xfrm: esp: avoid in-place decrypt on shared skb
+frags") in the 6.1.y tree, the tx_flags variable was set, instead of
+flags.
+
+Link: https://lore.kernel.org/r/1b941a1353791ddd6fd75fb8e68b377367d689ff.camel@oracle.com
+Reported-by: Dominik Grzegorzek <dominik.grzegorzek@oracle.com>
+Reported-by: Massimiliano Pellizzer <mpellizzer.dev@gmail.com>
+Cc: Ben Hutchings <benh@debian.org>
+Fixes: ab8b995323e5 ("xfrm: esp: avoid in-place decrypt on shared skb frags")
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/ipv4/ip_output.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/ipv4/ip_output.c b/net/ipv4/ip_output.c
+index ec8279278dea..f5a2ad2b2dbd 100644
+--- a/net/ipv4/ip_output.c
++++ b/net/ipv4/ip_output.c
+@@ -1463,7 +1463,7 @@ ssize_t	ip_append_page(struct sock *sk, struct flowi4 *fl4, struct page *page,
+ 			goto error;
+ 		}
+ 
+-		skb_shinfo(skb)->tx_flags |= SKBFL_SHARED_FRAG;
++		skb_shinfo(skb)->flags |= SKBFL_SHARED_FRAG;
+ 
+ 		if (skb->ip_summed == CHECKSUM_NONE) {
+ 			__wsum csum;
+-- 
+2.53.0
+
