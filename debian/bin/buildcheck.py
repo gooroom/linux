@@ -25,17 +25,10 @@ class CheckSecureBootConfig:
 
             for name, value in [('EFI_STUB', True),
                                 ('LOCK_DOWN_IN_EFI_SECURE_BOOT', True),
-                                ('SYSTEM_TRUSTED_KEYS',
-                                 ('"debian/certs/gooroom_x509_system.pem"',
-                                  '""'))]:
+                                ('SYSTEM_TRUSTED_KEYS', '""')]:
                 if name not in kconfig:
                     out.write(f'Secure Boot: CONFIG_{name} is not defined\n')
                     fail = 1
-                elif isinstance(value, tuple):
-                    if kconfig[name].value not in value:
-                        out.write(f'Secure Boot: CONFIG_{name} has wrong'
-                                  f' value: {kconfig[name].value}\n')
-                        fail = 1
                 elif kconfig[name].value != value:
                     out.write(f'Secure Boot: CONFIG_{name} has wrong value:'
                               f' {kconfig[name].value}\n')
