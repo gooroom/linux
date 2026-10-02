@@ -1,0 +1,57 @@
+From: Salvatore Bonaccorso <carnil@debian.org>
+Date: Fri, 18 Sep 2026 20:48:59 +0200
+Subject: perf tests: Change shebang for stat_bpf_counters.sh to #!/bin/bash
+Origin: https://lore.kernel.org/stable/aq2O42fwBRdHELBC@eldamar.lan/
+
+When commit b02027776ac5 ("perf tests: Fix flakiness in BPF counters
+test on hybrid systems") was backported to several stable series
+(v5.15.221, v6.1.188, v6.6.157, v6.12.110, v6.18.52, v7.2.6) it
+introduced specific bash syntax. For versions after 2f5d370dec3f ("perf
+test: Change all remaining #!/bin/sh to #!/bin/bash") in v6.17-rc1 this
+is not a problem as the shebang was already changed to #!/bin/bash. For
+the older stable series this introduced invalid syntax if #!/bin/sh is
+not bash:
+
+	$ sh -n tools/perf/tests/shell/stat_bpf_counters.sh
+	tools/perf/tests/shell/stat_bpf_counters.sh: 12: Syntax error: "(" unexpected
+
+	$ checkbashism tools/perf/tests/shell/stat_bpf_counters.sh
+	possible bashism in tools/perf/tests/shell/stat_bpf_counters.sh line 52 (bash arrays, ${name[0|*|@]}):
+		base_instructions=$(perf stat --no-big-num -e instructions:u -- "${workload[@]}" 2>&1 | \
+					awk -v i=0 -v c=0 '/instructions/ { \
+						if ($1 != "<not") { i++; c += $1 } \
+					} END { if (i > 0) printf "%.0f", c; else print "<not" }')
+	possible bashism in tools/perf/tests/shell/stat_bpf_counters.sh line 57 (bash arrays, ${name[0|*|@]}):
+		bpf_instructions=$(perf stat --no-big-num --bpf-counters -e instructions:u \
+					-- "${workload[@]}"  2>&1 | \
+					awk -v i=0 -v c=0 '/instructions/ { \
+						if ($1 != "<not") { i++; c += $1 } \
+					} END { if (i > 0) printf "%.0f", c; else print "<not" }')
+	possible bashism in tools/perf/tests/shell/stat_bpf_counters.sh line 68 (bash arrays, ${name[0|*|@]}):
+		stat_output=$(perf stat --no-big-num \
+			-e instructions/name=base_instructions/u,instructions/name=bpf_instructions/bu \
+			-- "${workload[@]}" 2>&1)
+
+Change shebang for the stat_bpf_counters.sh script to #!/bin/bash.
+
+No upstream commit exists for this change as for versions post 6.17-rc1
+the scripts were converted to #!/bin/bash already.
+
+Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
+---
+ tools/perf/tests/shell/stat_bpf_counters.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/perf/tests/shell/stat_bpf_counters.sh b/tools/perf/tests/shell/stat_bpf_counters.sh
+index 76d4a7f15a43..c4f71bfc0fc6 100755
+--- a/tools/perf/tests/shell/stat_bpf_counters.sh
++++ b/tools/perf/tests/shell/stat_bpf_counters.sh
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/bin/bash
+ # perf stat --bpf-counters test
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-- 
+2.55.0
+

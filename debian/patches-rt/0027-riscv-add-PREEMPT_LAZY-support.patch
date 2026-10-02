@@ -22,8 +22,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  arch/riscv/include/asm/thread_info.h | 10 ++++++----
  2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/arch/riscv/Kconfig b/arch/riscv/Kconfig
-index d160c3b83026..3f3e91fde491 100644
 --- a/arch/riscv/Kconfig
 +++ b/arch/riscv/Kconfig
 @@ -39,6 +39,7 @@ config RISCV
@@ -32,13 +30,11 @@ index d160c3b83026..3f3e91fde491 100644
  	select ARCH_HAS_PMEM_API
 +	select ARCH_HAS_PREEMPT_LAZY
  	select ARCH_HAS_PREPARE_SYNC_CORE_CMD
+ 	select ARCH_HAS_PTDUMP if MMU
  	select ARCH_HAS_PTE_DEVMAP if 64BIT && MMU
- 	select ARCH_HAS_PTE_SPECIAL
-diff --git a/arch/riscv/include/asm/thread_info.h b/arch/riscv/include/asm/thread_info.h
-index 9c10fb180f43..f5916a70879a 100644
 --- a/arch/riscv/include/asm/thread_info.h
 +++ b/arch/riscv/include/asm/thread_info.h
-@@ -107,9 +107,10 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src);
+@@ -107,9 +107,10 @@ int arch_dup_task_struct(struct task_str
   * - pending work-to-be-done flags are in lowest half-word
   * - other flags in upper half-word(s)
   */
@@ -52,7 +48,7 @@ index 9c10fb180f43..f5916a70879a 100644
  #define TIF_RESTORE_SIGMASK	4	/* restore signal mask in do_signal() */
  #define TIF_MEMDIE		5	/* is terminating due to OOM killer */
  #define TIF_NOTIFY_SIGNAL	9	/* signal notifications exist */
-@@ -117,9 +118,10 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src);
+@@ -117,9 +118,10 @@ int arch_dup_task_struct(struct task_str
  #define TIF_32BIT		11	/* compat-mode 32bit process */
  #define TIF_RISCV_V_DEFER_RESTORE	12 /* restore Vector before returing to user */
  
@@ -64,6 +60,3 @@ index 9c10fb180f43..f5916a70879a 100644
  #define _TIF_NOTIFY_SIGNAL	(1 << TIF_NOTIFY_SIGNAL)
  #define _TIF_UPROBE		(1 << TIF_UPROBE)
  #define _TIF_RISCV_V_DEFER_RESTORE	(1 << TIF_RISCV_V_DEFER_RESTORE)
--- 
-2.52.0
-
