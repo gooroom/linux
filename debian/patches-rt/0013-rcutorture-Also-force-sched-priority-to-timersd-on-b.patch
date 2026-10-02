@@ -1,9 +1,8 @@
-From fe46b4f0c6988e58c7d361a2f17508fb3f15cd08 Mon Sep 17 00:00:00 2001
 From: Frederic Weisbecker <frederic@kernel.org>
 Date: Tue, 5 Apr 2022 03:07:51 +0200
-Subject: [PATCH 13/67] rcutorture: Also force sched priority to timersd on
+Subject: [PATCH 13/72] rcutorture: Also force sched priority to timersd on
  boosting test.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=c0e0b94aec81f1c85d854510c0c2532e5dfb91df
 
 ksoftirqd is statically boosted to the priority level right above the
 one of rcu_torture_boost() so that timers, which torture readers rely on,
@@ -64,7 +63,7 @@ index c14517912cfa..8cebf6d8f10d 100644
  
  	/* Don't allow time recalculation while creating a new task. */
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 92cc1de67205..5b436a4be593 100644
+index aecc1ad32cf9..be0ba74bc2c8 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -667,7 +667,7 @@ static inline void tick_irq_exit(void)
@@ -76,6 +75,3 @@ index 92cc1de67205..5b436a4be593 100644
  static DEFINE_PER_CPU(unsigned long, pending_timer_softirq);
  
  static unsigned int local_pending_timers(void)
--- 
-2.51.1
-

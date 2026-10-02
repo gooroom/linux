@@ -1,9 +1,8 @@
-From 218cbf9a2ee062fbf2932ed09ed98fb4a8c30ce6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 22 Jun 2022 11:36:17 +0200
-Subject: [PATCH 02/67] signal: Don't disable preemption in ptrace_stop() on
+Subject: [PATCH 02/72] signal: Don't disable preemption in ptrace_stop() on
  PREEMPT_RT.
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=a6cd5589f770429502bfd28b581319bdf9eb3db5
 
 Commit
    53da1d9456fe7 ("fix ptrace slowness")
@@ -40,10 +39,10 @@ Link: https://lkml.kernel.org/r/20220720154435.232749-2-bigeasy@linutronix.de
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 723c84d162dd..ae3c903c6b20 100644
+index 98dbe713829e..bf97176110d4 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -2303,13 +2303,13 @@ static int ptrace_stop(int exit_code, int why, unsigned long message,
+@@ -2304,13 +2304,13 @@ static int ptrace_stop(int exit_code, int why, unsigned long message,
  	/*
  	 * Don't want to allow preemption here, because
  	 * sys_ptrace() needs this task to be inactive.
@@ -61,6 +60,3 @@ index 723c84d162dd..ae3c903c6b20 100644
  	schedule();
  	cgroup_leave_frozen(true);
  
--- 
-2.51.1
-

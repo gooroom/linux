@@ -1,9 +1,8 @@
-From be7dbceb333ba04687d776b2658538fd492c2a37 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 23 Jun 2023 22:15:17 +0200
-Subject: [PATCH 58/67] mm/page_alloc: Use write_seqlock_irqsave() instead
+Subject: [PATCH 58/72] mm/page_alloc: Use write_seqlock_irqsave() instead
  write_seqlock() + local_irq_save().
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=3aee53b66cdc69a3b768ea0b1c57158358c0491c
 
 __build_all_zonelists() acquires zonelist_update_seq by first disabling
 interrupts via local_irq_save() and then acquiring the seqlock with
@@ -53,10 +52,10 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  1 file changed, 6 insertions(+), 9 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 86066a2cf258..543c51acf487 100644
+index 93c63b5fad28..d7659a07ecc1 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -6657,19 +6657,17 @@ static void __build_all_zonelists(void *data)
+@@ -6701,19 +6701,17 @@ static void __build_all_zonelists(void *data)
  	unsigned long flags;
  
  	/*
@@ -81,7 +80,7 @@ index 86066a2cf258..543c51acf487 100644
  
  #ifdef CONFIG_NUMA
  	memset(node_load, 0, sizeof(node_load));
-@@ -6706,9 +6704,8 @@ static void __build_all_zonelists(void *data)
+@@ -6750,9 +6748,8 @@ static void __build_all_zonelists(void *data)
  #endif
  	}
  
@@ -92,6 +91,3 @@ index 86066a2cf258..543c51acf487 100644
  }
  
  static noinline void __init
--- 
-2.51.1
-

@@ -1,0 +1,46 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Thu, 2 Jul 2026 13:05:52 +0200
+Subject: Revert "media: rc: streamzap: Error handling in probe"
+
+This reverts commit 70f179c3cb018856bcde61a01471b83817c437fc, which
+was commit 42844992664f03ef9f930e64f7370fa481e9c267 upstream.  The
+added error handling does not unregister the device, introducing a
+UAF.
+---
+ drivers/media/rc/streamzap.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/media/rc/streamzap.c b/drivers/media/rc/streamzap.c
+index 8e9b156e4300..d3b48a0dd1f4 100644
+--- a/drivers/media/rc/streamzap.c
++++ b/drivers/media/rc/streamzap.c
+@@ -219,8 +219,9 @@ static void streamzap_callback(struct urb *urb)
+ 	case -ESHUTDOWN:
+ 		/*
+ 		 * this urb is terminated, clean up.
++		 * sz might already be invalid at this point
+ 		 */
+-		dev_dbg(sz->dev, "urb terminated, status: %d\n", urb->status);
++		dev_err(sz->dev, "urb terminated, status: %d\n", urb->status);
+ 		return;
+ 	default:
+ 		break;
+@@ -357,16 +358,11 @@ static int streamzap_probe(struct usb_interface *intf,
+ 
+ 	usb_set_intfdata(intf, sz);
+ 
+-	retval = usb_submit_urb(sz->urb_in, GFP_ATOMIC);
+-	if (retval < 0) {
++	if (usb_submit_urb(sz->urb_in, GFP_ATOMIC))
+ 		dev_err(sz->dev, "urb submit failed\n");
+-		goto rc_submit_fail;
+-	}
+ 
+ 	return 0;
+-rc_submit_fail:
+-	rc_free_device(sz->rdev);
+-	usb_set_intfdata(intf, NULL);
++
+ rc_dev_fail:
+ 	usb_free_urb(sz->urb_in);
+ free_buf_in:

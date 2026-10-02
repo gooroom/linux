@@ -22,11 +22,9 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  include/net/mana/mana.h                       |  3 +
  2 files changed, 76 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index a5b4bdcd2f99..0abc4d619aae 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -1423,8 +1423,8 @@ static struct sk_buff *mana_build_skb(struct mana_rxq *rxq, void *buf_va,
+@@ -1432,8 +1432,8 @@ static struct sk_buff *mana_build_skb(st
  	return skb;
  }
  
@@ -37,7 +35,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  {
  	struct mana_stats_rx *rx_stats = &rxq->stats;
  	struct net_device *ndev = rxq->ndev;
-@@ -1457,6 +1457,9 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
+@@ -1466,6 +1466,9 @@ static void mana_rx_skb(void *buf_va, st
  	if (!skb)
  		goto drop;
  
@@ -47,7 +45,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  	skb->dev = napi->dev;
  
  	skb->protocol = eth_type_trans(skb, ndev);
-@@ -1507,9 +1510,14 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
+@@ -1516,9 +1519,14 @@ drop_xdp:
  	u64_stats_update_end(&rx_stats->syncp);
  
  drop:
@@ -65,7 +63,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  
  	++ndev->stats.rx_dropped;
  
-@@ -1517,11 +1525,13 @@ static void mana_rx_skb(void *buf_va, struct mana_rxcomp_oob *cqe,
+@@ -1526,11 +1534,13 @@ drop:
  }
  
  static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
@@ -80,7 +78,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  	/* Reuse XDP dropped page if available */
  	if (rxq->xdp_save_va) {
  		va = rxq->xdp_save_va;
-@@ -1542,17 +1552,22 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1551,17 +1561,22 @@ static void *mana_get_rxfrag(struct mana
  			return NULL;
  		}
  	} else {
@@ -105,7 +103,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  		return NULL;
  	}
  
-@@ -1561,21 +1576,25 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1570,21 +1585,25 @@ static void *mana_get_rxfrag(struct mana
  
  /* Allocate frag for rx buffer, and save the old buf */
  static void mana_refill_rx_oob(struct device *dev, struct mana_rxq *rxq,
@@ -133,7 +131,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  }
  
  static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
-@@ -1589,6 +1608,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
+@@ -1598,6 +1617,7 @@ static void mana_process_rx_cqe(struct m
  	struct device *dev = gc->dev;
  	void *old_buf = NULL;
  	u32 curr, pktlen;
@@ -141,9 +139,9 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  
  	apc = netdev_priv(ndev);
  
-@@ -1631,12 +1651,12 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
- 	rxbuf_oob = &rxq->rx_oobs[curr];
- 	WARN_ON_ONCE(rxbuf_oob->wqe_inf.wqe_size_in_bu != 1);
+@@ -1653,12 +1673,12 @@ static void mana_process_rx_cqe(struct m
+ 		goto drop;
+ 	}
  
 -	mana_refill_rx_oob(dev, rxq, rxbuf_oob, &old_buf);
 +	mana_refill_rx_oob(dev, rxq, rxbuf_oob, &old_buf, &old_fp);
@@ -156,7 +154,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  
  drop:
  	mana_move_wq_tail(rxq->gdma_rq, rxbuf_oob->wqe_inf.wqe_size_in_bu);
-@@ -1906,6 +1926,7 @@ static void mana_destroy_rxq(struct mana_port_context *apc,
+@@ -1936,6 +1956,7 @@ static void mana_destroy_rxq(struct mana
  	struct mana_recv_buf_oob *rx_oob;
  	struct device *dev = gc->dev;
  	struct napi_struct *napi;
@@ -164,7 +162,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  	int i;
  
  	if (!rxq)
-@@ -1938,10 +1959,18 @@ static void mana_destroy_rxq(struct mana_port_context *apc,
+@@ -1968,10 +1989,18 @@ static void mana_destroy_rxq(struct mana
  		dma_unmap_single(dev, rx_oob->sgl[0].address,
  				 rx_oob->sgl[0].size, DMA_FROM_DEVICE);
  
@@ -184,7 +182,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  	if (rxq->gdma_rq)
  		mana_gd_destroy_queue(gc, rxq->gdma_rq);
  
-@@ -1952,18 +1981,20 @@ static int mana_fill_rx_oob(struct mana_recv_buf_oob *rx_oob, u32 mem_key,
+@@ -1982,18 +2011,20 @@ static int mana_fill_rx_oob(struct mana_
  			    struct mana_rxq *rxq, struct device *dev)
  {
  	struct mana_port_context *mpc = netdev_priv(rxq->ndev);
@@ -206,7 +204,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  
  	rx_oob->sgl[0].address = da;
  	rx_oob->sgl[0].size = rxq->datasize;
-@@ -2033,6 +2064,25 @@ static int mana_push_wqe(struct mana_rxq *rxq)
+@@ -2063,6 +2094,25 @@ static int mana_push_wqe(struct mana_rxq
  	return 0;
  }
  
@@ -232,7 +230,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
  					u32 rxq_idx, struct mana_eq *eq,
  					struct net_device *ndev)
-@@ -2062,6 +2112,13 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
+@@ -2092,6 +2142,13 @@ static struct mana_rxq *mana_create_rxq(
  	mana_get_rxbuf_cfg(ndev->mtu, &rxq->datasize, &rxq->alloc_size,
  			   &rxq->headroom);
  
@@ -246,7 +244,7 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  	err = mana_alloc_rx_wqe(apc, rxq, &rq_size, &cq_size);
  	if (err)
  		goto out;
-@@ -2133,8 +2190,8 @@ static struct mana_rxq *mana_create_rxq(struct mana_port_context *apc,
+@@ -2163,8 +2220,8 @@ static struct mana_rxq *mana_create_rxq(
  
  	WARN_ON(xdp_rxq_info_reg(&rxq->xdp_rxq, ndev, rxq_idx,
  				 cq->napi.napi_id));
@@ -257,8 +255,6 @@ index a5b4bdcd2f99..0abc4d619aae 100644
  
  	napi_enable(&cq->napi);
  
-diff --git a/include/net/mana/mana.h b/include/net/mana/mana.h
-index a5802cef3af0..e1c721a23eb8 100644
 --- a/include/net/mana/mana.h
 +++ b/include/net/mana/mana.h
 @@ -283,6 +283,7 @@ struct mana_recv_buf_oob {
@@ -278,6 +274,3 @@ index a5802cef3af0..e1c721a23eb8 100644
  	/* MUST BE THE LAST MEMBER:
  	 * Each receive buffer has an associated mana_recv_buf_oob.
  	 */
--- 
-2.49.0
-

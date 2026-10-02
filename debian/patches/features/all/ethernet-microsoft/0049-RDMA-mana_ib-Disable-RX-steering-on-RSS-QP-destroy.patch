@@ -1,0 +1,77 @@
+From f1ccc4d500a0b87a5599343fc2f798048836e184 Mon Sep 17 00:00:00 2001
+From: Long Li <longli@microsoft.com>
+Date: Fri, 1 May 2026 22:12:37 -0400
+Subject: [PATCH] RDMA/mana_ib: Disable RX steering on RSS QP destroy
+
+[ Upstream commit dbeb256e8dd87233d891b170c0b32a6466467036 ]
+
+When an RSS QP is destroyed (e.g. DPDK exit), mana_ib_destroy_qp_rss()
+destroys the RX WQ objects but does not disable vPort RX steering in
+firmware. This leaves stale steering configuration that still points to
+the destroyed RX objects.
+
+If traffic continues to arrive (e.g. peer VM is still transmitting) and
+the VF interface is subsequently brought up (mana_open), the firmware
+may deliver completions using stale CQ IDs from the old RX objects.
+These CQ IDs can be reused by the ethernet driver for new TX CQs,
+causing RX completions to land on TX CQs:
+
+  WARNING: mana_poll_tx_cq+0x1b8/0x220 [mana]  (is_sq == false)
+  WARNING: mana_gd_process_eq_events+0x209/0x290 (cq_table lookup fails)
+
+Fix this by disabling vPort RX steering before destroying RX WQ objects.
+Note that mana_fence_rqs() cannot be used here because the fence
+completion is delivered on the CQ, which is polled by user-mode (e.g.
+DPDK) and not visible to the kernel driver.
+
+Refactor the disable logic into a shared mana_disable_vport_rx() in
+mana_en, exported for use by mana_ib, replacing the duplicate code.
+The ethernet driver's mana_dealloc_queues() is also updated to call
+this common function.
+
+Fixes: 0266a177631d ("RDMA/mana_ib: Add a driver for Microsoft Azure Network Adapter")
+Cc: stable@vger.kernel.org
+Signed-off-by: Long Li <longli@microsoft.com>
+Link: https://patch.msgid.link/20260325194100.1929056-1-longli@microsoft.com
+Signed-off-by: Leon Romanovsky <leon@kernel.org>
+[ kept early-return error handling and used unquoted NET_MANA namespace in EXPORT_SYMBOL_NS ]
+Signed-off-by: Sasha Levin <sashal@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/ethernet/microsoft/mana/mana_en.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+Index: linux/drivers/net/ethernet/microsoft/mana/mana_en.c
+===================================================================
+--- linux.orig/drivers/net/ethernet/microsoft/mana/mana_en.c
++++ linux/drivers/net/ethernet/microsoft/mana/mana_en.c
+@@ -2390,6 +2390,13 @@ static void mana_rss_table_init(struct m
+ 			ethtool_rxfh_indir_default(i, apc->num_queues);
+ }
+ 
++int mana_disable_vport_rx(struct mana_port_context *apc)
++{
++	return mana_cfg_vport_steering(apc, TRI_STATE_FALSE, false, false,
++				       false);
++}
++EXPORT_SYMBOL_NS(mana_disable_vport_rx, NET_MANA);
++
+ int mana_config_rss(struct mana_port_context *apc, enum TRI_STATE rx,
+ 		    bool update_hash, bool update_tab)
+ {
+@@ -2679,12 +2686,14 @@ static int mana_dealloc_queues(struct ne
+ 	 */
+ 
+ 	apc->rss_state = TRI_STATE_FALSE;
+-	err = mana_config_rss(apc, TRI_STATE_FALSE, false, false);
++	err = mana_disable_vport_rx(apc);
+ 	if (err) {
+ 		netdev_err(ndev, "Failed to disable vPort: %d\n", err);
+ 		return err;
+ 	}
+ 
++	mana_fence_rqs(apc);
++
+ 	mana_destroy_vport(apc);
+ 
+ 	return 0;

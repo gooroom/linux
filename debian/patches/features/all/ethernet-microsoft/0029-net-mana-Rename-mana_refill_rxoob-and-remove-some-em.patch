@@ -16,11 +16,9 @@ Signed-off-by: Bastian Blank <waldi@debian.org>
  drivers/net/ethernet/microsoft/mana/mana_en.c | 9 +++------
  1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/ethernet/microsoft/mana/mana_en.c b/drivers/net/ethernet/microsoft/mana/mana_en.c
-index d982af3093e8..1c7e793bb6b8 100644
 --- a/drivers/net/ethernet/microsoft/mana/mana_en.c
 +++ b/drivers/net/ethernet/microsoft/mana/mana_en.c
-@@ -580,7 +580,6 @@ static int mana_pre_alloc_rxbufs(struct mana_port_context *mpc, int new_mtu)
+@@ -580,7 +580,6 @@ static int mana_pre_alloc_rxbufs(struct
  
  		da = dma_map_single(dev, va + mpc->rxbpre_headroom,
  				    mpc->rxbpre_datasize, DMA_FROM_DEVICE);
@@ -28,7 +26,7 @@ index d982af3093e8..1c7e793bb6b8 100644
  		if (dma_mapping_error(dev, da)) {
  			put_page(virt_to_head_page(va));
  			goto error;
-@@ -1548,7 +1547,6 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1557,7 +1556,6 @@ static void *mana_get_rxfrag(struct mana
  
  	*da = dma_map_single(dev, va + rxq->headroom, rxq->datasize,
  			     DMA_FROM_DEVICE);
@@ -36,7 +34,7 @@ index d982af3093e8..1c7e793bb6b8 100644
  	if (dma_mapping_error(dev, *da)) {
  		put_page(virt_to_head_page(va));
  		return NULL;
-@@ -1558,14 +1556,13 @@ static void *mana_get_rxfrag(struct mana_rxq *rxq, struct device *dev,
+@@ -1567,14 +1565,13 @@ static void *mana_get_rxfrag(struct mana
  }
  
  /* Allocate frag for rx buffer, and save the old buf */
@@ -53,15 +51,12 @@ index d982af3093e8..1c7e793bb6b8 100644
  	if (!va)
  		return;
  
-@@ -1630,7 +1627,7 @@ static void mana_process_rx_cqe(struct mana_rxq *rxq, struct mana_cq *cq,
- 	rxbuf_oob = &rxq->rx_oobs[curr];
- 	WARN_ON_ONCE(rxbuf_oob->wqe_inf.wqe_size_in_bu != 1);
+@@ -1652,7 +1649,7 @@ static void mana_process_rx_cqe(struct m
+ 		goto drop;
+ 	}
  
 -	mana_refill_rxoob(dev, rxq, rxbuf_oob, &old_buf);
 +	mana_refill_rx_oob(dev, rxq, rxbuf_oob, &old_buf);
  
  	/* Unsuccessful refill will have old_buf == NULL.
  	 * In this case, mana_rx_skb() will drop the packet.
--- 
-2.49.0
-

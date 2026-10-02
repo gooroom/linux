@@ -1,8 +1,7 @@
-From 035265703ff6aa175d3ee3287e1955108f547907 Mon Sep 17 00:00:00 2001
 From: Paolo Abeni <pabeni@redhat.com>
 Date: Mon, 8 May 2023 08:17:44 +0200
-Subject: [PATCH 55/67] revert: "softirq: Let ksoftirqd do its job"
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
+Subject: [PATCH 55/72] revert: "softirq: Let ksoftirqd do its job"
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=7645a43e0cf8567baca74a5e6f5a59b4ca0e61d2
 
 Due to the mentioned commit, when the ksoftirqd processes take charge
 of softirq processing, the system can experience high latencies.
@@ -50,7 +49,7 @@ Signed-off-by: Clark Williams <clark.williams@gmail.com>
  1 file changed, 2 insertions(+), 20 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 8a3cb530a9fd..911d0627970d 100644
+index afdd4598065e..50afb10062b4 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -80,21 +80,6 @@ static void wakeup_softirqd(void)
@@ -103,6 +102,3 @@ index 8a3cb530a9fd..911d0627970d 100644
  		do_softirq_own_stack();
  
  	local_irq_restore(flags);
--- 
-2.51.1
-

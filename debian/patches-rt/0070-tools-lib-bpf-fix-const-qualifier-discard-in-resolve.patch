@@ -1,0 +1,30 @@
+From: Clark Williams <clark.williams@gmail.com>
+Date: Sat, 13 Jun 2026 10:55:56 -0500
+Subject: [PATCH 70/72] tools/lib/bpf: fix const-qualifier discard in
+ resolve_full_path
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=ff2366c237459db823e6d98a9f909cd141382e85
+
+strchr() now propagates const when passed a const char * argument in
+newer GCC/glibc combinations, causing -Werror=discarded-qualifiers to
+fire on the assignment to next_path. Declare next_path as const char *
+since it is only used for pointer arithmetic, never written through.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Signed-off-by: Clark Williams <clrkwllms@kernel.org>
+---
+ tools/lib/bpf/libbpf.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/lib/bpf/libbpf.c b/tools/lib/bpf/libbpf.c
+index 7bd6aff6e260..33b214a91338 100644
+--- a/tools/lib/bpf/libbpf.c
++++ b/tools/lib/bpf/libbpf.c
+@@ -10748,7 +10748,7 @@ static int resolve_full_path(const char *file, char *result, size_t result_sz)
+ 		if (!search_paths[i])
+ 			continue;
+ 		for (s = search_paths[i]; s != NULL; s = strchr(s, ':')) {
+-			char *next_path;
++			const char *next_path;
+ 			int seg_len;
+ 
+ 			if (s[0] == ':')

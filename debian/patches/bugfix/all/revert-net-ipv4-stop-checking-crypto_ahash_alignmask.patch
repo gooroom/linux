@@ -1,0 +1,77 @@
+From: Ben Hutchings <benh@debian.org>
+Date: Thu, 2 Jul 2026 13:29:51 +0200
+Subject: Revert "net: ipv4: stop checking crypto_ahash_alignmask"
+
+This reverts commit b6ebc7df8490f501f3b2d49ccf78bfb40cea9f8c, which
+was commit e77f5dd701381cef35b9ea8b6dea6e62c8a7f9f3 upstream.  It
+depends on changes in several drivers which have not been backported.
+
+Signed-off-by: Ben Hutchings <benh@debian.org>
+---
+ net/ipv4/ah4.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/net/ipv4/ah4.c b/net/ipv4/ah4.c
+index d62bf0a147d4..5a3364f89afd 100644
+--- a/net/ipv4/ah4.c
++++ b/net/ipv4/ah4.c
+@@ -27,7 +27,9 @@ static void *ah_alloc_tmp(struct crypto_ahash *ahash, int nfrags,
+ {
+ 	unsigned int len;
+ 
+-	len = size + crypto_ahash_digestsize(ahash);
++	len = size + crypto_ahash_digestsize(ahash) +
++	      (crypto_ahash_alignmask(ahash) &
++	       ~(crypto_tfm_ctx_alignment() - 1));
+ 
+ 	len = ALIGN(len, crypto_tfm_ctx_alignment());
+ 
+@@ -44,9 +46,10 @@ static inline u8 *ah_tmp_auth(void *tmp, unsigned int offset)
+ 	return tmp + offset;
+ }
+ 
+-static inline u8 *ah_tmp_icv(void *tmp, unsigned int offset)
++static inline u8 *ah_tmp_icv(struct crypto_ahash *ahash, void *tmp,
++			     unsigned int offset)
+ {
+-	return tmp + offset;
++	return PTR_ALIGN((u8 *)tmp + offset, crypto_ahash_alignmask(ahash) + 1);
+ }
+ 
+ static inline struct ahash_request *ah_tmp_req(struct crypto_ahash *ahash,
+@@ -131,7 +134,7 @@ static void ah_output_done(struct crypto_async_request *base, int err)
+ 		seqhi_len = sizeof(*seqhi);
+ 	iph = AH_SKB_CB(skb)->tmp;
+ 	seqhi = (__be32 *)((char *)iph + ihl);
+-	icv = ah_tmp_icv(seqhi, seqhi_len);
++	icv = ah_tmp_icv(ahp->ahash, seqhi, seqhi_len);
+ 	memcpy(ah->auth_data, icv, ahp->icv_trunc_len);
+ 
+ 	top_iph->tos = iph->tos;
+@@ -184,7 +187,7 @@ static int ah_output(struct xfrm_state *x, struct sk_buff *skb)
+ 	if (!iph)
+ 		goto out;
+ 	seqhi = (__be32 *)((char *)iph + ihl);
+-	icv = ah_tmp_icv(seqhi, seqhi_len);
++	icv = ah_tmp_icv(ahash, seqhi, seqhi_len);
+ 	req = ah_tmp_req(ahash, icv);
+ 	sg = ah_req_sg(ahash, req);
+ 	seqhisg = sg + nfrags;
+@@ -286,7 +289,7 @@ static void ah_input_done(struct crypto_async_request *base, int err)
+ 	work_iph = AH_SKB_CB(skb)->tmp;
+ 	seqhi = (__be32 *)((char *)work_iph + ihl);
+ 	auth_data = ah_tmp_auth(seqhi, seqhi_len);
+-	icv = ah_tmp_icv(auth_data, ahp->icv_trunc_len);
++	icv = ah_tmp_icv(ahp->ahash, auth_data, ahp->icv_trunc_len);
+ 
+ 	err = crypto_memneq(icv, auth_data, ahp->icv_trunc_len) ? -EBADMSG : 0;
+ 	if (err)
+@@ -381,7 +384,7 @@ static int ah_input(struct xfrm_state *x, struct sk_buff *skb)
+ 
+ 	seqhi = (__be32 *)((char *)work_iph + ihl);
+ 	auth_data = ah_tmp_auth(seqhi, seqhi_len);
+-	icv = ah_tmp_icv(auth_data, ahp->icv_trunc_len);
++	icv = ah_tmp_icv(ahash, auth_data, ahp->icv_trunc_len);
+ 	req = ah_tmp_req(ahash, icv);
+ 	sg = ah_req_sg(ahash, req);
+ 	seqhisg = sg + nfrags;

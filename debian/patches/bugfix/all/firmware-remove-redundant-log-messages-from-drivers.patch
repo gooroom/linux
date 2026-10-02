@@ -25,7 +25,7 @@ upstream submission.
  	if (!verify_container(fw->data, fw->size, false))
 --- a/drivers/atm/fore200e.c
 +++ b/drivers/atm/fore200e.c
-@@ -2400,10 +2400,9 @@ static int fore200e_load_and_start_fw(st
+@@ -2404,10 +2404,9 @@ static int fore200e_load_and_start_fw(st
      int err;
  
      sprintf(buf, "%s%s", fore200e->bus->proc_name, FW_EXT);
@@ -1787,7 +1787,7 @@ upstream submission.
  
 --- a/drivers/scsi/pm8001/pm8001_ctl.c
 +++ b/drivers/scsi/pm8001/pm8001_ctl.c
-@@ -848,9 +848,6 @@ static ssize_t pm8001_store_update_fw(st
+@@ -845,9 +845,6 @@ static ssize_t pm8001_store_update_fw(st
  			       pm8001_ha->dev);
  
  	if (ret) {
@@ -1810,7 +1810,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -8676,10 +8676,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -8674,10 +8674,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1821,7 +1821,7 @@ upstream submission.
  		return QLA_FUNCTION_FAILED;
  	}
  
-@@ -8782,9 +8778,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -8780,9 +8776,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1848,7 +1848,7 @@ upstream submission.
  	if (qla82xx_validate_firmware_blob(vha,
 --- a/drivers/scsi/qla2xxx/qla_os.c
 +++ b/drivers/scsi/qla2xxx/qla_os.c
-@@ -7677,8 +7677,6 @@ qla2x00_request_firmware(scsi_qla_host_t
+@@ -7671,8 +7671,6 @@ qla2x00_request_firmware(scsi_qla_host_t
  		goto out;
  
  	if (request_firmware(&blob->fw, blob->name, &ha->pdev->dev)) {
@@ -1971,7 +1971,7 @@ upstream submission.
  
 --- a/drivers/usb/atm/ueagle-atm.c
 +++ b/drivers/usb/atm/ueagle-atm.c
-@@ -606,10 +606,8 @@ static void uea_upload_pre_firmware(cons
+@@ -608,10 +608,8 @@ static void uea_upload_pre_firmware(cons
  	int ret, size;
  
  	uea_enters(usb);
@@ -1983,9 +1983,9 @@ upstream submission.
  
  	pfw = fw_entry->data;
  	size = fw_entry->size;
-@@ -704,10 +702,6 @@ static int uea_load_firmware(struct usb_
+@@ -708,10 +706,6 @@ static int uea_load_firmware(struct usb_
  	ret = request_firmware_nowait(THIS_MODULE, 1, fw_name, &usb->dev,
- 					GFP_KERNEL, usb,
+ 					GFP_KERNEL, intf,
  					uea_upload_pre_firmware);
 -	if (ret)
 -		uea_err(usb, "firmware %s is not available\n", fw_name);
@@ -1994,7 +1994,7 @@ upstream submission.
  
  	uea_leaves(usb);
  	return ret;
-@@ -869,12 +863,8 @@ static int request_dsp(struct uea_softc
+@@ -873,12 +867,8 @@ static int request_dsp(struct uea_softc
  	}
  
  	ret = request_firmware(&sc->dsp_firm, dsp_name, &sc->usb_dev->dev);
@@ -2008,7 +2008,7 @@ upstream submission.
  
  	if (UEA_CHIP_VERSION(sc) == EAGLE_IV)
  		ret = check_dsp_e4(sc->dsp_firm->data, sc->dsp_firm->size);
-@@ -1587,12 +1577,8 @@ static int request_cmvs_old(struct uea_s
+@@ -1591,12 +1581,8 @@ static int request_cmvs_old(struct uea_s
  
  	cmvs_file_name(sc, cmv_name, 1);
  	ret = request_firmware(fw, cmv_name, &sc->usb_dev->dev);
@@ -2022,7 +2022,7 @@ upstream submission.
  
  	data = (u8 *) (*fw)->data;
  	size = (*fw)->size;
-@@ -1629,9 +1615,6 @@ static int request_cmvs(struct uea_softc
+@@ -1633,9 +1619,6 @@ static int request_cmvs(struct uea_softc
  				"try to get older cmvs\n", cmv_name);
  			return request_cmvs_old(sc, cmvs, fw);
  		}
@@ -2032,7 +2032,7 @@ upstream submission.
  		return ret;
  	}
  
-@@ -1914,11 +1897,8 @@ static int load_XILINX_firmware(struct u
+@@ -1918,11 +1901,8 @@ static int load_XILINX_firmware(struct u
  	uea_enters(INS_TO_USBDEV(sc));
  
  	ret = request_firmware(&fw_entry, fw_name, &sc->usb_dev->dev);
@@ -2100,7 +2100,7 @@ upstream submission.
  	}
 --- a/drivers/usb/serial/io_edgeport.c
 +++ b/drivers/usb/serial/io_edgeport.c
-@@ -332,11 +332,8 @@ static void update_edgeport_E2PROM(struc
+@@ -334,11 +334,8 @@ static void update_edgeport_E2PROM(struc
  
  	response = request_ihex_firmware(&fw, fw_name,
  					 &edge_serial->serial->dev->dev);
@@ -2115,7 +2115,7 @@ upstream submission.
  	BootMajorVersion = rec->data[0];
 --- a/drivers/usb/serial/io_ti.c
 +++ b/drivers/usb/serial/io_ti.c
-@@ -1009,8 +1009,6 @@ static int download_fw(struct edgeport_s
+@@ -1020,8 +1020,6 @@ static int download_fw(struct edgeport_s
  
  	status = request_firmware(&fw, fw_name, dev);
  	if (status) {

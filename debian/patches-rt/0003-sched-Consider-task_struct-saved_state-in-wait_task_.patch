@@ -1,9 +1,8 @@
-From 6402a8af76a246f7c14d815c4592e143462c13a7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 22 Jun 2022 12:27:05 +0200
-Subject: [PATCH 03/67] sched: Consider task_struct::saved_state in
+Subject: [PATCH 03/72] sched: Consider task_struct::saved_state in
  wait_task_inactive().
-Origin: https://www.kernel.org/pub/linux/kernel/projects/rt/6.1/older/patches-6.1.158-rt58.tar.xz
+Origin: https://git.kernel.org/cgit/linux/kernel/git/rt/linux-stable-rt.git/commit?id=2d8f9fe8c2c118a338004f0375b32dc0b2dc9758
 
 Ptrace is using wait_task_inactive() to wait for the tracee to reach a
 certain task state. On PREEMPT_RT that state may be stored in
@@ -27,10 +26,10 @@ Link: https://lkml.kernel.org/r/Yt%2FpQAFQ1xKNK0RY@linutronix.de
  1 file changed, 76 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 9b01fdceb622..c5c53f11821c 100644
+index 56111b42da2a..6a7f727abb06 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3280,6 +3280,76 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
+@@ -3281,6 +3281,76 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
  }
  #endif /* CONFIG_NUMA_BALANCING */
  
@@ -107,7 +106,7 @@ index 9b01fdceb622..c5c53f11821c 100644
  /*
   * wait_task_inactive - wait for a thread to unschedule.
   *
-@@ -3298,7 +3368,7 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
+@@ -3299,7 +3369,7 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
   */
  unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state)
  {
@@ -116,7 +115,7 @@ index 9b01fdceb622..c5c53f11821c 100644
  	struct rq_flags rf;
  	unsigned long ncsw;
  	struct rq *rq;
-@@ -3324,7 +3394,7 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
+@@ -3325,7 +3395,7 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
  		 * is actually now running somewhere else!
  		 */
  		while (task_on_cpu(rq, p)) {
@@ -125,7 +124,7 @@ index 9b01fdceb622..c5c53f11821c 100644
  				return 0;
  			cpu_relax();
  		}
-@@ -3337,9 +3407,10 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
+@@ -3338,9 +3408,10 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
  		rq = task_rq_lock(p, &rf);
  		trace_sched_wait_task(p);
  		running = task_on_cpu(rq, p);
@@ -138,7 +137,7 @@ index 9b01fdceb622..c5c53f11821c 100644
  			ncsw = p->nvcsw | LONG_MIN; /* sets MSB */
  		task_rq_unlock(rq, p, &rf);
  
-@@ -3369,7 +3440,7 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
+@@ -3370,7 +3441,7 @@ unsigned long wait_task_inactive(struct task_struct *p, unsigned int match_state
  		 * running right now), it's preempted, and we should
  		 * yield - it could be a while.
  		 */
@@ -147,6 +146,3 @@ index 9b01fdceb622..c5c53f11821c 100644
  			ktime_t to = NSEC_PER_SEC / HZ;
  
  			set_current_state(TASK_UNINTERRUPTIBLE);
--- 
-2.51.1
-
