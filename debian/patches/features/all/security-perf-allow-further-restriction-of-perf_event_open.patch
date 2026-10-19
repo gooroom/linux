@@ -22,7 +22,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 
 --- a/include/linux/perf_event.h
 +++ b/include/linux/perf_event.h
-@@ -1617,6 +1617,11 @@ int perf_cpu_time_max_percent_handler(co
+@@ -1658,6 +1658,11 @@ int perf_cpu_time_max_percent_handler(co
  int perf_event_max_stack_handler(const struct ctl_table *table, int write,
  		void *buffer, size_t *lenp, loff_t *ppos);
  
@@ -36,7 +36,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
-@@ -449,8 +449,13 @@ static struct kmem_cache *perf_event_cac
+@@ -462,8 +462,13 @@ static struct kmem_cache *perf_event_cac
   *   0 - disallow raw tracepoint access for unpriv
   *   1 - disallow cpu events for unpriv
   *   2 - disallow kernel profiling for unpriv
@@ -50,7 +50,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
  
  /* Minimum for 512 kiB + 1 user control page */
  int sysctl_perf_event_mlock __read_mostly = 512 + (PAGE_SIZE / 1024); /* 'free' kiB per user */
-@@ -12681,6 +12686,9 @@ SYSCALL_DEFINE5(perf_event_open,
+@@ -12842,6 +12847,9 @@ SYSCALL_DEFINE5(perf_event_open,
  	if (err)
  		return err;
  
@@ -58,7 +58,7 @@ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
 +		return -EACCES;
 +
  	/* Do we allow access to perf_event_open(2) ? */
- 	err = security_perf_event_open(&attr, PERF_SECURITY_OPEN);
+ 	err = security_perf_event_open(PERF_SECURITY_OPEN);
  	if (err)
 --- a/security/Kconfig
 +++ b/security/Kconfig
