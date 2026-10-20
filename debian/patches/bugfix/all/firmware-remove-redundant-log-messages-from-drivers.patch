@@ -218,7 +218,7 @@ upstream submission.
  		release_firmware(rdev->me_fw);
 --- a/drivers/gpu/drm/radeon/r100.c
 +++ b/drivers/gpu/drm/radeon/r100.c
-@@ -1077,9 +1077,7 @@ static int r100_cp_init_microcode(struct
+@@ -1082,9 +1082,7 @@ static int r100_cp_init_microcode(struct
  	}
  
  	err = request_firmware(&rdev->me_fw, fw_name, rdev->dev);
@@ -940,7 +940,7 @@ upstream submission.
  
 --- a/drivers/media/usb/s2255/s2255drv.c
 +++ b/drivers/media/usb/s2255/s2255drv.c
-@@ -2276,10 +2276,8 @@ static int s2255_probe(struct usb_interf
+@@ -2282,10 +2282,8 @@ static int s2255_probe(struct usb_interf
  	}
  	/* load the first chunk */
  	if (request_firmware(&dev->fw_data->fw,
@@ -951,7 +951,7 @@ upstream submission.
 -	}
  	/* check the firmware is valid */
  	fw_size = dev->fw_data->fw->size;
- 	pdata = (__le32 *) &dev->fw_data->fw->data[fw_size - 8];
+ 	if (fw_size < 8) {
 --- a/drivers/media/usb/ttusb-budget/dvb-ttusb-budget.c
 +++ b/drivers/media/usb/ttusb-budget/dvb-ttusb-budget.c
 @@ -282,10 +282,8 @@ static int ttusb_boot_dsp(struct ttusb *
@@ -998,7 +998,7 @@ upstream submission.
  	/*
 --- a/drivers/net/can/softing/softing_fw.c
 +++ b/drivers/net/can/softing/softing_fw.c
-@@ -226,11 +226,8 @@ int softing_load_app_fw(const char *file
+@@ -238,11 +238,8 @@ int softing_load_app_fw(const char *file
  	int8_t type_end = 0, type_entrypoint = 0;
  
  	ret = request_firmware(&fw, file, &card->pdev->dev);
@@ -1272,7 +1272,7 @@ upstream submission.
  		dev_err(&kaweth->intf->dev, "Firmware too big: %zu\n",
 --- a/drivers/net/wireless/ath/ath9k/hif_usb.c
 +++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
-@@ -1250,9 +1250,6 @@ static void ath9k_hif_usb_firmware_cb(co
+@@ -1245,9 +1245,6 @@ static void ath9k_hif_usb_firmware_cb(co
  		if (!ret)
  			return;
  
@@ -1294,7 +1294,7 @@ upstream submission.
  
 --- a/drivers/net/wireless/atmel/at76c50x-usb.c
 +++ b/drivers/net/wireless/atmel/at76c50x-usb.c
-@@ -1616,13 +1616,8 @@ static struct fwentry *at76_load_firmwar
+@@ -1619,13 +1619,8 @@ static struct fwentry *at76_load_firmwar
  
  	at76_dbg(DBG_FW, "downloading firmware %s", fwe->fwname);
  	ret = request_firmware(&fwe->fw, fwe->fwname, &udev->dev);
@@ -1810,7 +1810,7 @@ upstream submission.
  	}
 --- a/drivers/scsi/qla2xxx/qla_init.c
 +++ b/drivers/scsi/qla2xxx/qla_init.c
-@@ -8674,10 +8674,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
+@@ -8708,10 +8708,6 @@ qla2x00_load_risc(scsi_qla_host_t *vha,
  	/* Load firmware blob. */
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1821,7 +1821,7 @@ upstream submission.
  		return QLA_FUNCTION_FAILED;
  	}
  
-@@ -8780,9 +8776,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
+@@ -8814,9 +8810,6 @@ qla24xx_load_risc_blob(scsi_qla_host_t *
  
  	blob = qla2x00_request_firmware(vha);
  	if (!blob) {
@@ -1960,7 +1960,7 @@ upstream submission.
  
 --- a/drivers/usb/atm/cxacru.c
 +++ b/drivers/usb/atm/cxacru.c
-@@ -996,8 +996,6 @@ static int cxacru_find_firmware(struct c
+@@ -998,8 +998,6 @@ static int cxacru_find_firmware(struct c
  		return -ENOENT;
  	}
  
