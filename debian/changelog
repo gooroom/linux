@@ -1,52 +1,3098 @@
-linux (6.12.113-1+grm5u1) gooroom-5.0; urgency=medium
+linux (6.12.117-1) trixie-security; urgency=high
 
-  * Rebased on gooroom-5.0 (kernel 6.12.113-1 trixie-security base).
-  * Keep the IMA keyring unrestricted so that organizations can enroll
-    their own self-signed IMA key (local key flow).
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v6.x/ChangeLog-6.12.117
+    - ksmbd: wait for negotiation before receiving another PDU
+    - [arm64] KVM: arm64: Transfer the hyp stack pages out of the host stage-2
+      (CVE-2026-98466)
+    - mm/damon/core: error damos_commit_quota_goal() for zero target_value
+    - mm: vmscan: fix dirty folios throttling on cgroup v1 for MGLRU
+    - mm/damon/sysfs: put target pids for damon_start() failure
+    - mm/damon/sysfs: put target pids for apply_inputs() failure
+    - iio: hid-sensor: als: scale each channel individually
+    - kbuild: link-vmlinux.sh: improve detection of third pass requirement
+    - exec: cancel io_uring requests before de_thread()
+    - fork: move the coredump and exec checks into create_io_thread()
+    - fork: don't create io threads once PF_POSTCOREDUMP is set
+    - lib/crypto: arm64: Fix lost Poly1305 carry when resuming NEON state
+    - net: gso: limit recursive IP-in-IP segmentation (CVE-2026-98853)
+    - ext4: validate readdir offset before accessing dirent (CVE-2026-92499)
+    - ALSA: line6: Clear prev_fbuf on capture buffer release (CVE-2026-99271)
+    - drm/rockchip: dw_hdmi: Use resume_early pm ops for system suspend
+    - drm/amd/pm: Validate OD DPM triples before mutating tables
+    - drm/amdgpu: Gate debugfs MMIO access on kernel lockdown
+    - drm/amd/display: fix max dispclk_khz/dppclk_khz double 1000
+    - drm/radeon: avoid double free in r600 DPM cleanup
+    - drm/amdgpu: add buf length check
+    - drm/amdgpu: add bounds check to prevent array overflow
+    - gpio: pca9570: Use I2C match data
+    - w1: ds2482: add OF device match table
+    - media: cec: stm32: return an error when log-address wait times out
+    - irqdomain: Plug leak in irq_domain_alloc_irqs_locked() error path
+    - ASoC: sma1303: remove fault-check sysfs group on remove
+    - clk: zynq: handle kasprintf() failure in periph_clk registration
+    - ASoC: tlv320aic26: remove keyclick sysfs file
+    - ASoC: hdac_hdmi: Fix resource cleanup on probe failure
+    - regmap: maple: Workaround for another false-positive compiler warning
+    - iio: accel: fxls8962af: clamp the device-reported FIFO sample count
+    - [amd64] perf/x86/intel: Fallback to sw branch type decoding if no hw
+      decoding
+    - fat: reject name longer than NAME_MAX in msdos_format_name()
+    - [amd64] perf/x86/intel/uncore: Fix PCI PMU cleanup on setup failure
+    - spi: bcm-qspi: return error from failed controller suspend
+    - spi: bcm63xx: return error from failed controller suspend
+    - spi: bcm63xx-hsspi: return error from failed controller suspend
+    - drm/panel-edp: Add BOE NE160QDM-NY1 panel
+    - spi: nxp-fspi: disable runtime PM on probe failures
+    - spi: bcmbca-hsspi: return error from failed controller suspend
+    - wifi: ath12k: avoid setting 320MHz support on non 6GHz band
+    - i2c: acpi: Force ELAN1300 touchpads to 100 kHz
+    - drm/amdgpu: Add checks to vbios fetch through ATRM
+    - drm/amdgpu: Validate ATIF buffer length before use
+    - drm/amd/pm: validate vega10 profile mode inputs
+    - drm/amdgpu: Support some Barco AMD based graphics adapters
+    - drm/amdgpu: Guard reads in pcie state readout
+    - drm/amd/pm: Validate Vega hwmgr PowerPlay table bounds
+    - drm/amd/pm: Validate pp_table header before reading size
+    - drm/amd/pm: Use uploaded size for legacy custom PPTable
+    - drm/amd/pm: Validate Tonga PowerPlay state array bounds
+    - drm/amd/pm: Guard VBIOS AC timing table walk
+    - drm/amd/pm: Validate Tonga PPTable subtable bounds
+    - drm/amd/pm: Validate Vega10 PPTable subtable bounds
+    - drm/amd/pm: Validate legacy hwmgr PP table offsets
+    - drm/amdkfd: add sanity check in svm_range_is_valid
+    - drm/panel-edp: Support MB116AS01'3 edp panel
+    - libbpf: Skip bpf_object__probe_loading() when BPF token is in use
+    - net: usb: rtl8150: handle link status read failures
+    - netfilter: ebtables: bound num_counters like nentries in do_replace()
+    - soundwire: dmi-quirks: Disable ghost Realtek on Asus Expertbook
+    - dmaengine: pl330: remove debugfs file on teardown
+    - net: mvneta_bm: add suspend/resume support to prevent crash after resume
+    - dmaengine: dw-axi-dmac: fix __le32 on set of CH_CTL_H_LLI_VALID
+    - wifi: rtlwifi: rtl8723be: Remove unnecessary irq save/restore in hw_init()
+    - wifi: rtw89: wow: only WiFi 6 chips initialize RF registers in WoWLAN mode
+    - wifi: rtlwifi: fix disabling of ASPM for RTL8723BE with AER flooding
+    - wifi: rtw89: wow: add QoS control field to WoWLAN ARP response for MLO
+    - block: reject block device inodes with i_rdev == 0 in lookup_bdev()
+    - iio: adc: max1241: add missing MODULE_DEVICE_TABLE()
+    - soc: qcom: socinfo: Add SoC ID for SDM850
+    - RDMA/rxe: Check PDs for memory window binds
+    - dt-bindings: arm: qcom,ids: Add SoC ID for Snapdragon SDM 850
+    - gpio: sifive: add missing MODULE_DEVICE_TABLE()
+    - mmc: moxart: report DMA completion timeout
+    - mmc: cqhci: fix to missed endian conversions
+    - mmc: sdhci-of-ma35d1: add missing MODULE_DEVICE_TABLE()
+    - mmc: dw_mmc: stop and complete DMA also in STATE_DATA_BUSY state
+    - clk: sunxi-ng: fix ccu probe clock unregister on error
+    - remoteproc: core: Full attach detach during recovery
+    - nvme: handle positive error codes in nuse_show()
+    - nvme-auth: use crypto_memneq for DH-HMAC-CHAP response comparison
+    - nvme: zns: cap zone report nr_zones by DMA buffer size
+    - staging: rtl8723bs: fix missing unregister_netdev on sdio_alloc_irq
+      failure
+    - udf: validate extent partition references in udf_current_aext()
+    - udf: avoid recursive s_alloc_mutex deadlock when freeing AED blocks
+    - drm/amdgpu/atomfirmware: WARN() rather than BUG()
+    - drm/amdgpu/gfx11: WARN() rather than BUG() for invalid SDMA engine
+    - nvme: don't reference NS after unlocking in nvme_ns_head_ctrl_ioctl()
+    - bus: mhi: core: Fix sys error transition latency
+    - ASoC: codecs: max98396: Unwind supplies on resume failure
+    - PCI/ATS: Ensure pci_ats_supported() is PF-aware for VFs
+    - rpmsg: char: Check for ongoing chrdev destroy
+    - media: cec: tegra: add missing MODULE_DEVICE_TABLE()
+    - media: v4l2-tpg: reduce stack usage for kasan builds
+    - mmc: block: reject invalid perdev_minors before division
+    - serial: 8250: force synchronous probe for the ISA and PNP drivers
+    - tty: serial: pch_uart: add check for pci_get_slot()
+    - serial: qcom_geni: Disable closing_wait for console to prevent shutdown
+      timeout
+    - usb: fsl_qe_udc: check qe_alloc_request() failure in ch9getstatus()
+    - usb: gadget: u_audio: clean up capture endpoint on feedback failure
+    - usb_string_copy: Use kzalloc() to avoid leaking old data
+    - USB: gadget: inode: fix mm lifetime handling
+    - pinctrl: sx150x: add missing MODULE_DEVICE_TABLE()
+    - crypto: keembay - add missing MODULE_DEVICE_TABLE()
+    - pmdomain: qcom: rpmhpd: Skip retention by default
+    - media: em28xx: dev_info->pr_info since dev has been freed
+    - media: em28xx: requeue buffers if start_streaming fails
+    - media: em28xx: use vb2_video_unregister_device
+    - drm/xe: only resume exec queues that were actually suspended
+    - soundwire: dmi-quirks: add a global ghost list
+    - soundwire: intel_auxdevice: Add cs42l44 to wake_capable_list
+    - nvme: bound ns descriptor header and body to identify buffer
+    - iwlwifi: dvm: add missing cleaup for on error path
+    - media: i2c: ov8865: Drop the runtime PM usage count on stream failure
+    - drm/etnaviv: check all modules for idle after reset
+    - media: i2c: ov8865: Program the sensor on stream start
+    - media: ivtv: stop VBI start-code scan before short tail
+    - media: cx18: stop VBI start-code scan before short tail
+    - media: go7007: avoid undefined shifts in MPEG-4 headers
+    - remoteproc: qcom: Check subdev start status in rproc_stop()
+    - remoteproc: core: cancel crash_handler work in rproc_add() error path
+    - wifi: iwlwifi: mvm: reset the smart fifo state upon FW stop
+    - tools/lib/api: Fix potential double-free from fdarray__grow()
+    - gpu: host1x: Wait for timeout worker completion on channel free
+    - scsi: qla2xxx: Handle INTx not connected while passing through
+    - media: cec: tegra_cec: don't break off msg on NACK
+    - media: cec/core: drop cec_post_state_event call
+    - usb: musb: host: clear stale RX interrupt on three-strikes error
+    - usb: misc: cypress_cy7c63: check result of IO
+    - USB: misc: uss720: Fix leak in get_1284_register
+    - uio: sercos3: add missing MODULE_DEVICE_TABLE()
+    - comedi: ni_atmio16d: Add sanity check to interrupt handler
+    - comedi: ni_at_a2150: Fix sanity check in interrupt handler
+    - comedi: pcm818: Fix sanity check in interrupt handler
+    - comedi: quatech_daqp_cs: Fix sanity check in interrupt handler
+    - comedi: das6402: Add sanity check to interrupt handler
+    - comedi: dt2811: Fix sanity check in interrupt handler
+    - comedi: pcm711: Fix sanity check in interrupt handler
+    - comedi: aio_iiro_16: Add sanity check to interrupt handler
+    - comedi: pcmmio: Add sanity check to interrupt handler
+    - comedi: pcm816: Fix sanity check in interrupt handler
+    - comedi: pcmuio: Add sanity check to interrupt handler
+    - misc: bcm-vk: validate write size before allocation
+    - misc: genwqe: handle a first DMA address of zero
+    - misc: hpilo: validate device queue entries before use
+    - greybus: manifest: validate string descriptor header
+    - misc: ibmvmc: release send buffer on write errors
+    - ipack: ipoctal: add rwsem to guard against TOCTOU in remove path
+    - misc: ibmvmc: reject oversized inbound messages
+    - PCI: switchtec: Add Microchip PCI1008 device ID
+    - PCI: switchtec: Add Microchip PCI1008 to NTB DMA alias quirk
+    - driver core: attribute_container: Unwind device_add() on attr failure
+    - drm/msm/adreno: Add support for A704 GPU
+    - wifi: iwlwifi: mvm: ignore sync frames when sync is disabled
+    - media: dvb-core: fix feed leak on failed DMX_ADD_PID
+    - media: go7007: s2250: propagate control I/O failures
+    - [amd64] platform/x86: asus-nb-wmi: map ProArt key (0x8b) to KEY_PROG3
+    - ALSA: hda: Check snd_hda_power_pm construct error before executing verb
+    - ACPI: FPDT: validate table and record lengths
+    - ACPI: battery: Sanitise model_number by dropping unprintable characters
+    - ext4: reduce max cluster size to match documented 256MB limit
+    - PCI: vmd: Handle BUS_RESTRICT_CFG value 3 for Arrow Lake-HX
+    - ext4: set EXT4_STATE_NO_EXPAND in ext4_evict_inode
+    - wifi: mac80211: ibss: read deauth reason_code after frame length check
+    - wifi: mac80211_hwsim: clear PMSR request state on abort
+    - ACPI: sysfs: Properly map BERT and CCEL data to their ACPI tables
+    - riscv, bpf: Add support for BPF_SDIV and BPF_SMOD in RV32 JIT
+    - power: supply: cros_pchg: unregister EC notifier
+    - net: sfp: add quirk for HORACO copper SFP+ module
+    - net: prestera: ignore duplicate RIF destruction events
+    - power: reset: piix4-poweroff: add missing MODULE_DEVICE_TABLE()
+    - [riscv64] bpf: Add support for BPF_MOVSX in RV32 JIT
+    - wifi: cfg80211: include cf1 offset when sending chandef
+    - ext4: reject mount if clusters/inodes per group are not 8-aligned
+    - iommu/arm-smmu-qcom: Add SM8450 MDSS compatible
+    - drm/panel: simple: Add Kyocera tcg070wvlq panel
+    - iommu/qcom: Check pm_runtime_resume_and_get() return in probe
+    - iommu/qcom: Enable clocks before hardware access in qcom_iommu_ctx_probe()
+    - thermal: intel: int340x: clean up RFIM groups on DVFS failure
+    - iommu/qcom: Publish pgtbl_ops before releasing init_mutex
+    - wifi: ath11k: validate regulatory capability phy_id
+    - wifi: ath10k: trigger hardware recovery upon rx failures
+    - wifi: ath12k: fix scan command endianness on big endian
+    - ext4: check return value of ext4_get_block() in ext4_load_tail_bh()
+    - ext4: use FGP_WRITEBEGIN for tail block zeroing
+    - bitops: make the *_bit_le functions use unsigned long
+    - ata: pata_ep93xx: fix PIO fallback when DMA init fails
+    - drm/etnaviv: force flush on power register ops
+    - soc: ixp4xx: qmgr: add missing MODULE_DEVICE_TABLE()
+    - ntfs3: initialize err in attr_wof_frame_info
+    - PCI/portdrv: Allow probing even without child services
+    - fs/ntfs3: reserve NUL byte when converting UTF-16 names
+    - ntfs3: fix info-leak in ntfs_rename()
+    - fs/ntfs3: fix lseek EINVAL on sparse/compressed files with 64-bit clusters
+    - fs/ntfs3: load ATTR_BITMAP run extents from $MFT extension records
+    - [amd64] platform/x86: int1092: Fix info leak in parse_package()
+    - firmware: imx: scu: manage mailbox channels and global handle
+    - pinctrl: npcm8xx: enable RMII outputs from RMII groups
+    - pinctrl: npcm8xx: clear pending GPIO events during init
+    - pinctrl: npcm8xx: fix debounce register selection
+    - pinctrl: npcm8xx: move GPIO IRQ setup into request_resources
+    - hsi: omap_ssi: remove debugfs on port creation failure
+    - [arm64] iommu/rockchip: Clear stale page faults before enabling stall
+    - scsi: ibmvfc: check for NULL evt in implicit LOGO and target delete path
+    - scsi: ibmvfc: free ibmvfc_target allocations with mempool_free
+    - udf: Fix bh leak for unallocated space entries
+    - udf: bound lengthAllocDescs from unallocated space entry
+    - exfat: write moved entry before removing source
+    - iommu/tegra241-cmdqv: Rate-limit the error ISR's log message
+    - clk: imx: imx8qxp: add missing MODULE_DEVICE_TABLE()
+    - clk: imx: imx8qxp-lpcg: add missing MODULE_DEVICE_TABLE()
+    - media: cx88: fix memory leak in cx8802_register_driver() error path
+    - clk: tegra: support 48MHz clock for pll_p_out1
+    - ata: ata_generic: Don't store pci_device_id
+    - scsi: smartpqi: Add new PCI device-ids
+    - exfat: clean up new entry on add entry failure
+    - ALSA: hda/conexant: Add NULL check for dc_mode_path
+    - [amd64] platform/x86: dell-smbios-wmi: Fix chardev resource management
+    - exfat: free new directory cluster if zeroing fails
+    - ALSA: hda/realtek: add missing NULL check for codec->bus->pci
+    - fs/ntfs3: Fix memory leak in indx_find_sort()
+    - mfd: ipaq-micro: Fix out-of-bounds stack read in ipaq_micro_str
+    - ALSA: hda/realtek: add missing error checks for COEF index reads in alc269
+    - mfd: axp20x: Preserve other control bits when powering off
+    - regulator: rt6245: Restore state on enable failure
+    - romfs: detect hard link cycles
+    - nvmem: brcm_nvram: reject empty NVRAM partition
+    - nvmem: brcm_nvram: fix out-of-bounds access on malformed flash data
+    - virtio_console: take a kref in find_port_by_vq() to fix port UAF
+    - wifi: mt76: mt7603: free beacon SKB on error
+    - wifi: mt76: mt76x02: report rx FCS errors to mac80211
+    - wifi: mt76: mt7915: configure noise floor reporting on reset
+    - wifi: mt76: mt7921: fix memory leak when skb_linearize fails in mcu rx
+      event
+    - wifi: mt76: mt7603: add 0x7592 EEPROM chip ID
+    - netfilter: conntrack: tcp: use UNACK timeout for non-closing RST packets
+      (CVE-2026-99283)
+    - netfilter: nf_tables: call skb_valid_dst() before skb_dst()
+    - perf: marvell: Cancel CN10K DDR PMU hrtimer on device remove
+    - wifi: ath11k: fix resource leak on error in ext IRQ setup
+    - [amd64] ASoC: SOF: Intel: mtl: Power down DSP if it is left enabled in
+      pre_fw_run()
+    - wifi: mt76: mt7615: fix NULL deref in mt7615_mac_set_rates
+    - wifi: mt76: set the EOSP bit in the QoS header of the last released frame
+    - wifi: mt76: mt7603: fix U-APSD service period termination
+    - wifi: brcmfmac: Set DMA direction for msgbuf packet IDs
+    - wifi: brcmfmac: validate msgbuf flowring IDs before use
+    - wifi: wilc1000: validate monitor transmit frame headers
+    - ALSA: hda/realtek: Add quirk for ASUS VivoBook M515DA/X515DAP
+    - HID: logitech-hidpp: Add support for G502 X Plus USB mouse
+    - HID: quirks: Add ALWAYS_POLL quirk for Beitong BTP-KP20D dongle
+    - HID: quirks: add ALWAYS_POLL quirk for AULA Mini 60 HE Pro Dongle
+    - HID: intel-ish-hid: ignore post-init ENUM_DEVICES from firmware
+    - net/rds: don't use unpin_user_pages_dirty_lock() from atomic context
+    - net/rds: hold the socket while an rds_mr references it
+    - net/rds: fix rds_message leak in the rds_send_xmit() drop path
+    - net/rds: unpin MR pages with unpin_user_pages_dirty_lock()
+    - kconfig: abort rather than loop for ever on EOF
+    - [s390x] dasd: Snapshot intrc before freeing the request block
+    - ACPI: video: force native backlight on Acer Nitro AN515-46
+    - wifi: mt76: mt7603: file buffered frames under the TID reported to
+      mac80211
+    - net: stmmac: raise TX completion interrupt at the end of an xmit burst
+    - net: usb: cdc_ether: add quirk for AMI BMC stale link events
+    - xsk: account ring allocations to memcg
+    - ALSA: hda/realtek: Enable mute LED on HP Laptop 15-dy0xxx
+    - opp: Use clk_get_optional() to avoid leaving opp_table->clk as an error
+      pointer
+    - soundwire: dmi-quirks: Disable ghost Realtek on Asus Zenbook Duo
+    - wifi: rsi: Fix types to appease CFI
+    - [arm64] mm: fix accidental linear mapping of no-map reserved memory
+    - HID: rmi: check report length before trimming sentinel bytes
+    - ext4: guard against NULL s_group_info in ext4_get_group_info
+    - ALSA: hda/realtek: Enable mute LEDs on HP Spectre x360 16-aa0xxx
+    - md/raid5: reject zero-sector reshape chunks
+    - md: add cond_resched() to md_do_sync()'s skip path
+    - tools/lib/thermal: Fix misplaced extern "C" closing brace
+    - Bluetooth: btusb: Add support for 1357:c123 Realtek 8852BE device
+    - Bluetooth: hci_nokia: validate firmware packet bounds
+    - btrfs: fix memory barrier order in reloc_root_is_dead()
+    - drm/amd: Add DCN6 register headers
+    - ACPI: APEI: Handle repeated SEA error storms
+    - ALSA: hda/realtek: Fix headset mic on ASUS Vivobook S14 S5406SA
+    - ALSA: hda/realtek: Fix speakers on ASUS ROG Zephyrus G14 GA403UM
+    - Bluetooth: btrsi: Move set_bt_context after successful HCI registration
+    - Bluetooth: hci_bcsp: validate received packet lengths
+    - Bluetooth: hci_sync: Disable legacy instance's ext adv before setup
+      snapshot
+    - net: dsa: mt7530: error out on failed PHY_IAC command writes
+    - Bluetooth: hci_event: fix out-of-bounds read in LE PA report reassembly
+    - net: dsa: mt7530: check bus->read() error in core_rmw()
+    - net: pcs: mtk-lynxi: check regmap reads in mtk_pcs_lynxi_get_state()
+    - net: dsa: mt7530: check CORE_PLL_GROUP4 access in mt7531_setup()
+    - [riscv64] kprobes: Prevent probes in breakpoint handlers
+    - [riscv64] perf: fix resource cleanup on driver probe failure
+    - fbdev: omap2: dsi: do not copy isr table
+    - fbdev: udlfb: validate vendor descriptor items
+    - [amd64] iommu/vt-d: Fix CACHE_TAG_NESTING_DEVTLB polluting shared
+      variables in flush loop
+    - ALSA: usx2y: Stop clearing urb->hcpriv before submission
+    - [amd64] perf/x86: Unregister PMI handler on PMU init failure
+    - [amd64] perf/x86: Free hybrid state on PMU init failure
+    - nvmet: passthru: fix OOB reads when parsing ns id descriptor list
+    - docs: cgroup-v2: fix stale "io" controller introduction
+    - nvme-tcp: look up host_iface in the current netns
+    - tap: fix incorrect variable used for USO check in set_offload()
+    - apparmor: fix auditing of mount binary data
+    - [amd64] iommu/amd: Fix missing CMD_COMPLETE_PPR response for invalid PPR
+      requests
+    - nfc: mrvl: spi: Unregister dev on allocation fail
+    - nfc: nxp-nci: Add remove on IRQ error
+    - nvme: ratelimit the completion-path messages driven by device data
+    - ALSA: hda/conexant: Add mute LED quirk for HP ProBook 440 G5
+    - hfsplus: validate extent record length before writing it back
+    - regulator: fan53555: Add support for FAN53555BUC23X type
+    - soundwire: dmi-quirks: Disable ghost Realtek on Asus ROG Zephyrus Duo
+    - ipmi: Fix leak in __ipmi_bmc_register
+    - PCI: Avoid saving config space state if inaccessible
+    - ALSA: hda/intel: Add sanity check for BAR0 size
+    - ALSA: usb-audio: Rename the Audient iD14 monitor mix volume control
+    - [amd64] HID: amd_sfh: Serialize access to the shared emp2 pointer
+    - drm/virtio: reclaim pending vbufs before tearing down vqs
+    - exfat: keep FITRIM within the requested range
+    - gre: fix ERSPAN o_flags race/corruption in xmit and fill_info
+    - crypto: keembay - use crypto_memneq() to compare GCM AEAD tags
+    - crypto: sa2ul - use crypto_memneq() to compare AEAD tag
+    - libbpf: Fix ring buffer consumer loop on 32-bit position wrap
+    - crypto: keembay - use crypto_memneq() to compare CCM AEAD tags
+    - ksmbd: protect private extended attributes
+    - ksmbd: preserve access denied status for copychunk
+    - ksmbd: allow I/O on directory named streams
+    - ksmbd: fix durable handle v2 default timeout units (60 -> 60000)
+    - ksmbd: reject SMB3.1.1 binding with mismatched cipher
+    - ksmbd: fix off-by-one rejecting minimal COPYCHUNK query-limits request
+    - ksmbd: return buffer too small for short security queries
+    - ksmbd: handle empty QUERY_ALLOCATED_RANGES output
+    - ksmbd: honor byte-range locks for zero data
+    - ksmbd: allow FSCTL_SET_SPARSE without input buffer
+    - ksmbd: skip fallocate for SMB2_CREATE_ALLOCATION_SIZE on a stream handle
+    - ksmbd: report actual xattr value length in stream enumeration
+    - smb/server: cancel async requests when closing connection (CVE-2026-98439)
+    - ALSA: hda/realtek: Fix mute LED for HP Victus 15-fa1xxx (MB 8C3F)
+    - ksmbd: fix SMB2 byte-range lock end offset
+    - ksmbd: fix AsyncId zeroed before use in smb2_lock() cancel response
+    - ksmbd: reject blocking compound lock requests
+    - ksmbd: honor client signing-required in all modes
+    - smb: server: Make sure that passkey is not leaked on the heap in
+      user_config.c
+    - pNFS: honor clora_changed when recalling a layout
+    - ksmbd: notify parent directory leases on child create
+    - smb: server: Free session data in user_session.c with kfree_sensitive()
+    - NFS: Verify symlink inode before caching target
+    - NFSv4: pin the superblock for active state owners
+    - net: stmmac: use dma_addr_t for DMA addresses
+    - [amd64] platform/x86: msi-ec: Add MSI Katana GF76 11UEK EC firmware
+    - [amd64] platform/x86: thinkpad_acpi: Fix fan speed reporting on Edge E330
+    - ASoC: codec: max98926: fixup invert setup mask
+    - vdpa_sim: hold iommu_lock across dma_unmap passthrough transition
+    - drm/radeon: fix internal display on iMac11, 1 (RV770/DCE3.1)
+    - vdpa/mlx5: roll back MR update after VQ setup failure
+    - virtio_balloon: warn on failed buffer add in tell_host()
+    - rtc: ab-eoz9: add missing MODULE_DEVICE_TABLE()
+    - virtio_ring: fix infinite loop in virtnet_poll_cleantx when device is
+      broken
+    - ASoC: rt712-sdca: Pull high JD2 to prevent from entering TV mode
+    - rtc: ds1307: fix RX8130 wakeup alarm WADA bit for day-of-month mode
+    - rtc: brcmstb-waketimer: add missing MODULE_DEVICE_TABLE()
+    - i2c: imx-lpi2c: properly unwind resources on probe failure
+    - fbdev: maxine: fix 64-bit build error
+    - fbdev: platinumfb: add error checking for ioremap calls
+    - ksmbd: enable TCP keepalive for accepted connections
+    - sched_ext/scx_flatcg: expire cached hweights on weight changes
+    - ACPI: button: Add DMI quirk for Razer Blade Pro 17 early 2020 lid switch
+    - f2fs: avoid setting SBI_NEED_FSCK on transient resize failure
+    - ALSA: hda/realtek: Fix ALC700 audio on Intel Hades Canyon
+    - ALSA: usb-audio: Add iD14 MkI to monitor-mix volume quirk
+    - scsi: snic: Fix SCSI host leak on workqueue allocation failure
+    - docs: block: fix dead http link in blk-mq.rst
+    - net: ethernet: mtk_wed: increase WED v2 WDMA RESV_BUFF to 0x80
+    - fbcon: Fix KASAN slab-out-of-bounds Read in fbcon_prepare_logo
+    - powercap: intel_rapl: Fix kernel panic during PMU unbind
+    - net: stmmac: fix device node reference leaks in stmmac_mtl_setup()
+    - ALSA: hda/realtek: Add quirk for Lenovo IdeaPad Slim 3 15ABR8
+    - fuse: zero the partial EOF page when extending a file
+    - [amd64] ASoC: amd: yc: Add DMI entry for Alienware m18 R1 AMD
+    - HID: i2c-hid: Add a quirk for a Cirque I2C device.
+    - HID: multitouch: Fix stale MT slots when contact count drops to zero
+    - tpm: tpm_tis_spi: fix nodef CR50 tpm_tis_spi_resume is null
+    - ALSA: usb-audio: Skip mixer creation on M-Audio Venom
+    - ASoC: amd: acp3x-es83xx: Add HVY-WXX9/M1060 DMI quirk
+    - ceph: do not cache negative dentries for snapped directories
+    - ALSA: hda/conexant: Always enable the headset-mic pin on plugin
+    - ASoC: amd: acp-config: Add HVY-WXX9/M1060 DMI quirk
+    - ceph: fix use-after-dereference of NULL ci in __ceph_remove_cap()
+    - netfilter: tproxy: use DEBUG_NET_WARN_ON_ONCE for protocol fallbacks
+    - ksmbd: handle allocated range queries on dense files
+    - HID: i2c-hid: Add i2c-hid-quirk-bad-input-size quirk for 0911:5288 device
+    - nvme-fc: do not warn on controller removal race
+    - HID: roccat: fix locking in roccat_connect() and roccat_disconnect()
+    - scsi: devinfo: Add BLIST_SKIP_IO_HINTS for EMC Symmetrix
+    - [amd64] ASoC: amd: yc: Add Lenovo ThinkPad E16 Gen 2 (21JN) to quirks
+    - gpio: mvebu: keep resume masks within the irqchip cache
+    - sfc: add X4D PF support
+    - [amd64] ASoC: amd: yc: Add DMI quirk for Lenovo V15 G6 ARP
+    - [amd64] ASoC: Intel: bytcr_rt5651: Add quirk for Chuwi Hi8 with generic
+      DMI strings
+    - ALSA: hda/realtek: Limit internal mic boost on HP Pavilion 15 (103c:2164)
+    - ALSA: usb-audio: Add mixer mapping for MSI MAG B850M MORTAR WIFI
+    - ALSA: hda/realtek: Add quirk for Lenovo ThinkBook 16p Gen 3 ARH (21EK)
+    - ALSA: hda/realtek: Add quirk for Lenovo ThinkBook G8+
+    - ALSA: hda/realtek: Add mute LED quirk for HP Pavilion 15-ec1xxx
+    - ALSA: hda/realtek: Add quirk for HP ENVY 13-aq1xxx
+    - ALSA: hda/realtek: Add quirk for Acer Nitro AN515-45
+    - ALSA: hda/realtek: Fix speakers on ASUS PM3406CHA
+    - ALSA: hda/realtek: Add mute LED quirk for HP Pavilion 14-dv1001TU
+    - usb: mtu3: Fix double dereference in TP_printk
+    - net: usb: qmi_wwan: add Rolling Wireless RN947R
+    - ALSA: hda/realtek: Add quirk for ASRock NUC BOX-358H
+    - spi: cadence-qspi: Fix status polling with octal DTR chips
+    - ALSA: hda/realtek: Add mute LED quirk for HP Pavilion 15-eg3xxx
+      (103c:8bfd)
+    - ALSA: usb-audio: Add native DSD support for Cambridge Audio streamers
+    - regmap: Remove debugfs before cache teardown
+    - nbcon/reboot: Switch NBCON consoles into the emergency mode in
+      emergency_restart()
+    - Revert "namei: don't reveal overmounted entries in refwalk"
+    - media: em28xx: use video_unregister_device for radio_dev
+    - blk-crypto: fix NULL deref and UAF in __blk_crypto_evict_key()
+    - ceph: fail readdir when the MDS reply carries no dirfrag
+    - kcov: ignore an out-of-range comparison count in write_comp_data()
+    - kcsan: Avoid division by zero in kcsan_prandom_u32_max()
+    - libceph: bound mon_command ack decode to front len
+    - media: cx88: Disable PCI device on MPEG initialization failure
+    - media: em28xx: reject audio endpoint with zero packet size
+    - media: go7007: only set audio_enabled if go7007_snd_init() succeeded
+    - net: ipv4: add zero check for snd_cwnd_clamp
+    - net: usb: pegasus: do not advance rx_skb->data on dropped frames
+    - ocfs2/dlm: drain join handlers before releasing module text
+    - ocfs2: drain quorum work before removing the cluster
+    - ocfs2: pin owning modules for open debugfs files
+    - ocfs2: publish the filecheck owner before adding sysfs attributes
+    - [amd64] thunderbolt: Do not RPM complete unrelated subtrees on unplug
+    - udf: fix return value for non-recorded-allocated extents in
+      udf_map_block()
+    - wwan: wwan_hwsim: Pin module for debugfs file operations
+    - netfilter: nf_conntrack_expect: add and use nf_ct_expect_related_pair()
+    - sctp: auth: discard auth_chunk when skb_clone fails
+    - drm/xe/display: skip FORCE_WC and vm_bound check for external dma-bufs
+    - [amd64] platform/x86: lenovo/ymc: Only match lower byte in WMI lid switch
+      query response
+    - [amd64] KVM: SEV: Extract loading of guest-provided VMSA to a separate
+      helper
+    - [amd64] KVM: SEV: Mark vCPU RUNNABLE after AP_CREATE, even if VMSA is
+      unusable
+    - [amd64] KVM: x86/mmu: Use split "zap all fast" helpers when invalidating
+      memslot
+    - media: chips-media: wave5: Set inst->std during default format
+      initialization
+    - media: chips-media: wave5: Resume device before setting EOS flag
+      (CVE-2026-89866)
+    - [amd64] KVM: x86: Always initialize EFER reserved bits on vendor
+      initialization
+    - PCI/AER: Fix mapping of errors to agent & layer
+    - PCI/AER: Emit TLP Log only for unmasked errors
+    - [amd64] platform/x86/amd/pmc: Fix msg_port restoration in
+      amd_stb_debugfs_open_v2()
+    - mm/rmap: use huge_ptep_get() in try_to_migrate_one()
+    - mm/migrate: use huge_ptep_get() in remove_migration_pte()
+    - HID: input: read battery capacity from its actual report offset
+    - module: Use RCU in find_kallsyms_symbol().
+    - module/kallsyms: fix nextval for data symbol lookup
+    - module: Factor out elf_validity_ehdr
+    - module: Factor out elf_validity_cache_sechdrs
+    - module: Factor out elf_validity_cache_secstrings
+    - module: Factor out elf_validity_cache_index_info
+    - module: Factor out elf_validity_cache_index_mod
+    - module: Factor out elf_validity_cache_index_sym
+    - module: Factor out elf_validity_cache_index_str
+    - module: validate string table section types
+    - mm: remove unnecessary whitespace before a quoted newline
+    - mm: memcg-v1: fix wrong linux-mm list address in deprecation warnings
+    - i3c: master: Fix potential UAF in i3c_device_uevent()
+    - futex: Sanitize and document task_struct::futex::state transitions
+    - nfsd: use test_and_clear_bit for somebody_reclaimed to prevent lost update
+    - ALSA: hda/realtek: Enable micmute LED on HP EliteBook 6 G1a p/n:
+      AD3Q9ET#UUG
+    - sched_ext: Fix exit_task leak on fork failure during enable
+    - drm/amdgpu: Disable runtime PM for externally attached dGPUs
+    - cifs: add cifs_resize_file_locked() to guard fscache_resize_cookie() under
+      i_rwsem
+    - ALSA: hda/realtek: Add quirk for TongFang X6xx45xU
+    - ALSA: hda/realtek: Add quirk for TongFang X6SP45xU
+    - ALSA: hda/realtek: Add quirk for TongFang XxAF5xxx
+    - mm/kmemleak: stop the task stack scan early when interrupted
+    - mm/kmemleak: report RCU-tasks quiescent states during the scan
+    - memcg: bypass the reclaim and oom killer for dying tasks once oom_reaper
+      is done
+    - io_uring/waitid: honor task_work cancellation
+    - i2c: qcom-cci: Do not check return value of cci_init()
+    - i2c: qcom-cci: Remove overcautious disable_irq() calls
+    - i2c: qcom-cci: fix autosuspend cleanup
+    - iio: adc: adi-axi-adc: Initialize state mutex (CVE-2026-98674)
+    - smb: client: reject SetEA requests that do not fit the request buffer
+      (CVE-2026-99109)
+    - vsock/vmci: validate packet source for connected sockets (CVE-2026-99122)
+    - ipv6: Fix redirect exception creation for UDP/RAW sockets
+    - ipv6: udp: Create exceptions before socket matching (CVE-2026-99076)
+    - dm-integrity: fix NULL pointer dereference when the 'R' flag is used
+      (CVE-2026-99087)
+    - smb: client: fix uid/gid override in getattr with posix extensions
+    - smb: client: fix WSL reparse point uid/gid override
+    - cifs: Remove duplicate struct reparse_symlink_data and
+      SYMLINK_FLAG_RELATIVE
+    - cifs: Remove struct reparse_posix_data from struct cifs_open_info_data
+    - cifs: Rename struct reparse_posix_data to reparse_nfs_data_buffer and move
+      to common/smb2pdu.h
+    - smb: client: fix file type corruption in posix_reparse_to_fattr()
+    - hwmon: (asus_rog_ryujin) Synchronize HID command and report handling
+    - drm/amdgpu/pm: add workload profile pause helper
+    - drm/amdgpu: skip gfx switch_power_profile during GPU reset
+    - drm/amd/pm: fix gpu metrics energy accumulator for smu 13.0.0/13.0.7
+    - [arm64] drm/msm: RCU-free the scheduler-containing ring and VM objects
+      (CVE-2026-98180)
+    - smb: client: fix fattr leaking on wsl_to_fattr() failure
+    - [riscv64] KVM: Propagate interrupted G-stage faults
+    - [riscv64] KVM: Fix sdata leak and stale snapshot_addr in
+      snapshot_set_shmem
+    - watchdog: rzv2h: Obtain clock-divider and timeout values from OF match
+      data
+    - watchdog: rzv2h: Add support for configurable count clock source
+    - watchdog: rzv2h: Avoid division by zero (CVE-2026-98408)
+    - xfs: don't cross reference rmapbt with bitmaps if they're incomplete
+    - drm/amdkfd: Guard m->cp_hqd_eop_control setting by q->eop_ring_buffer_size
+    - drm/amdkfd: Avoid integer underflow with ffs in EOP ring size calc
+      (CVE-2026-98176)
+    - drm/amdkfd: Avoid integer underflow in EOP ring size calculation.
+      (CVE-2026-98177)
+    - smb: client: delete compound mids on send failure before unlock
+      (CVE-2026-98449)
+    - [amd64] drm/i915/dp_mst: Fix configuring TUs for a disconnected stream
+    - [amd64] KVM: x86: Re-pend GET_NESTED_STATE_PAGES if getting said pages
+      fails (CVE-2026-98863)
+    - [amd64] KVM: x86: Fill kvm_run exit fields in common
+      get_nested_state_pages() error paths
+    - serial: 8250_omap: fix wake irq cleared during suspend
+    - net/sched: act_ct: remove 'add_helper' dead code
+    - fs: don't silently unmount busy mounts (CVE-2026-98996)
+    - netfs: Fix missing alloc tagging of direct mempool allocations
+      (CVE-2026-98920)
+    - [amd64] KVM: SVM: Preserve TLB control (i.e. pending TLB flush) on failed
+      VMRUN (CVE-2026-98715)
+    - [amd64] KVM: SVM: Update control fields on #VMEXIT if and only if VMRUN
+      succeeded (CVE-2026-98714)
+    - ALSA: hda/realtek: Fix silent speaker on Higole F9B
+    - smb: client: clear post-EOF pagecache when extending a file via truncate
+    - smb: client: discard post-EOF pagecache when extending a file via clone
+      range (CVE-2026-98685)
+    - smb: client: flush and commit data before querying allocated ranges
+      (CVE-2026-98684)
+    - smb: client: flush dirty data before zeroing a range (CVE-2026-98683)
+    - smb: client: drain and invalidate before server-side copy/clone
+      (CVE-2026-98682)
+    - smb: client: only require read lease for size-extending zero range
+    - smb: client: require stable pages for signed connections
+    - dm-integrity: validate the superblock on resume (CVE-2026-99086)
+    - namespace: check a recursive bind mount for mount namespace loops
+      (CVE-2026-98989)
+    - drm/amd/display: Fix fast updates on DCE 6.x
+    - drm/amdgpu: remove gart_window_lock usage from gmc v12
+    - drm/amdgpu/gmc12: properly pass flush_type to gmc_v12_0_flush_vm_hub()
+    - drm/amdgpu: skip the noirq suspend reset for a switcheroo-parked GPU
+    - namespace: never expire a locked mount (CVE-2026-98978)
+    - regulator: of: fill in supply names in of_regulator_bulk_get_all()
+      (CVE-2026-99021)
+    - net: team: free skb when broadcast has no txable port (CVE-2026-99026)
+    - Input: xpad - add support for 8BitDo Pro 2 Wired Controller for Xbox
+    - [amd64] drm/i915/dmc: Add sanity check for DMC load address
+      (CVE-2026-99146)
+    - ipc: create_ipc_ns: drop mqueue mount on sysctl setup failure
+    - ipc: drop the mqueue mount with kern_unmount() on setup failure
+      (CVE-2026-99172)
+    - ntfs3: free replaced mount options after a grace period
+    - tracing: Fix fully-qualified variable reference printing in histograms
+    - tracing: Use __free() for expr_str() buffer
+    - tracing: Return ERR_PTR() from expr_str()
+    - tracing: Bound histogram expression strings with seq_buf
+    - tracing: Fix NULL dereference when copying keys for a field variable
+    - drm/amdgpu/uvd3.1: Fix checking whether UVD firmware keyselect was already
+      set
+    - [riscv64] KVM: Fix double-free of sdata in kvm_pmu_clear_snapshot_area()
+    - drm/amd/display: guard dc_sink dereferences in MST mode validation
+      (CVE-2026-98786)
+    - net/sched: cls_bpf: accept dev-bound programs on shared blocks
+    - net/sched: cls_flower: avoid stale mask references after delete
+    - net/sched: sch_teql: fix slaves_lock IRQ deadlock
+    - net/sched: sch_teql: fix use-after-free on lower qdisc drop
+      (CVE-2026-99282)
+    - net/sched: fix packet reordering on requeue
+    - net/sched: act_ife: do not consume the inner header on egress
+    - driver core: take parent lock on deferred probe
+    - driver core: Limit the messages on a refused uevent
+    - driver core: fix parent lock use-after-free on USB disconnect
+    - Drivers: hv: vmbus: Bounds check the shared ring buffer indices
+    - backlight: lm3630a: Cancel delayed work before destroying workqueue
+    - backlight: qcom-wled: Fix NULL pointer dereference in wled_remove()
+    - backlight: qcom-wled: Fix unbalanced OVP IRQ enable at probe
+    - backlight: qcom-wled: Fix WLED3 brightness register stride
+    - ksmbd: accept share config responses from ksmbd-tools before 3.5.3
+    - ksmbd: avoid restoring only in-memory EOF after allocation change
+    - ksmbd: fix extended session security negotiation for raw NTLMSSP
+    - ksmbd: fix OOB read and cross-share confusion in
+      ksmbd_validate_name_reconnect()
+    - ksmbd: fix overflow in dacloffset bounds check in build_sec_desc()
+    - ksmbd: fix parent dentry lifetime in directory enumeration
+    - ksmbd: ignore network devices of other namespaces
+    - ksmbd: preserve unreadable named streams on open
+    - ksmbd: reserve space for the UTF-16 terminator in stream info
+      (CVE-2026-99273)
+    - ksmbd: return end of file for reads past a named stream's data
+    - ksmbd: use u8 for SMB2 oplock level values
+    - ksmbd: validate security descriptor offsets before pointer arithmetic
+    - tcp: Fix potential UAF in reqsk_timer_handler(). (CVE-2026-99270)
+    - vlan: restore HW VLAN tag insertion with reorder_hdr off
+    - Revert "Bluetooth: btusb: Add ASUS USB-BT600 for Realtek 8761CU"
+      (Closes: #1149377)
+    - Revert "Bluetooth: btusb: Add ASUS USB-BT540 for Realtek 8761CU"
+      (Closes: #1149377)
+    - [amd64] KVM: x86/mmu: pass PFERR_GUEST_PAGE/FINAL_MASK to
+      kvm_translate_gpa
+    - [amd64] KVM: x86: Tell ->inject_page_fault() whether or a fault came from
+      hardware
+    - [amd64] KVM: VMX: Synthesize nested EPT violation
+      GVA_IS_VALID/GVA_TRANSLATED bits
+    - [amd64] x86/ioperm: Prevent NULL dereference on theoretical missing IO
+      bitmap
+    - wifi: b43: fix use-after-free in b43_bcma_remove()
+    - SUNRPC: fix netns use-after-free in write_gssp()
+    - smb: client: fix use-after-free infoleak via the readdir resume name
+    - smb: client: fix use-after-free in cifs_ses_add_channel()
+    - rapidio: mport_cdev: fix use-after-free in mport_mm_close()
+    - nvmet-fc: fix use-after-free in nvmet_fc_ls_create_connection()
+    - landlock: Fix superblock use-after-free in release_inode()
+    - lockd: Fix use-after-free in nlmsvc_retry_blocked
+    - media: au0828: fix use-after-free in bulk_timeout timer on disconnect
+    - media: cx23885: Fix use-after-free in cx23885_finidev due to race
+      condition
+    - media: hackrf: fix use-after-free in hackrf_alloc_urbs() error path
+    - media: imon: fix use-after-free in display_close via dev_dbg
+    - mm/hugetlb: fix use-after-free in hugetlb_mfill_atomic_pte()
+    - apparmor: fix a use-after-free in aa_lookupn_ns()
+    - ata: sata_fsl: Fix use-after-free of host_priv on probe() failure
+    - [s390x] cpum_cf: Check session mask before cpu offline
+    - [s390x] probes: Fix wrong opcode for cgrb fixup
+    - [s390x] signal: Fix incorrect return address in signal frame
+    - [s390x] zcrypt: Fix out-of-bounds ptr advance in
+      cca_query_crypto_facility()
+    - HID: wacom: Use hdev->product in wacom_setup_touch_input_capabilities
+    - HID: wacom: Advertise SW_MUTE_DEVICE capability prior to registration
+    - HID: wacom: Fix Use-After-Free in wacom_intuos_pad
+    - HID: wacom: Fix Use-After-Free in wacom_bamboo_pad
+    - HID: wacom: Redesign shared sibling data lifecycle
+    - HID: wacom: Setup SW_MUTE_DEVICE according to the order of input
+      registration
+    - HID: wacom: Write shared touch initial status only once
+    - klist: avoid accesses after waking klist_remove()
+    - ALSA: control: Fix UAF in snd_ctl_elem_add() on card disconnect
+    - ALSA: pcmtest: handle multiple wraps in random capture fill
+    - Bluetooth: hci_vhci: Pin module for debugfs file operations
+    - drm/panthor: Fix TOCTOU race between GROUP_REGISTERED check and erase
+    - fbdev: atmel_lcdfb: Prevent FIFO work after removal
+    - fbdev: udlfb: don't rebuild the mode list while the framebuffer is in use
+    - fs/proc/task_mmu: pin mm_users in do_pagemap_scan()
+    - genirq: Defer kfree(irqaction) until irq_thread_dtor() finishes
+    - genirq: Move interrupt thread exit_work object to irqaction
+    - HID: hiddev: keep state alive through disconnect unlock
+    - io_uring/io-wq: save worker type before dropping its reference
+    - [powerpc*] KVM: PPC: Book3S HV: Add SRCU protection for virtual-mode HPT
+      hcalls
+    - media: cx23885: unregister DVB bus when SP2 CI setup fails
+    - media: gspca: use vb2_video_unregister_device() on disconnect
+    - media: imx-jpeg: cancel timeout worker when streaming stops
+    - media: marvell: mcam: stop DMA and cancel s_bh_work before freeing DMA
+      buffers
+    - media: microchip-csi2dc: fix async notifier leak on probe error path
+    - media: microchip-isc: take a reference on the parsed endpoints
+    - media: redrat3: fix UAF in probe error path leaving rc device registered
+    - mm/slab: sample slab_state once in kmem_cache_destroy()
+    - mm: khugepaged: fix folio is used after folio_put/unlock()
+    - serial: core: shut down initialized port on removal
+    - xen-blkfront: unbind irq before tearing down ring and shadow requests
+    - wifi: ath9k: delete channel-context timers on deinit
+    - usb: gadget: fix refcount underflow in gadgetfs_bind() error path
+    - ufs: use u64 for directory size in ufs_last_byte
+    - resource: report a devm_request_resource() conflict under the lock
+    - phy: core: Fix race-condition between _of_phy_get() and try_module_get()
+    - power: supply: sbs-battery: disable polling before supply teardown
+    - nvmem: core: Fix OOB read for bit offsets of more than one byte
+    - media: rc: Ensure that rc_unregister_device() does not free input device
+    - media: rc: Ensure registered is cleared in error path
+    - media: rc: fintek-cir: process a full RX buffer instead of overflowing it
+    - media: rc: mce_kbd: Fix inconsistent locking of keylock
+    - media: rc: Use after free in ir_raw_event_handle()
+    - media: rc: After rc_unregister_device() timers can be re-armed
+    - media: rc: Fix use after free in bpf progs
+    - media: rc: Fix ABBA deadlock by making locks more fine grained
+    - ocfs2/heartbeat: unlink live slots when their node is missing
+    - ocfs2/dlm: hold a lock reference across grant AST enqueue
+    - ocfs2/dlm: hold the lookup reference across convert AST enqueue
+    - ocfs2: cancel quota sync work before freeing quota info
+    - ocfs2: fix chunk number of the first chunk in a local quota file
+    - ocfs2: pin refcount trees before dropping the lookup lock
+    - ocfs2: snapshot dentry names in file and setattr traces
+    - smb: client: fix OOB last_entry pointer from unbounded LastNameOffset
+    - smb: client: stop processing a read response after a receive error
+    - ovl: take a snapshot of the name for copy up
+    - ovl: use the pinned upper dir in ovl_fix_origin()
+    - ovl: always encode the origin fh when index is enabled
+    - ovl: do not copy up an xattr value that was never read
+    - ovl: fix a torn path in ovl_get_redirect()
+    - ovl: fortify ovl_copy_xattr() against underlying layer modifications
+    - ovl: read the nlink xattr of every indexed non-dir
+    - ovl: set the revalidate flags after d_instantiate()
+    - ovl: skip copy up of empty security.capability
+    - xfs: clear the symlink zapped flag if inline symlink is ok
+    - xfs: compute the correct fdblocks/frextents for repair when they're
+      negative
+    - xfs: fix ondisk symlink target validation in xrep_dinode_check_dfork
+    - xfs: fix xfs_rename_space_res for non-pptr filesystems
+    - xfs: fix missing xfs_qm_adjust_dqlimits call in quotacheck repair
+    - xfs: fix buffer overruns in xfs_ioc_attr_list
+    - xfs: online quotacheck must dirty dquot if enforcement adjustments needed
+    - xfs: fix unnecessary dapos truncation in xchk_dir_walk
+    - xfs: fix buffer overflow in corrupt inline attr structure
+    - xfs: actually report corrupt xattrs as XFAIL during cross-referencing
+    - xfs: fix inode btree repair when a cluster is larger than a chunk
+    - xfs: always reset incore attr fork buffer when resetting fork
+    - xfs: don't pass iget failures up when marking ondisk inodes
+    - xfs: don't fix the directory tree if live update fails
+    - xfs: don't proceed with xattr repair if the live update fails
+    - xfs: fix skipped inode mask handling in iscan
+    - xfs: don't repair fs summary counters with garbage
+    - xfs: fix lost errno returned from xfarray_foliosort
+    - xfs: allow softlimit with no hardlimit in quota scrub
+    - xfs: assign an owner to scrub_stats_fops
+    - xfs: bail out of directory tree repairs on error
+    - xfs: fix revalidation of xchk_dquot_iter cached mappings
+    - xfs: abort dirtree repair if the live update hook dies
+    - xfs: check fork type against dabtree block magic number
+    - xfs: mark overfull dabtree node blocks as corrupt
+    - xfs: jump out of xchk_bmap_check_rmap if fatal signals
+    - xfs: adjust checks for cross-AG reaping issues
+    - xfs: fix xchk_stats_estimate_bufsize to allow for the trailing null
+    - ksmbd: serialize directory emptiness checks with readdir
+    - ksmbd: fix breaking_cnt leak on early return in oplock_break()
+    - EDAC/mc: Really fix error path ordering in edac_mc_alloc()
+    - ufs: fix ufs_read_cylinder() failure handling
+    - media: usbtv: drop redundant device reference
+    - media: usbtv: fix null-pointer dereference on disconnect
+    - xfs: reject absurdly large xattr value lengths in xchk_xattr_actor
+    - xfs: reject out-of-range attribute value lengths in xfs_attr_copy_value
+    - xfs: reject remote xattr entries with an out-of-range value length
+    - xfs: abort directory tree repair whenever dl->aborted is set
+    - xfs: always forget cached ACLs if the attr fork swap succeeds
+    - xfs: always report inode repair setup failures
+    - xfs: always report scrub errors in tracepoints
+    - xfs: always zero the whole shortform header when zeroing attr fork
+    - xfs: bound da-node entry count against the correct geometry
+    - xfs: bound inode fork length against the fork size during log recovery
+    - xfs: check for fragments when full-extent sharing matches
+    - xfs: check for termination during rmap btree walk
+    - xfs: clarify various parts of the bitmap API
+    - xfs: clear set[ug]id mode bits when zapping attr fork
+    - xfs: don't clear COWEXTSIZE on directories on reflink filesystems
+    - xfs: don't overrun incore inode when cleaning attr forks
+    - xfs: don't rescan ifree and icount when frozen
+    - xfs: don't subtract excess usage twice when computing agf_btreeblks
+    - xfs: fix correction of unwritten extents in quota file data fork
+    - xfs: fix data fork block count check in xrep_inode_blockcounts
+    - xfs: never reset the default quota timer
+    - xfs: only written file data blocks can be shared
+    - xfs: opportunistically skip btree block checks
+    - xfs: propagate errors while checking null siblings
+    - xfs: range-check bc_levels array access in scrub tracepoints
+    - smb: server: size directory name conversion buffer correctly
+    - smb: client: don't resurrect an exiting tcon from cached dir workers
+    - smb: client: fix buffer overflow in SMB2_tcon()
+    - smb: client: fix fiemap wild read on empty truncated response
+      (CVE-2026-99274)
+    - smb: client: fix slab-out-of-bounds write in id_mode_to_cifs_acl()
+    - pNFS: Fix CB_NOTIFY_DEVICEID CHANGE to consume ndc_immediate
+    - pnfs/blocklayout: Complete a device upcall only on its own reply
+    - pnfs/blocklayout: Complete a device upcall when the pipe is closed
+    - NFSv4.1/pnfs: suspend pNFS on NFS4ERR_TOOSMALL from LAYOUTGET
+    - NFSv4/filelayout: Anchor page coalescing on pattern_offset
+    - NFSv4/flexfiles: fail I/O to the data server once a lock is lost
+    - NFSD: cap the number of listeners accepted in listener_set
+    - nfsd: clear XDR padding in GETXATTR replies
+    - NFSD: copy SETXATTR data from all XDR buffer segments
+    - NFSD: Do not send CB_RECALL_ANY to NFSv4.0 clients
+    - NFSD: Don't complete a cld upcall the daemon has not read
+    - nfsd: don't modify a session slot when replaying its cached reply
+    - NFSD: Fail a pool_threads read whose reply does not fit
+    - nfsd: Fix id-to-name cache entry leak in idtoname_parse()
+    - NFSD: Fix out-of-bounds read in the rpc_status dump
+    - nfsd: hold cl_lock in client_has_openowners()
+    - nfsd: honour client-provided attributes for NFS4_CREATE_EXCLUSIVE4_1
+    - NFSD: map fh_verify() status codes for NFS_ACLv3 replies
+    - nfsd: preflight SEQUENCE replies before accepting a slot
+    - nfsd: propagate SETXATTR value decode errors
+    - NFSD: Reject an oversized principal hash from nfsdcld
+    - NFSD: Resolve the recall-any mask names in the trace format
+    - NFSD: Return NFSERR_ISDIR for NFSv2 READ and WRITE on a non-regular file
+    - NFSD: Set nn->cld_net before registering the cld pipe
+    - NFSD: validate transport name in listener_set before serv creation
+    - nfsd: zero NFSv4 COMPOUND tag padding
+    - SUNRPC: Copy the deferred RPC Call from the head buffer
+    - SUNRPC: Do not credit control-record octets to the RPC stream
+    - SUNRPC: fix oversized GSS proxy token copy
+    - SUNRPC: keep the first error in svc_register()
+    - sunrpc: pin gss module across auth_domain RCU free
+    - SUNRPC: Reject a socket that already has an svc_sock attached
+    - SUNRPC: Reject a TLS alert record that is not two octets
+    - SUNRPC: Resume receiving after a TLS control record
+    - SUNRPC: trace an accepted transport before publishing it
+    - sunrpc: treat empty auth.unix.gid replies as negative entries
+    - SUNRPC: Treat every TLS error alert as fatal
+    - rxrpc: Fix double IRQ enablement
+    - rxrpc: Fix return in rxrpc_recvmsg_data() for service calls
+    - [amd64] x86/mm/pat: Fix effective RW computation in
+      lookup_address_in_pgd_attr()
+    - [amd64] KVM: SVM: Trigger new ASID allocation in both VMCBs on pCPU switch
+    - [amd64] KVM: nSVM: Ignore EFER.LMA if EFER.LME=0 when preparing L2 state
+    - KVM: Use goto to handle errors during memslot preparation
+    - [amd64] KVM: x86/mmu: Bug the VM if KVM attempts to walk more levels than
+      the MMU has
+    - [amd64] KVM: x86/mmu: Bug the VM if KVM calcs a CPU role with EFER.LMA=1
+      && CR4.PAE=0
+    - [amd64] KVM: x86/xen: Enforce 4-byte alignment of vcpu_info registration
+    - [amd64] KVM: x86/xen: Take kvm->srcu in __kvm_xen_has_interrupt()
+    - [amd64] KVM: x86: Preserve DR6.BLD (Bus Lock Detect) when delivering #DB
+      payload
+    - [amd64] KVM: x86: Request event processing for exception VM-Exits
+    - [amd64] KVM: x86: Take SRCU in kvm_zap_gfn_range()
+    - [amd64] KVM: x86: Zero reserved synic flags when delivering message to
+      avoid stack leak
+    - [powerpc*] KVM: PPC: Book3S HV: Add preempt_disable() around virtual-mode
+      HPTE bit-lock users
+    - [powerpc*] KVM: PPC: Fix get_d_signext() 12-bit displacement for
+      paired-single D-form
+    - HID: zydacron: validate key report length
+    - HID: amd_sfh: Remove unsupported motion-state field from accelerometer
+      report
+    - HID: amd_sfh: Use report type from request node
+    - HID: core: Fix out-of-bounds left shift by 32 in s32ton()
+    - HID: cougar: reject short special-key reports
+    - HID: cp2112: validate response report lengths
+    - HID: elo: reject short touchscreen reports
+    - HID: logitech-dj: validate unnumbered keyboard reports
+    - HID: mcp2200: validate READ_ALL response length
+    - HID: mcp2221: validate response report length
+    - HID: picoLCD: check for fb_deferred_io_init() error
+    - HID: prodikeys: validate fixed-format MIDI reports
+    - HID: pxrc: reject short input reports
+    - HID: quirks: Always poll the Anne Pro 2 with product ID a292
+    - HID: roccat: isku: reject short button reports
+    - HID: roccat: koneplus: reject short button reports
+    - HID: roccat: konepure: reject short button reports
+    - HID: roccat: kovaplus: reject short button reports
+    - HID: roccat: pyra: reject short button reports
+    - HID: roccat: ryos: reject short special reports
+    - HID: roccat: savu: reject short special reports
+    - ovl: set OVL_WHITEOUTS before publishing the upper dir
+    - io_uring/kbuf: advance head when a pickup empties the buffer ring
+    - io_uring/net: keep recvmsg buffer select length within MAX_RW_COUNT
+    - io_uring/net: don't retry a non-blocking connect() that fails with -EAGAIN
+    - io_uring/io-wq: no new workers once the exit has begun
+    - io_uring/rsrc: charge buffer arrays and nodes to memcg
+    - io_uring: charge tctx nodes and personalities
+    - io_uring: free XArray nodes left by a failed store
+    - io_uring/sqpoll: don't wait for the thread to exit
+    - io_uring/timeout: count cancelled timeouts in cq_timeouts
+    - media: rc: Fix build failure with CONFIG_LIRC disabled
+    - drm/amdgpu/powerplay: Align get_tonga_state_array() header with prototype
+    - netfilter: conntrack: always lower timeout for non-closing RST packets
+    - opp: fix use after free in _update_opp_table_clk()
+    - tun: Require CAP_NET_ADMIN to attach to an ownerless device
+      (CVE-2026-99281)
+    - mm/rmap: don't discard lazyfree THPs at PMD level
+    - smb: client: fix early procfs exposure race
+    - smb: client: do not pass a NULL buf to is_oplock_break()
+    - ksmbd: deny access for an empty DACL instead of granting the request
+    - ksmbd: prevent stale data from being written by SMB2 WRITE requests
+    - ksmbd: prevent share root removal through empty paths
+    - ksmbd: fix out-of-bounds read when padding the final compound response
+    - ksmbd: verify transform SessionId matches the decrypted header
+    - ksmbd: fix use-after-free after a failed durable reconnect
+    - [amd64] KVM: VMX: Preserve negative return value in vmx_handle_exit() with
+      bus lock detected
+    - driver core: Check drivers_autoprobe for all added devices
+    - driver core: take parent lock in async device attach
+    - ksmbd: fix session reference leak on compounded SESSION_SETUP
+    - ksmbd: fix invalid pointer dereference when get_inode_acl() fails
+    - ksmbd: use the existing xattr name for a named stream
+    - ksmbd: fix named stream write and EOF handling
+    - [amd64] KVM: VMX: Formally define KVM's "0xdead" exit reason used for
+      failed VM-Enter
+    - [amd64] x86/mm/pat: Use pr_warn() for early W^X warnings
+    - inet: reject unhashed sockets during established lookups (CVE-2026-99288)
+    - ovl: check that the parents of volatile/dirty are dirs
+    - ovl: hold a reference on the parent in readdir
+    - ovl: do not copy up a dentry that was removed
+    - smb: smbdirect: fix buffer length underflow in RDMA transfers
+    - drm/amdgpu: drop retry loop in amdgpu_hmm_range_get_pages
+    - iommufd: Fix event queue release use-after-free
+    - mm/hugetlb: stop using avoid_reserve flag in fork()
+    - mm/hugetlb: rename avoid_reserve to cow_from_owner
+    - mm,hugetlb: change mechanism to detect a COW on private mapping
+    - mm,hugetlb: sort out folio locking in the faulting path
+    - mm/hugetlb: fix use-after-free of a new anon folio
+    - KVM: guest_memfd: Gracefully handle xarray errors when binding a memslot
+    - staging: rtl8723bs: fix spacing around operators in rtw_recv.c
+    - staging: rtl8723bs: fix protected RX frame validation in decrypt path
+    - wifi: mt76: mt7996: unlink TWT flow if the MCU rejects the agreement
+    - mptcp: hold MP_JOIN msk ref when cloning reqsk
+    - virtio_net: atomically disable rx mode work
+    - nvmet: replace use of system_wq with system_percpu_wq
+    - nvmet-auth: serialize access to DH-HMAC-CHAP state to fix UAF
+    - media: ipu-bridge: Fix use-after-free in IVSC error path
+    - [amd64] ASoC: amd: ps: fix snd_acp63_remove() teardown ordering
+    - mm: khugepaged: fix swap entry value to folio_pfn()
+    - media: s5p-mfc: use timer_shutdown_sync() for the self-rearming watchdog
+    - scsi: dc395x: sync the waiting_timer before freeing the host
+    - media: rc: Fix race between bpf(BPG_PROG_ATTACH) and device unregister
+    - drm/nouveau: reject zero-size notifier object allocation
+    - drm/nouveau/svm: drain fault handler before freeing svmm
+    - drm/nouveau: disable the fence uevent work instead of just cancelling it
+    - drm/nouveau: cancel the DP IRQ work before freeing the connector
+    - drm/nouveau: don't dereference outp before checking it in nouveau_dp_irq
+    - drm/amdgpu: recompute the dw estimate after allocating a new VM update job
+    - drm/amd/display: Force GAMCOR for subsampled surfaces with PQ/Gamma22/HLG
+    - media: streamzap: Add missing rc_unregister_device()
+    - media: redrat3: Ensure we don't read beyond the end of the packet
+    - media: redrat3: Ensure all urbs are suspended
+    - media: sunxi-cir: Ensure no more interrupts can occur before free
+    - media: meson-ir-tx: Ensure clock is disabled on unbind
+    - media: meson-ir-tx: Ensure rc_free_device() is called on unbind
+    - media: meson-ir-tx: Ensure probe error is propagated
+    - media: ir-hix5hd2: Ensure rdev is setup before interrupts are enabled
+    - media: imx-jpeg: finish the job on device_run() error paths
+    - microblaze: Fix MB_MANAGER build with older binutils
+    - udf: Make sure there's enough space for LVID implementation use field
+    - aio: prevent eventfd/epoll recursion on poll
+    - ipc/mqueue: release notification resources during inode eviction
+    - remoteproc: elf_loader: Bound the section header table
+    - microblaze: reserve the ABI argument-home area in the signal frame
+    - microblaze: don't clobber r3/r4 restored by rt_sigreturn
+    - microblaze: preserve the MSR carry flags across signals
+    - memory: brcmstb_dpfe: Fix out-of-bounds access due to DCPU offset
+    - memory: brcmstb_dpfe: Bounds check DCPU-supplied MSG_ARG_COUNT
+    - wifi: rtw88: fix out-of-bounds CAM write when key table is full
+    - wifi: rtw89: 8851b: fix swapped DPK channel/bandwidth backup fields
+    - wifi: rtw89: cap firmware section_num before parsing
+    - clk: mstar: msc313-mpll: fix off-by-one in clock array allocation
+    - bpf: Fix queue/stack map u32 index overflow
+    - hte: tegra194: Initialize slice locks before registering chip
+    - wifi: ath11k: Fix possible memory leak in ath11k_dp_srng_setup()
+    - media: i2c: ov8856: fix debug message to report actual CSI-2 lane count
+    - mtd: spi-nor: sfdp: check the length of the xSPI Profile 1.0 table
+    - mtd: spi-nor: sfdp: check the length of the SCCR map
+    - mtd: spi-nor: Unprepare legacy controllers upon RWW wait interruption
+    - fs_pin: publish pins with RCU list helpers
+    - fs: make sure to call fsnotify_inoderemove() only once when inode is dead
+    - [arm64] dts: ti: k3-am62-verdin: Set MMC clock pins as OUTPUT
+    - thermal: intel: powerclamp: Reject invalid window_size values
+    - thermal: intel: int340x: Fix temperature selection around 0 C
+    - isofs: fix Rock Ridge CE extent validation on multisession media
+    - [arm64] dts: mediatek: mt7986: correct timer frequency
+    - media: cx231xx-audio: drain wq_trigger before audio fini
+    - media: cx231xx: Fix cleanup path on failure
+    - firewire: core: fix source bus ID detection for AT context in big-endian
+      systems
+    - media: au0828: Free URBs when starting DVB streaming fails
+    - media: i2c: tc358743: add missing color-space strings
+    - media: go7007: bound EZ-USB I2C transfers to the usb_buf size
+    - media: saa7146: Initialize interrupt lock before requesting IRQ
+    - media: vim2m: keep transaction buffer count stable while streaming
+    - media: vicodec: fix out-of-bounds write on under-rounded coded dimensions
+    - media: vicodec: make encoder CAPTURE dimensions read-only
+    - media: vidtv: fix frontend reference leak on unbind
+    - media: vidtv: fix uaf in vidtv_bridge_on_new_pkts_avail
+    - media: marvell-cam: fix unmet dependency for VIDEO_MMP_CAMERA
+    - staging: media: av7110: fix corrupted BER reporting in sp8870
+    - staging: media: av7110: fix sp8870 initialization failure state
+    - media: m2m-deinterlace: fix default capture field
+    - ASoC: codecs: lpass-wsa-macro: use v2.5 Compander1 addresses on v2.5+
+    - media: microchip-isc: fix awb_mutex and lock lifecycle
+    - media: microchip-isc: synchronize the IRQ before disabling clocks on stop
+    - media: microchip-isc: disable histogram and flush AWB work on teardown
+    - media: microchip-isc: do not touch WB registers when not streaming
+    - media: microchip-isc: fix PM runtime leak in AWB work handler
+    - media: microchip-isc: don't sleep in the clk .is_enabled callback
+    - mtd: rawnand: sunxi: reject ECC maximization on small pages
+    - media: adv7604: avoid negative array index in log_status when cp_read
+      fails
+    - media: stv090x: bound DiSEqC reply length to msg[] size
+    - media: stv0900: bound DiSEqC reply length to msg[] size
+    - media: nuvoton: npcm-video: quiesce VCD IRQ before teardown
+    - drm/bridge: analogix_dp: Restore mandatory samsung DP DT properties
+    - dmaengine: altera-msgdma: initialize state before requesting IRQ
+    - ACPI: pfr_update: zero-initialize capability query result
+    - power: supply: qcom_smbx: include base when petting watchdog
+    - power: supply: qcom_smbx: test battery health status bits
+    - power: supply: qcom_smbx: fix float voltage selector
+    - power: supply: qcom_smbx: notify battery overvoltage recovery
+    - power: supply: bq27xxx: synchronize work cancellation on suspend
+    - iio: imu: inv_icm42600: fix odr change not caught in certain cases
+    - sched/fair: Reset NUMA fault locality after scan period update
+    - media: vivid: round the height down to the vertical subsampling factor
+    - media: cx231xx: preserve I2C transfer length
+    - media: vivid: cancel svid ctrl work on release
+    - media: vicodec: zero-initialize stateful decoder heap buffers
+    - crypto: atmel-tdes - zero-initialize device state
+    - crypto: atmel-aes - fix AADLENR for standalone GHASH
+    - lib/842: reject output overflows from index and short data
+    - lib/842: require a complete history block for repeat templates
+    - crypto: ccp - Initialize DBC ioctl mutex before registering device
+    - PM: CPU: Restore synchronize_rcu() to cpu_pm_unregister_notifier()
+    - affs: validate blocks before freeing them
+    - dm vdo indexer: prevent delta list overflow on load
+    - dm vdo indexer: validate record page numbers better
+    - f2fs: force out-place update for all writes on compressed file
+    - f2fs: compress: fix to handle race between truncate and writeback
+    - ata: ahci_st: Do not ignore errors when getting the reset controls
+    - ata: ahci_st: Assert the power down reset in the probe() error path
+    - ata: libahci: Free the IRQs when activating a multi-IRQ host fails
+    - ata: libata: Do not leave ata_host_stop() registered when activation fails
+    - media: i2c: alvium-csi2: balance runtime PM usage count on remove
+    - [amd64] platform/x86: hp-bioscfg: fix slab-out-of-bounds write in
+      hp_convert_hexstr_to_str()
+    - ntfs3: bound index head insertions by buffer capacity
+    - crypto: atmel-tdes - sync output bounce buffer before DMA
+    - usb: fotg210: validate endpoint index in ep0 handlers
+    - ASoC: wm8994: Fix runtime PM imbalance in wm8994_component_probe()
+    - ASoC: arizona-jack: Fix runtime PM imbalance in
+      arizona_start_hpdet_acc_id()
+    - iio: accel: kxcjk-1013: Disable autosuspend on remove
+    - iio: accel: mma9551: disable autosuspend on remove
+    - iio: accel: mma9553: disable autosuspend on remove
+    - iio: adc: at91-sama5d2: disable autosuspend on remove
+    - md/raid5: track disks array size to fix extra_page leak on error paths
+    - md/raid5: fix NULL pointer dereference in raid5_free_percpu
+    - md/raid5: validate payload size before calculating payload_len
+    - cpufreq: conservative: Restrict deferred downscaling to low load
+    - regulator: core: Fix c_rdev reference leak in regulator_resolve_coupling()
+    - regulator: core: Fix rdev reference leak in regulator_resolve_supply()
+    - ASoC: codecs: wm8994: Fix runtime PM leak in wm8994_mic_detect()
+    - fpga: Fix of_fpga_mgr_get() reference in fpga_mgr_lock() docs
+    - regulator: rt6190: Fix runtime PM imbalance in rt6190_out_enable()
+    - iio: accel: adis16201: fix channel order for buffer mode
+    - iio: imu: inv_icm42600: force accel odr change when switching power mode
+    - iio: light: apds9306: fix default sampling frequency definition
+    - ata: libata-scsi: abort multi-sector pass-through commands when
+      multi_count is 0
+    - PCI: pciehp: Make 'pciehp_poll_mode' parameter read-only
+    - signalfd: don't dequeue the forced fatal signals
+    - seccomp: restore knotif->state when SECCOMP_ADDFD_FLAG_SEND is interrupted
+    - staging: media: imx: csc-scaler: fix ipu_image_convert_run leak on queue
+      error
+    - leds: ktd2692: Pass context to regulator cleanup
+    - media: ir_toy: Validate the maximum tx carrier
+    - media: meson-ir-tx: Prevent divide by zero in meson_irtx_prepare_pulse()
+    - ASoC: ti: davinci-mcasp: Fix runtime PM imbalance in
+      __davinci_mcasp_set_clkdiv()
+    - [arm64] dts: ti: k3-am62a: Fix MMC0_CLK register address
+    - [arm64] dts: ti: k3-am62a7-sk: Set eMMC clock pin as OUTPUT
+    - [arm64] dts: ti: k3-am62a7-sk: Set SD clock pin as OUTPUT
+    - [arm64] dts: ti: k3-am62a-phycore-som: Set eMMC clock pin as OUTPUT
+    - [arm64] dts: ti: k3-am62-lp-sk: Set eMMC clock pins as OUTPUT
+    - [arm64] dts: ti: k3-am625-beagleplay: Set MMC clock pins as OUTPUT
+    - [arm64] dts: ti: k3-am62x-sk-common: Set SD clock pin as OUTPUT
+    - [arm64] dts: ti: k3-am62-phycore-som: Set eMMC clock pin as OUTPUT
+    - [arm64] dts: ti: k3-am62x-phyboard-lyra: Set SD clock pin as OUTPUT
+    - drm/mali-dp: Fix runtime PM leak in malidp_crtc_atomic_enable()
+    - [amd64] cpufreq/amd-pstate: Skip auto_sel write when it already matches
+      the mode
+    - nilfs2: fix checkpoint root lifetime on sysfs errors
+    - [amd64] EDAC/i10nm: Fix mdev reference leak in i10nm_get_ddr_munits()
+    - md: validate bblog_size when loading v1.x badblocks metadata
+    - crypto: amlogic - Fix IRQ handler return value and fallthrough logic
+    - crypto: hisilicon/hpre - fix pointer dereference before length check
+    - crypto: hisilicon/hpre - return -EOVERFLOW for small ECDH output buffer
+    - crypto: hisilicon/hpre - fix ECDH destination DMA mapping
+    - crypto: hisilicon/hpre - fix GFP flags for dma_alloc_coherent
+    - crypto: qat - zero the VF migration state buffer on save
+    - media: cec: extron: clear response tail before dispatch
+    - media: v4l2-ctrls: do nothing if controls[0] == NULL in cluster functions
+    - media: marvell: manage the MMP camera clock provider
+    - media: go7007: unregister the I2C adapter on USB probe failure
+    - media: cx18: Disable PCI device on probe failure
+    - media: tw68: balance PCI enable on cleanup
+    - media: adv7180: Initialize mutex before ancillary clients
+    - media: au0828: Fix media device leak in au0828_usb_probe()
+    - media: vpif_capture: Fix i2c adapter reference leak in vpif_probe()
+    - media: vpif_display: Fix i2c adapter reference leak in vpif_probe()
+    - media: atmel-isi: release unregistered video device on remove
+    - [arm64] dts: freescale: imx8mp-verdin-yavia: fix external GPIOs
+    - [arm64] clk: qcom: gcc-ipq5018: mark 'gpll0_main' clock as critical
+    - mfd: da903x: Cancel IRQ work during teardown
+    - mfd: wcd934x: set DMA mask on parent to silence "DMA mask not set"
+    - mfd: wcd934x: Fix NULL pointer dereference on IRQ probe deferral
+    - nilfs2: fix deadlock between nilfs_evict_inode() and find_inode()
+    - kobject: fix out-of-bounds access in kobject_action_type()
+    - [amd64] ASoC: Intel: atom: Fix platform device leak on probe failure
+    - ASoC: rt712-sdca-dmic: fix drvdata type in the gain controls
+    - clk: mvebu: ap-cpu-clk: Assign .num before accessing .hws
+    - regulator: core: Fix coupled regulators reference leak on removal
+    - hwmon: (lm95245) Fix negative temperature conversion
+    - [amd64] platform/x86/intel/pmt: Block mmap when callback is present
+    - mtd: rawnand: atmel: Fix MCK clock leak in atmel_nand_controller_init()
+    - mtd: maps: pci: balance PCI enable on cleanup
+    - mtd: cfi_cmdset_0002: cap the write-buffer chunk at 256 bytes on an x8
+      device
+    - mtd: amd76xrom: Fix PCI device reference leak in amd76xrom_init_one()
+    - mtd: maps: l440gx: Fix double put of the ISA bridge in init_l440gx()
+    - mtd: maps: l440gx: Fix double put of the PM device in init_l440gx()
+    - mtd: mtdsuper: Fix MTD device reference leak in mtd_get_sb()
+    - mtd: Call get_wunit() on the master partition
+    - hwmon: (coretemp) Refresh the temperature on the first read
+    - dcache: report a Tasks-RCU quiescent state in dentry_kill()
+    - ASoC: sdw_utils: clear stale RT711 device reference on exit
+    - ASoC: wcd9335: Fix device reference leak in wcd9335_slim_status()
+    - peci: aspeed: Initialize state before requesting IRQ
+    - peci: npcm: Initialize state before requesting IRQ
+    - netfilter: ctnetlink: fix inverted IPv6 address match in dump filter
+    - [arm64] dts: qcom: sdm845-xiaomi-beryllium: Extend the xbl_mem region
+    - [arm64] dts: qcom: sdm845-xiaomi-polaris: Extend the xbl_mem region
+    - [amd64] iommu/vt-d: Avoid out-of-range shift in qi_desc_dev_iotlb_pasid()
+    - ASoC: codecs: wcd9335: Fix SLIM interface device leak in
+      wcd9335_slim_status()
+    - iio: dac: ad5755: validate SPI match data
+    - iio: frequency: adf4377: reject devices without match data
+    - iio: potentiometer: x9250: reject devices without match data
+    - iio: pressure: bmp280: validate SPI match data
+    - iio: adc: max11205: reject devices without match data
+    - iio: adc: mcp3911: reject devices without match data
+    - iio: adc: ti-adc128s052: validate SPI match data
+    - iio: accel: adxl313: reject devices without match data
+    - iio: accel: adxl380: reject devices without match data
+    - iio: adc: stm32: fix minimum sampling time values
+    - spi: bcm2835: fix device_node reference leak in bcm2835_spi_setup()
+    - fs/ntfs3: fix integer overflow in find_log_rec() causing OOB read
+    - cxl/acpi: Check ACPI companion before use
+    - media: qcom: camss: vfe-17x: Fix write master buffer done being dropped
+    - media: qcom: camss: vfe: Fix VFE reset while another line is streaming
+    - ALSA: sgio2audio: Only free successfully requested IRQs
+    - ALSA: core: Check shutdown flag at D0 power-state, too
+    - clk: starfive: jh7110-isp: fix refcount leak in jh7110_ispcrg_probe()
+    - pseries/plpks: fix error handling in plpks_read_var()
+    - pseries/plpks: validate input to plpks_signed_update_var()
+    - pseries/plpks: clear sensitive PLPKS buffers
+    - pseries/plpks: clear signed update authentication buffer
+    - pseries/plpks: clear SED key data after use
+    - ASoC: pcm6240: do not free an unrequested IRQ
+    - nilfs2: clear dirty flag on bdev buffers on log write failure
+    - pwm: tiehrpwm: Clear period on disable to allow reconfiguration
+    - [arm64] drm/msm/hdmi_phy: Cleanup after msm_hdmi_phy_resource_enable()
+      failure
+    - [arm64] drm/msm/hdmi_bridge: Correct poweroff/audio cleanup order in
+      post_disable
+    - staging: greybus: uart: fix racy TIOCMIWAIT implementation
+    - staging: rtl8723bs: fix RX buffer OOB write from device-reported length
+    - media: tw686x: fix V4L2 device lifetime on probe failure
+    - media: pvrusb2: Fix USB parent device leak in class_dev_create()
+    - media: rtl28xxu: fix SDR platform device leak
+    - media: exynos4-is: Fix a race between s_stream(0) and the interrupt
+      handler
+    - media: em28xx: fix double free in em28xx_alloc_urbs
+    - dm: fix a bug in dm_accept_partial_bio
+    - dm-writecache: report I/O error if flush failed
+    - dm-writecache: fix a quirk in statistics
+    - dm-writecache: fix a crash if we attempt to use non-dax device
+    - dm-writecache: fix uncommitted_blocks underflow
+    - dm-writecache: fix REQ_FUA processing
+    - block: drop the cached plug time when blk_add_rq_to_plug() flushes
+    - PCI: Disable MSI for ULi M1575 EHCI controller
+    - media: uvcvideo: Fix NULL deref on events for uninitialized controls
+    - crypto: caam - fix double-free in caam_rsa_set_priv_key_form()
+    - hwrng: amd - report partial reads in non-blocking mode
+    - hwrng: ba431 - fix reported byte count
+    - hwrng: core - reject unknown RNG names
+    - crypto: nx - validate 'ignore' before subtracting in decompress
+    - [arm64] KVM: arm64: vgic-v3: Undo assignment on iodev registration failure
+    - [arm64] KVM: arm64: vgic-v3: Roll back assignments from the new region
+    - media: imagination: Fix value clamping in calculate_qp_tables
+    - media: v4l2-common: Fix P010 format info
+    - media: sti: delta: use unaligned accessors for MJPEG SOF fields
+    - media: meson: vdec: size capture planes from the aligned canvas
+    - media: amphion: drain message work before releasing core state
+    - media: amphion: prevent unbind while video instances are open
+    - media: mediatek: vpu: free IRQ before destroying watchdog workqueue
+    - media: platform: mtk-mdp3: Fix device reference leak in mdp_comp_init()
+    - media: mtk-jpeg: Fix runtime PM leak in mtk_jpegdec_worker()
+    - media: mtk-jpeg: Fix runtime PM leak in mtk_jpegenc_worker()
+    - media: mediatek: vcodec: destroy core workqueue on remove
+    - media: mediatek: vpu: release reserved memory on remove
+    - media: verisilicon: rockchip: Fix leaks in init
+    - media: mediatek: jpeg: retry HW selection after successful wait
+    - media: vicodec: fix NULL deref on oversized frame
+    - media: hantro: Harden MPEG-2 control access against NULL
+    - media: amphion: fix runtime PM imbalance on probe failure
+    - media: hantro: disable runtime PM before hardware teardown
+    - fsverity: hoist statx reporting of fs-verity flag
+    - power: supply: ab8500_fg: Accept status from supplied power
+    - power: supply: ab8500_fg: Report sub-percent charge changes
+    - perf: xgene: initialize lock before requesting IRQ
+    - svcrdma: Grant credits from the clamped sc_max_requests
+    - ASoC: codecs: rt5682s: disable jack detection work on shutdown
+    - floppy: don't store a stack buffer in timeout_message
+    - floppy: return the drive state flags from the 32-bit FDGETDRVSTAT
+    - dlm: fix send buffer backpressure handling
+    - PCI/AER: Fix memory leak in aer_recover_queue() on kfifo buffer overflow
+    - wifi: brcmsmac: Adjust txpwrindex value in nphy_ipa_rxcal_gaintbl_2GHz
+    - mm/mempolicy: take a cpuset cookie for the interleave node count
+    - resource: fix lost wakeup when waiting for a muxed region
+    - fat: fix fat_ent_write() for reverting the value
+    - fault-inject: fix dentry leak
+    - USB: gadgetfs: do not WARN about excessively large memory allocations
+    - init: fix early boot crash with bare hostname parameter
+    - ocfs2: exit recovery thread on mount error path
+    - ocfs2: free replay slots in ocfs2_recovery_exit()
+    - ocfs2: skip uninitialized lockres in ocfs2_mark_lockres_freeing()
+    - wifi: mt76: mt76x02: validate TX-status rate index before mac80211 handoff
+    - wifi: mt76: mt7615: do not tear down BSS/STA state for monitor vifs
+    - wifi: mt76: mt792x: fix UAF in SDIO TX path when out of memory
+    - wifi: mt76: fix memory leak in USB TX path
+    - wifi: mt76: mt7615: restore DBDC state after ext PHY failure
+    - wifi: mt76: mt7615: cancel reset work during unregister
+    - wifi: mt76: Fix of_node reference leak in mt76_get_rate_power_limits()
+    - clocksource/drivers/fttmr010: Fix clk reference leak in error paths
+    - clocksource/drivers/digicolor: Fix clk reference leak on request_irq
+      failure
+    - aoe: pull in the headers each received packet type reads
+    - PCI/sysfs: Pass the device name length in UTF-16 code units
+    - wifi: rtw89: fix IE length passed to cfg80211_find_ie() in WoW AKM
+    - crypto: algif_skcipher - rewind rounded output bytes
+    - fanotify: report names longer than NAME_MAX
+    - ext4: fix fast commit replay failing on a read-only mount
+    - jbd2: don't advance j_fc_off before the buffer is recorded
+    - ext4: skip extra isize expansion while unmounting
+    - ext4: don't report delalloc data as a hole on indirect-mapped inodes
+    - ext4: fix ABBA deadlock in ext4_rmdir()
+    - ext4: fix out-of-bounds read in ext4_get_group_info()
+    - nilfs2: validate directory position after llseek in readdir
+    - md: don't hand out the array before md_alloc() has added mddev->kobj
+    - mm/nommu: reject wrapping ranges in access_remote_vm()
+    - mm/zswap: enable zswap_ever_enabled in zswap_pool_create()
+    - clk: imx: Fix clock reference leak in imx_get_clk_hw_by_name()
+    - clk: imx: Fix clock reference leak in imx_obtain_fixed_clock_hw()
+    - xen/gntdev: prevent private mappings from becoming writable
+    - soc: fsl: cpm1: tsa: Fix clock leak in tsa_of_parse_tdms()
+    - soc: fsl: dpio: Fix cleanup on IRQ registration failure
+    - soc: fsl: dpio: Free the IRQ before releasing the I/O object
+    - xen/privcmd: Only claim ioreqs matching an ioeventfd
+    - xen/pcifront: check that an AER callback exists before calling it
+    - xen-pciback: Fix pcistub_device ref leak in pcistub_get_gsi_from_sbdf()
+    - iommu/dma: Catch scatterlist length overflows
+    - drm/ttm: return an error when kmapping a BO without pages
+    - USB: cdc-acm: fix urb leak on disconnect
+    - USB: serial: option: add Rolling Wireless RN947R
+    - USB: serial: option: add support for ASR 1286:4e3c modem
+    - USB: serial: usb_wwan: fix urb leak on disconnect
+    - slimbus: messaging: fix leaked PM vote on tid allocation failure
+    - xen-blkfront: Fix IO race during unplug
+    - [riscv64] KVM: Fix IPI delivery for out-of-order vcpu_id
+    - vfio/mlx5: Fix boundary check in set_report_output()
+    - cxl/port: Convert PCIe link latency to nanoseconds
+    - cxl: Account for link width in latency calculation
+    - cxl/acpi: Convert QTG _DSM latencies to picoseconds
+    - USB: cdc-acm: add VeriFone VX820 device ID
+    - usb: typec: ucsi_ccg: Add retry mechanism in ccg_read
+    - mailbox: mtk-cmdq: Fix runtime PM leak in cmdq_mbox_flush()
+    - mailbox: qcom-ipcc: Guard against NULL con_priv in send_data()
+    - USB: serial: sierra: fix urb leak on write completion
+    - dm-snapshot: fix crash if dm_io_client_create fails
+    - [arm64] efi: Clear PTE_WRITE when applying EFI_MEMORY_RO
+    - btrfs: zoned: fix block group reference leak in btrfs_repair_one_zone()
+    - btrfs: return -ENOTTY for unknown ioctls on the control device
+    - mtd: parsers: qcom: fix offset/size overflow on large partitions
+    - xprtrdma: prevent disconnect feedback during endpoint teardown
+    - xprtrdma: trim head iovec when the payload arrives via a Write chunk
+    - PCI: Avoid D3 on PLX PEX 8532/8533/8548 downstream ports
+    - mm/damon/sysfs-schemes: read sysfs_filter->addr_range only once
+    - mm/madvise: reclaim isolated folios if PTE restart fails
+    - mm/madvise: use folio_trylock() in the cold/pageout PMD split
+    - mm/page_alloc: do not boost watermarks in kdump capture kernels
+    - mm/hugetlb_cgroup: move per-node usage on cross node migration
+    - mm/hugetlb_cgroup: move per-node usage on cgroup reparenting
+    - mm/shmem: report RCU-tasks quiescent states while undoing a range
+    - mm/damon/core: charge only the part of a region the filter left
+    - [amd64] platform/x86/amd/pmf: Validate the APTS state index
+    - [amd64] platform/x86: asus-wmi: fix unclear usage of bd->props.power
+    - [amd64] platform/x86: asus-wmi: fix screenpad power state detection
+    - [amd64] platform/x86: hp-bioscfg: fix 16-byte heap overflow for empty auth
+      token
+    - [amd64] platform/x86: hp-wmi: fix heap OOB read and memory corruption in
+      hp_wmi_perform_query()
+    - [amd64] platform/x86/amd/pmf: Fix power_supply refcount leak in
+      amd_pmf_get_battery_prop()
+    - [amd64] platform/x86: simatic-ipc: fix platform device leak on
+      registration failure
+    - [amd64] platform/x86/intel-uncore-freq: Continue restoring limits on
+      resume
+    - fbdev: ssd1307fb: check for fb_deferred_io_init() error
+    - fbdev: xen-fbfront: check for fb_deferred_io_init() error
+    - fbdev: udlfb: check for fb_deferred_io_init() error
+    - fbdev: smscufx: check for fb_deferred_io_init() error
+    - fbdev: sh_mobile_lcdc: check for fb_deferred_io_init() error
+    - serial: 8250_exar: store the GPIO platform device in struct exar8250
+    - dm-bufio: fix a race leading to an unsigned integer underflow
+    - mei: vsc: Fix packet CRC computed over pointer size
+    - speakup: Fix NULL pointer dereference on VT switch + selection
+    - clk: qcom: ipq5018: add 24MHz rate for USB UTMI clock
+    - clk: qcom: ipq5332: add 24MHz rate for USB UTMI clock
+    - iomap: don't lose a fiemap iteration error when emitting the last extent
+    - nvme-rdma: don't complete a request after a bogus remote invalidation
+    - nvme-auth: fail when the controller does not authenticate itself
+    - nvmet: free the bvec on file namespace range errors
+    - nvmet: zns: don't leak stale memory in zone management receive
+    - f2fs: convert inline quota files when turning quota on
+    - PCI: rockchip-host: Do not attempt 5.0 GT/s retraining
+    - sh: intc: Sort the prio and sense lists after filling them
+    - f2fs: remove mappedtodisk flag usage in mmap write path
+    - f2fs: allow pinning empty compressed files
+    - f2fs: read i_size once in f2fs_vm_page_mkwrite
+    - f2fs: check every cur_*_segno[] entry on readonly images
+    - f2fs: fix defragment writeback range truncation on 32-bit
+    - f2fs: disallow mmap write and data-modifying fallocate on atomic files
+    - spi: ljca: validate the response length before copying the data
+    - spi: ljca: Don't require data in write replies
+    - pinctrl: stm32: Fix fwnode reference leak in stm32_gpiolib_register_bank()
+    - lib/decompress_bunzip2: fix off-by-one in run-length bounds check
+    - lib: decompress_bunzip2: fix integer overflow in run-length decoding
+    - ALSA: cs46xx: fix unit mismatch in DSP code area bounds check
+    - [amd64] platform/x86: hp-bioscfg: fix OOB reads in
+      hp_get_string_from_buffer()
+    - [amd64] platform/x86: hp-bioscfg: fix non-ASCII truncation in
+      hp_get_string_from_buffer()
+    - [amd64] platform/x86: hp-bioscfg: return -E2BIG from
+      validate_password_input()
+    - [amd64] platform/x86: hp-bioscfg: allow clearing current_password
+    - [amd64] platform/x86: hp-bioscfg: NUL-terminate the SPM auth token
+    - serial: 8250_lpss: do not touch uninitialized line in ehl_serial_exit()
+    - serial: pmac_zilog: push received data to the port that received it
+    - nvme: make the DH-HMAC-CHAP secret attributes readable by root only
+    - spi: cadence-xspi: fix stack buffer overflow in the Marvell b0 path
+    - PCI: Set supported_speeds in set_pcie_port_type()
+    - Bluetooth: btusb: Add device ID for Realtek RTL8761BUE (StarTech AV53C1)
+    - Bluetooth: 6lowpan: Pin module for 6lowpan_control debugfs file
+    - Bluetooth: hci_debugfs: Pin module for debugfs file operations
+    - Bluetooth: L2CAP: Reject mode changes on connected channels
+    - Bluetooth: L2CAP: Reject invalid TxWindow in configuration requests
+    - Bluetooth: L2CAP: Use default TxWindow for zero socket option
+    - cpufreq: schedutil: Serialize sugov_start() against rate limit updates
+    - PCI: xilinx-xdma: Fix device node reference leak in
+      xilinx_pl_dma_pcie_init_irq_domain()
+    - iommufd: Reject a zero-length dirty bitmap request
+    - crypto: qat - initialise state_lock on every path in adf_devmgr_add_dev()
+    - crypto: qat - fix use of destroyed vf2pf_lock on VF restart
+    - irqchip/gic-v3-its: Don't clamp nvecs to zero when id_bits is 32
+    - irqchip/imx-intmux: Fix runtime PM teardown on remove
+    - irqchip/mchp-eic: Fix clock reference leak in mchp_eic_probe()
+    - ALSA: ump: Correct return size of fill_rpn()
+    - gfs2: fix the escaped block copy in gfs2_before_commit()
+    - spi: jcore: fix divide-by-zero when speed_hz is zero
+    - efi/libstub: Don't replace an existing LINUX_EFI_MEMRESERVE table
+    - [arm64] KVM: arm64: Move OUTSIDE_GUEST_MODE publication past context being
+      saved
+    - [arm64] KVM: arm64: Turn vcpu->arch.pause into a counter
+    - spi: npcm-fiu: limit UMA data_size to the 16-byte staging buffer
+    - mfd: tps65217: Fix NULL pointer dereference on IRQ init failure
+    - mfd: tps65217: Check return value when masking interrupt sources
+    - mfd: tps65217: Use devres for IRQ domain and wake teardown
+    - [arm64] ASoC: qcom: q6apm: reset the hw pointer with the fragment queue
+    - spi: bcm-qspi: reject oversized dummy bytes in mspi exec_mem_op
+    - spi: amd: fix len==0 underflow and FIFO overflow
+    - spi: amd: validate FIFO usage before executing message
+    - erofs: use on-disk blkszbits for lz4 max pcluster bound
+    - ring-buffer: Take cpus_read_lock() when changing the subbuf order
+    - dax: Return errors from dax_core_init()
+    - dax: fix dax_range_compare_iter() to use correct size and address offset
+    - net: skbuff: don't BUG() on a bad csum_start in skb_copy_and_csum_dev()
+    - ipv6: defrag: orphan skb before queuing
+    - sctp: hold transport reference across connect wait
+    - RDS/IB: validate receive fragment completions
+    - cpufreq: loongson3: Make this driver depend on MACH_LOONGSON64
+    - cpufreq: loongson3: Adjust the width of id and val in smc_message
+    - cpufreq: loongson3: Replace per-package mutex with per-node
+    - cpufreq: loongson3: Use global physical CPU ID in get/target callbacks
+    - cpufreq: loongson3: Replace IOCSR read/write with MMIO ones
+    - virtio_fs: read the vring size under virtio_fs_mutex in ->get_tree
+    - ipc, msg: Account msg_msg allocations with GFP_KERNEL_ACCOUNT again
+    - mptcp: reset msk state on early connect failure
+    - ALSA: seq: oss: Skip events until fully initialized
+    - ALSA: hda/realtek: Fix internal speakers on Acer Aspire AL16-31P
+    - power: supply: generic-adc-battery: fix status with no supplier
+    - ALSA: hda/via: Apply runtime PM workaround for ASUS X55A
+    - spi: ch341: handle transfers without a TX or RX buffer
+    - hwmon: (corsair-cpro) Make wait_input_report_lock IRQ safe
+    - lib/buildid: reject file offsets that do not fit in pgoff_t
+    - netfilter: nf_reject: initialize IPCB at inet ingress
+    - hwmon: (coretemp) Fix handling of isolated SMT siblings
+    - hwmon: (gigabyte_waterforce) reject short input reports
+    - f2fs: flush SIT journal during filesystem resize
+    - f2fs: fix submit accounting for IPU writeback
+    - rtc: cmos: Disable ACPI RTC event before handling it
+    - [amd64] platform/x86/amd/pmc: Fix RTC reference leak in
+      amd_pmc_verify_czn_rtc()
+    - hwmon: (sht3x) Return the consumed count for heater writes
+    - Revert "Input: matrix_keypad - force switch rows to input mode"
+    - cgroup: fix cgroup.kill for exited thread group leader
+    - netdevsim: reject cls_bpf programs bound to another device
+    - net: gro: don't chain linear parts larger than gso_size into frag_list
+    - ALSA: compress: fix buffer leak on failed SET_PARAMS
+    - ALSA: compress: reject buffer geometry change on gapless next_track
+    - ALSA: compress: add missing OPEN-state gate to SET_METADATA
+    - ALSA: emux: Stop voices before freeing zones in all cases
+    - gpiolib: Free chip resources when allocating the label fails
+    - gpio: davinci: Clear interrupt status in every bank on suspend
+    - gpio: pca953x: Handle direction register read errors in IRQ paths
+    - blk-mq: clear stale inactive flag on hctx reuse
+    - drm/amdgpu: require _PR3 for BOCO
+    - drm/amdgpu: reset CIK ASIC on Apple boards with VRAM at 0
+    - drm/amdgpu: reset VI ASIC on Apple boards with VRAM at 0
+    - drm/amdkfd: fix doorbell allocation race creating duplicate allocations
+    - drm/amd/display: don't WARN when removing an unallocated MST payload
+    - drm/amdgpu: reject ANONONLY userptrs that span multiple VMAs
+    - drm/amdkfd: don't drop an SVM CWSR reference that was never taken
+    - drm/amd/display: Fix swap in median3() for DSC rate control
+    - drm/amdkfd: wait for a GPU reset before freeing a BO
+    - ipv6: remove ifaddr from hash during ifdown list cleanup
+    - ipv6: serialize address publication with device teardown
+    - ipv6: initialize temporary ifaddr before publication
+    - ipv6: do not restart DAD for a dead ifaddr
+    - fbdev: bitblit: Fix glyph clipping when fbcon pans
+    - PCI: qcom-ep: Deinitialize endpoint on remove
+    - net/rds: ib: don't enable IRQs in rds_ib_conn_free()
+    - net: unix: reject negative max_dgram_qlen values
+    - net/smc: queue the copied chunk when smc_tx_sendmsg() faults
+    - ocfs2: reserve metadata for a new xattr block and its value tree
+    - ocfs2: reserve value tree metadata when moving an xattr into the inode
+    - ocfs2: deal with legacy signed dir index name hash values
+    - ocfs2: use the stored hash when checking xattr bucket collision
+    - ocfs2: deal with legacy signed xattr name hash values
+    - ocfs2/cluster: initialize heartbeat regions before publishing them
+    - Documentation: hyperv: Update documentation for sending VMBus packets
+    - [amd64] platform/x86: asus-wmi: fix TUF keyboard power state shutdown
+      naming
+    - writeback: reset dirtied_when when switching wbs
+    - writeback: clear old wb dirty state after inode switches
+    - ALSA: aloop: Update the PCM Slave controls for a matching playback
+    - nvmet: take subsys->lock while force-reconnecting in
+      nvmet_subsys_attr_qid_max_store()
+    - net: wwan: iosm: validate msg_head before indexing msg_ring
+    - tipc: fix broadcast sender hang on last acker departure
+    - exportfs: Release the get_name() directory file synchronously
+    - statmount: don't copy the reserved empty string past the buffer
+    - listmount: don't wrap around with a U64_MAX cursor
+    - ucount: take the rlimit reference before checking the limit
+    - cpufreq: intel_pstate: cancel HWP notify work in driver cleanup
+    - i2c: acpi: Fix adapter reference leak in i2c_acpi_new_device_by_fwnode()
+    - i2c: designware: queue only one read command for block reads
+    - tpm: tpm_nsc: fix NULL pointer dereference on init failure
+    - tpm: tpm_nsc: stop using the cleanup callback as dev.release
+    - tpm: fix zero-length read discarding the pending response
+    - gpiolib: don't report -ENOMEM for a requested line without a label
+    - ASoC: tlv320aic32x4: Prevent division by zero in divider callbacks
+    - i2c: mt7621: fix copying uninitialized kernel stack with reduced page_len
+    - spi: zynq-qspi: fix address buffer corruption and support 4-byte address
+    - posix-cpu-timers: Fix pid refcount leak in do_cpu_nanosleep() signal path
+    - timekeeping: Update offsets on sequence counter retry in
+      ktime_get_update_offsets_now()
+    - cgroup: don't kill migrated processes through their exiting threads
+    - gve: fix out-of-bounds read in gve_get_flow_rule_entry()
+    - veth: fix stale peer max_mtu on XDP program replacement
+    - scsi: ufs: bsg: Complete the job on error
+    - scsi: ufs: bsg: Clear the reply buffer before use
+    - scsi: ufs: core: Clear stale UIC result byte before peer DME retries
+    - scsi: libiscsi_tcp: Prevent R2T range check overflow
+    - scsi: ufs: core: Remove an always-false WARN_ONCE()
+    - scsi: ufs: core: Remove completed-without-interrupt path in ufshcd_abort()
+    - compat: avoid double rounding in times()
+    - ocfs2: snapshot the dentry name while tracing file release
+    - ocfs2/cluster: remove zero-address nodes from IP tree on teardown
+    - mm/madvise: add cond_resched() in THP branch of
+      madvise_cold_or_pageout_pte_range()
+    - mm/mlock: use a long for the page count in mlock_fixup()
+    - mm/percpu: account full object size for percpu memory allocations
+    - mm/madvise: atomically clear the young bit on THP MADV_COLD
+    - ipc/shm: fix RSS accounting for hugetlb shared memory
+    - mm/page_alloc: count guard pages as free again when their buddy merges
+    - mm/mempolicy: apply bind policies against the scoped allocation zone
+    - [riscv64] mm: exclude invalid THP PMDs from page table check
+    - mm: multi-gen LRU: fix NULL lruvec->pgdat deref with memcg disabled on
+      cmdline
+    - fscrypt: Fix missing barrier in fscrypt_find_mode_key()
+    - fbdev: atmel_lcdfb: fix list_first_entry() on possibly empty modelist in
+      probe
+    - timers/itimer: Keep a nonzero value at CPU timer expiry
+    - time/namespace: Fix overflow when converting absolute deadlines
+    - ceph: avoid pending truncate during nonblocking cap acquire
+    - ceph: fix out-of-bounds read in ceph_netfs_issue_op_inline()
+    - ceph: reject mdsmaps that claim more than CEPH_MAX_MDS ranks
+    - ceph: require the dentry lease record to cover struct ceph_mds_reply_lease
+    - libceph: only set read_from_replica on read requests
+    - libceph: Fix unsafe decode in ceph_redirect_decode()
+    - libceph: Fix multiple unsafe decodes in ceph_oloc_decode()
+    - libceph: reject mismatched CRUSH weight-set sizes
+    - libceph: reject an initial monmap with no monitors
+    - ceph: fix integer overflow in the snap trace bounds check
+    - ceph: Fix xattr buffer leak in __send_cap()
+    - ceph: Fix mds session leak in __open_export_target_session()
+    - ceph: fix 32-bit overflow in readdir reply count check
+    - libceph: fix out-of-bounds reads from repeated CRUSH bucket entries
+    - ceph: clamp MDS reply result code to the errno range
+    - ceph: don't fail write_begin with -EAGAIN after flushing old snapc
+    - ceph: validate fscrypt auth blob length
+    - ceph: bound name skips in ceph_mdsmap_decode() by the message end
+    - ceph: validate MDS reply fragtree split array length
+    - ceph: validate encoded xattr name lengths
+    - ceph: fix uninitialized err in ceph_netfs_issue_read()
+    - [arm64] ASoC: qcom: qdsp6: q6afe: fix clk vote response type mismatch
+    - ASoC: codecs: wsa884x: Accept temperatures across the full trim range
+    - net: usb: pegasus: check rx pkt_len against the received length
+    - bonding: fix out-of-bounds read of arp_ip_target
+    - ipmr: fully initialize the synthetic IP header in ipmr_get_route()
+    - dt-bindings: clock: ma35d1: Document the missing crystal inputs
+    - tcp: limit tcp_tso_rtt_log to a valid shift count
+    - xsk: restore UMEM flags after failed pool assignment
+    - loop: check for read-write open mode on LOOP_SET_STATUS in
+      lo_compat_ioctl()
+    - ALSA: hda: Reject codec reset on ASoC (ext_ops) buses
+    - ixgbe: reserve TX timestamp after skb preparation
+    - ASoC: hdac_hda: Balance the runtime PM disable in codec remove
+    - cpufreq: stats: Fix potential out-of-bounds access in deferred reset
+    - [arm64] mm: restrict transparent contpte mappings to valid PTEs
+    - drm/amdkfd: stop restore retries on device unplug
+    - drm/amd/display: take a runtime PM reference only when a CRTC turns on
+    - drm/amdkfd: split vram_pages of SVM ranges prefetched without a GPU
+      mapping
+    - drm/amd/display: Initialize missing TD-LUT programming inputs
+    - drm/amdkfd: validate SRAT subtables before parsing
+    - drm/amdkfd: evict the queues only once for CRIU PROCESS_INFO
+    - macvlan: fix passthru promiscuity accounting while down
+    - net: hisilicon: hisi_femac: Stop the receiver before releasing the RX ring
+    - fs/ntfs3: bound CreateAttribute asize against record_size in do_action
+    - fs/ntfs3: bound DeleteAttribute asize against rec->used in do_action
+    - ntfs3: fix mapping pairs bounds check for alignment
+    - ASoC: hdac_hda: Keep runtime PM state in sync across codec remove/probe
+    - ppp: fix stale pointer access after pskb_may_pull in ppp_ccp_peek
+    - nvmet-rdma: reject short connection requests
+    - nvmet-fc: only send read data for successful commands
+    - nvmet-auth: fix error handling on CHALLENGE failure
+    - nvmet-fc: Tear down the association when the admin queue allocation fails
+    - nvme-tcp: start error recovery when read_sock fails
+    - nvmet: Finish the blk plug when integrity allocation fails
+    - nvmet: Free the old negotiation state when restarting authentication
+    - fsverity: Be more careful with return value of ->get_verity_descriptor()
+    - irqchip/riscv-imsic: Report successful hardware retrigger
+    - irqchip/irq-msi-lib: Free wired MSI descriptors
+    - mount: refuse setns() with a shared fs_struct again
+    - blk-iocost: abort weight transfer on invalid donation weights
+    - tcp: check congestion control restriction first
+    - apparmor: fix refcount leak in aa_get_newest_profile()
+    - net/packet: check TX_RING fragments before memory accounting
+    - tcp: fix reordering addition overflow in MTU probing
+    - apparmor: remove fs entries created by a failed policy load
+    - aio: fix NULL deref when a fault races ring truncation
+    - splice: avoid stale f_pos writeback on error
+    - fs: skip copy_file_range write limits when there is no data
+    - fs: don't fail __d_obtain_alias() for unlinked inodes
+    - init/bootconfig: pass init arguments in documented order
+    - wifi: brcmfmac: map msgbuf RX packet IDs bidirectional
+    - ALSA: hda/realtek: Fix audio after Windows reboot on ASUS Q423SA
+    - ocfs2: read the xattr entry hash before defragmenting the bucket
+    - apparmor: on failed load ensure profile files are removed before parent
+    - [amd64] x86/bugs: Mitigate TSA on AMD Zen5
+    - xen-netback: Fix XenBus connection failure cleanup (CVE-2026-99286)
+    - xen-netback: Zero out sring pointers on unmap (CVE-2026-99287)
 
- -- jongkyung.woo <jkwoo@gooroom.kr>  Mon, 19 Oct 2026 20:39:27 +0900
+ -- Salvatore Bonaccorso <carnil@debian.org>  Thu, 12 Nov 2026 10:30:20 +0100
 
-linux (6.12.111-1+grm5u2) gooroom-5.0; urgency=medium
+linux (6.12.116-1) trixie-security; urgency=high
 
-  * Do not restrict the IMA keyring to the Gooroom CA so that organizations
-    can enroll their own self-signed IMA key (local key flow).
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v6.x/ChangeLog-6.12.116
+    - xen-netback: Fix UAF when reading statistics data (CVE-2026-100080)
+    - xen-netback: defer xenvif_mcast_addr_list_free() (CVE-2026-100081)
+    - xen-blkback: Avoid UAF when reading I/O statistics (CVE-2026-100082)
 
- -- jongkyung.woo <jkwoo@gooroom.kr>  Fri, 16 Oct 2026 22:52:50 +0900
+  [ Salvatore Bonaccorso ]
+  * ALSA: usb-audio: Use the right limit for PCM OOB check (Closes: #1152888)
 
-linux (6.12.111-1+grm5u1) gooroom-5.0; urgency=medium
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sat, 07 Nov 2026 09:40:59 +0100
 
-  * Rebased on gooroom-5.0 (kernel 6.12.111-1 stable-sec base).
-  * Gooroom customizations unchanged (gooroom-0001..0004 + signing certs).
+linux (6.12.115-2) trixie-security; urgency=high
 
- -- jongkyung.woo <jkwoo@gooroom.kr>  Fri, 02 Oct 2026 11:28:45 +0900
+  * [s390x] Revert "s390/uv: Don't return 0 from make_hva_secure() if the
+    operation was not successful"
+  * [s390x] Revert "KVM: s390: Fix FOLL_*/FAULT_FLAG_* confusion"
+  * [s390x] Revert "KVM: s390: pv: fix race when making a page secure"
+  * [s390x] Revert "KVM: s390: move gmap_shadow_pgt_lookup() into kvm"
+  * [s390x] Revert "KVM: s390: use __kvm_faultin_pfn()"
+  * [s390x] Revert "KVM: s390: move pv gmap functions into kvm"
 
-linux (6.12.107-1+grm5u1) gooroom-5.0; urgency=medium
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sun, 01 Nov 2026 06:25:35 +0100
 
-  * Rebased on gooroom-5.0 (kernel 6.12.107-1 stable-sec base).
-  * Gooroom customizations unchanged (gooroom-0001..0004 + signing certs).
+linux (6.12.115-1) trixie-security; urgency=high
 
- -- jongkyung.woo <jkwoo@gooroom.kr>  Thu, 03 Sep 2026 17:00:17 +0900
+  * New upstream stable update:
+    https://www.kernel.org/pub/linux/kernel/v6.x/ChangeLog-6.12.114
+    - spi: mpc52xx: clean up interrupt handling
+    - usb: gadget: f_hid: Add missing error code
+    - [amd64] iommu/amd: Disable AMD IOMMU if CMPXCHG16B feature is not
+      supported
+    - [amd64] iommu/amd: Fix ivrs_base memleak in early_amd_iommu_init()
+    - ice: fix use-after-free in dynamic port cleanup
+    - xfs: stop exchanging reflink flags when exchanging mappings
+    - xfs: fix exchange-range-to-eof file size exchange
+    - ip6_gre: remove obsolete ERSPAN PMTU update
+    - xfs: xfs_ifree_cluster vs xfs_iflush_shutdown_abort deadlock
+    - xfs: catch stale AGF/AGF metadata
+    - xfs: avoid dquot buffer pin deadlock
+    - xfs: rearrange code in xfs_buf_item.c
+    - xfs: factor out stale buffer item completion
+    - xfs: fix unmount hang with unflushable inodes stuck in the AIL
+    - drm/amd: Create a device link between APU display and XHCI devices
+    - ata: libata-scsi: do not lose CHECK CONDITION for failed ATAPI commands
+    - mm/mremap: fix locked_vm leak by splitting VMA for MREMAP_DONTUNMAP
+    - mm/mremap: fix locked_vm leak from MREMAP_DONTUNMAP self-merge
+    - wifi: mt76: connac: tolerate inactive BSS deactivation
+    - net: team: Remove unused team_mode_op, port_enabled
+    - net: team: Rename port_disabled team mode op to port_tx_disabled
+    - net: team: fix NULL pointer dereference in team_xmit during mode change
+      (CVE-2026-64190)
+    - net: team: stop reusing skb after queue override
+    - sched_ext: Fix CPU hotplug hang when a dying CPU's tasks sit in the BPF
+      scheduler
+    - Bluetooth: hci_sync: Fix command skb lifetime during scan setup
+    - Bluetooth: RFCOMM: connect the session socket without rfcomm_mutex
+    - drm/vmwgfx: Stop using dev_private to store driver data.
+    - drm/vmwgfx: validate pitch coming from userspace
+    - namespace: don't inherit MNT_UMOUNT in clone_mnt()
+    - namespace: check the mounts before reading their parents in pivot_root()
+    - dm-integrity: use internal variable for digestsize
+    - dm-integrity: rename internal_hash
+    - dm-integrity: fix buffer overflow in inline mode with large tag size
+    - net: xilinx: axienet: Free outstanding DMA buffers on dmaengine stop
+    - [riscv64] patch: Avoid early phys_to_page()
+    - [riscv64] patch: fix handling of bpf-jit execmem addresses
+    - scsi: ufs: core: Decouple CQ sweep from request iterator in MCQ
+    - scsi: ch: Do not keep references to data transfer element devices
+    - scsi: ufs: core: Move an assignment in ufshcd_mcq_process_cqe()
+    - scsi: ufs: core: Add debug log for MCQ command timeout
+    - scsi: ufs: core: Add a comment block above
+      ufshcd_mcq_compl_all_cqes_lock()
+    - scsi: ufs: core: Avoid unsafe MMIO reads in
+      ufshcd_mcq_compl_all_cqes_lock()
+    - drm/vc4: Use video aperture helpers
+    - drm/vc4: Fix firmware reference leak in vc4_drm_bind()
+    - namespace: unhash a dentry before detaching the mounts on it
+    - namespace: check the target before walking it in do_mount_setattr()
+    - fcntl: refuse F_SET_RW_HINT on an immutable inode
+    - namespace: handle mount locking for automounts correctly
+    - smb: client: improve compound padding in encryption
+    - smb: client: get rid of bounds check in SMB2_ioctl_init()
+    - smb: client: fix compound alignment with encryption
+    - [amd64] drm/i915/display: pass display to intel_crtc_for_pipe()
+    - [amd64] drm/i915/vga: Convert VGA code to intel_display
+    - [amd64] drm/i915/display: convert I915_STATE_WARN() to struct
+      intel_display
+    - [amd64] drm/i915/gmbus: convert to struct intel_display
+    - [amd64] drm/i915/crt: convert to struct intel_display
+    - [amd64] drm/i915: Grab intel_display from the encoder to avoid potential
+      oopsies (CVE-2024-58074)
+    - ax25: Remove broken autobind (CVE-2025-22109)
+    - f2fs: quota: fix to avoid warning in dquot_writeback_dquots()
+      (CVE-2025-23132)
+    - [riscv64] KVM: Teardown riscv specific bits after kvm_exit
+      (CVE-2025-23135)
+    - wifi: ath12k: fix struct hal_rx_phyrx_rssi_legacy_info
+    - wifi: ath12k: fix incorrect TID updation in DP monitor status path
+    - wifi: ath12k: Avoid explicit type cast in monitor status parse handler
+    - wifi: ath12k: Avoid memory leak while enabling statistics (CVE-2025-37743)
+    - perf/dwc_pcie: Qualify RAS DES VSEC Capability by Vendor, Revision
+    - perf/dwc_pcie: fix duplicate pci_dev devices (CVE-2025-37746)
+    - ublk: fix race between io_uring_cmd_complete_in_task and ublk_cancel_cmd
+      (CVE-2025-37906)
+    - kasan: avoid sleepable page allocation from atomic context
+      (CVE-2025-38029)
+    - clk: sunxi-ng: h616: Reparent CPU clock during frequency changes
+    - clk: sunxi-ng: h616: Reparent GPU clock during frequency changes
+      (CVE-2025-38041)
+    - net: ethernet: ti: am65-cpsw: streamline RX queue creation and cleanup
+    - dmaengine: ti: k3-udma-glue: Drop skip_fdq argument from
+      k3_udma_glue_reset_rx_chn (CVE-2025-38042)
+    - virtio: break and reset virtio devices on device_shutdown()
+      (CVE-2025-38064)
+    - coresight: holding cscfg_csdev_lock while removing cscfg from csdev
+      (CVE-2025-38132)
+    - PCI/pwrctl: Use of_platform_device_create() to create pwrctl devices
+    - PCI/pwrctl: Create pwrctl device only if at least one power supply is
+      present
+    - PCI/pwrctrl: Cancel outstanding rescan work when unregistering
+      (CVE-2025-38137)
+    - drm/nouveau: fix a use-after-free in r535_gsp_rpc_push() (CVE-2025-38187)
+    - wifi: ath12k: convert struct ath12k_sta::update_wk to use struct
+      wiphy_work
+    - wifi: ath12k: ath12k_mac_op_sta_state(): clean up update_wk cancellation
+    - wifi: ath12k: prepare vif data structure for MLO handling
+    - wifi: ath12k: Fix memory leak due to multiple rx_stats allocation
+      (CVE-2025-38199)
+    - mm: fix uprobe pte be overwritten when expanding vma (CVE-2025-38207)
+    - [riscv64] Enable cbo.zero only when all harts support Zicboz
+    - [riscv64] Add support for per-thread envcfg CSR values
+    - [riscv64] save the SR_SUM status over switches (CVE-2025-38261)
+    - wifi: rtw89: pci: configure manual DAC mode via PCI config API only
+      (CVE-2025-38284)
+    - [s390x] entry: Remove __GMAP_ASCE and use _PIF_GUEST_FAULT again
+    - [s390x] kvm: Remove kvm_arch_fault_in_page()
+    - [s390x] mm/fault: Handle guest-related program interrupts in KVM
+    - [s390x] mm: Simplify get_fault_type()
+    - [s390x] mm: Get rid of fault type switch statements
+    - [s390x] mm: Fix in_atomic() handling in do_secure_storage_access()
+      (CVE-2025-38359)
+    - [amd64] platform/x86/amd/pmf: Switch to platform_get_resource() and
+      devm_ioremap_resource()
+    - [amd64] platform/x86/amd: pmf: Use device managed allocations
+      (CVE-2025-38421)
+    - drm/rockchip: vop2: Consistently use dev_err_probe()
+    - drm/rockchip: vop2: Register the primary plane and overlay plane
+      separately
+    - drm/rockchip: vop2: fail cleanly if missing a primary plane for a
+      video-port (CVE-2025-38597)
+    - wifi: ath12k: Pass ab pointer directly to ath12k_dp_tx_get_encap_type()
+      (CVE-2025-38605)
+    - rv: Remove trailing whitespace from tracepoint string
+    - rv: Use strings in da monitors tracepoints (CVE-2025-38636)
+    - wifi: iwlwifi: return ERR_PTR from opmode start()
+    - wifi: iwlwifi: Fix error code in iwl_op_mode_dvm_start() (CVE-2025-38656)
+    - net/sched: Fix backlog accounting in qdisc_dequeue_internal
+      (CVE-2025-39677)
+    - mm/mremap: fix WARN with uffd that has remap events disabled
+      (CVE-2025-39775)
+    - [amd64] crypto: x86/aegis128 - eliminate some indirect calls
+    - [amd64] crypto: x86/aegis128 - optimize length block preparation using
+      SSE4.1
+    - [amd64] crypto: x86/aegis128 - improve assembly function prototypes
+    - [amd64] crypto: x86/aegis - Fix sleeping when disallowed on PREEMPT_RT
+    - [amd64] crypto: x86/aegis - Add missing error checks (CVE-2025-39789)
+    - net/mlx5: HWS, denote how refcounts are protected
+    - net/mlx5: HWS, simplify allocations as we support only FDB
+    - net/mlx5: HWS, handle returned error value in pool alloc
+    - net/mlx5: HWS, update flow - remove the use of dual RTCs
+    - net/mlx5: HWS, Remove unused element array
+    - net/mlx5: HWS, Make pool single resource
+    - net/mlx5: HWS, Refactor pool implementation
+    - net/mlx5: HWS, Fix memory leak in hws_pool_buddy_init error path
+      (CVE-2025-39830)
+    - net/mlx5: HWS, Fix memory leak in hws_action_get_shared_stc_nic error flow
+      (CVE-2025-39834)
+    - ptp: ocp: fix use-after-free bugs causing by ptp_ocp_watchdog
+      (CVE-2025-39859)
+    - wifi: mt76: mt7915: fix list corruption after hardware restart
+      (CVE-2025-39862)
+    - mm/vmalloc, mm/kasan: respect gfp mask in kasan_populate_vmalloc()
+      (CVE-2025-39910)
+    - smb: client: let recv_done verify data_offset, data_length and
+      remaining_data_length (CVE-2025-39933)
+    - [s390x] iommu/s390: handle IOAT registration based on domain
+    - [s390x] iommu/s390: set appropriate IOTA region type
+    - [s390x] iommu/s390: Make attach succeed when the device was surprise
+      removed (CVE-2025-39958)
+    - [riscv64] KVM: Write hgatp register with valid mode bits (CVE-2025-40065)
+    - drm/xe: Don't allow evicting of BOs in same VM in array of VM binds
+      (CVE-2025-40086)
+    - remoteproc: Switch back to struct platform_driver::remove()
+    - remoteproc: qcom: pas: Make remoteproc name human friendly
+    - remoteproc: qcom_q6v5_pas: Simplify with dev_err_probe()
+    - remoteproc: qcom: pas: Conclude the rename from adsp
+    - remoteproc: qcom: pas: Shutdown lite ADSP DTB on X1E (CVE-2025-40113)
+    - scsi: ufs: core: Fix data race in CPU latency PM QoS request handling
+      (CVE-2025-40130)
+    - crypto: hisilicon/hpre - enable all clusters clock gating
+    - crypto: hisilicon/qm - request reserved interrupt for virtual function
+      (CVE-2025-40136)
+    - [amd64] ASoC: Intel: avs: Use topology information for endpoint numbers
+    - [amd64] ASoC: Intel: avs: Do not share the name pointer between components
+      (CVE-2025-40338)
+    - sysfs: check visibility before changing group attribute ownership
+      (CVE-2025-40355)
+    - amd/amdkfd: enhance kfd process check in switch partition (CVE-2025-68174)
+    - drm/xe/guc: Add devm release action to safely tear down CT
+      (CVE-2025-68193)
+    - RDMA/mlx5: Remove the redundant MLX5_IB_STAGE_UAR stage
+    - net/mlx5: HWS, fix bad parameter in CQ creation
+    - net/mlx5: Fix typo of MLX5_EQ_DOORBEL_OFFSET
+    - net/mlx5: Store the global doorbell in mlx5_priv
+    - net/mlx5e: Prepare for using different CQ doorbells
+    - mlx5: Fix default values in create CQ (CVE-2025-68209)
+    - scsi: ufs: qcom : Refactor phy_power_on/off calls
+    - scsi: ufs: ufs-qcom: Fix UFS OCP issue during UFS power down (PC=3)
+      (CVE-2025-68236)
+    - clk: thead: th1520-ap: set all AXI clocks to CLK_IS_CRITICAL
+      (CVE-2025-68318)
+    - netconsole: Acquire su_mutex before navigating configs hierarchy
+      (CVE-2025-68319)
+    - net: vxlan: prevent NULL deref in vxlan_xmit_one (CVE-2025-68353)
+    - btrfs: fix double free of qgroup record after failure to add delayed ref
+      head (CVE-2025-68359)
+    - wifi: mt76: wed: use proper wed reference in mt76 wed driver callabacks
+      (CVE-2025-68360)
+    - md: init bioset in mddev_init (CVE-2025-68368)
+    - coresight-tmc: change tmc_drvdata spinlock's type to raw_spinlock_t
+    - coresight: ETR: Fix ETR buffer use-after-free issue (CVE-2025-68376)
+    - wifi: ath12k: Fix MSDU buffer types handling in RX error path
+      (CVE-2025-68729)
+    - accel/ivpu: Allow to import single buffer into multiple contexts
+    - accel/ivpu: Rework bind/unbind of imported buffers
+    - accel/ivpu: Fix page fault in ivpu_bo_unbind_all_bos_from_context()
+      (CVE-2025-68730)
+    - drm/panthor: Prevent potential UAF in group creation (CVE-2025-68735)
+    - scsi: qla2xxx: Clear cmds after chip reset (CVE-2025-68745)
+    - staging: most: remove broken i2c driver (CVE-2025-68755)
+    - wifi: mac80211: fix typo in HE MCS check
+    - wifi: mac80211: log link information in ieee80211_determine_chan_mode
+    - wifi: mac80211: don't WARN for connections on invalid channels
+      (CVE-2025-71227)
+    - accel/qaic: Add config structs for supported cards
+    - net: qrtr: Drop the MHI auto_queue feature for IPCR DL channels
+      (CVE-2025-71285)
+    - PCI: endpoint: Add missing NULL check for alloc_workqueue()
+      (CVE-2025-71313)
+    - bpf: Mark bpf_refcount field as unique (CVE-2026-100074)
+    - staging: rtl8723bs: fix xmit_frame/xmit_buf leaks on mgnt-frame error
+      paths (CVE-2026-100076)
+    - drm/msm: Recover HW before retire hung submit (CVE-2026-100077)
+    - block: zero non-PI portion of auto integrity buffer (CVE-2026-23007)
+    - idpf: fix error handling in the init_task on load (CVE-2026-23017)
+    - stddef: Introduce TRAILING_OVERLAP() helper macro
+    - virtio_net: Fix misalignment bug in struct virtnet_info (CVE-2026-23143)
+    - ALSA: usb-audio: Prevent excessive number of frames (CVE-2026-23208)
+    - riscv: trace: fix snapshot deadlock with sbi ecall (CVE-2026-23217)
+    - io_uring/rw: free potentially allocated iovec on cache put failure
+      (CVE-2026-23259)
+    - cxl/mbox: validate payload size before accessing contents in
+      cxl_payload_from_user_allowed() (CVE-2026-23327)
+    - sched/deadline: Fix missing ENQUEUE_REPLENISH during PI de-boosting
+      (CVE-2026-23371)
+    - ice: change XDP RxQ frag_size from DMA write length to xdp.frame_sz
+      (CVE-2026-23377)
+    - netfilter: nf_tables: clone set on flush only (CVE-2026-23385)
+    - serial: rename local uart_port_lock() -> uart_port_ref_lock()
+    - serial: core: fix infinite loop in handle_tx() for PORT_UNKNOWN
+      (CVE-2026-23472)
+    - RDMA/efa: Fix use of completion ctx after free (CVE-2026-31493)
+    - bpf: Fix exception exit lock checking for subprogs (CVE-2026-31526)
+    - drm/mediatek: dsi: Store driver data before invoking
+      mipi_dsi_host_register (CVE-2026-31562)
+    - [s390x] mm: Add missing secure storage access fixups for donated memory
+      (CVE-2026-31568)
+    - dm: limit swapping tables for devices with zone write plugs
+      (CVE-2025-38140)
+    - drm/tilcdc: Fix removal actions in case of failed probe (CVE-2025-71141)
+    - net: Factorise setup_net() and cleanup_net().
+    - net: Add ops_undo_single for module load/unload.
+    - net: Add ->exit_rtnl() hook to struct pernet_operations.
+    - wireguard: device: use exit_rtnl callback instead of manual rtnl_lock in
+      pre_exit (CVE-2026-31579)
+    - [amd64] KVM: SEV: Use long-term pin when registering encrypted memory
+      regions
+    - [amd64] KVM: SEV: Protect *all* of sev_mem_enc_register_region() with
+      kvm->lock (CVE-2026-31592)
+    - rxrpc: proc: size address buffers for %pISpc output (CVE-2026-31630)
+    - Bluetooth: hci_event: move wake reason storage into validated event
+      handlers (CVE-2026-31771)
+    - bpf: Factor out atomic_ptr_type_ok()
+    - bpf: Factor out check_atomic_rmw()
+    - bpf: Factor out check_load_mem() and check_store_reg()
+    - bpf: Fix incorrect pruning due to atomic fetch precision tracking
+      (CVE-2026-43009)
+    - Bluetooth: hci_sync: hci_cmd_sync_queue_once() return -EEXIST if exists
+      (CVE-2026-43022)
+    - bnxt_en: Update firmware interface spec to 1.10.3.85
+    - bnxt_en: set backing store type from query type (CVE-2026-43034)
+    - mpls: Hold dev refcnt for mpls_nh.
+    - mpls: Unify return paths in mpls_dev_notify().
+    - mpls: Add mpls_dev_rcu().
+    - mpls: Pass net to mpls_dev_get().
+    - mpls: Add mpls_route_input().
+    - mpls: Convert mpls_dump_routes() to RCU.
+    - mpls: Protect net->mpls.platform_label with a per-netns mutex.
+    - mpls: add seqcount to protect the platform_label{,s} pair (CVE-2026-43042)
+    - HID: core: Add reserved item tag for main items
+    - HID: rate-limit hid_warn to prevent log flooding
+    - HID: core: Mitigate potential OOB by removing bogus memset()
+      (CVE-2026-43048)
+    - xfs: remove bp->b_error check in xfs_attr3_root_inactive
+    - xfs: factor out xfs_attr3_node_entry_remove
+    - xfs: close crash window in attr dabtree inactivation (CVE-2026-43053)
+    - net: ioam6: fix OOB and missing lock (CVE-2026-43083)
+    - ipv6: ioam: fix potential NULL dereferences in __ioam6_fill_trace_data()
+      (CVE-2026-43101)
+    - types: move struct rcuwait into types.h
+    - irqwork: Move data struct to a types header
+    - srcu: Use irq_work to start GP in tiny SRCU (CVE-2026-43115)
+    - btrfs: tree-log: don't use token set/get accessors in fill_inode_item()
+    - btrfs: fix zero size inode with non-zero size after log replay
+      (CVE-2026-43118)
+    - fs/ntfs3: Accumulated refactoring changes
+    - ntfs3: fix circular locking dependency in run_unpack_ex (CVE-2026-43127)
+    - wifi: iwlwifi: fix 22000 series SMEM parsing (CVE-2026-43172)
+    - ksmbd: fix signededness bug in smb_direct_prepare_negotiation()
+      (CVE-2026-43185)
+    - drm/amd/display: Adjust PHY FSM transition to TX_EN-to-PLL_ON for TMDS on
+      DCN35 (CVE-2026-43191)
+    - ASoC: qcom: q6asm: handle the responses after closing
+    - ASoC: qcom: q6asm: drop DSP responses for closed data streams
+      (CVE-2026-43204)
+    - wifi: rtw89: pci: validate sequence number of TX release report
+      (CVE-2026-43213)
+    - team: avoid NETDEV_CHANGEMTU event when unregistering slave
+      (CVE-2026-43234)
+    - media: chips-media: wave5: Fix Null reference while testing fluster
+      (CVE-2026-43263)
+    - ring-buffer: Fix possible dereference of uninitialized pointer
+      (CVE-2026-43272)
+    - drm: renesas: rz-du: mipi_dsi: fix kernel panic when rebooting for some
+      panels (CVE-2026-43294)
+    - drm/amdgpu: Skip vcn poison irq release on VF (CVE-2026-43298)
+    - btrfs: do not ASSERT() when the fs flips RO inside
+      btrfs_repair_io_failure() (CVE-2026-43299)
+    - btrfs: remove 'reserved' argument from btrfs_pin_extent()
+    - btrfs: don't BUG() on unexpected delayed ref type in run_one_delayed_ref()
+      (CVE-2026-43308)
+    - md raid: fix hang when stopping arrays with metadata through dm-raid
+      (CVE-2026-43309)
+    - media: v4l2-mem2mem: Add a kref to the v4l2_m2m_dev structure
+    - media: verisilicon: Avoid G2 bus error while decoding H.264 and HEVC
+      (CVE-2026-43310)
+    - KVM: Export hardware virtualization enabling/disabling functions
+    - syscore: Pass context data to callbacks
+    - soc/tegra: pmc: Fix unsafe generic_handle_irq() call (CVE-2026-43311)
+    - wifi: iwlwifi: mvm: don't send a 6E related command when not supported
+      (CVE-2026-43325)
+    - drm/amd/display: Fix NULL pointer dereference in dcn401_init_hw()
+      (CVE-2026-43337)
+    - ice: ptp: don't WARN when controlling PF is unavailable (CVE-2026-43346)
+    - i3c: mipi-i3c-hci: Correct RING_CTRL_ABORT handling in DMA dequeue
+      (CVE-2026-43352)
+    - i3c: mipi-i3c-hci: Fix race in DMA ring dequeue (CVE-2026-43353)
+    - scsi: qla2xxx: Completely fix fcport double free (CVE-2026-43414)
+    - [amd64] ASoC: amd: acp-mach-common: Add missing error check for clock
+      acquisition (CVE-2026-43443)
+    - rxrpc: kdoc: Update function descriptions and add link from rxrpc.rst
+    - rxrpc, afs: Fix missing error pointer check after
+      rxrpc_kernel_lookup_peer() (CVE-2026-43463)
+    - net/mlx5e: RX, Fix XDP multi-buf frag counting for legacy RQ
+      (CVE-2026-43464)
+    - net/mlx5e: RX, Fix XDP multi-buf frag counting for striding RQ
+      (CVE-2026-43465)
+    - nouveau/gsp: drop WARN_ON in ACPI probes (CVE-2026-43485)
+    - bpf: Fix tcx/netkit detach permissions when prog fd isn't given
+      (CVE-2026-45932)
+    - btrfs: fix EEXIST abort due to non-consecutive gaps in chunk allocation
+      (CVE-2026-45934)
+    - net: stmmac: fix oops when split header is enabled (CVE-2026-45940)
+    - drm/exynos: vidi: use priv->vidi_dev for ctx lookup in
+      vidi_connection_ioctl() (CVE-2026-45956)
+    - gfs2: fix memory leaks in gfs2_fill_super error path (CVE-2026-45961)
+    - [amd64] KVM: SVM: Add missing save/restore handling of LBR MSRs
+      (CVE-2026-46014)
+    - ipmi:ssif: Clean up kthread on errors (CVE-2026-46044)
+    - [amd64] KVM: x86: Rename "governed features" helpers to use
+      "guest_cpu_cap"
+    - [amd64] KVM: nSVM: Always use NextRIP as vmcb02's NextRIP after first L2
+      VMRUN (CVE-2026-46059)
+    - ceph: Remove call to PagePrivate2()
+    - ceph: extend ceph_writeback_ctl for ceph_writepages_start() refactoring
+    - ceph: introduce ceph_process_folio_batch() method
+    - ceph: Remove uses of page from ceph_process_folio_batch()
+    - ceph: fix num_ops off-by-one when crypto allocation fails (CVE-2026-46066)
+    - [amd64] KVM: nSVM: Avoid clearing VMCB_LBR in vmcb12 (CVE-2026-46071)
+    - dm-verity-fec: fix reading parity bytes split across blocks (take 3)
+      (CVE-2026-46130)
+    - spi: microchip-core-qspi: Support per spi-mem operation frequency switches
+    - spi: microchip-core-qspi: set min_speed_hz during probe
+    - spi: microchip-core-qspi: remove unused param from
+      mchp_coreqspi_write_op()
+    - spi: microchip-core-qspi: control built-in cs manually (CVE-2026-46148)
+    - [riscv64] kvm: fix vector context allocation leak (CVE-2026-46171)
+    - f2fs: fix fsck inconsistency caused by FGGC of node block (CVE-2026-46175)
+    - refcount: provide ops for cases when object's memory can be reused
+    - RDMA/mlx4: Fix mis-use of RCU in mlx4_srq_event() (CVE-2026-46181)
+    - spi: ch341: switch to use devm_spi_alloc_host()
+    - spi: ch341: fix devres lifetime (CVE-2026-46228)
+    - drm/amd/display: Fix dc_link NULL handling in HPD init (CVE-2026-46245)
+    - NFS/localio: prevent direct reclaim recursion into NFS via nfs_writepages
+      (CVE-2026-46256)
+    - coresight: tmc-etr: Fix race condition between sysfs and perf mode
+      (CVE-2026-46272)
+    - selinux: allow multiple opens of /sys/fs/selinux/policy (CVE-2026-46302)
+    - netfilter: nf_tables: use list_del_rcu for netlink hooks (CVE-2026-46324)
+    - RDMA/rxe: Move some code to rxe_loc.h in preparation for ODP
+    - RDMA/rxe: Fix iova-to-va conversion for MR page sizes != PAGE_SIZE
+      (CVE-2026-46325)
+    - Revert "net/smc: Introduce TCP ULP support" (CVE-2026-46330)
+    - tap: fix stack info leak in tap_ioctl() SIOCGIFHWADDR (CVE-2026-52937)
+    - libceph: Fix potential out-of-bounds access in __ceph_x_decrypt()
+      (CVE-2026-52956)
+    - net: airoha: fix BQL imbalance in TX path (CVE-2026-52983)
+    - sched/psi: fix race between file release and pressure write
+      (CVE-2026-52991)
+    - netfilter: nat: use kfree_rcu to release ops (CVE-2026-53000)
+    - ice: fix double-free of tx_buf skb (CVE-2026-53009)
+    - f2fs: fix data loss caused by incorrect use of nat_entry flag
+      (CVE-2026-53017)
+    - f2fs: avoid reading already updated pages during GC (CVE-2026-53018)
+    - greybus: raw: fix use-after-free on cdev close (CVE-2026-53025)
+    - net: pull headers in qdisc_pkt_len_segs_init() (CVE-2026-53091)
+    - wifi: mt76: mt7925: fix potential deadlock in mt7925_roc_abort_sync
+      (CVE-2026-53103)
+    - wifi: mt76: Fix memory leak destroying device (CVE-2026-53104)
+    - [powerpc*] 64s: Fix unmap race with PMD migration entries (CVE-2026-53108)
+    - [powerpc*] pgtable-frag: Fix bad page state in pte_frag_destroy
+      (CVE-2026-53109)
+    - vdpa: use generic driver_override infrastructure (CVE-2026-53118)
+    - staging: rtl8723bs: rtw_mlme: add bounds checks before ie_length
+      subtraction (CVE-2026-53178)
+    - sctp: validate embedded INIT chunk and address list lengths in cookie
+      (CVE-2026-53224)
+    - wifi: fix leak if split 6 GHz scanning fails (CVE-2026-53258)
+    - [arm64] KVM: arm64: Take the SRCU lock for page table walks in fault
+      injection and AT emulation (CVE-2026-53277)
+    - [amd64] iommu/vt-d: Avoid NULL pointer dereference or refcount corruption
+      (CVE-2026-53281)
+    - btrfs: only release the dirty pages io tree after successful writes
+      (CVE-2026-53284)
+    - drm/amd/display: Wrap DCN32 phantom-plane allocation in
+      DC_RUN_WITH_PREEMPTION_ENABLED (CVE-2026-53285)
+    - net: phonet: do not BUG_ON() in pn_socket_autobind() on failed bind
+      (CVE-2026-53292)
+    - net: mana: Guard mana_remove against double invocation (CVE-2026-53297)
+    - io_uring/napi: protect concurrent io_napi_entry timeout accesses
+    - io_uring/napi: improve __io_napi_add
+    - io_uring/napi: Use lock guards
+    - io_uring/napi: clean up __io_napi_do_busy_loop
+    - io_uring/napi: cap busy_poll_to 10 msec (CVE-2026-53321)
+    - drm/amd/display: Fix out-of-bounds read in dp_get_eq_aux_rd_interval()
+      (CVE-2026-53330)
+    - f2fs: fix fsck inconsistency caused by incorrect nat_entry flag usage
+      (CVE-2026-53368)
+    - drm/msm: always recover the gpu (CVE-2026-53377)
+    - fbdev: omap2: fix inconsistent lock returns in omapfb_mmap
+    - fbdev: omap2: fix use-after-free in omapfb_mmap (CVE-2026-53401)
+    - f2fs: read COW data with the original inode during atomic write
+      (CVE-2026-63811)
+    - gcov: use atomic counter updates to fix concurrent access crashes
+      (CVE-2026-63825)
+    - wifi: mt76: add wcid publish check in mt76_sta_add (CVE-2026-63832)
+    - drm/amdgpu/vcn: set no_user_fence for VCN v4.0 enc ring (CVE-2026-63853)
+    - net: airoha: Do not read uninitialized fragment address in
+      airoha_dev_xmit() (CVE-2026-63857)
+    - net: airoha: Add missing bits in airoha_qdma_cleanup_tx_queue()
+      (CVE-2026-63859)
+    - drm/amdgpu: fix amdgpu_hmm_range_get_pages (CVE-2026-63879)
+    - net/handshake: hand off the pinned file reference to accept_doit
+      (CVE-2026-63979)
+    - ethtool: module: call ethnl_ops_complete() on module flash errors
+      (CVE-2026-63998)
+    - ethtool: rss: fix indir_table and hkey leak on get_rxfh failure
+      (CVE-2026-63999)
+    - netfilter: nf_tables: fix dst corruption in same register operation
+      (CVE-2026-64006)
+    - tcp: Remove sk->sk_prot->orphan_count.
+    - tcp: fix stale per-CPU tcp_tw_isn leak enabling ISN prediction
+      (CVE-2026-64024)
+    - cgroup/rstat: validate cpu before css_rstat_cpu() access (CVE-2026-64036)
+    - hwmon: (lm90) Stop work before releasing hwmon device (CVE-2026-64038)
+    - netfs: Fix leak of request in netfs_write_begin() error handling
+      (CVE-2026-64060)
+    - netfs: Fix missing locking around retry adding new subreqs
+      (CVE-2026-64068)
+    - netfilter: bridge: eb_tables: close module init race (CVE-2026-64076)
+    - netfilter: ebtables: move to two-stage removal scheme (CVE-2026-64077)
+    - netfilter: x_tables: allow initial table replace without emitting audit
+      log message
+    - netfilter: x_tables: allocate hook ops while under mutex (CVE-2026-64079)
+    - wifi: mac80211: fix missing RX bitrate update for mesh forwarding path
+    - wifi: mac80211: capture fast-RX rate before mesh reuses skb->cb
+      (CVE-2026-64117)
+    - erofs: fix metabuf leak in inode xattr initialization (CVE-2026-64146)
+    - drm/msm/adreno: Fix a reference leak in a6xx_gpu_init() (CVE-2026-64154)
+    - netfs: Fix zeropoint update where i_size > remote_i_size (CVE-2026-64159)
+    - hwmon: (lm90) Add lock protection to lm90_alert (CVE-2026-64213)
+    - KVM: guest_memfd: Treat memslot binding offset+size as unsigned values
+      (CVE-2026-64283)
+    - smb/client: fix chown/chgrp with SMB3 POSIX Extensions (CVE-2026-64388)
+    - ksmbd: validate NTLMv2 response before updating session key
+      (CVE-2026-64389)
+    - ksmbd: prevent path traversal bypass by restricting caseless retry
+      (CVE-2026-64400)
+    - [amd64] KVM: x86: Drop superfluous kvm_lapic_set_base() call when setting
+      APIC state
+    - [amd64] KVM: x86: Move kvm_set_apic_base() implementation to lapic.c (from
+      x86.c)
+    - [amd64] KVM: x86: Rename APIC base setters to better capture their
+      relationship
+    - [amd64] KVM: x86: Move update_cr8_intercept() to lapic.c
+    - [amd64] KVM: x86: Unconditionally recompute CR8 intercept on PPR update
+      (CVE-2026-64513)
+    - [amd64] KVM: nVMX: Put vmcs12 pages if nested VM-Enter fails due to
+      invalid guest state (CVE-2026-68081)
+    - drm/amdgpu: Fix kernel panic during driver load failure (CVE-2026-68105)
+    - media: stm32: dcmipp: use v4l2_subdev_is_streaming
+    - media: stm32: dcmipp: replace s_stream with enable/disable_streams
+    - media: stm32-dcmipp: Return queued buffers on start_streaming() failure
+      (CVE-2026-68211)
+    - drm/vc4: Shut down BO cache timer before teardown (CVE-2026-68233)
+    - drm/amdgpu: Use dbg level for VBIOS check messages
+    - drm/amdgpu: Add wrapper for freeing vbios memory
+    - drm/amdgpu: Release VFCT ACPI table reference (CVE-2026-68238)
+    - [amd64] drm/i915/mst: limit DP MST ESI service loop (CVE-2026-68241)
+    - [amd64] drm/i915/gt: Fix NULL deref on sched_engine alloc failure
+      (CVE-2026-68242)
+    - drm/amdkfd: Check bounds on CRIU restore queue type and mqd size
+      (CVE-2026-68258)
+    - idpf: fix max_vport related crash on allocation error during init
+      (CVE-2026-68291)
+    - LoongArch: BPF: Zero-extend signed ALU32 div/mod results (CVE-2026-68295)
+    - cifs: prevent readdir from changing file size due to stale directory
+      metadata
+    - cifs: fix cifsFileInfo leak on kmalloc failure in deferred close drain
+      paths (CVE-2026-68312)
+    - tipc: serialize udp bearer replicast list updates (CVE-2026-68323)
+    - fwctl/bnxt_en: Refactor aux bus functions to be more generic
+    - bnxt_en: Handle partially initialized auxiliary devices (CVE-2026-68375)
+    - drm/xe/guc: Keep scheduler timeline name alive (CVE-2026-68383)
+    - Bluetooth: hci_sync: extend conn_hash lookup critical sections
+      (CVE-2026-68393)
+    - bpf: Disable migration when destroying sock storage
+    - bpf: Disable migration when cloning sock storage
+    - rcu: add rcu_read_lock_dont_migrate()
+    - bpf: Use rcu_read_lock_dont_migrate in bpf_sk_storage.c
+    - bpf: Fix UAF in sock clone early bailouts (CVE-2026-68399)
+    - firmware: arm_ffa: Fix out-of-bound writes in ffa_setup_and_transmit()
+      (CVE-2026-68401)
+    - wifi: cfg80211: use wiphy work for socket owner autodisconnect
+      (CVE-2026-68404)
+    - wifi: mac80211: refactor populating mesh related fields in sinfo
+    - wifi: cfg80211: add link_station_info structure to support MLO statistics
+    - wifi: mac80211: defer link RX stats percpu free to RCU (CVE-2026-68409)
+    - wifi: cfg80211: Fix an error handling path in cfg80211_wext_siwscan()
+      (CVE-2026-68412)
+    - RDMA/irdma: Prevent user-triggered null deref on QP create
+      (CVE-2026-68418)
+    - sched_ext: Don't warn on core-sched forced idle in put_prev_task_scx()
+      (CVE-2026-68421)
+    - xfrm: fix stale skb->prev after async crypto steals a GSO segment
+      (CVE-2026-68426)
+    - drm/amd/display: use kvzalloc to allocate struct dc (CVE-2026-68436)
+    - net/sched: Handle TC_ACT_REDIRECT from qdisc filter chains
+      (CVE-2026-68441)
+    - drm/amdkfd: clamp v9 CRIU control stack checkpoint copy to BO size
+      (CVE-2026-68447)
+    - ovl: check access to copy_file_range source with src mounter creds
+      (CVE-2026-68448)
+    - [s390x] zcrypt: Fix buffer over-read in cca_cipher2protkey
+      (CVE-2026-68453)
+    - wifi: mac80211: validate extension-frame layout before RX (CVE-2026-68470)
+    - wifi: ieee80211: validate MLE common info length (CVE-2026-68471)
+    - ata: libata-core: Disable LPM on Silicon Motion MD619{H,G}XCLDE3TC
+    - ata: libata-core: Add NOLPM quirk for PNY CS900 1TB SSD (CVE-2026-72031)
+    - mmc: vub300: Use devm_mmc_alloc_host() helper
+    - mmc: vub300: fix use-after-free on disconnect
+    - mmc: vub300: rename probe error labels
+    - mmc: vub300: fix use-after-free on probe failure (CVE-2026-72073)
+    - dm-verity: fix buffer overflow in FEC calculation (CVE-2026-72098)
+    - ocfs2: correct l_next_free_rec in online check
+    - ocfs2: add suballoc slot check in ocfs2_validate_inode_block()
+    - ocfs2: add extra consistency checks for chain allocator dinodes
+    - ocfs2: validate i_refcount_loc when refcount flag is set
+    - ocfs2: fix UBSAN array-index-out-of-bounds in ocfs2_sum_rightmost_rec
+      (CVE-2026-72162)
+    - [arm64] KVM: arm64: vgic: Handle race between interrupt affinity change
+      and LPI disabling (CVE-2026-72288)
+    - ipv4: igmp: Fix potential memory leaks in igmp_mod_timer() and
+      igmp_stop_timer() (CVE-2026-72321)
+    - net/liquidio: drop cached VF pci_dev LUT (CVE-2026-72329)
+    - Bluetooth: 6lowpan: avoid untracked enable work (CVE-2026-72337)
+    - net/mlx5e: Fix publication race for priv->channel_stats[] (CVE-2026-72341)
+    - netfs: Clean up some whitespace in trace header
+    - netfs: Use a folio_queue allocation and free functions
+    - netfs: Add a tracepoint to log the lifespan of folio_queue structs
+    - netfs: Abstract out a rolling folio buffer implementation
+    - netfs: Drop the was_async arg from netfs_read_subreq_terminated()
+    - netfs: Fix netfs_create_write_req() to handle async cache object creation
+      (CVE-2026-72366)
+    - iomap: guard io_size EOF trim against concurrent truncate underflow
+      (CVE-2026-72367)
+    - afs: Fix reinitialisation of the inode, in particular ->lock_work
+      (CVE-2026-72375)
+    - xen/pvcalls: bound backend response req_id before indexing rsp[]
+      (CVE-2026-72380)
+    - sctp: fix addr_wq_timer race in sctp_free_addr_wq() (CVE-2026-72383)
+    - drm/panthor: Always use the IRQ-safe variant when acquiring the fence lock
+      (CVE-2026-72388)
+    - hwmon: (pmbus/core) honor vrm_version in pmbus_data2reg_vid()
+      (CVE-2026-72397)
+    - sctp: add INIT verification after cookie unpacking (CVE-2026-72398)
+    - tipc: fix UAF in cleanup_bearer() due to premature dst_cache_destroy()
+      (CVE-2026-72404)
+    - bpf: Guard conntrack opts error writes (CVE-2026-72423)
+    - md/raid10: fix writes_pending leak on write request failures
+      (CVE-2026-72439)
+    - md/raid1: fix writes_pending and barrier reference leaks on write failures
+      (CVE-2026-72440)
+    - soundwire: fix bug in sdw_add_element_group_count found by syzkaller
+      (CVE-2026-72488)
+    - net: serialize netif_running() check in enqueue_to_backlog()
+      (CVE-2026-72493)
+    - RDMA/irdma: Replace waitqueue and flag with completion (CVE-2026-72494)
+    - RDMA/bnxt_re: Avoid repeated requests to allocate WC pages
+      (CVE-2026-72495)
+    - RDMA/bnxt_re: Add a max slot check for SQ (CVE-2026-72497)
+    - RDMA/bnxt_re: Free CQ toggle page after firmware teardown (CVE-2026-72499)
+    - RDMA/bnxt_re: Fix budget handling of notification queue
+    - RDMA/bnxt_re: Remove unusable nq variable
+    - RDMA/bnxt_re: Free SRQ toggle page after firmware teardown
+      (CVE-2026-72500)
+    - RDMA/bnxt_re: Initialize dpi variable to zero (CVE-2026-72501)
+    - sockmap: Fix use-after-free in udp_bpf_recvmsg() (CVE-2026-74257)
+    - ALSA: seq: Clean up fifo locking with guard
+    - ALSA: seq: avoid stale FIFO cells during resize (CVE-2026-74261)
+    - net: watchdog: fix refcount tracking races (CVE-2026-74264)
+    - bnxt: fix head underflow on XDP head-grow (CVE-2026-74269)
+    - cxl/region: Block region delete during region creation (CVE-2026-74273)
+    - ixgbe: do not configure xps for XDP queues (CVE-2026-74317)
+    - bpf: Reject sleepable BPF_LSM_CGROUP programs at load time
+      (CVE-2026-74338)
+    - ocfs2: validate fast symlink target during inode read (CVE-2026-74350)
+    - wifi: ath12k: fix memory leak in ath12k_wifi7_dp_rx_h_verify_tkip_mic()
+      (CVE-2026-74368)
+    - md: replace wait loop with wait_event() in md_handle_request()
+    - md/raid1,raid10: fix deadlock in read error recovery path (CVE-2026-74375)
+    - md/raid1,raid10: fix bio accounting for split md cloned bios
+      (CVE-2026-74373)
+    - md/raid1,raid10: fix error-path detection with md_cloned_bio()
+      (CVE-2026-74374)
+    - nvmet-tcp: check return value of nvmet_tcp_set_queue_sock (CVE-2026-74385)
+    - ALSA: seq: oss: Fix UAF at handling events with embedded SysEx data
+      (CVE-2026-74388)
+    - OPP: Fix race between OPP addition and lookup (CVE-2026-74405)
+    - wifi: ath11k: cancel SSR work items during PCI shutdown (CVE-2026-74407)
+    - drm/amd/display: Fix divide-by-zero in calculate_mcache_setting on zero
+      viewport (CVE-2026-74449)
+    - [s390x] ap: Move response_type struct into ap_msg struct
+    - [s390x] ap/zcrypt: Rework AP message buffer allocation
+    - [s390x] ap: Introduce ap message buffer pool
+    - [s390x] ap/zcrypt: New xflag parameter
+    - [s390x] zcrypt: Move inline function rng_type6cprb_msgx from header to
+      code
+    - [s390x] zcrypt: Rework domain processing within zcrypt device driver
+    - [s390x] zcrypt: Close speculative mem read possibility (CVE-2026-74466)
+    - afs: Fix UAF when sending a message (CVE-2026-74506)
+    - dibs: fix use-after-free of dmb_node in loopback attach/detach/unregister
+      (CVE-2026-74513)
+    - [amd64] iommu/iommufd: Fix IOPF group ownership UAF (CVE-2026-74520)
+    - octeontx2-af: Block VFs from clobbering special CGX PKIND state
+      (CVE-2026-74527)
+    - Bluetooth: hci_sync: hold conn in hci_connect_pa_sync() callback
+      (CVE-2026-74529)
+    - Bluetooth: hci_sync: hold conn in hci_connect_big_sync() callback
+      (CVE-2026-74530)
+    - Bluetooth: ISO: hold sk properly in iso_conn_ready (CVE-2026-74537)
+    - Bluetooth: ISO: lock sk in iso_connect_ind (CVE-2026-74538)
+    - netfs: Fix folio_queue ENOMEM in writeback by adding a mempool
+      (CVE-2026-74542)
+    - net/sched: cls_u32: validate offshift to prevent shift-out-of-bounds
+      (CVE-2026-74544)
+    - xsk: drain continuation descs after overflow in xsk_build_skb()
+      (CVE-2026-74559)
+    - xsk: provide sufficient space in pool->tx_descs
+    - xsk: reclaim invalid Tx descriptors in ZC batch path (CVE-2026-74558)
+    - btrfs: skip global block reserve accounting for rescue mounts
+      (CVE-2026-74571)
+    - mm/page_table_check: skip special zero mappings (CVE-2026-74600)
+    - eventfs: Use children field for rcu head and add memory barriers
+      (CVE-2026-74605)
+    - tls: rx: restore msg_iter before TLS 1.3 optimistic retry (CVE-2026-74611)
+    - watchdog: at91sam9_wdt: prevent timer rearm during teardown
+      (CVE-2026-74687)
+    - [s390x] ism: Fix UAF of sba and ieq during ism_dev_exit() (CVE-2026-74690)
+    - netfilter: nf_flow_table: drop existing skb dst before skb_dst_set_noref()
+      (CVE-2026-74695)
+    - bnxt_en: Disable EOP for TPA on all chips to prevent data corruption
+      (CVE-2026-74697)
+    - hwmon: (pmbus) Fix type confusion in notification logic (CVE-2026-74711)
+    - vhost_iotlb: bound map allocation in add_range (CVE-2026-74713)
+    - bpf: Fix netns reference imbalance in conntrack kfuncs (CVE-2026-74715)
+    - btrfs: lzo: reject inline extents without valid headers (CVE-2026-74723)
+    - xfs: handle NULL b_addr in xfs_buf_free (CVE-2026-74728)
+    - soc: aspeed: lpc-snoop: Fix usercopy overflow in snoop_file_read
+      (CVE-2026-74729)
+    - gpio: pca953x: fix pca953x_irq_bus_sync_unlock regmap lock
+      (CVE-2026-74733)
+    - firewire: ohci: fix NULL pointer dereference in ar_context_release
+      (CVE-2026-74734)
+    - ipvs: revalidate ihl to prevent out-of-bounds access (CVE-2026-74747)
+    - sctp: validate cookie AUTH state before use (CVE-2026-74752)
+    - scsi: core: pair EH runtime PM get and put (CVE-2026-74754)
+    - ASoC: SOF: Relocate and rework functionality for PCM stream freeing
+    - ASoC: SOF: pcm: Move period/buffer configuration print after platform open
+    - ASoC: SOF: pcm: Add snd_sof_pcm specific wrappers for dev_dbg() and
+      dev_err()
+    - ASoC: SOF: ipc4-pcm: Continue the pipeline trigger in case of IPC timeout
+      (CVE-2026-80581)
+    - tracing/probes: Remove WARN_ON_ONCE from parse_btf_arg (CVE-2026-80607)
+    - net: ibm: emac: use devm_platform_ioremap_resource
+    - net: ibm: emac: use platform_get_irq
+    - net: emac: Fix NULL pointer dereference in emac_probe (CVE-2026-80614)
+    - ieee802154: Avoid calling WARN_ON() on -ENOMEM in cfg802154_switch_netns()
+      (CVE-2026-80616)
+    - coresight: ete: Always save state on power down (CVE-2026-80623)
+    - ALSA: seq: oss: Serialize readq reset state with q->lock (CVE-2026-80628)
+    - btrfs: lzo: reject compressed segment that overflows the compressed input
+      (CVE-2026-80631)
+    - netfilter: flowtable: avoid num_encaps underflow on bridge VLAN untag
+      (CVE-2026-80634)
+    - EDAC/igen6: Initialize edac_op_state according to the configuration data
+    - EDAC/igen6: Add polling support
+    - EDAC/igen6: Skip absent memory controllers
+    - EDAC/igen6: Fix call trace due to missing release() (CVE-2026-80643)
+    - scsi: hisi_sas: Add slave_destroy interface for v3 hw (CVE-2026-80653)
+    - soc: xilinx: Fix race condition in event registration (CVE-2026-80655)
+    - cxl: Fix CXL_HEADERLOG_SIZE to match RAS Capability size (CVE-2026-80662)
+    - netfilter: nf_conntrack_expect: use conntrack GC to reap expectations
+      (CVE-2026-80668)
+    - Bluetooth: hci_sync: hold conn in hci_connect_acl/le_sync() callbacks
+      (CVE-2026-80692)
+    - idpf: bound interrupt-vector register fill to the allocated array
+      (CVE-2026-80693)
+    - dmaengine: idxd: fix double free of wq, engine, and group structs
+      (CVE-2026-80698)
+    - drm/amd/display: check if dml21_add_phantom_plane() is successful
+      (CVE-2026-80705)
+    - btrfs: initialize inode mapping flags for cached inodes (CVE-2026-80734)
+    - bpf: Check sk_state before sk_protocol in bpf_tcp_*_syncookie
+      (CVE-2026-80738)
+    - drm/amdkfd: Fix infinite loop parsing CRAT with zero subtype length
+    - drm/amdkfd: Add bounds check for CRAT subtype length (CVE-2026-80747)
+    - Bluetooth: ISO: zero the sockaddr before returning it in getname
+      (CVE-2026-80761)
+    - fbdev: Wrap user-invoked calls to fb_set_var() in helper (CVE-2026-80786)
+    - tipc: avoid busy looping in tipc_exit_net() (CVE-2026-80866)
+    - NTB: core: Add .get_dma_dev() callback to ntb_dev_ops
+    - NTB: ntb_transport: Use ntb_get_dma_dev() for DMA buffers
+    - ntb: Store original DMA address for future release (CVE-2026-80884)
+    - tap: Keep hdr_len in tap_get_user()
+    - net: tap: fix wrong transport_header when sending VLAN-tagged frame
+      (CVE-2026-80905)
+    - io_uring: defer eventfd signaling when queued from a wakeup handler
+      (CVE-2026-80920)
+    - wifi: iwlwifi: dvm: pair transport op-mode enter/leave
+    - wifi: iwlwifi: dvm: fix memory leak in iwl_op_mode_dvm_start()
+      (CVE-2026-80948)
+    - svcrdma: Reject Read lists that exceed the page budget (CVE-2026-89528)
+    - svcrdma: Add Write chunk WRs to the RPC's Send WR chain
+    - svcrdma: wake sq waiters when the transport closes
+    - svcrdma: Clear sc_cm_id when ADDR_CHANGE replacement fails
+      (CVE-2026-89534)
+    - SUNRPC: Reject short RFC 4121 MIC tokens in gss_krb5_verify_mic_v2
+      (CVE-2026-89537)
+    - ext2: Fix lost inode updates for IS_SYNC inodes (CVE-2026-89601)
+    - smb: client: reject a tree connect response whose byte count is too small
+      (CVE-2026-89631)
+    - cifs: call pagecache_isize_extended() in cifs_setsize() when extending
+      (CVE-2026-89642)
+    - ceph: cap delegated inode count in ceph_parse_deleg_inos()
+      (CVE-2026-89648)
+    - ceph: fix UAF in check_new_map() on session freed during unlock
+      (CVE-2026-89654)
+    - nfsd: fix fcache_disposal UAF by inlining dispose state into nfsd_net
+      (CVE-2026-89682)
+    - nfsd: restore rq_status_counter to even on all nfsd_dispatch() exit paths
+      (CVE-2026-89705)
+    - lockd, nfsd: RCU-protect nlmsvc_ops dispatch (CVE-2026-89709)
+    - mm/mglru: reset page lru tier bits when activating
+    - mm/mglru: use the common routine for dirty/writeback reactivation
+    - mm/mglru: fix and remove redundant unevictable folio handling
+      (CVE-2026-89757)
+    - ksmbd: fix tree connection use-after-free in smb2_tree_connect()
+      (CVE-2026-89788)
+    - drm/amdkfd: Fix partial migrate issue
+    - drm/amdkfd: return migration pages from copy function
+    - Revert "drm/amdkfd: return migration pages from copy function"
+    - drm/amdkfd: Fix the case that vm range is hole at svm_migrate_copy_to_vram
+      (CVE-2026-89808)
+    - drm/amdkfd: return migration pages from copy function - again
+    - drm/amdkfd: Fix error path at svm_migrate_copy_to_ram (CVE-2026-89810)
+    - drm/amdkfd: Add TLB flush after MES queue eviction/suspension
+      (CVE-2026-89811)
+    - drm/amdgpu: force complete the MES ring fences on reset (CVE-2026-89812)
+    - drm/amdgpu: force complete the KIQ ring fences on reset (CVE-2026-89813)
+    - f2fs: fix to avoid potential deadloop in f2fs_fsync_node_pages()
+      (CVE-2026-89833)
+    - [arm64] KVM: arm64: vgic-v3: take an LPI reference in
+      vgic_v3_save_pending_tables (CVE-2026-89913)
+    - [s390x] KVM: s390: Fix memory corruption by not reinjecting CK machine
+      checks (CVE-2026-89920)
+    - mm/huge_memory: transfer the pmd dirty bit to the folio on zap
+      (CVE-2026-89987)
+    - netfilter: nf_tables: prefer nft_trans_elem_alloc helper
+    - netfilter: nf_tables: add nft_trans_commit_list_add_elem helper
+    - netfilter: nf_tables: prepare for multiple elements in nft_trans_elem
+      structure
+    - netfilter: nf_tables: skip double clone set expressions on element insert
+      (CVE-2026-90061)
+    - net_sched: sch_fq: add three drop_reason
+    - net/sched: add qstats_cpu_drop_inc() helper
+    - net/sched: act_ife: Only operate on Ethernet frames (CVE-2026-90083)
+    - octeontx2-vf: fix workqueue and netdev race in probe/remove
+      (CVE-2026-90084)
+    - xsk: honor XDP_TX_METADATA in zero-copy path (CVE-2026-90086)
+    - Bluetooth: do not leak an hci_conn when a second LE connect is rejected
+      (CVE-2026-90087)
+    - net: add getsockopt_iter callback to proto_ops
+    - Bluetooth: L2CAP: convert to getsockopt_iter
+    - Bluetooth: L2CAP: access chan->conn safely in get/setsockopt
+      (CVE-2026-90093)
+    - Drivers: hv: vmbus: Skip VMBus module cleanup for non-nested root
+      partition (CVE-2026-90097)
+    - net/sched: account classifier filter allocations to memcg (CVE-2026-90099)
+    - NFSv4.1: zero referring call lists before decoding (CVE-2026-90104)
+    - vxlan: fix reading neigh ha (CVE-2026-90105)
+    - net: bridge: arp/nd proxy: fix reading neigh ha (CVE-2026-90106)
+    - ip6mr: do not clone dst in ip6mr_cache_report() (CVE-2026-90111)
+    - ALSA: mtpav: shut down output timer before card teardown (CVE-2026-90116)
+    - virtio_net: Fix resize of the RX ring (CVE-2026-90142)
+    - dpll: fix NULL deref in dpll_device_ops() during teardown race
+      (CVE-2026-90144)
+    - bpf, xdp: move offload check into dev_xdp_install()
+    - NFSv4/flexfiles: fix NULL dereference for NFSv4.0 data servers
+      (CVE-2026-90149)
+    - ksmbd: scope session state changes to bound connections (CVE-2026-90154)
+    - ksmbd: detach blocked lock requests before freeing (CVE-2026-90155)
+    - ksmbd: safely discard unregistered deferred locks (CVE-2026-90156)
+    - erofs: fix interlaced ztailpacking pclusters (CVE-2026-90161)
+    - ksmbd: defer publishing granted locks to prevent UAF/double-free race
+      (CVE-2026-90162)
+    - ksmbd: serialize oplock close with pending break ownership
+      (CVE-2026-90167)
+    - ksmbd: fix slab-out-of-bounds read in ksmbd_alloc_user() (CVE-2026-90174)
+    - bpf: Check pointer type for all atomic RMW paths (CVE-2026-90177)
+    - apparmor: fix deadlock in complain-mode change_hat (CVE-2026-90179)
+    - blk-cgroup: delay freeing policy data after rcu grace period
+    - blk-iocost: clear delay state when freeing policy data (CVE-2026-90182)
+    - blk-iolatency: clear delay state when freeing policy data (CVE-2026-90183)
+    - ocfs2: validate DIO orphan slot during inode read (CVE-2026-90204)
+    - ocfs2: validate orphan slot during inode read (CVE-2026-90205)
+    - nvmet: fix max_qid race between configfs and controller allocation
+      (CVE-2026-90206)
+    - clocksource/drivers/samsung_pwm: Switch to raw_spinlock_t type
+      (CVE-2026-90208)
+    - bpf: Compare iterator types during state pruning (CVE-2026-90217)
+    - apparmor: fix unconfined user namespace restriction forced stack
+      (CVE-2026-90231)
+    - amt: Don't support cross-netns setup. (CVE-2026-90232)
+    - NFS: Return a delegation the client fails to record (CVE-2026-90234)
+    - [amd64] iommu/vt-d: Flush context cache with correct SID when tearing down
+      aliases (CVE-2026-90240)
+    - bpf: Fix mmap_lock leak in irq_work path (CVE-2026-90247)
+    - Bluetooth: ISO: fix race of kfree vs kref_get_unless_zero (CVE-2026-74533)
+    - Bluetooth: L2CAP: use proto_lock for l2cap_data to fix l2cap_disconn_ind
+      (CVE-2026-90256)
+    - btrfs: qgroup: fix a wrong length calculation in
+      qgroup_free_reserved_data() (CVE-2026-90259)
+    - btrfs: zoned: don't clobber the extent buffer when zeroing it out
+      (CVE-2026-90260)
+    - btrfs: check if root is readonly when setting posix acl (CVE-2026-90263)
+    - btrfs: always wait for ordered extents to avoid OE races (CVE-2026-90264)
+    - btrfs: defrag: fix deadlock between defrag and delalloc space reservation
+      (CVE-2026-90265)
+    - scsi: sd: Move the sd_config_discard() function definition
+    - scsi: sd: Fix special_vec mempool leak when scsi_alloc_sgtables() fails
+      (CVE-2026-90267)
+    - coresight: etm4x: missing cscfg_csdev_disable_active_config() in perf
+      enable (CVE-2026-90273)
+    - drm/amd/display: disable replay when crc source is enabled
+    - drm/amd/display: Resize MST HDCP per-connector arrays to 32
+      (CVE-2026-90289)
+    - bpf: Factor callchain_store function from __bpf_get_stack
+    - bpf: Factor callchain_finalize function from __bpf_get_stack
+    - bpf: Remove trace_in argument from __bpf_get_stack
+    - bpf: Clear buf on error in __bpf_get_task_stack (CVE-2026-90300)
+    - ocfs2/heartbeat: fix slot mapping rollback leaks on error paths
+    - ocfs2: o2hb: quiesce negotiate handlers and timeout work (CVE-2026-90301)
+    - thermal: hwmon: Remove hwmon class device along with its parent
+      (CVE-2026-90311)
+    - ocfs2: validate inline xattrs during inode block validation
+      (CVE-2026-90321)
+    - ublk: check import_ubuf() return value (CVE-2026-90324)
+    - blk-cgroup: fix race between policy activation and blkg destruction
+      (CVE-2026-90326)
+    - HID: steam: Reject short reads (CVE-2026-90328)
+    - HID: logitech-hidpp: Fix FF device cleanup on init failure
+      (CVE-2026-90330)
+    - tty: skip cdev_del() when no cdev is registered (CVE-2026-90335)
+    - serial: core: clear freed pointers on uart_register_driver() failure
+      (CVE-2026-90336)
+    - serial: core: do fallible allocations before the console can be registered
+      (CVE-2026-90337)
+    - wifi: cfg80211: stop PMSR before P2P and NAN teardown (CVE-2026-90343)
+    - wifi: brcmfmac: fix P2P action frame handling without device vif
+      (CVE-2026-90345)
+    - wifi: nl80211: check link is beaconing for color change
+    - wifi: nl80211: clean up color-change beacon data on errors
+      (CVE-2026-90346)
+    - [arm64] ptrace: Keep 'orig_x0' in-sync with x0 on syscall entry
+      (CVE-2026-90347)
+    - wifi: mt76: mt7996: do not attach hif2 WED when the main WED attach failed
+      (CVE-2026-90351)
+    - bpf: Reject >8 byte return values on return-reading trampoline paths
+      (CVE-2026-90359)
+    - drm/msm: don't tear down KMS twice when KMS init fails (CVE-2026-90363)
+    - wifi: mt76: cancel reset and rc work on device unregister (CVE-2026-90365)
+    - wifi: mt76: mt7996: hold dev->mt76.mutex while disabling tx worker in SER
+      (CVE-2026-90367)
+    - wifi: ath12k: fix overreads in ath12k_wmi_process_csa_switch_count_event()
+      (CVE-2026-90408)
+    - [amd64] drm/i915: rename range_overflows_end() to range_end_overflows()
+    - [amd64] drm/i915: document range_overflows() and range_end_overflows()
+      macros
+    - overflow: add range_overflows() and range_end_overflows()
+    - drm/panthor: Add vm_bind region with kbo range overlap check
+      (CVE-2026-90409)
+    - RDMA/cxgb4: Fix dereg_skb leak and double free in write_tpt_entry()
+      (CVE-2026-90417)
+    - PCI: Make pci_match_one_device() match on ID instead of device
+    - PCI: Fix dyn_id add TOCTOU
+    - PCI: Fix UAF when probe runs concurrent to dyn ID removal (CVE-2026-90421)
+    - clk: mediatek: pllfh: Fix IO remapping leak in register_pllfhs error path
+      (CVE-2026-90422)
+    - iommu/tegra241-cmdqv: Fix VINTF0 leak on the init-failure path
+      (CVE-2026-90424)
+    - iommu/tegra241-cmdqv: Don't fall back to a freed smmu after
+      devm_krealloc() (CVE-2026-90427)
+    - scsi: ufs: core: Convert string descriptor format macros to enum
+    - scsi: ufs: core: Validate string descriptors (CVE-2026-92480)
+    - pinctrl: mediatek: use devm_gpiochip_add_data() for GPIO chip
+      (CVE-2026-92482)
+    - bpf: Fix WARNING in bpf_tracing_link_release (CVE-2026-92485)
+    - ext4: fix ABBA deadlock in ext4_xattr_inode_cache_find() (CVE-2026-92503)
+    - bpf: Zero queue and stack outputs on lock failure (CVE-2026-92520)
+    - drm/sched: Use struct for drm_sched_init() params
+    - drm/msm: Only fini scheduler after successful init (CVE-2026-93058)
+    - firmware: arm_scmi: Fix SCMI device destroy lifetimes (CVE-2026-93081)
+    - fs/resctrl: Prevent use-after-free in rdtgroup_kn_put() (CVE-2026-93100)
+    - RDMA/rvt: Return NULL after port allocation failure (CVE-2026-93104)
+    - esp: do not unref managed frag pages in esp_ssg_unref() (CVE-2026-93105)
+    - platform/x86: asus-wmi: fix resource leaks on probe failure
+      (CVE-2026-93116)
+    - usb: gadget: uac: validate rate list length before storing
+      (CVE-2026-93122)
+    - bpf: Reject rdonly/rdwr_buf_size kfunc arguments that exceed u32 max
+      (CVE-2026-93125)
+    - [amd64] platform/x86: dell-wmi-base: Fix handling of ultra performance key
+      (CVE-2026-93129)
+    - bpf: Reject writes through untrusted BTF pointers (CVE-2026-93144)
+    - time/namespace: Validate nanosecond field in proc_timens_set_offset()
+      (CVE-2026-93146)
+    - bpf: Reject MEM_ALLOC BTF accesses past object bounds (CVE-2026-93148)
+    - dmaengine: xilinx_dma: Fix CPU stall in xilinx_dma_poll_timeout
+      (CVE-2026-93168)
+    - drm/amd/display: Fix dangling pointer in CRTC reset function
+      (CVE-2026-93175)
+    - drm/amd/display: Fix dangling pointer in plane reset function
+      (CVE-2026-93176)
+    - mm/page_owner: use memcg_data snapshot to avoid TOCTOU in
+      print_page_owner_memcg() (CVE-2026-93216)
+    - nfsd: convert nfsd_net boolean flags to unsigned long flags word
+      (CVE-2026-93221)
+    - mm/hugetlb: refactor code around vmemmap_walk
+    - mm/hugetlb: initialize gigantic bootmem hugepage struct pages earlier
+      (CVE-2026-93230)
+    - ACPI: bus: Introduce acpi_bus_get_primary_device() (CVE-2026-93251)
+    - powerpc/xive: add error return value to xive_smp_probe()
+    - powerpc/xive: propagate IPI init errors to prevent use-after-free
+      (CVE-2026-93260)
+    - remoteproc: qcom_wcnss: Fix handling the lack of PD regulators in v3
+      (CVE-2026-93272)
+    - ksmbd: remove redundant DACL check in smb_check_perm_dacl
+    - ksmbd: fix maximum allowed access checks (CVE-2026-93282)
+    - drm/amdkfd: fix SMI event cross-process information leak (CVE-2026-97422)
+    - drm/amdgpu: Update SRIOV Exchange Headers for RAS Telemetry Support
+    - drm/amdgpu/ras: add ras_suspend callback and use it for cp_ecc_error_irq
+      (CVE-2026-97424)
+    - wifi: iwlwifi: simplify nested if checks
+    - wifi: iwlwifi: mvm: fix P2P-Device binding handling (CVE-2026-97432)
+    - RDMA/counter: Fix num_counters leak on bind_qp failure in alloc_and_bind()
+      (CVE-2026-97477)
+    - virt: acrn: Remove unused list 'acrn_irqfd_clients'
+    - virt: acrn: Fix irqfd use-after-free during eventfd shutdown
+      (CVE-2026-97478)
+    - PM: sleep: core: Synchronize runtime PM status of parents and children
+    - PM: sleep: core: Restrict power.set_active propagation
+    - PM: Rearrange documentation related to __pm_runtime_disable()
+    - PM: Block enabling of runtime PM during system suspend
+    - PM: runtime: Introduce pm_runtime_blocked()
+    - PM: sleep: Use DPM_FLAG_SMART_SUSPEND conditionally
+    - PM: sleep: Fix bit masking operation
+    - driver core: Add device_link_test() for testing device link flags
+    - driver core: Avoid warning when removing a device while its supplier is
+      unbinding (CVE-2026-97479)
+    - serial: 8250: invert serial8250_register_8250_port() CIR condition
+    - tty: serial: 8250: protect against NULL uart->port.dev in register
+      (CVE-2026-97480)
+    - drm/amdgpu: Remove unused amdgpu_i2c functions
+    - drm/amdgpu/atombios: drop empty function
+    - drm/amdgpu: rework i2c init and fini
+    - drm/amdgpu: Bound GPIO I2C table entry count from VBIOS (CVE-2026-97493)
+    - gpiolib: make value setters have return values
+    - gpiolib: wrap gpio_chip::set()
+    - gpiolib: rework the wrapper around gpio_chip::set_multiple()
+    - gpiolib: introduce gpio_chip setters that return values
+    - pinctrl: mediatek: paris: don't double-check the GPIO number
+    - pinctrl: mediatek: paris: use new GPIO line value setter callbacks
+    - pinctrl: mediatek: paris: bypass pinctrl GPIO layer in set GPIO direction
+      (CVE-2026-97501)
+    - genirq/proc: Switch to lock guards
+    - genirq: Consistently use '%u' format specifier for unsigned int variables
+    - genirq/proc: Size interrupt directory names for 10-digit interrupt numbers
+      (CVE-2026-97503)
+    - media: chips-media: wave5: Release m2m_ctx after Instance Removed from
+      List (CVE-2026-97513)
+    - i3c: master: svc: Fix npcm845 FIFO empty issue
+    - i3c: master: svc: Fix npcm845 invalid slvstart event
+    - i3c: master: svc: Prevent IRQ storm from false SLVSTART on NPCM845
+      (CVE-2026-97515)
+    - hwmon: (asus_rog_ryujin) Rely on subsystem locking
+    - hwmon: (asus_rog_ryujin) Add per-device configuration
+    - hwmon: (asus_rog_ryujin) Validate HID report lengths (CVE-2026-97538)
+    - smb: client: avoid using uninitialized SIDs in cifs_posix_to_fattr()
+      (CVE-2026-97554)
+    - smb: client: honor forceuid/forcegid when mapping SIDs to uid/gid
+      (CVE-2026-97561)
+    - drm/amdgpu: skip the VMID 0 flush for VRAM (CVE-2026-97928)
+    - [amd64] perf/x86/intel: Prevent drain_pebs() reentry (CVE-2026-97960)
+    - net/mlx5e: Move representor vnic reporter to eswitch devlink port
+      (CVE-2026-97962)
+    - Bluetooth: hci_sysfs: Fix NULL pointer dereference in device_del()
+      (CVE-2026-97975)
+    - vhost: invalidate vring access on IOTLB transitions (CVE-2026-97988)
+    - vduse: validate virtqueue alignment (CVE-2026-97989)
+    - virtio_ring: fix stale descriptor flags after a failed packed add
+      (CVE-2026-97997)
+    - [amd64] iommu/amd: Do not reallocate GA log buffers on resume
+      (CVE-2026-98003)
+    - bpf: mark a NULL call argument precise (CVE-2026-98019)
+    - tracing: Fix subbuf resize races with trace_pipe_raw readers
+      (CVE-2026-98032)
+    - bpf: Preserve inner map identity in callback frames (CVE-2026-98033)
+    - bpf: Mark NULL kptr stores precise (CVE-2026-98034)
+    - bpf: Keep refcount_acquire nullable for borrowed RCU kptrs
+      (CVE-2026-98038)
+    - bpf: Don't infer non-NULL from a pointer with an unbounded offset
+      (CVE-2026-98043)
+    - bpf: Reject legacy packet loads from callbacks (CVE-2026-98044)
+    - bpf: Check ancestor frames for rbtree callbacks (CVE-2026-98047)
+    - bpf: don't rewrite bpf_fastcall patterns entered by a jump
+      (CVE-2026-98048)
+    - bpf: zero extend the result of an arena 32-bit cmpxchg (CVE-2026-98049)
+    - [amd64] ASoC: Intel: avs: Refactor and fix init_config access
+      (CVE-2026-98053)
+    - bpf: Mark syscall helpers as sleepable (CVE-2026-98058)
+    - bpf: Mark signal tracepoint siginfo arguments as scalar (CVE-2026-98062)
+    - erofs: disable LZ4 rolling decompression for now (CVE-2026-98067)
+    - net: rename netns_local to netns_immutable
+    - net: plumb extack in __dev_change_net_namespace()
+    - net: Remove conflicting altnames for dying netns in
+      __dev_change_net_namespace(). (CVE-2026-98073)
+    - btrfs: zstd: fix lost wakeup when waiting for a workspace (CVE-2026-98079)
+    - bpf: backtracking shouldn't clear outer frame R1-R5 for callbacks
+      (CVE-2026-98084)
+    - bpf: backtrack_insn(): Handle ld_{abs,ind} subprog exit edge
+      (CVE-2026-98085)
+    - ipv6: mcast: use rcu_assign_pointer() for __rcu list updates
+      (CVE-2026-98099)
+    - smb/client: invalidate fscache for fallocate range operations
+      (CVE-2026-98124)
+    - net: stmmac: fix dma mapping leak in stmmac_tso_xmit() (CVE-2026-98131)
+    - bpf: check_cond_jmp_op(): properly infer if register is null
+      (CVE-2026-98134)
+    - printk: Don't WARN on kthread_run failure. (CVE-2026-98147)
+    - drm/gud: validate GUD_ROTATION_0 is present in supported rotations
+      (CVE-2026-98148)
+    - drm/virtio: Use drm_gem_plane_helper_prepare_fb()
+    - drm/virtio: Add a helper to map and note the dma addrs and lengths
+    - drm/virtio: use the DMA API for resource backing on Xen (CVE-2026-98156)
+    - functionfs: fix the open/removal races (CVE-2025-71074)
+    - ACPI: platform: Use acpi_bus_get_primary_device() (CVE-2026-100072)
+    - [amd64] KVM: nSVM: Triple fault if restore host CR3 fails on nested
+      #VMEXIT (CVE-2026-46032)
+    - greybus: raw: fix use-after-free if write is called after disconnect
+      (CVE-2026-53024)
+    - firmware: arm_ffa: Add support for IMPDEF value in the memory access
+      descriptor
+    - firmware: arm_ffa: Fix Endpoint Memory Access Descriptor offset
+      calculation (CVE-2026-68400)
+    - pmdomain: imx93-blk-ctrl: Extract PHY as shared domain for DSI/CSI
+      (CVE-2026-72009)
+    - cxl/region: Resolve region deletion races (CVE-2026-74272)
+    - bpf: Remove migrate_{disable|enable} in bpf_obj_free_fields()
+    - bpf: Clear rb node linkage when freeing bpf_rb_root (CVE-2026-74344)
+    - ocfs2: validate external xattr entries when reading metadata
+      (CVE-2026-90320)
+    - dm-integrity: replace forgeable discard filler with a keyed sector marker
+      (CVE-2026-90333)
+    - [amd64] perf/x86/intel/uncore: Fix uncore_box ref/unref ordering
+      (CVE-2026-93181)
+    - i3c: master: Fix recursive locking during device registration
+      (CVE-2026-93202)
+    - xfs: remove unused trace event xfs_dqreclaim_dirty
+    - ublk: fix dead loop when canceling io command
+    - riscv: uaccess: Only restore the CSR_STATUS SUM bit
+    - [s390x] kvm: Initialize uninitialized flags variable
+    - [s390x] KVM: s390: wrapper for KVM_BUG
+    - [s390x] KVM: s390: move pv gmap functions into kvm
+    - [s390x] KVM: s390: use __kvm_faultin_pfn()
+    - [s390x] KVM: s390: move gmap_shadow_pgt_lookup() into kvm
+    - [s390x] KVM: s390: pv: fix race when making a page secure
+    - [s390x] KVM: s390: Fix FOLL_*/FAULT_FLAG_* confusion
+    - [s390x] kvm: Mask extra bits from program interrupt code
+    - scsi: ufs: qcom : Fix NULL pointer dereference in ufs_qcom_setup_clocks
+    - accel/ivpu: Fix race condition when mapping dmabuf
+    - [amd64] KVM: SEV: Drop FOLL_WRITE for encrypted region registration
+    - net: Fix wild-memory-access in __register_pernet_operations() when
+      CONFIG_NET_NS=n.
+    - mpls: Set rt->rt_nhn just before returning from mpls_nh_build_multi().
+    - media: verisilicon: Fix kernel panic due to __initconst misuse
+    - soc/tegra: pmc: Document tegra_pmc.syscore field
+    - soc/tegra: pmc: Add kerneldoc for wake-up variables
+    - i3c: mipi-i3c-hci: Preserve RUN bit when aborting DMA ring
+    - ceph: do not skip the first folio of the next object in writeback
+    - ceph: fix crash after fscrypt_encrypt_pagecache_blocks() error
+    - ceph: introduce ceph_submit_write() method
+    - ceph: always call ceph_shift_unused_folios_left()
+    - spi: microchip-core-qspi: stop checking viability of op->max_freq in
+      supports_op callback
+    - sched/psi: Create the psimon kthread outside of cgroup_mutex
+    - ocfs2: use correct endian in ocfs2_dinode_has_extents
+    - netfs: release readahead folios on iterator preparation failure
+    - netfs: Fix folio state after ENOMEM whilst under writeback iteration
+    - net: do not acquire dev->tx_global_lock in netdev_watchdog_up()
+    - [s390x] zcrypt: Fix memory leak with CCA cards used as accelerator
+    - EDAC/igen6: Fix the flood of invalid error reports
+    - netfilter: ctnetlink: do not expose expectation DEAD flag
+    - EDAC/igen6: Fix NULL pointer dereference
+    - Revert "esp: do not unref managed frag pages in esp_ssg_unref()"
+    - mm/hugetlb_vmemmap: fix incorrect vmemmap restore in rollback
+    - PM: sleep: Unblock runtime PM when device prepare fails
+    - soundwire: intel_auxdevice: Fix system suspend/resume handling
+    - gpiolib: Allow to use setters with return value for output-only gpios
+    - gpiolib: initialize return value in gpiochip_set_multiple()
+    - i3c: master: svc: Fix missed IBI after false SLVSTART on NPCM845
+    - i3c: master: svc: Fix npcm845 FIFO_EMPTY quirk
+    - i3c: master: svc: Fix i3c_master_get_free_addr return check
+    - tracing: Fix ring_buffer_read_page_size() kernel-doc
+    - tracing: Fix comment in tracing_buffers_splice_read()
+    - dm-integrity: fix buffer overflow with keyed discard
+    - bpf, sockmap: Account for receive queue in FIONREAD without a verdict
+      program
+    - wifi: atk9k: Revert "wifi: ath9k: reject short WMI command responses"
+      (Closes: #1151097)
+    - [s390x] uv: Don't return 0 from make_hva_secure() if the operation was not
+      successful
+    - drm/panfrost: Fix scheduler workqueue bug
+    - ksmbd: fix heap out-of-bounds write in krb5_authenticate()
+    - [amd64] KVM: x86: Use active memslots for the per-vCPU MMIO cache
+    https://www.kernel.org/pub/linux/kernel/v6.x/ChangeLog-6.12.115
+    - rose: set SOCK_DESTROY in rose_kill_by_device() for prompt cleanup
+    - rose: disconnect orphaned STATE_2 sockets when device is gone
+    - rose: release netdev ref and destroy orphaned incoming sockets
+    - rose: clear neighbour pointer in rose_kill_by_device()
+    - rose: don't free fd-owned sockets when reaping in the heartbeat
+    - rose: keep the route needed for routing loop detection
+    - rose: guard rose_transmit_link() against a NULL neighbour
+    - rose: use timer_shutdown_sync() for t0timer teardown
+    - rose: don't warn on stray CALL_ACCEPTED/CLEAR_CONFIRMATION in state 3
+    - rose: hold a reference on incoming sockets queued for accept()
+    - ax25: bound REJ-driven fast retransmits with the existing N2 counter
+    - rose: purge rose_neigh->queue on final teardown
+    - mptcp: move the OoO check back into __mptcp_try_fallback()
+    - fat: stop reading directory entries past the end-of-directory marker
+    - [arm64,armhf] soc/tegra: fuse: Add missing newline to APBMISC error
+      message
+    - power: supply: Fix maintenance charge table kernel-doc
+    - power: supply: ds2780: Fix ds2780_get_capacity() returning raw value
+    - Drivers: hv: Avoid infinite retry loop in init_vp_index()
+    - [amd64] x86/hyperv: Avoid using per-cpu output page in
+      hv_apicid_to_vp_index()
+    - Drivers: hv: Don't reset VMBus connection state on error/exit paths
+      (CVE-2026-99216)
+    - pinctrl: qcom: ipq5018: add missing pwm3 function on gpio13
+    - tools/power turbostat: Fix fd_perf leak on reset
+    - tools/power turbostat: Fix add_counter issue if > 24 counters.
+    - power: supply: generic-adc-battery: Fix temperature IIO channel conversion
+    - pinctrl: qcom: ipq5018: replace gcc_plltest with pwm2 on gpio12
+    - drm/vc4: hdmi: Move packet RAM enable to PM runtime (CVE-2026-99214)
+    - vsock: treat TCP_CLOSING as once-established (CVE-2026-99213)
+    - net/rds: don't let the rdma_cm destroy an id RDS still owns on route
+      failure (CVE-2026-99212)
+    - [amd64] ASoC: Intel: avs: Reset the stream unless it is already prepared
+    - [armhf] ASoC: stm32: spdifrx: fix synchronization state check
+    - regcache: Add ->populate() callback to separate from ->init()
+    - regcache: Do not overwrite error code when finalizing cache after error
+    - regmap: Drop map lock during cache init and exit
+    - netlink: reset skb headers before unicast and multicast filtering
+      (CVE-2026-99211)
+    - [arm64,armhf] spi: tegra114: assert CS GPIO for every transfer in a
+      message
+    - scsi: st: Save the visited block for the partition the drive is in
+    - scsi: target: iscsi: Fix race in discovery auth updates (CVE-2026-99206)
+    - ocfs2/dlm: Protect the recovery list during debugfs reads (CVE-2026-99204)
+    - pipe: preserve existing fasync readers on writer setup failure
+      (CVE-2026-99203)
+    - tracing: probes: error if BTF is required but unavailable
+    - scsi: libsas: Fix SMP IO deadlock during HA resume (CVE-2026-99202)
+    - netlink: avoid hashing the network namespace pointer (CVE-2026-99201)
+    - net: bcmgenet: unshare the skb before writing the control block
+      (CVE-2026-99192)
+    - net/ipv6: Introduce payload_len helpers
+    - calipso: keep BIG TCP payload_len in calipso_skbuff_setattr()
+      (CVE-2026-99191)
+    - gpiolib: fix memory leak in gpiod_set_array_value_complex() on error paths
+      (CVE-2026-99190)
+    - gpio: mxc: use lock guards for the generic GPIO chip lock
+    - gpio: mxc: fix both_edges bit operations
+    - gpio: mxc: use BIT() macro
+    - gpio: mxc: fix wakeup_pads bit operations
+    - perf: Fix perf_pmu_migrate_context() leaving events behind
+      (CVE-2026-99187)
+    - printk: Postpone kthread startup
+    - PCI: Don't treat ~0 as ready in pci_dev_wait() with RRS SV
+      (Closes: #1112238)
+    - afs: free the super info after a grace period
+    - autofs: ignore notification errors from a replaced pipe (CVE-2026-99181)
+    - unicode: free the map after a grace period (CVE-2026-99180)
+    - [amd64] x86/kvm: Don't consume async #PF flags on a kernel #PF in NMI
+      context (CVE-2026-99178)
+    - [amd64] KVM: nVMX: Reset MMU back to the root MMU if loading L2 state
+      fails for !VM-Entry (CVE-2026-99176)
+    - fsnotify: prevent mark additions during connector teardown
+      (CVE-2026-99175)
+    - pid_namespace: make zap_pid_ns_processes() freezable
+    - eventfs: Free the eventfs_inode after an rcu grace period too
+      (CVE-2026-99173)
+    - namei: test for a negative dentry the way traverse_mounts() does
+    - net/sched: fix use-after-free in __tcf_action_put() (CVE-2026-99167)
+    - net: rds: fix uninitialized trans dereference in CM event handler
+      (CVE-2026-99166)
+    - pinctrl: amd: Clear S4 wake bits when firmware has _AEI
+    - sctp: revalidate output stream after association connect wait
+      (CVE-2026-99165)
+    - tools: gpio: fix building from the top level with O=
+    - tracing/histograms: Reject non-stacktrace fields for synthetic stacktrace
+      fields (CVE-2026-99163)
+    - i2c: qcom-cci: Fix HALT_ACK reset request being dropped
+    - perf: Update cgroup time when rotating multiplexed events
+    - ring-buffer: Do not show buffer_meta for CPUs without a buffer
+      (CVE-2026-99160)
+    - ring-buffer: Fix the sub-buffer array base in rb_meta_subbuf_idx()
+      (CVE-2026-99159)
+    - ring-buffer: Fix false warning in ring_buffer_map_get_reader()
+      (CVE-2026-99158)
+    - scsi: bsg: Pass reply_len to bsg_setup_queue() to fit UFS ARPMB replies
+      (CVE-2026-99157)
+    - scsi: xen/scsifront: Check for a NULL shadow entry on a backend response
+      (CVE-2026-99155)
+    - scsi: libiscsi: Reject a negative task index from parse_pdu_itt
+      (CVE-2026-99154)
+    - scsi: libiscsi: Validate the ITT reflected in a Reject PDU
+      (CVE-2026-99153)
+    - scsi: libiscsi: Validate the task named by a management response
+      (CVE-2026-99152)
+    - drm/amdgpu/sdma3: Work around POLL_REGMEM / FENCE hang
+    - drm/amdgpu: don't drop the runtime PM reference twice in amdgpu_gpr
+      (CVE-2026-99150)
+    - drm/exec: don't immediately add prelocked obj to array of locked objs
+      (CVE-2026-99147)
+    - tracing: Fix the shift out of bounds in the log2 histogram modifier
+    - tracing: Take trace_types_lock when dropping the buffer_meta reference
+    - tracing: Check operator stack capacity before pushing (CVE-2026-99142)
+    - tracing: Do not initialize tracefs work if tracing is disabled
+    - tracing: Fix hist trigger timestamps for buffered events (CVE-2026-99140)
+    - wifi: p54: validate firmware record lengths (CVE-2026-99100)
+    - tcp: fix use-after-free in do_tcp_getsockopt(TCP_CONGESTION)
+      (CVE-2026-99139)
+    - tcp: fix use-after-free in do_tcp_getsockopt(TCP_CC_INFO) (CVE-2026-99138)
+    - cgroup: fix spurious SIGKILL of CLONE_INTO_CGROUP children
+    - dm cache: fix demotion stats in passthrough mode
+    - dm cache: fix issue with background work locking
+    - dm-crypt: fix a tiny race condition in crypt_dec_pending (CVE-2026-99136)
+    - dm-ebs: fix incorrect device offset check in ebs_ctr()
+    - dm-integrity: fix infinite loop on discard with large tag size
+      (CVE-2026-99135)
+    - dm-integrity: require stable writes for internal hash modes
+    - mac802154: fix data race and NULL deref on local->assoc_dev
+      (CVE-2026-99134)
+    - net/iucv: fix the recvmsg window update (CVE-2026-99133)
+    - xfs: fix capability check in xfs (CVE-2026-99131)
+    - workqueue: Use raise_softirq() to trigger softirq in irq_work handler
+    - tipc: protect node reset trace dump with node lock
+    - sctp: validate chunk length in the inqueue parser (CVE-2026-99128)
+    - page_pool: keep frag_offset aligned for odd-sized requests
+      (CVE-2026-99127)
+    - [s390x] ctcm: Prevent XID null dereference (CVE-2026-99126)
+    - [s390x] pci: Fix leak of uninitialized kernel data in SCLP report
+      (CVE-2026-99124)
+    - ipv4: avoid divide by zero in fib_rebalance (CVE-2026-99121)
+    - drm/amdgpu: Fix VCE 3 ring align_mask
+    - mm, madvise: fix potential workingset node list_lru leaks
+      (Closes: #1151281)
+    - mm/huge_memory: initialise workingset state before folio split
+    - [s390x] Revert "s390/mm: Add missing secure storage access fixups for
+      donated memory"
+    - netfilter: nft_byteorder: remove multi-register support
+    - mm/huge_memory: bypass THP tuneables for huge pfnmap mappings
+    - [amd64] KVM: x86/mmu: Preserve nested TDP shadow page tables if they are
+      used as roots
+    - net: bridge: mcast: don't truncate the port group walk on teardown
+      (CVE-2026-99117)
+    - ksmbd: fill in FileSysIdentifier in FS_POSIX_INFORMATION (CVE-2026-99115)
+    - ksmbd: initialize FileSystemControlFlags in FS_CONTROL_INFORMATION
+      (CVE-2026-99114)
+    - ksmbd: zero the FS_OBJECT_ID_INFORMATION buffer before filling it in
+      (CVE-2026-99113)
+    - net/sched: cls_flower: validate mask pointer after nla_next()
+      (CVE-2026-99112)
+    - smb: client: fix heap overflow in cifs_do_set_acl() (CVE-2026-99110)
+    - smb: client: fix multiuser mount with krb5
+    - scsi: st: Fix use-after-free race between st_remove() and st_open()
+      (CVE-2026-99156)
+    - perf: Track the perf mlock gift separately
+    - eventfs: fix SRCU read lock leak in eventfs_iterate()
+    - net: call getsockopt_iter if available
+    - kernel/watch_queue: Use pipe_buf() to retrieve the pipe buffer
+    - watch_queue: Fix note pool publication race in watch_queue_set_size()
+      (CVE-2026-99179)
+    - ntfs3: free the sbi after a grace period (CVE-2026-99171)
+    - ext4: free the sbi after a grace period (CVE-2026-99174)
+    - [amd64] ASoC: SOF: ipc4-topology: Fix shift-out-of-bounds for aggregated
+      ALH capture (CVE-2026-99182)
+    - drm/xe: Bump LRU for external objects on exec and rebind
+    - tracing: Keep the predicate limit separate from program capacity
+      (CVE-2026-99143)
+    - io_uring/cancel: don't spin on local work the task can't run
+      (CVE-2026-99130)
+    - virtio: set skb owner of virtio_transport_reset_no_sock() reply
+    - vsock/virtio: validate packet source for connected sockets
+      (CVE-2026-99123)
+    - ipv4: udp: Create exceptions before socket matching (CVE-2026-99077)
+    - workqueue: release pwq pools by pool type
+    - workqueue: Fix unbound pool lifetime for pending pwqs (CVE-2026-99103)
+    - i2c: viai2c-wmt: Replace dev_err() with dev_err_probe() in probe function
+    - i2c: viai2c-wmt: Fix clock leak in wmt_i2c_probe() (CVE-2026-99161)
+    - futex: Fix mm reuse handling for FUT_OFF_MMSHARED (CVE-2026-99169)
+    - [amd64] drm/i915/dmc: Harden DMC firmware payload parsing (CVE-2026-99118)
+    - tracing: Fix ignored return value of resize_buffer_duplicate_size()
+    - drm/amdgpu: free the userptr ranges when a CS fails after parser_bos
+      (CVE-2026-99106)
+    - sched_ext: Fix stall when a task enqueued with SCX_ENQ_LAST lands back on
+      its CPU's local DSQ (CVE-2026-99105)
+    - cifs: add revalidation on FSCTL failure in smb2_duplicate_extents()
+    - xfs: don't hold buffer locks across sync transaction commit in
+      xfs_sync_sb_buf (CVE-2026-99132)
+    - rose: clear stale N(R)/N(S) before (re)transmitting a data frame
+    - netrom: linearize and validate lengths in nr_rx_frame()
+    - netrom: require full NET/ROM headers in nr_route_frame()
+    - net: netrom: validate source address in nr_find_socket()
+    - netrom: bound fragment reassembly in nr_queue_rx_frame()
+    - ax25: fix OOB read after address header strip in ax25_rcv()
+    - ax25: check frame length in ax25_decode() and ax25_rx_iframe()
+    - net: ax25: fix integer overflow in ax25_rx_fragment()
+    - netrom: use a single lock for the node and neighbour lists
+    - netrom: look up and update routes in one critical section
+    - netrom: fix reference count leak in nr_rt_device_down
+    - netrom: clear nr_neigh->ax25 under the routing lock in nr_link_failed()
+    - netrom: fix nr_node leak when nr_del_node() removes the last route
+    - rose: clear through routes when a neighbour is removed from the tables
+    - rose: restart the link of a neighbour created over a live AX.25 connection
+    - ax25: serialise the transmission of I frames on a connection
+    - rose: process received frames and send with the socket locked
+    - ax25: don't create two connections for the same link in ax25_send_frame()
+    - ax25: read the connection's ax25_dev only once when walking ax25_list
+    - ax25: wait for ax25_send_frame() before detaching the connections of a
+      device
+    - ax25: don't accept frames on a device that is going down
+    - ax25: send a private copy of each I frame
+    - rose: clear the circuits of a neighbour that restarts the link
+    - ax25: send unacknowledged I frames again when a link is re-established
+    - rose: bring up the link of the preferred route passed over by a connect
+      request
+    - ax25: don't free an incoming SABM skb left on the listener's queue
+    - mm/pagewalk: fix stale walk->action escaping walk_pmd_range()
+    - block: avoid potential deadlock on zone revalidation failure
+    - Revert "srcu: Use irq_work to start GP in tiny SRCU"
+    - net_sched: codel: fix stale state for empty flows in fq_codel
+    - Bluetooth: L2CAP: refuse __l2cap_chan_add if chan already has conn
+    - tracing: Reject incomplete event filter expressions
+    - tracing: Save the event file instead of the compatible histogram
+    - tracing: Unregister field variable histograms when the command fails
+    - tracing: Fix 64-bit and signed histogram fields on 32-bit kernels
+    - tracing/histograms: Verify event_call identity when updating synth_event
+      refcount
+    - io-wq: order the exit bit against worker creation task work
+    - io_uring/waitid: own the request before clearing ->head
+    - io_uring/cmd: don't leave list poison in ->hash_node
+    - io_uring/wait: don't spin on a stuck overflow list
+    - io_uring/io-wq: don't lose the signal that ends work
+    - io_uring/io-wq: don't hide a link from cancellations
+    - io_uring: don't flood a cancelling task with task_work
+    - io_uring/io-wq: don't strand work when a worker exits
+    - io_uring/io-wq: don't exit with a creation pending
+    - io_uring/io-wq: let cancel find picked up hashed work
+    - io_uring/poll: don't lose a cancel as io-wq arms poll
+    - io_uring: don't lose a cancel as io-wq parks a request
+    - io_uring/cancel: don't forget that the work was running
+    - io_uring/cancel: recognize "no timeout" on 32-bit
+    - io_uring/cancel: let CANCEL_ALL find parked requests
+    - io_uring: wake ring pollers for local task_work
+    - io_uring/wait: look at all CQ waiters on wake up
+    - io_uring/poll: drop stale double poll entry on rearm
+    - io_uring/timeout: don't skip over reached sequences
+    - io_uring/timeout: keep repeat count on multishot update
+    - io_uring/wait: no early -ETIME if min_wait finds work
+    - io_uring/napi: make stale entries time out after 60s
+    - io_uring/napi: don't busy poll past an expired timeout
+    - io_uring/kbuf: handle index wrap in last buffer check
+    - io_uring/sqpoll: let the thread sleep on disabled rings
+    - io_uring: don't pass restart error codes to userspace
+    - io_uring/net: don't retry recv on uncommitted buffers
+    - io_uring/timeout: no ABS update of multishot timeouts
+    - io_uring/timeout: don't end a linked timeout with 1
+    - io_uring: look up the file before queueing to io-wq
+    - io_uring/poll: avoid retry wakeup loss when dropping ownership
+    - io_uring/timeout: don't put a sequence target behind the last flush
+    - io_uring/timeout: don't flush with the sequence behind the last flush
+    - io_uring/timeout: don't lose a cancel as io-wq arms a timeout
+    - io_uring/poll: don't loop on HUP with multiple references
+    - io_uring/net: keep recv buffer select length within MAX_RW_COUNT
+    - io_uring/wait: wake real-time waiters from hard interrupt context
+    - io_uring/waitid: prevent cancel reference wrap
+    - keys: Avoid the owner account dereference in named keyring lookup
+    - keys: Check the authorization payload in process keyring searches
+    - keys: Protect the type name while describing a key
+    - keys: make keyring indexes independent of kernel addresses
+    - keys: Protect the read method check against type removal
+    - KEYS: Fix key_reject_and_link() race with keyring restriction
+    - KEYS: trusted: Fix blob allocation size in tpm2_key_decode()
+    - keys/trusted_keys: return immediately after TPM unseal failure
+    - asymmetric_keys: reject trust keys without IDs
+    - ftrace: Initialize modname and offset in print_rec()
+    - coredump: hold RCU while releasing parked threads
+    - signal: don't retarget shared signals in a dying thread group
+    - signal: only SIGKILL and the freezers interrupt a coredumping task
+    - ptrace: refuse to change the signal mask of a user worker
+    - fork: release the files of a failed fork after sched_cancel_fork()
+    - signal: allow taks to temporarily block TIF_NOTIFY_SIGNAL
+    - pid_namespace: prevent TIF_NOTIFY_SIGNAL from interrupting the reaper
 
-linux (6.12.94-1+grm5u1) gooroom-5.0; urgency=medium
+  [ Salvatore Bonaccorso ]
+  * net: skbuff: propagate shared-frag marker in skb_zerocopy()
 
-  * Rebased on gooroom-5.0 (kernel 6.12.94-1 stable base).
-  * Gooroom customizations unchanged (gooroom-0001..0004 + signing certs).
+ -- Salvatore Bonaccorso <carnil@debian.org>  Sat, 31 Oct 2026 15:51:21 +0100
 
- -- jongkyung.woo <jkwoo@gooroom.kr>  Wed, 26 Aug 2026 17:58:31 +0900
-
-linux (6.12.86-1+grm5u1) gooroom-5.0; urgency=medium
-
-  * Rebased on gooroom-5.0 (kernel 6.12.86-1 stable-sec base).
-  * IMA enforce kernel CONFIG (compared with BSYSTEM 3.0 working 6.12.22+bpo):
-    - enable INTEGRITY_TRUSTED_KEYRING, IMA_READ_POLICY, IMA_BLACKLIST_KEYRING
-    - enable IMA_QUEUE_EARLY_BOOT_KEYS (boot-time cert auto-register; eliminates
-      ima.sh hook hand-load race that hangs initramfs on trixie 6.12)
-    - enable IMA_LSM_RULES, IMA_APPRAISE_BOOTPARAM
-    - enable IMA_MEASURE_ASYMMETRIC_KEYS, IMA_MEASURE_PCR_IDX=10
-  * Apply Gooroom customizations (gooroom-0001..0004 patches + signing certs +
-    distributor=gooroom).
-
- -- jongkyung.woo <jkwoo@gooroom.kr>  Fri, 08 May 2026 18:00:00 +0900
 linux (6.12.113-1) trixie-security; urgency=high
 
   * New upstream stable update:
